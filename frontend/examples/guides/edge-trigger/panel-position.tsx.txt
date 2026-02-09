@@ -1,0 +1,5 @@
+config={{
+  panel: {
+    position: 'right', // Trigger will be on the right edge
+  },
+}}

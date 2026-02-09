@@ -1,0 +1,13 @@
+pillar.on('sidebar:click', ({ tabId }) => {
+  if (tabId === 'support') {
+    const context = pillar.getChatContext();
+    
+    // Navigate to your support page with context
+    const params = new URLSearchParams();
+    if (context?.conversationId) {
+      params.set('pillar_conversation', context.conversationId);
+    }
+    
+    window.location.href = `/support?${params.toString()}`;
+  }
+});

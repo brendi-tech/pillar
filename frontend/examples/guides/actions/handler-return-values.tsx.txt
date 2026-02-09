@@ -1,0 +1,8 @@
+// Success
+return { success: true };
+
+// Success with message
+return { success: true, message: 'Invite sent!' };
+
+// Failure
+return { success: false, message: 'Something went wrong' };

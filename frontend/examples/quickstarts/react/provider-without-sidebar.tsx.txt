@@ -1,0 +1,9 @@
+<PillarProvider
+  helpCenter={process.env.NEXT_PUBLIC_PILLAR_PRODUCT_KEY!}
+  config={{
+    edgeTrigger: { enabled: false },
+    mobileTrigger: { enabled: false },
+  }}
+>
+  {children} {/* Your app content renders here */}
+</PillarProvider>

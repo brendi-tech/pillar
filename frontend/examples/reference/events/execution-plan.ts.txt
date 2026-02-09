@@ -1,0 +1,8 @@
+interface ExecutionPlan {
+  id: string;
+  goal: string;
+  status: 'awaiting_start' | 'executing' | 'awaiting_result' | 'completed' | 'cancelled' | 'failed';
+  steps: ExecutionStep[];
+  completed_steps: number;
+  total_steps: number;
+}

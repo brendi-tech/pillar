@@ -1,0 +1,2 @@
+// When user completes a wizard triggered by an action
+Pillar.completeAction('add_source', true, { sourceId: '123' });

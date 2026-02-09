@@ -1,0 +1,30 @@
+import { Pillar } from '@pillar-ai/sdk';
+
+// Initialize the SDK
+const pillar = await Pillar.init({
+  helpCenter: '...',
+  publicKey: '...',
+  edgeTrigger: { enabled: true },
+  panel: { position: 'right' },
+});
+
+// Register task handlers
+pillar.onTask('navigate', ({ path }) => {
+  window.location.href = path;
+});
+
+pillar.onTask('invite_member', ({ email, role }) => {
+  showInviteModal({ email, role });
+});
+
+// Or handle all tasks with a single handler
+pillar.on('task:execute', (task) => {
+  switch (task.name) {
+    case 'navigate':
+      window.location.href = task.data.path;
+      break;
+    case 'invite_member':
+      showInviteModal(task.data);
+      break;
+  }
+});

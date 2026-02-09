@@ -1,0 +1,15 @@
+// providers/PillarSDKProvider.tsx
+'use client';
+
+import { PillarProvider } from '@pillar-ai/react';
+
+export function PillarSDKProvider({ children }: { children: React.ReactNode }) {
+  return (
+    <PillarProvider
+      helpCenter={process.env.NEXT_PUBLIC_PILLAR_PRODUCT_KEY!}
+      publicKey={process.env.NEXT_PUBLIC_PILLAR_PUBLIC_KEY!}
+    >
+      {children} {/* Your app content renders here */}
+    </PillarProvider>
+  );
+}

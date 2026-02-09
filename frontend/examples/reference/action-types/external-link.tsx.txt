@@ -1,0 +1,8 @@
+{
+  view_docs: {
+    description: 'Open the API documentation',
+    type: 'external_link',
+    externalUrl: 'https://docs.example.com/api',
+    autoRun: true,
+  },
+}

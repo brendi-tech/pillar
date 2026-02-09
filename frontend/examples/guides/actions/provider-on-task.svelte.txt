@@ -1,0 +1,26 @@
+<script lang="ts">
+  import { PillarProvider, PillarPanel } from '@pillar-ai/svelte';
+  import { goto } from '$app/navigation';
+
+  let showInviteModal = $state(false);
+
+  function handleTask(task: { name: string; data: any }) {
+    switch (task.name) {
+      case 'navigate':
+        goto(task.data.path);
+        break;
+      case 'invite_member':
+        showInviteModal = true;
+        break;
+    }
+  }
+</script>
+
+<PillarProvider
+  helpCenter="..."
+  config={{ publicKey: '...' }}
+  onTask={handleTask}
+>
+  <PillarPanel />
+  <slot />
+</PillarProvider>

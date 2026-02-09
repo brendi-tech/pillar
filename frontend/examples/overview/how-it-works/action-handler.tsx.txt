@@ -1,0 +1,8 @@
+invite_member: {
+  description: 'Invite a team member',
+  type: 'trigger_action',
+  handler: (data) => {
+    // This runs when the user triggers the action
+    openInviteModal({ email: data.email });
+  },
+}

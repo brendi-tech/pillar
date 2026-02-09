@@ -1,0 +1,14 @@
+pillar.on('sidebar:click', ({ tabId }) => {
+  const context = pillar.getChatContext();
+  
+  switch (tabId) {
+    case 'chat':
+      window.Intercom('showNewMessage');
+      break;
+    case 'email':
+      window.location.href = `/contact?context=${context?.conversationId || ''}`;
+      break;
+  }
+  
+  pillar.close();
+});

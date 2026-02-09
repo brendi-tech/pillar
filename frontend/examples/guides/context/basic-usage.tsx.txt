@@ -1,0 +1,15 @@
+import { usePillar } from '@pillar-ai/react';
+
+function SettingsPage() {
+  const { pillar } = usePillar();
+
+  useEffect(() => {
+    pillar?.setContext({
+      currentPage: '/settings',
+      currentFeature: 'Account Settings',
+      userRole: 'admin',
+    });
+  }, [pillar]);
+
+  return <Settings />;
+}

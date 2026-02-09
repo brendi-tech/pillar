@@ -1,0 +1,148 @@
+name: Tests - Backend
+
+on:
+  pull_request:
+    paths:
+      - 'backend/**'
+      - '.github/workflows/test-backend.yml'
+
+concurrency:
+  group: test-backend-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  test:
+    name: Run Backend Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: help_center_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    env:
+      # Python path
+      PYTHONPATH: ${{ github.workspace }}
+
+      # Django settings
+      DJANGO_SETTINGS_MODULE: config.settings.test
+
+      # Database configuration
+      HC_POSTGRES_HOST: localhost
+      HC_POSTGRES_PORT: 5432
+      HC_POSTGRES_DB: help_center_test
+      HC_POSTGRES_USER: postgres
+      HC_POSTGRES_PASSWORD: postgres
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/help_center_test
+
+      # Redis configuration
+      REDIS_URL: redis://localhost:6379/0
+      REDIS_HOST: localhost
+      REDIS_PORT: 6379
+
+      # Test mode
+      TESTING: true
+
+      # Required Django secrets (dummy values for testing)
+      SECRET_KEY: test-secret-key-for-ci-testing-only
+      DJANGO_SECRET_KEY: test-secret-key-for-ci-testing-only
+
+      # Hatchet (dummy values)
+      HATCHET_CLIENT_TOKEN: test-hatchet-token
+      HATCHET_NAMESPACE: test-namespace
+
+      # Mock LLM API keys (not used in unit tests, but needed for imports)
+      OPENAI_API_KEY: sk-test-key
+      OPENROUTER_API_KEY: sk-or-test-key
+      GOOGLE_API_KEY: test-google-key
+      COHERE_API_KEY: test-cohere-key
+
+      # Optional services (not needed for tests)
+      FIRECRAWL_API_KEY: test-firecrawl-key
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          uv sync
+
+      - name: Create test database schema
+        run: |
+          cd backend
+          uv run python manage.py migrate --noinput --verbosity 0
+
+      - name: Run tests
+        run: |
+          cd backend
+          uv run pytest apps/ \
+            -m "not workflow" \
+            --tb=short \
+            --strict-markers \
+            -v \
+            --cov=apps \
+            --cov-report=xml \
+            --cov-report=term-missing
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          files: ./backend/coverage.xml
+          flags: backend
+          name: backend-tests
+        continue-on-error: true
+
+      - name: Test Summary
+        if: always()
+        run: |
+          echo "## Backend Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Status:** ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Test Configuration" >> $GITHUB_STEP_SUMMARY
+          echo "- Python: 3.12" >> $GITHUB_STEP_SUMMARY
+          echo "- PostgreSQL: pgvector/pgvector:pg16" >> $GITHUB_STEP_SUMMARY
+          echo "- Redis: 7-alpine" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "All tests passed!" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "Tests failed. Check logs above for details." >> $GITHUB_STEP_SUMMARY
+          fi

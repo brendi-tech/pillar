@@ -1,0 +1,11 @@
+import type { CardComponentProps, CardComponent } from '@pillar-ai/react';
+
+interface MyData {
+  items: string[];
+  count: number;
+}
+
+const MyCard: CardComponent<MyData> = ({ data, onConfirm, onCancel }) => {
+  // data is typed as MyData
+  return <div>...</div>;
+};

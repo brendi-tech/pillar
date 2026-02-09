@@ -1,0 +1,4 @@
+<PillarProvider productKey="..." publicKey="...">
+  <RouteContextSync />
+  {children} {/* Your app content */}
+</PillarProvider>

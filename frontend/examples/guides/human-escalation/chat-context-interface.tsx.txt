@@ -1,0 +1,9 @@
+interface ChatContext {
+  /** Server-assigned conversation ID */
+  conversationId: string | null;
+  /** All messages in the conversation */
+  messages: Array<{
+    role: 'user' | 'assistant';
+    content: string;
+  }>;
+}

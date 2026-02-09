@@ -1,0 +1,100 @@
+# Create Pillar Custom Cards for My Actions
+
+Look at my existing Pillar actions and create custom confirmation card components.
+
+## What Custom Cards Do
+
+Instead of a generic confirmation dialog, cards let you:
+- Show rich, branded UI for confirmations
+- Let users edit AI-extracted data before confirming
+- Display previews of what will happen
+- Use your existing design system components
+
+## Your Task
+
+### 1. Find My Existing Actions
+Look for my Pillar actions definition (usually in lib/pillar/actions.ts or similar).
+
+### 2. Identify Actions That Need Cards
+Focus on actions that:
+- Modify data (create, update, delete)
+- Have multiple parameters the user might want to edit
+- Would benefit from a preview (e.g., "Invite 3 members as Admin")
+
+### 3. For Each Card, Generate:
+
+```tsx
+// components/cards/[ActionName]Card.tsx
+import type { CardComponentProps } from '@pillar-ai/react';
+import { useState } from 'react';
+// Import my design system components
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+
+interface ActionData {
+  // Match the dataSchema from my action
+}
+
+export function ActionNameCard({
+  data,
+  onConfirm,
+  onCancel,
+}: CardComponentProps<ActionData>) {
+  const [formData, setFormData] = useState(data);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleConfirm = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      // Call my API if needed
+      onConfirm(formData);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="...">
+      {/* Editable form fields */}
+      {/* Preview of action */}
+      {error && <p className="text-red-500">{error}</p>}
+      <div className="flex gap-2">
+        <Button variant="outline" onClick={onCancel} disabled={loading}>
+          Cancel
+        </Button>
+        <Button onClick={handleConfirm} disabled={loading}>
+          {loading ? 'Processing...' : 'Confirm'}
+        </Button>
+      </div>
+    </div>
+  );
+}
+```
+
+### 4. Register Cards in Provider
+
+```tsx
+import { InviteMembersCard } from '@/components/cards/InviteMembersCard';
+import { ConfirmDeleteCard } from '@/components/cards/ConfirmDeleteCard';
+
+<PillarProvider
+  productKey="..."
+  publicKey="..."
+  cards={{
+    invite_members: InviteMembersCard,
+    delete_item: ConfirmDeleteCard,
+    // ... other cards
+  }}
+>
+```
+
+## Start Here
+
+1. Find my Pillar actions definition
+2. Look at my design system (components/ui/ or similar)
+3. Identify which actions would benefit from custom cards
+4. Generate card components using my design patterns

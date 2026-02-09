@@ -1,0 +1,8 @@
+useEffect(() => {
+  const unsubscribers = [
+    on('panel:open', handleOpen),
+    on('plan:complete', handlePlanComplete),
+  ];
+
+  return () => unsubscribers.forEach(unsub => unsub());
+}, [on]);

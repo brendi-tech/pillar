@@ -1,0 +1,12 @@
+// Get the SDK instance (after Pillar.init() has completed)
+const pillar = Pillar.getInstance();
+
+pillar.onTask('navigate', function(data) {
+  window.location.href = data.path;
+  return { success: true };
+});
+
+pillar.onTask('open_modal', function(data) {
+  document.getElementById(data.modalId).showModal();
+  return { success: true };
+});

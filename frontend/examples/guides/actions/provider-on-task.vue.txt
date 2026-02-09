@@ -1,0 +1,29 @@
+<script setup lang="ts">
+import { PillarProvider, PillarPanel } from '@pillar-ai/vue';
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
+const showInviteModal = ref(false);
+
+function handleTask(task: { name: string; data: any }) {
+  switch (task.name) {
+    case 'navigate':
+      router.push(task.data.path);
+      break;
+    case 'invite_member':
+      showInviteModal.value = true;
+      break;
+  }
+}
+</script>
+
+<template>
+  <PillarProvider
+    help-center="..."
+    :config="{ publicKey: '...' }"
+    :on-task="handleTask"
+  >
+    <PillarPanel />
+    <slot />
+  </PillarProvider>
+</template>

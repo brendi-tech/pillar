@@ -1,0 +1,96 @@
+{
+  "success": true,
+  "datasets": [
+    {
+      "id": 20,
+      "name": "users_channels",
+      "database": "examples",
+      "schema": "main",
+      "description": null,
+      "kind": "physical"
+    },
+    {
+      "id": 11,
+      "name": "messages_channels",
+      "database": "examples",
+      "schema": "main",
+      "description": null,
+      "kind": "virtual"
+    },
+    {
+      "id": 17,
+      "name": "exported_stats",
+      "database": "examples",
+      "schema": "main",
+      "description": null,
+      "kind": "physical"
+    },
+    {
+      "id": 12,
+      "name": "users_channels-uzooNNtSRO",
+      "database": "examples",
+      "schema": "main",
+      "description": null,
+      "kind": "virtual"
+    },
+    {
+      "id": 10,
+      "name": "FCC 2018 Survey",
+      "database": "examples",
+      "schema": "main",
+      "description": null,
+      "kind": "physical"
+    },
+    {
+      "id": 18,
+      "name": "covid_vaccines",
+      "database": "examples",
+      "schema": "main",
+      "description": null,
+      "kind": "physical"
+    },
+    {
+      "id": 2,
+      "name": "birth_names",
+      "database": "examples",
+      "schema": "main",
+      "description": null,
+      "kind": "physical"
+    },
+    {
+      "id": 15,
+      "name": "channel_members",
+      "database": "examples",
+      "schema": "main",
+      "description": null,
+      "kind": "physical"
+    },
+    {
+      "id": 13,
+      "name": "new_members_daily",
+      "database": "examples",
+      "schema": "main",
+      "description": null,
+      "kind": "virtual"
+    },
+    {
+      "id": 21,
+      "name": "threads",
+      "database": "examples",
+      "schema": "main",
+      "description": null,
+      "kind": "physical"
+    },
+    {
+      "id": 5,
+      "name": "sf_population_polygons",
+      "database": "examples",
+      "schema": "main",
+      "description": "Population density of San Francisco",
+      "kind": "physical"
+    }
+  ],
+  "count": 11,
+  "has_more": true,
+  "message": "Showing first 11 datasets"
+}

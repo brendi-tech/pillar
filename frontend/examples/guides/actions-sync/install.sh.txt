@@ -1,0 +1,5 @@
+npm install @pillar-ai/sdk
+# or
+pnpm add @pillar-ai/sdk
+# or
+yarn add @pillar-ai/sdk

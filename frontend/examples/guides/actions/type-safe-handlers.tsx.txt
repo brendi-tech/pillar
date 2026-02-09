@@ -1,0 +1,16 @@
+import { usePillar } from '@pillar-ai/react';
+import type { actions } from '@/lib/pillar/actions';
+
+function ActionHandlers() {
+  const { onTask } = usePillar<typeof actions>();
+
+  useEffect(() => {
+    // TypeScript knows the data shape for each action
+    onTask('invite_member', (data) => {
+      console.log(data.email); // Typed!
+      console.log(data.role);  // Typed!
+    });
+  }, [onTask]);
+
+  return null;
+}

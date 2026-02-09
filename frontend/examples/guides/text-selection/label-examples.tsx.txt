@@ -1,0 +1,7 @@
+// Good
+label: 'Ask co-pilot'
+label: 'Help'
+label: 'Explain'
+
+// Too long
+label: 'Ask the co-pilot about this text'

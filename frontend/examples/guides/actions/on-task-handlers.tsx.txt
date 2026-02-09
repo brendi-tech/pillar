@@ -1,0 +1,26 @@
+import { usePillar } from '@pillar-ai/react';
+
+function ActionHandlers() {
+  const { pillar } = usePillar();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!pillar) return;
+
+    const handlers = [
+      pillar.onTask('navigate', ({ path }) => {
+        router.push(path);
+        return { success: true };
+      }),
+
+      pillar.onTask('invite_member', ({ email, role }) => {
+        openInviteModal({ email, role });
+        return { success: true };
+      }),
+    ];
+
+    return () => handlers.forEach(unsub => unsub?.());
+  }, [pillar, router]);
+
+  return null;
+}

@@ -1,0 +1,2 @@
+# .env.local
+NEXT_PUBLIC_PILLAR_PRODUCT_KEY=your-help-center-slug

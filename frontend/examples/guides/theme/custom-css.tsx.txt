@@ -1,0 +1,16 @@
+config={{
+  customCSS: `
+    .pillar-header {
+      padding: 20px;
+      border-bottom: 2px solid var(--pillar-primary);
+    }
+    
+    .pillar-message-user {
+      border-radius: 16px;
+    }
+    
+    .pillar-button {
+      font-weight: 600;
+    }
+  `,
+}}

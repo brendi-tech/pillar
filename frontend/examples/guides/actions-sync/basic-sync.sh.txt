@@ -1,0 +1,6 @@
+# Set your credentials
+export PILLAR_SLUG="your-help-center-slug"
+export PILLAR_SECRET="your-secret-token"
+
+# Sync your actions
+npx pillar-sync --actions ./lib/pillar/actions.ts

@@ -1,0 +1,7 @@
+const pillar = Pillar.getInstance();
+
+const unsubscribe = pillar.on('panel:open', () => {
+  console.log('Panel opened');
+});
+
+// Later: unsubscribe();

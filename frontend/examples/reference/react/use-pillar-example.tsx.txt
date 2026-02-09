@@ -1,0 +1,27 @@
+import { usePillar } from '@pillar-ai/react';
+
+function MyComponent() {
+  const {
+    pillar,      // SDK instance
+    isReady,     // Whether SDK is initialized
+    isPanelOpen, // Panel open state
+    open,        // Open the panel
+    close,       // Close the panel
+    toggle,      // Toggle the panel
+    navigate,    // Navigate to a view
+    setTheme,    // Update theme at runtime
+    on,          // Subscribe to events
+    onTask,      // Register task handler
+    activePlan,  // Current active plan
+  } = usePillar();
+
+  if (!isReady) {
+    return <div>Loading...</div>;
+  }
+
+  return (
+    <button onClick={() => open()}>
+      Get Help
+    </button>
+  );
+}

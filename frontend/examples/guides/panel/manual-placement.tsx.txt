@@ -1,0 +1,17 @@
+import { PillarProvider, PillarPanel } from '@pillar-ai/react';
+
+function App() {
+  return (
+    <PillarProvider
+      productKey="..."
+      publicKey="..."
+      config={{ panel: { container: 'manual' } }}
+    >
+      <div className="layout">
+        <Sidebar />
+        <main>Your content</main>
+        <PillarPanel className="custom-panel" />
+      </div>
+    </PillarProvider>
+  );
+}

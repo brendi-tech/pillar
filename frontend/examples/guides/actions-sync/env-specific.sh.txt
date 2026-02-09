@@ -1,0 +1,7 @@
+# Staging environment
+PILLAR_SLUG=myapp-staging PILLAR_SECRET=$STAGING_SECRET \
+  npx pillar-sync --actions ./lib/pillar/actions.ts
+
+# Production environment
+PILLAR_SLUG=myapp-production PILLAR_SECRET=$PROD_SECRET \
+  npx pillar-sync --actions ./lib/pillar/actions.ts

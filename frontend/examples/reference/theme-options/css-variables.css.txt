@@ -1,0 +1,12 @@
+.pillar-panel {
+  --pillar-primary: #2563eb;
+  --pillar-primary-hover: #1d4ed8;
+  --pillar-bg: #ffffff;
+  --pillar-bg-secondary: #f9fafb;
+  --pillar-text: #111827;
+  --pillar-text-muted: #6b7280;
+  --pillar-border: #e5e7eb;
+  --pillar-border-light: #f3f4f6;
+}
+
+/* In dark mode, these values are updated automatically */

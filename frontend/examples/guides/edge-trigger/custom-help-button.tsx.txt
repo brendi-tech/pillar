@@ -1,0 +1,9 @@
+function CustomHelpButton() {
+  const { open, close, toggle, isPanelOpen } = usePillar();
+  
+  return (
+    <button onClick={toggle}>
+      {isPanelOpen ? 'Close' : 'Help'}
+    </button>
+  );
+}

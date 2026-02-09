@@ -1,0 +1,18 @@
+function UserContextSync() {
+  const { pillar } = usePillar();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user && pillar) {
+      pillar.setContext({
+        userRole: user.role,
+        userState: user.subscription?.status,
+        custom: {
+          plan: user.subscription?.plan,
+        },
+      });
+    }
+  }, [pillar, user]);
+
+  return null;
+}

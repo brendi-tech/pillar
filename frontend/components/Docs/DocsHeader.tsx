@@ -1,0 +1,55 @@
+"use client";
+
+import { Button } from "@/components/ui/button";
+import { PillarLogoWithName } from "@/components/marketing/LandingPage/PillarLogoWithName";
+import { usePillar } from "@pillar-ai/react";
+import { Search, Sparkles } from "lucide-react";
+import Link from "next/link";
+
+interface DocsHeaderProps {
+  onOpenSearch: () => void;
+}
+
+export function DocsHeader({ onOpenSearch }: DocsHeaderProps) {
+  const { open } = usePillar();
+
+  return (
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      {/* Full-width container with centered search */}
+      <div className="relative flex h-14 items-center">
+        {/* Left: Logo aligned with sidebar (inside max-width container) */}
+        <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8">
+          <Link href="/docs" className="flex items-center w-fit">
+            <PillarLogoWithName className="h-6" />
+          </Link>
+        </div>
+
+        {/* Center: Search + Ask AI - absolutely centered on viewport */}
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-2">
+          {/* Search Button - triggers command palette */}
+          <button
+            onClick={onOpenSearch}
+            className="flex items-center gap-2 rounded-lg border border-input bg-muted/50 px-4 py-2 text-sm text-muted-foreground hover:bg-muted transition-colors w-48 sm:w-64"
+          >
+            <Search className="h-4 w-4" />
+            <span className="flex-1 text-left">Search...</span>
+            <kbd className="pointer-events-none hidden sm:inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+              ⌘K
+            </kbd>
+          </button>
+
+          {/* Ask AI Button */}
+          <Button
+            onClick={() => open()}
+            variant="outline"
+            size="sm"
+            className="gap-2"
+          >
+            <Sparkles className="h-4 w-4" />
+            <span className="hidden sm:inline">Ask AI</span>
+          </Button>
+        </div>
+      </div>
+    </header>
+  );
+}

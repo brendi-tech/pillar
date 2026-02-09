@@ -1,0 +1,13 @@
+// When your wizard/modal flow completes, signal to Pillar
+function handleWizardComplete(source) {
+  // 1. Your app logic
+  saveSource(source);
+
+  // 2. Tell Pillar the action is done
+  pillar.completeAction('add_source', true, { sourceId: source.id });
+}
+
+// If the user cancels the wizard
+function handleWizardCancel() {
+  pillar.completeAction('add_source', false);
+}

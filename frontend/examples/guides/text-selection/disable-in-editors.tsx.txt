@@ -1,0 +1,10 @@
+function EditorPage() {
+  const { pillar } = usePillar();
+  
+  useEffect(() => {
+    pillar?.setTextSelectionEnabled(false);
+    return () => pillar?.setTextSelectionEnabled(true);
+  }, [pillar]);
+
+  return <RichTextEditor />;
+}

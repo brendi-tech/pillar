@@ -1,0 +1,207 @@
+# E2E Tests for Agent (Agentic Loop)
+#
+# Tests the full agent flow with real LLM calls and fixture-based client responses.
+# Uses real API keys from GitHub secrets.
+#
+# Triggered:
+# - On PRs that touch agent-related code
+# - Manually via workflow_dispatch
+
+name: Tests - Agent E2E
+
+on:
+  pull_request:
+    paths:
+      - 'backend/apps/mcp/services/agent/**'
+      - 'backend/apps/mcp/tools/**'
+      - 'backend/tests/e2e/**'
+      - '.github/workflows/test-agent-e2e.yml'
+  
+  # Allow manual triggering
+  workflow_dispatch:
+
+concurrency:
+  group: test-agent-e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  test-agent-e2e:
+    name: Agent E2E Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: help_center_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    env:
+      # Python path
+      PYTHONPATH: ${{ github.workspace }}
+
+      # Django settings - use e2e settings for real API calls
+      DJANGO_SETTINGS_MODULE: config.settings.e2e
+
+      # Database configuration
+      HC_POSTGRES_HOST: localhost
+      HC_POSTGRES_PORT: 5432
+      HC_POSTGRES_DB: help_center_test
+      HC_POSTGRES_USER: postgres
+      HC_POSTGRES_PASSWORD: postgres
+
+      # Redis configuration
+      REDIS_URL: redis://localhost:6379/0
+      REDIS_HOST: localhost
+      REDIS_PORT: 6379
+
+      # Required Django secrets
+      SECRET_KEY: test-secret-key-for-ci-testing-only
+      DJANGO_SECRET_KEY: test-secret-key-for-ci-testing-only
+
+      # Hatchet (dummy - not needed for agent tests)
+      HATCHET_CLIENT_TOKEN: test-hatchet-token
+      HATCHET_NAMESPACE: test-namespace
+
+      # Real API keys from secrets (required for LLM calls)
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
+
+      # Optional services
+      FIRECRAWL_API_KEY: test-firecrawl-key
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          uv sync
+
+      - name: Create test database schema
+        run: |
+          cd backend
+          uv run python manage.py migrate --noinput --verbosity 0
+
+      - name: Verify API keys are set
+        run: |
+          if [ -z "$OPENROUTER_API_KEY" ] || [ "$OPENROUTER_API_KEY" = "" ]; then
+            echo "OPENROUTER_API_KEY not set - check GitHub secrets"
+            exit 1
+          fi
+          if [ -z "$GOOGLE_API_KEY" ] || [ "$GOOGLE_API_KEY" = "" ]; then
+            echo "GOOGLE_API_KEY not set - check GitHub secrets"
+            exit 1
+          fi
+          echo "Required API keys are set"
+
+      - name: Run Agent E2E tests
+        run: |
+          cd backend
+          uv run pytest tests/e2e/ \
+            -m e2e \
+            -n auto \
+            -v \
+            --tb=short \
+            --confcutdir=tests/e2e \
+            -p no:django \
+            2>&1 | tee test_output.log
+          
+          # Capture exit code
+          TEST_EXIT_CODE=${PIPESTATUS[0]}
+          exit $TEST_EXIT_CODE
+
+      - name: Print Agent Thinking Logs
+        if: always()
+        run: |
+          cd backend
+          echo ""
+          echo "========================================"
+          echo "       AGENT THINKING LOGS"
+          echo "========================================"
+          echo ""
+          
+          if [ -d "logs/agent-sessions" ]; then
+            SESSION_LOGS=$(find logs/agent-sessions -name "*.txt" -type f 2>/dev/null | sort)
+            
+            if [ -n "$SESSION_LOGS" ]; then
+              for log_file in $SESSION_LOGS; do
+                echo ""
+                echo "========================================"
+                echo "SESSION: $log_file"
+                echo "========================================"
+                cat "$log_file"
+                echo ""
+              done
+            else
+              echo "No session logs found in logs/agent-sessions/"
+            fi
+          else
+            echo "logs/agent-sessions directory does not exist"
+          fi
+
+      - name: Test Summary
+        if: always()
+        run: |
+          echo "## Agent E2E Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Status:** ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Test Configuration" >> $GITHUB_STEP_SUMMARY
+          echo "- Python: 3.12" >> $GITHUB_STEP_SUMMARY
+          echo "- PostgreSQL: pgvector/pgvector:pg16" >> $GITHUB_STEP_SUMMARY
+          echo "- LLM: Budget tier (via OpenRouter)" >> $GITHUB_STEP_SUMMARY
+          echo "- Embeddings: Gemini" >> $GITHUB_STEP_SUMMARY
+          echo "- Reranking: Cohere" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "All Agent E2E tests passed!" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "Tests failed. Check logs for details." >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: agent-e2e-test-logs-${{ github.run_number }}
+          path: |
+            backend/test_output.log
+            backend/logs/agent-sessions/
+          retention-days: 7

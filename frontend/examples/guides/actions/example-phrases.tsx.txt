@@ -1,0 +1,6 @@
+examples: [
+  'invite someone to my team',
+  'add a new team member',
+  'how do I add users?',
+  'share access with someone',
+]

@@ -1,0 +1,12 @@
+<PillarProvider
+  productKey="..."
+  publicKey="..."
+  config={{
+    theme: {
+      mode: 'auto',
+      colors: {
+        primary: '#2563eb',
+      },
+    },
+  }}
+>

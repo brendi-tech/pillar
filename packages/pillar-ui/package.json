@@ -1,0 +1,41 @@
+{
+  "name": "@pillar/ui",
+  "version": "1.0.0",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./sources-card": "./dist/sources-card.bundle.js",
+    "./product-card": "./dist/product-card.bundle.js"
+  },
+  "scripts": {
+    "build": "vite build && vite build --config vite.bundle.config.ts && vite build --config vite.product-card.bundle.config.ts && tsc --emitDeclarationOnly --outDir dist",
+    "build:lib": "vite build && tsc --emitDeclarationOnly --outDir dist",
+    "build:bundle": "vite build --config vite.bundle.config.ts && vite build --config vite.product-card.bundle.config.ts",
+    "dev": "vite --config vite.dev.config.ts",
+    "dev:watch": "vite build --watch"
+  },
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/react": "^19.0.8",
+    "@types/react-dom": "^19.0.3",
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.4.20",
+    "fast-glob": "^3.3.2",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.5.3",
+    "vite": "^6.0.0"
+  }
+}

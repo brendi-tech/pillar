@@ -1,0 +1,20 @@
+import { usePillar } from '@pillar-ai/react';
+
+function SettingsPage() {
+  const { pillar } = usePillar();
+
+  const handleToggle = (enabled: boolean) => {
+    pillar?.setTextSelectionEnabled(enabled);
+  };
+
+  return (
+    <label>
+      <input
+        type="checkbox"
+        defaultChecked
+        onChange={(e) => handleToggle(e.target.checked)}
+      />
+      Enable text selection helper
+    </label>
+  );
+}

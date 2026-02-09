@@ -1,0 +1,6 @@
+delete_user: {
+  description: 'Delete a user from the organization',
+  type: 'trigger_action',
+  requiredContext: { userRole: 'admin' },
+  handler: ({ userId }) => deleteUser(userId),
+}

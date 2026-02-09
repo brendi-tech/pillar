@@ -1,0 +1,17 @@
+// Get the SDK instance (after Pillar.init() has completed)
+const pillar = Pillar.getInstance();
+
+// Open the panel
+pillar.open();
+
+// Open to a specific article
+pillar.open({ article: 'getting-started' });
+
+// Open with a search query
+pillar.open({ search: 'billing' });
+
+// Close the panel
+pillar.close();
+
+// Toggle
+pillar.toggle();

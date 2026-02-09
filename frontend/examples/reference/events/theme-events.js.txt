@@ -1,0 +1,5 @@
+const pillar = Pillar.getInstance();
+
+pillar.on('theme:change', ({ mode }) => {
+  console.log('Theme changed to:', mode);
+});

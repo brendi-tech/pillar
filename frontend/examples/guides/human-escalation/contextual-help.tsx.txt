@@ -1,0 +1,15 @@
+function ContextualHelp({ errorCode }: { errorCode: string }) {
+  const { open, sendMessage } = usePillar();
+  
+  async function handleGetHelp() {
+    // Open the co-pilot and ask about the error
+    open({ tab: 'assistant' });
+    await sendMessage(`I'm seeing error ${errorCode}. What does this mean?`);
+  }
+  
+  return (
+    <button onClick={handleGetHelp}>
+      Get help with this error
+    </button>
+  );
+}

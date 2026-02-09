@@ -1,0 +1,45 @@
+function SupportTab() {
+  const { context, close } = usePillar();
+  const { user, subscription } = context || {};
+  
+  // Check if user has support access
+  const hasSupport = subscription?.status === 'active' && 
+                     ['pro', 'enterprise'].includes(subscription?.plan);
+  
+  // Check if user is in trial
+  const isInTrial = subscription?.status === 'trialing';
+  
+  // Check support hours (example: 9am-5pm PST)
+  const now = new Date();
+  const pstHour = now.getUTCHours() - 8;
+  const isBusinessHours = pstHour >= 9 && pstHour < 17;
+  
+  if (!hasSupport && !isInTrial) {
+    return (
+      <div className="upgrade-required">
+        <LockIcon />
+        <h3>Support requires a paid plan</h3>
+        <p>Upgrade to Pro to get access to live chat and priority email support.</p>
+        <a href="/pricing" onClick={() => close()}>
+          View Plans
+        </a>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="support-options">
+      <button 
+        onClick={handleLiveChat} 
+        disabled={!isBusinessHours}
+      >
+        <HeadsetIcon />
+        <span>Live Chat</span>
+        {!isBusinessHours && (
+          <span className="status">Available 9am-5pm PST</span>
+        )}
+      </button>
+      {/* ... other options */}
+    </div>
+  );
+}

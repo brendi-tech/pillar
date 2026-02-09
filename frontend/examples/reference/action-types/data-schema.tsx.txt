@@ -1,0 +1,14 @@
+dataSchema: {
+  type: 'object',
+  properties: {
+    url: {
+      type: 'string',
+      description: 'URL of the source to add',
+    },
+    name: {
+      type: 'string',
+      description: 'Display name for the source',
+    },
+  },
+  required: ['url'],
+}

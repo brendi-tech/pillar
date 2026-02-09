@@ -1,0 +1,3 @@
+"""
+Knowledge admin API.
+"""

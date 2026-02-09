@@ -1,0 +1,12 @@
+<PillarProvider
+  productKey="..."
+  publicKey="..."
+  config={{
+    panel: {
+      enabled: true,
+      position: 'right',
+      mode: 'push',
+      width: 380,
+    },
+  }}
+>

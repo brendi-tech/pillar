@@ -1,0 +1,14 @@
+// Open to home view
+open();
+
+// Open to a specific article
+open({ article: 'getting-started' });
+
+// Open with a search query
+open({ search: 'billing' });
+
+// Open and focus the input
+open({ focusInput: true });
+
+// Open to the chat view
+open({ view: 'chat' });

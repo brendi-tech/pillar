@@ -1,0 +1,8 @@
+// Get the SDK instance (after Pillar.init() has completed)
+const pillar = Pillar.getInstance();
+
+pillar?.setContext({
+  currentPage: window.location.pathname,
+  userId: 'user_123',
+  userRole: 'admin',
+});

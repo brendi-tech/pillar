@@ -1,0 +1,90 @@
+services:
+  # ---------------------------------------------------------------------------
+  # Infrastructure
+  # ---------------------------------------------------------------------------
+
+  db:
+    image: pgvector/pgvector:pg18
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: ${HC_POSTGRES_DB:-pillar}
+      POSTGRES_USER: ${HC_POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${HC_POSTGRES_PASSWORD:-postgres}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: pg_isready -U ${HC_POSTGRES_USER:-postgres}
+      start_period: 30s
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: redis-cli ping
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    command: redis-server --appendonly yes
+
+  # ---------------------------------------------------------------------------
+  # Application (use: docker compose --profile app up)
+  # ---------------------------------------------------------------------------
+
+  api:
+    profiles: ["app"]
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    env_file: .env
+    environment:
+      HC_POSTGRES_HOST: db
+      REDIS_URL: redis://redis:6379
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+             uvicorn config.asgi:application --host 0.0.0.0 --port 8000 --log-level info"
+
+  worker:
+    profiles: ["app"]
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.worker
+    env_file: .env
+    environment:
+      HC_POSTGRES_HOST: db
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  frontend:
+    profiles: ["app"]
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_PILLAR_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+    env_file: .env
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:
+  redis_data:

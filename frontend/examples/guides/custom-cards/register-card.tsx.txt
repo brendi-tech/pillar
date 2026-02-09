@@ -1,0 +1,10 @@
+import { PillarProvider } from '@pillar-ai/react';
+import { InviteMembersCard } from '@/components/cards/InviteMembersCard';
+
+<PillarProvider
+  productKey="..."
+  publicKey="..."
+  cards={{
+    invite_members: InviteMembersCard,
+  }}
+>

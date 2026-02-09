@@ -1,0 +1,16 @@
+// Get the SDK instance (after Pillar.init() has completed)
+const pillar = Pillar.getInstance();
+
+// Panel events
+pillar.on('panel:open', function() {
+  console.log('Panel opened');
+});
+
+pillar.on('panel:close', function() {
+  console.log('Panel closed');
+});
+
+// Ready event
+pillar.on('ready', function() {
+  console.log('SDK initialized');
+});

@@ -1,0 +1,25 @@
+import { useHelpPanel } from '@pillar-ai/react';
+
+function HelpButton() {
+  const {
+    isOpen,
+    open,
+    close,
+    toggle,
+    openArticle,
+    openCategory,
+    openSearch,
+    openChat,
+  } = useHelpPanel();
+
+  return (
+    <div>
+      <button onClick={toggle}>
+        {isOpen ? 'Close' : 'Help'}
+      </button>
+      <button onClick={openChat}>
+        Ask co-pilot
+      </button>
+    </div>
+  );
+}

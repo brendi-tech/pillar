@@ -1,0 +1,12 @@
+pillar.onTask('export_data', async (data) => {
+  try {
+    await exportData(data);
+    return { success: true };
+  } catch (error) {
+    console.error('Export failed:', error);
+    return {
+      success: false,
+      message: 'Export failed. Please try again.',
+    };
+  }
+});

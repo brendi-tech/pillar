@@ -1,0 +1,9 @@
+<PillarProvider
+  productKey="..."
+  publicKey="..."
+  config={{
+    edgeTrigger: {
+      enabled: true,
+    },
+  }}
+>

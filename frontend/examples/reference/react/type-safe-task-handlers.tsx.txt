@@ -1,0 +1,18 @@
+import { usePillar } from '@pillar-ai/react';
+import type { actions } from '@/lib/pillar/actions';
+
+function TaskHandlers() {
+  const { onTask } = usePillar<typeof actions>();
+
+  useEffect(() => {
+    // TypeScript knows the exact data shape for each action
+    const unsub = onTask('add_source', (data) => {
+      console.log(data.url); // Typed as string
+      return { success: true };
+    });
+
+    return unsub;
+  }, [onTask]);
+
+  return null;
+}

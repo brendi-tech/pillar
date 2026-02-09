@@ -1,0 +1,37 @@
+import { usePillar } from '@pillar-ai/react';
+import { useEffect } from 'react';
+
+function SupportHandler() {
+  const { on, getChatContext, close } = usePillar();
+
+  useEffect(() => {
+    const unsubscribe = on('sidebar:click', ({ tabId }) => {
+      if (tabId === 'support') {
+        handleEscalation();
+      }
+    });
+    return unsubscribe;
+  }, []);
+
+  function handleEscalation() {
+    const context = getChatContext();
+    
+    if (context) {
+      // Format the conversation for your support tool
+      const summary = context.messages
+        .map(m => `${m.role === 'user' ? 'Customer' : 'Co-pilot'}: ${m.content}`)
+        .join('\n\n');
+      
+      // Open Intercom with the conversation
+      window.Intercom('showNewMessage', 
+        `Escalated from Co-pilot:\n\n${summary}`
+      );
+    } else {
+      window.Intercom('showNewMessage');
+    }
+    
+    close();
+  }
+
+  return null;
+}

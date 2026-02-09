@@ -1,0 +1,36 @@
+# Environment files (but allow .env.example)
+*.env
+*.env.*
+!*.env.example
+*.pyc
+.vscode/settings.json
+
+# Python virtual environments
+.venv
+venv/
+
+# Node modules
+node_modules/
+
+# Build artifacts
+dist/
+backend/static/dev/
+
+# Logs directory
+backend/logs/
+logs/
+
+# Output files (test data, generated content)
+backend/outputs/
+
+# Lock files that cause merge conflicts
+frontend/package-lock.json
+
+.DS_STORE
+
+# Cursor debug logs
+.cursor/debug.log
+
+# Superset demo
+demos/superset-copilot/.yalc/
+demos/superset-copilot/yalc.lock

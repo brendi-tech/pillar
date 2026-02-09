@@ -1,0 +1,32 @@
+// lib/pillar/actions/index.ts
+import type { SyncActionDefinitions } from '@pillar-ai/sdk';
+
+export const actions = {
+  open_settings: {
+    description: 'Navigate to the settings page',
+    type: 'navigate' as const,
+    path: '/settings',
+    autoRun: true,
+    autoComplete: true,
+  },
+
+  invite_member: {
+    description: 'Open the invite team member modal',
+    examples: [
+      'invite someone to my team',
+      'add a new user',
+      'how do I invite people?',
+    ],
+    type: 'trigger_action' as const,
+  },
+
+  view_billing: {
+    description: 'Navigate to billing and subscription settings',
+    type: 'navigate' as const,
+    path: '/settings/billing',
+    autoRun: true,
+    autoComplete: true,
+  },
+} as const satisfies SyncActionDefinitions;
+
+export default actions;

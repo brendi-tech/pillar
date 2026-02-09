@@ -1,0 +1,16 @@
+#!/bin/bash
+set -e
+
+# Build your app
+npm ci
+npm run build
+
+# Sync actions to Pillar
+export PILLAR_SLUG="${PILLAR_SLUG}"
+export PILLAR_SECRET="${PILLAR_SECRET}"
+export GIT_SHA="${CI_COMMIT_SHA:-$(git rev-parse HEAD)}"
+
+npx pillar-sync --actions ./lib/pillar/actions.ts
+
+# Deploy your app
+npm run deploy

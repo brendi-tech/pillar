@@ -1,0 +1,9 @@
+const pillar = Pillar.getInstance();
+
+pillar.on('task:execute', ({ name }) => {
+  analytics.track('pillar_action', { action: name });
+});
+
+pillar.on('plan:complete', ({ id, goal }) => {
+  analytics.track('pillar_plan_complete', { planId: id, goal });
+});

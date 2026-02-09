@@ -1,0 +1,10 @@
+node_modules
+.next
+.git
+.gitignore
+.vscode
+.cursor
+.env.local
+.env.*.local
+*.log
+.DS_Store

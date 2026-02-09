@@ -1,0 +1,247 @@
+/**
+ * Remotion-specific styles for documentation stills.
+ * Uses CSS custom properties from the app's design system.
+ */
+
+/* CSS Reset for Remotion */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* Design system variables */
+:root {
+  --background: hsl(0 0% 100%);
+  --foreground: hsl(220.9091 39.2857% 10.9804%);
+  --primary: hsl(27, 94%, 38%);
+  --primary-foreground: hsl(0 0% 100%);
+  --muted-foreground: hsl(220 8.9362% 46.0784%);
+  --border: hsl(220 13.0435% 90.9804%);
+  --radius: 0.75rem;
+}
+
+/* Base typography */
+body {
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--foreground);
+  background: var(--background);
+}
+
+/* Common utility classes used by components */
+.text-foreground {
+  color: var(--foreground);
+}
+
+.text-muted-foreground {
+  color: var(--muted-foreground);
+}
+
+.text-primary {
+  color: var(--primary);
+}
+
+.text-sm {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.text-xs {
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+.text-base {
+  font-size: 1rem;
+  line-height: 1.5rem;
+}
+
+.font-medium {
+  font-weight: 500;
+}
+
+.font-semibold {
+  font-weight: 600;
+}
+
+/* Spacing utilities */
+.space-y-1 > * + * {
+  margin-top: 0.25rem;
+}
+
+.space-y-6 > * + * {
+  margin-top: 1.5rem;
+}
+
+.py-1 {
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+}
+
+.py-1\.5 {
+  padding-top: 0.375rem;
+  padding-bottom: 0.375rem;
+}
+
+.pl-4 {
+  padding-left: 1rem;
+}
+
+.mt-2 {
+  margin-top: 0.5rem;
+}
+
+.my-8 {
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+}
+
+.px-6 {
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+.py-5 {
+  padding-top: 1.25rem;
+  padding-bottom: 1.25rem;
+}
+
+.gap-2 {
+  gap: 0.5rem;
+}
+
+/* Flexbox utilities */
+.flex {
+  display: flex;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.w-full {
+  width: 100%;
+}
+
+/* Border utilities */
+.border-l {
+  border-left-width: 1px;
+  border-style: solid;
+  border-color: var(--border);
+}
+
+.border-l-2 {
+  border-left-width: 2px;
+}
+
+.border-primary {
+  border-color: var(--primary);
+}
+
+.border-border {
+  border-color: var(--border);
+}
+
+.border-dashed {
+  border-style: dashed;
+}
+
+/* Transition utilities */
+.transition-colors {
+  transition-property: color, background-color, border-color;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+.transition-transform {
+  transition-property: transform;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+/* Icon sizing */
+.h-4 {
+  height: 1rem;
+}
+
+.w-4 {
+  width: 1rem;
+}
+
+.h-5 {
+  height: 1.25rem;
+}
+
+.w-5 {
+  width: 1.25rem;
+}
+
+/* Button styles */
+button {
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  font: inherit;
+}
+
+/* Links */
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Collapsible chevron rotation */
+[data-state="open"] .rotate-90,
+.group[data-state="open"] .group-data-\[state\=open\]\:rotate-90 {
+  transform: rotate(90deg);
+}
+
+/* Hidden utility */
+.hidden {
+  display: none;
+}
+
+/* Sidebar specific styles */
+nav.space-y-6 > div {
+  margin-bottom: 1.5rem;
+}
+
+/* Button outline variant */
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: var(--radius);
+  border: 1px dashed var(--border);
+  background: transparent;
+  padding: 1.25rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--foreground);
+  transition: all 150ms;
+}
+
+.btn-outline:hover {
+  border-color: var(--primary);
+  background: hsl(27 94% 38% / 0.05);
+}
+
+/* Lucide icon default styling */
+svg.lucide {
+  display: inline-block;
+  vertical-align: middle;
+}

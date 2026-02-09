@@ -1,0 +1,20 @@
+async function createSupportTicket(issue: string) {
+  const { getChatContext, context } = usePillar();
+  const chatContext = getChatContext();
+  
+  const response = await fetch('/api/support/tickets', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      issue,
+      // Include Pillar conversation for context
+      pillarConversationId: chatContext?.conversationId,
+      conversationHistory: chatContext?.messages,
+      // Include user context
+      userId: context?.user?.id,
+      currentPage: context?.page?.path,
+    }),
+  });
+  
+  return response.json();
+}

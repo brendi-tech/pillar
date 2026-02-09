@@ -1,0 +1,24 @@
+{
+  "success": true,
+  "datasets": [
+    {
+      "id": 2,
+      "name": "birth_names",
+      "database": "examples",
+      "schema": "main",
+      "description": null,
+      "kind": "physical"
+    },
+    {
+      "id": 13,
+      "name": "new_members_daily",
+      "database": "examples",
+      "schema": "main",
+      "description": null,
+      "kind": "virtual"
+    }
+  ],
+  "count": 2,
+  "has_more": false,
+  "message": "Found 2 datasets matching 'name'"
+}

@@ -1,0 +1,17 @@
+// app/layout.tsx or App.tsx
+import { PillarProvider } from '@pillar-ai/react';
+
+export default function RootLayout({ children }) {
+  return (
+    <html>
+      <body>
+        <PillarProvider
+          productKey="your-product-key"
+          publicKey="pk_live_your_public_key"
+        >
+          {children} {/* Your app content */}
+        </PillarProvider>
+      </body>
+    </html>
+  );
+}

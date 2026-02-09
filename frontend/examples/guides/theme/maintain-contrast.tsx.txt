@@ -1,0 +1,11 @@
+// ❌ Low contrast
+colors: {
+  text: '#aaaaaa',
+  background: '#ffffff',
+}
+
+// ✅ Good contrast
+colors: {
+  text: '#374151',
+  background: '#ffffff',
+}

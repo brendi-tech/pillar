@@ -1,0 +1,23 @@
+-- Help Center Backend - Local Database Setup (REFERENCE ONLY)
+--
+-- NOTE: Use the setup_local_db.sh script instead!
+-- The shell script reads environment configuration from .vscode/settings.json
+-- and creates the database with the correct HC_POSTGRES_* variables.
+--
+-- This file is kept as a reference for the SQL commands executed.
+--
+-- Usage:
+--   ./scripts/setup_local_db.sh
+--
+-- The script will:
+--   1. Read .vscode/settings.json to determine environment (local/dev/prod)
+--   2. Load the corresponding .env file
+--   3. Use HC_POSTGRES_DB, HC_POSTGRES_USER, HC_POSTGRES_PASSWORD, etc.
+--   4. Create the database and enable pgvector extension
+
+-- Example SQL that the shell script generates dynamically:
+--
+-- CREATE DATABASE "help_center_dev";
+-- GRANT ALL PRIVILEGES ON DATABASE "help_center_dev" TO "help_center_user";
+-- \c help_center_dev
+-- CREATE EXTENSION IF NOT EXISTS vector;

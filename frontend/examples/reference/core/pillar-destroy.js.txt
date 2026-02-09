@@ -1,0 +1,4 @@
+function handleLogout() {
+  Pillar.destroy();
+  // Continue with logout...
+}

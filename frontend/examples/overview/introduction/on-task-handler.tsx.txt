@@ -1,0 +1,3 @@
+onTask('invite_member', ({ email }) => {
+  openInviteModal({ email });
+});

@@ -1,0 +1,16 @@
+function BillingPage() {
+  const { pillar } = usePillar();
+
+  useEffect(() => {
+    pillar?.setContext({
+      currentPage: '/settings/billing',
+      currentFeature: 'Billing Settings',
+      custom: {
+        userPlan: 'pro',
+        hasPaymentMethod: true,
+      },
+    });
+  }, [pillar]);
+
+  return <BillingSettings />;
+}

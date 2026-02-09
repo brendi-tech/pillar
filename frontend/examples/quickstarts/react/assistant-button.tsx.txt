@@ -1,0 +1,17 @@
+// components/AssistantButton.tsx
+'use client';
+
+import { usePillar } from '@pillar-ai/react';
+
+export function AssistantButton() {
+  const { open, isPanelOpen } = usePillar();
+
+  return (
+    <button
+      onClick={() => open()}
+      className="fixed bottom-4 right-4 bg-primary text-white px-4 py-2 rounded-full shadow-lg"
+    >
+      {isPanelOpen ? 'Close' : 'Ask Assistant'}
+    </button>
+  );
+}

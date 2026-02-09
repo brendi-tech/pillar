@@ -1,0 +1,4 @@
+# Install tsx for TypeScript support
+npm install -D tsx
+# or
+pnpm add -D tsx

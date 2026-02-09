@@ -1,0 +1,854 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --background: hsl(0 0% 100%);
+  --foreground: hsl(220.9091 39.2857% 10.9804%);
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(220.9091 39.2857% 10.9804%);
+  --card-header: hsl(20, 12%, 95%);
+  --card-header-foreground: hsl(0, 0%, 4%);
+  --card-border: hsl(0, 0%, 87%);
+  --tab-default-background: hsl(20, 12%, 95%);
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(220.9091 39.2857% 10.9804%);
+  --primary: hsl(27, 94%, 38%);
+  --primary-light: hsl(28, 100%, 97%);
+  --primary-foreground: hsl(0 0% 100%);
+  --secondary: hsl(180 17.5879% 39.0196%);
+  --secondary-foreground: hsl(0 0% 100%);
+  --muted: hsl(216, 10%, 90%);
+  --muted-foreground: hsl(220 8.9362% 46.0784%);
+  --accent: hsl(0 0% 93.3333%);
+  --accent-foreground: hsl(220.9091 39.2857% 10.9804%);
+  --destructive: hsl(0 84.2365% 60.1961%);
+  --destructive-foreground: hsl(0 0% 98.0392%);
+  --section-background: hsl(20, 12%, 97%);
+  --border: hsl(220 13.0435% 90.9804%);
+  --input: hsl(220 13.0435% 90.9804%);
+  --ring: hsl(27, 94%, 38%);
+  --chart-1: hsl(180 17.3913% 45.098%);
+  --chart-2: hsl(22.2973 75.5102% 61.5686%);
+  --chart-3: hsl(31.2 92.5926% 78.8235%);
+  --chart-4: hsl(0 0% 53.3333%);
+  --chart-5: hsl(0 0% 60%);
+  --sidebar: hsl(220, 14%, 96%);
+  --sidebar-foreground: hsl(220.9091 39.2857% 10.9804%);
+  --sidebar-primary: hsl(27, 94%, 38%);
+  --sidebar-primary-foreground: hsl(0 0% 100%);
+  --sidebar-accent: hsl(0, 0%, 92%);
+  --sidebar-accent-foreground: hsl(220.9091 39.2857% 10.9804%);
+  --sidebar-border: hsl(220 13.0435% 90.9804%);
+  --sidebar-ring: hsl(27, 94%, 38%);
+  --font-sans:
+    "Suisse Intl", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-serif: serif;
+  --font-mono: JetBrains Mono, monospace;
+  --radius: 0.75rem;
+  --shadow-x: 0px;
+  --shadow-y: 1px;
+  --shadow-blur: 4px;
+  --shadow-spread: 0px;
+  --shadow-opacity: 0.05;
+  --shadow-color: #000000;
+  --shadow-2xs: 0px 1px 4px 0px hsl(0 0% 0% / 0.03);
+  --shadow-xs: 0px 1px 4px 0px hsl(0 0% 0% / 0.03);
+  --shadow-sm:
+    0px 1px 4px 0px hsl(0 0% 0% / 0.05), 0px 1px 2px -1px hsl(0 0% 0% / 0.05);
+  --shadow:
+    0px 1px 4px 0px hsl(0 0% 0% / 0.05), 0px 1px 2px -1px hsl(0 0% 0% / 0.05);
+  --shadow-md:
+    0px 1px 4px 0px hsl(0 0% 0% / 0.05), 0px 2px 4px -1px hsl(0 0% 0% / 0.05);
+  --shadow-lg:
+    0px 1px 4px 0px hsl(0 0% 0% / 0.05), 0px 4px 6px -1px hsl(0 0% 0% / 0.05);
+  --shadow-xl:
+    0px 1px 4px 0px hsl(0 0% 0% / 0.05), 0px 8px 10px -1px hsl(0 0% 0% / 0.05);
+  --shadow-2xl: 0px 1px 4px 0px hsl(0 0% 0% / 0.13);
+  --tracking-normal: 0rem;
+  --spacing: 0.25rem;
+  --scrollbar-thumb: var(--muted);
+  --scrollbar-thumb-hover: var(--muted-foreground);
+  --scrollbar-track: var(--card);
+}
+
+.dark {
+  --background: hsl(270 5.5556% 7.0588%);
+  --foreground: hsl(0 0% 75.6863%);
+  --card: hsl(0 0% 7.0588%);
+  --card-foreground: hsl(0 0% 75.6863%);
+  --card-header: hsl(20, 6%, 10%);
+  --card-header-foreground: hsl(0, 0%, 96%);
+  --card-border: hsl(0, 0%, 13.3333%);
+  --tab-default-background: hsl(20, 6%, 10%);
+  --popover: hsl(270 5.5556% 7.0588%);
+  --popover-foreground: hsl(0 0% 75.6863%);
+  --primary: hsl(27, 94%, 38%);
+  --primary-light: hsl(28, 100%, 97%);
+  --primary-foreground: hsl(270 5.5556% 7.0588%);
+  --secondary: hsl(180 17.3913% 45.098%);
+  --secondary-foreground: hsl(270 5.5556% 7.0588%);
+  --muted: hsl(0 0% 13.3333%);
+  --muted-foreground: hsl(0 0% 53.3333%);
+  --accent: hsl(0 0% 20%);
+  --accent-foreground: hsl(0 0% 75.6863%);
+  --destructive: hsl(0 84.2365% 60.1961%);
+  --destructive-foreground: hsl(270 5.5556% 7.0588%);
+  --section-background: hsl(0, 0%, 4%);
+  --border: hsl(0 0% 13.3333%);
+  --input: hsl(0 0% 13.3333%);
+  --ring: hsl(27, 94%, 38%);
+  --chart-1: hsl(180 17.3913% 45.098%);
+  --chart-2: hsl(22.2973 75.5102% 61.5686%);
+  --chart-3: hsl(31.2 92.5926% 78.8235%);
+  --chart-4: hsl(0 0% 53.3333%);
+  --chart-5: hsl(0 0% 60%);
+  --sidebar: hsl(0 0% 7.0588%);
+  --sidebar-foreground: hsl(0 0% 75.6863%);
+  --sidebar-primary: hsl(27, 94%, 38%);
+  --sidebar-primary-foreground: hsl(270 5.5556% 7.0588%);
+  --sidebar-accent: hsl(0 0% 20%);
+  --sidebar-accent-foreground: hsl(0 0% 75.6863%);
+  --sidebar-border: hsl(0 0% 13.3333%);
+  --sidebar-ring: hsl(27, 94%, 38%);
+  --font-sans:
+    "Suisse Intl", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-serif: serif;
+  --font-mono: JetBrains Mono, monospace;
+  --radius: 0.75rem;
+  --shadow-x: 0px;
+  --shadow-y: 1px;
+  --shadow-blur: 4px;
+  --shadow-spread: 0px;
+  --shadow-opacity: 0.05;
+  --shadow-color: #000000;
+  --shadow-2xs: 0px 1px 4px 0px hsl(0 0% 0% / 0.03);
+  --shadow-xs: 0px 1px 4px 0px hsl(0 0% 0% / 0.03);
+  --shadow-sm:
+    0px 1px 4px 0px hsl(0 0% 0% / 0.05), 0px 1px 2px -1px hsl(0 0% 0% / 0.05);
+  --shadow:
+    0px 1px 4px 0px hsl(0 0% 0% / 0.05), 0px 1px 2px -1px hsl(0 0% 0% / 0.05);
+  --shadow-md:
+    0px 1px 4px 0px hsl(0 0% 0% / 0.05), 0px 2px 4px -1px hsl(0 0% 0% / 0.05);
+  --shadow-lg:
+    0px 1px 4px 0px hsl(0 0% 0% / 0.05), 0px 4px 6px -1px hsl(0 0% 0% / 0.05);
+  --shadow-xl:
+    0px 1px 4px 0px hsl(0 0% 0% / 0.05), 0px 8px 10px -1px hsl(0 0% 0% / 0.05);
+  --shadow-2xl: 0px 1px 4px 0px hsl(0 0% 0% / 0.13);
+  --scrollbar-thumb: var(--muted);
+  --scrollbar-thumb-hover: var(--muted-foreground);
+  --scrollbar-track: var(--background);
+}
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-card-header: var(--card-header);
+  --color-card-header-foreground: var(--card-header-foreground);
+  --color-card-border: var(--card-border);
+  --color-tab-default-background: var(--tab-default-background);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-light: var(--primary-light);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-section-background: var(--section-background);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-serif: var(--font-serif);
+  --font-editorial: var(--font-editorial-today);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --shadow-2xs: var(--shadow-2xs);
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow: var(--shadow);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
+  --shadow-2xl: var(--shadow-2xl);
+
+  --tracking-tighter: calc(var(--tracking-normal) - 0.05em);
+  --tracking-tight: calc(var(--tracking-normal) - 0.025em);
+  --tracking-normal: var(--tracking-normal);
+  --tracking-wide: calc(var(--tracking-normal) + 0.025em);
+  --tracking-wider: calc(var(--tracking-normal) + 0.05em);
+  --tracking-widest: calc(var(--tracking-normal) + 0.1em);
+  --gap-section: 0.75rem;
+  --spacing-page: 1rem;
+}
+
+@theme {
+  --max-width-marketingSection: 1334px;
+  --color-marketing: #d4d4d4;
+
+  --beakpoint-400: 400px;
+  --breakpoint-600: 600px;
+  --breakpoint-700: 700px;
+  --breakpoint-800: 800px;
+  --breakpoint-900: 900px;
+  --breakpoint-1000: 1000px;
+  --breakpoint-1100: 1100px;
+  --breakpoint-1200: 1200px;
+  --breakpoint-1300: 1300px;
+  --breakpoint-1400: 1400px;
+  --breakpoint-1500: 1500px;
+  --breakpoint-1600: 1600px;
+  --breakpoint-1700: 1700px;
+  --breakpoint-1800: 1800px;
+  --breakpoint-1900: 1900px;
+  --breakpoint-2000: 2000px;
+
+  --container-400: 400px;
+  --container-600: 600px;
+  --container-700: 700px;
+  --container-800: 800px;
+  --container-900: 900px;
+  --container-1000: 1000px;
+  --container-1100: 1100px;
+  --container-1200: 1200px;
+  --container-1300: 1300px;
+  --container-1400: 1400px;
+  --container-1500: 1500px;
+  --container-1600: 1600px;
+  --container-1700: 1700px;
+  --container-1800: 1800px;
+  --container-1900: 1900px;
+  --container-2000: 2000px;
+
+  --animate-collapsible-down: collapsible-down 0.3s ease-out;
+  --animate-collapsible-up: collapsible-up 0.3s ease-out;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* ============================================================================
+   Help Center Custom Theme Variables
+   These can be overridden by customer configuration
+   ============================================================================ */
+
+/* Help Center Specific Utilities */
+@layer utilities {
+  .hc-container {
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    max-width: var(--hc-content-max-width);
+  }
+
+  @media (min-width: 640px) {
+    .hc-container {
+      padding-left: 1.5rem;
+      padding-right: 1.5rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .hc-container {
+      padding-left: 2rem;
+      padding-right: 2rem;
+    }
+  }
+}
+
+/* ============================================================================
+   Theme-Aware Global Overrides
+   These make theme differences more visible across the entire UI
+   ============================================================================ */
+
+/* Admin Page Animations */
+@keyframes admin-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes admin-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes admin-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes admin-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes admin-pulse-subtle {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes overlay-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes wave {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(20deg);
+  }
+  75% {
+    transform: rotate(-15deg);
+  }
+}
+
+/* ============================================================================
+   TipTap Editor Styles
+   ============================================================================ */
+
+/* Editor container */
+.tiptap-editor {
+  min-height: 400px;
+}
+
+.tiptap-editor .tiptap {
+  outline: none;
+}
+
+/* Placeholder text */
+.tiptap-editor .tiptap p.is-editor-empty:first-child::before {
+  color: var(--hc-text-muted);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+/* Prose styling for editor content */
+.tiptap-editor .tiptap {
+  font-family: var(--hc-font-body);
+}
+
+.tiptap-editor .tiptap > * + * {
+  margin-top: 0.75em;
+}
+
+.tiptap-editor .tiptap h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.tiptap-editor .tiptap h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.3;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.tiptap-editor .tiptap h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.4;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.tiptap-editor .tiptap h4,
+.tiptap-editor .tiptap h5,
+.tiptap-editor .tiptap h6 {
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.4;
+  margin-top: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.tiptap-editor .tiptap p {
+  line-height: 1.7;
+}
+
+.tiptap-editor .tiptap ul,
+.tiptap-editor .tiptap ol {
+  padding-left: 1.5rem;
+}
+
+.tiptap-editor .tiptap ul {
+  list-style-type: disc;
+}
+
+.tiptap-editor .tiptap ol {
+  list-style-type: decimal;
+}
+
+.tiptap-editor .tiptap li {
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.tiptap-editor .tiptap li p {
+  margin: 0;
+}
+
+.tiptap-editor .tiptap blockquote {
+  border-left: 4px solid var(--admin-accent);
+  padding-left: 1rem;
+  margin-left: 0;
+  margin-right: 0;
+  font-style: italic;
+  color: var(--hc-text-muted);
+}
+
+.tiptap-editor .tiptap hr {
+  border: none;
+  border-top: 2px solid var(--admin-border);
+  margin: 2rem 0;
+}
+
+.tiptap-editor .tiptap a {
+  color: var(--admin-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.tiptap-editor .tiptap a:hover {
+  text-decoration: none;
+}
+
+.tiptap-editor .tiptap img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+}
+
+/* Inline code */
+.tiptap-editor .tiptap code {
+  background-color: var(--muted);
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  font-family: var(--hc-font-mono);
+  font-size: 0.875em;
+}
+
+/* Code blocks */
+.tiptap-editor .tiptap pre {
+  background-color: #1e1e1e;
+  color: #d4d4d4;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
+.tiptap-editor .tiptap pre code {
+  background: none;
+  padding: 0;
+  color: inherit;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+/* Selection highlight */
+.tiptap-editor .tiptap ::selection {
+  background-color: rgba(232, 93, 4, 0.2);
+}
+
+/* Focus state */
+.tiptap-editor:focus-within {
+  border-color: var(--admin-accent);
+  box-shadow: 0 0 0 3px rgba(232, 93, 4, 0.1);
+}
+
+/* Dark mode code blocks */
+.dark .tiptap-editor .tiptap pre {
+  background-color: #0d0d0d;
+}
+
+/* Syntax highlighting (lowlight) */
+.tiptap-editor .tiptap pre .hljs-comment,
+.tiptap-editor .tiptap pre .hljs-quote {
+  color: #6a9955;
+}
+
+.tiptap-editor .tiptap pre .hljs-keyword,
+.tiptap-editor .tiptap pre .hljs-selector-tag,
+.tiptap-editor .tiptap pre .hljs-built_in {
+  color: #569cd6;
+}
+
+.tiptap-editor .tiptap pre .hljs-string,
+.tiptap-editor .tiptap pre .hljs-title,
+.tiptap-editor .tiptap pre .hljs-attribute {
+  color: #ce9178;
+}
+
+.tiptap-editor .tiptap pre .hljs-number,
+.tiptap-editor .tiptap pre .hljs-literal {
+  color: #b5cea8;
+}
+
+.tiptap-editor .tiptap pre .hljs-function {
+  color: #dcdcaa;
+}
+
+.tiptap-editor .tiptap pre .hljs-variable,
+.tiptap-editor .tiptap pre .hljs-template-variable {
+  color: #9cdcfe;
+}
+
+/* ============================================================================
+   Prose Styles for Public Article Content (prose-hc)
+   Used by ArticleContent component for rendering TipTap JSON on public pages
+   ============================================================================ */
+
+.prose-hc {
+  font-family: var(--font-sans);
+  line-height: 1.625;
+  color: var(--foreground);
+}
+
+.prose-hc > * + * {
+  margin-top: 1rem;
+}
+
+/* Headings */
+.prose-hc h1 {
+  font-size: 2.25rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  color: var(--foreground);
+}
+
+.prose-hc h2 {
+  font-size: 1.75rem;
+  font-weight: 600;
+  line-height: 1.3;
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
+  color: var(--foreground);
+}
+
+.prose-hc h3 {
+  font-size: 1.375rem;
+  font-weight: 600;
+  line-height: 1.4;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+  color: var(--foreground);
+}
+
+.prose-hc h4,
+.prose-hc h5,
+.prose-hc h6 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.4;
+  margin-top: 1rem;
+  margin-bottom: 0.25rem;
+  color: var(--foreground);
+}
+
+/* Paragraphs */
+.prose-hc p {
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+/* Lists */
+.prose-hc ul,
+.prose-hc ol {
+  padding-left: 1.75rem;
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.prose-hc ul {
+  list-style-type: disc;
+}
+
+.prose-hc ol {
+  list-style-type: decimal;
+}
+
+.prose-hc li {
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.prose-hc li p {
+  margin: 0;
+}
+
+.prose-hc li > ul,
+.prose-hc li > ol {
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+/* Nested lists */
+.prose-hc ul ul,
+.prose-hc ol ul {
+  list-style-type: circle;
+}
+
+.prose-hc ul ul ul,
+.prose-hc ol ol ul,
+.prose-hc ol ul ul {
+  list-style-type: square;
+}
+
+/* Blockquotes */
+.prose-hc blockquote {
+  border-left: 4px solid var(--primary);
+  padding-left: 1rem;
+  margin-left: 0;
+  margin-right: 0;
+  font-style: italic;
+  color: var(--muted-foreground);
+}
+
+/* Horizontal rules */
+.prose-hc hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 2rem 0;
+}
+
+/* Links */
+.prose-hc a {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.prose-hc a:hover {
+  text-decoration: none;
+}
+
+/* Images */
+.prose-hc img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  margin: 1.5rem 0;
+}
+
+/* Inline code */
+.prose-hc code {
+  background-color: var(--muted);
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+}
+
+/* Code blocks */
+.prose-hc pre {
+  background-color: #1e1e1e;
+  color: #d4d4d4;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  overflow-x: auto;
+  margin: 1.5rem 0;
+}
+
+.prose-hc pre code {
+  background: none;
+  padding: 0;
+  color: inherit;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+/* Tables */
+.prose-hc table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+}
+
+.prose-hc th,
+.prose-hc td {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border);
+  text-align: left;
+}
+
+.prose-hc th {
+  background-color: var(--muted);
+  font-weight: 600;
+}
+
+.prose-hc tbody tr:nth-child(even) {
+  background-color: var(--muted);
+}
+
+/* Bold and italic */
+.prose-hc strong {
+  font-weight: 600;
+}
+
+.prose-hc em {
+  font-style: italic;
+}
+
+/* Strikethrough */
+.prose-hc s,
+.prose-hc del {
+  text-decoration: line-through;
+}
+
+/* Dark mode adjustments */
+.dark .prose-hc pre {
+  background-color: #0d0d0d;
+}
+
+/* Syntax highlighting */
+.prose-hc pre .hljs-comment,
+.prose-hc pre .hljs-quote {
+  color: #6a9955;
+}
+
+.prose-hc pre .hljs-keyword,
+.prose-hc pre .hljs-selector-tag,
+.prose-hc pre .hljs-built_in {
+  color: #569cd6;
+}
+
+.prose-hc pre .hljs-string,
+.prose-hc pre .hljs-title,
+.prose-hc pre .hljs-attribute {
+  color: #ce9178;
+}
+
+.prose-hc pre .hljs-number,
+.prose-hc pre .hljs-literal {
+  color: #b5cea8;
+}
+
+.prose-hc pre .hljs-function {
+  color: #dcdcaa;
+}
+
+.prose-hc pre .hljs-variable,
+.prose-hc pre .hljs-template-variable {
+  color: #9cdcfe;
+}
+
+/* =============================================================================
+   Pillar Highlight Animation
+   Used by AI-suggested actions to guide users to specific UI elements
+   ============================================================================= */
+
+@keyframes pillar-highlight-pulse {
+  0% {
+    box-shadow: 0 0 0 0 hsl(var(--primary) / 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px hsl(var(--primary) / 0.2);
+  }
+  100% {
+    box-shadow: 0 0 0 0 hsl(var(--primary) / 0);
+  }
+}
+
+.pillar-highlight {
+  position: relative;
+  animation: pillar-highlight-pulse 0.8s ease-out 3;
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 4px;
+  border-radius: var(--radius);
+}
+
+/* ============================================================================
+   Chat Showcase Animations
+   ============================================================================ */
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.4s ease-out forwards;
+}

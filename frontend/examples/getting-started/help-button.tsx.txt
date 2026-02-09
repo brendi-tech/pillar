@@ -1,0 +1,11 @@
+import { usePillar } from '@pillar-ai/react';
+
+function HelpButton() {
+  const { open, isPanelOpen, toggle } = usePillar();
+
+  return (
+    <button onClick={toggle}>
+      {isPanelOpen ? 'Close' : 'Get Help'}
+    </button>
+  );
+}

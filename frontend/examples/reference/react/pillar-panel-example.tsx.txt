@@ -1,0 +1,22 @@
+import { PillarProvider, PillarPanel } from '@pillar-ai/react';
+
+function App() {
+  return (
+    <PillarProvider
+      productKey="your-product-key"
+      publicKey="pk_live_xxx"
+      config={{
+        panel: { enabled: false }, // Disable auto-rendering
+      }}
+    >
+      <div className="app-layout">
+        <main>Your app content</main>
+        
+        {/* Render panel in a custom location */}
+        <aside className="help-sidebar">
+          <PillarPanel className="custom-panel" />
+        </aside>
+      </div>
+    </PillarProvider>
+  );
+}

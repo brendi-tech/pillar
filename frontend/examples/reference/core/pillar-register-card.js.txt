@@ -1,0 +1,14 @@
+Pillar.registerCard('invite_members', (container, data, callbacks) => {
+  container.innerHTML = `
+    <div>
+      <p>Invite ${data.emails.length} members</p>
+      <button id="cancel">Cancel</button>
+      <button id="confirm">Confirm</button>
+    </div>
+  `;
+
+  container.querySelector('#confirm').onclick = () => callbacks.onConfirm(data);
+  container.querySelector('#cancel').onclick = callbacks.onCancel;
+
+  return () => { container.innerHTML = ''; };
+});

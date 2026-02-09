@@ -1,0 +1,13 @@
+interface CardComponentProps<T = Record<string, unknown>> {
+  /** Data extracted by the AI */
+  data: T;
+  
+  /** Call when user confirms the action */
+  onConfirm: (modifiedData?: Record<string, unknown>) => void;
+  
+  /** Call when user cancels */
+  onCancel: () => void;
+  
+  /** Report state changes */
+  onStateChange?: (state: 'loading' | 'success' | 'error', message?: string) => void;
+}

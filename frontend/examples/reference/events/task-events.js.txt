@@ -1,0 +1,9 @@
+const pillar = Pillar.getInstance();
+
+pillar.on('task:execute', ({ name, data }) => {
+  analytics.track('action_executed', { action: name });
+});
+
+pillar.on('task:complete', ({ name, success }) => {
+  console.log(`Task ${name} completed:`, success);
+});

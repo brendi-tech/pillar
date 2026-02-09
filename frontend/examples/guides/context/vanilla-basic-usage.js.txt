@@ -1,0 +1,14 @@
+// Get the SDK instance (after Pillar.init() has completed)
+const pillar = Pillar.getInstance();
+
+// Set context when the page loads or changes
+pillar?.setContext({
+  currentPage: window.location.pathname,
+  currentFeature: 'Account Settings',
+  userRole: 'admin',
+});
+
+// Update context on navigation (for SPAs)
+window.addEventListener('popstate', () => {
+  pillar?.setContext({ currentPage: window.location.pathname });
+});

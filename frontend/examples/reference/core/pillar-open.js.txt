@@ -1,0 +1,5 @@
+const pillar = Pillar.getInstance();
+
+pillar.open();                          // Open to home
+pillar.open({ article: 'getting-started' }); // Open article
+pillar.open({ search: 'billing' });     // Open with search

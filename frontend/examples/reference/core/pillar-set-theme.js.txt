@@ -1,0 +1,10 @@
+const pillar = Pillar.getInstance();
+
+// Change mode
+pillar.setTheme({ mode: 'dark' });
+
+// Update colors
+pillar.setTheme({ colors: { primary: '#10b981' } });
+
+// Update dark mode colors
+pillar.setTheme({ darkColors: { primary: '#34d399' } });

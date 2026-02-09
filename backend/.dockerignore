@@ -1,0 +1,44 @@
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+
+# Testing
+.coverage
+.pytest_cache/
+htmlcov/
+.tox/
+
+# Build artifacts
+*.egg-info/
+dist/
+build/
+
+# Local development
+.env
+.env.*
+*.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker
+Dockerfile*
+docker-compose*.yml

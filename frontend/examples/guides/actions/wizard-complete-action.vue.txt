@@ -1,0 +1,21 @@
+<script setup lang="ts">
+import { usePillar } from '@pillar-ai/vue';
+
+const emit = defineEmits<{
+  complete: [source: { id: string }];
+}>();
+
+const { pillar } = usePillar();
+
+function handleFinish(source: { id: string }) {
+  // 1. Your app logic
+  emit('complete', source);
+
+  // 2. Tell Pillar the action is done
+  pillar.value?.completeAction('add_source', true, { sourceId: source.id });
+}
+</script>
+
+<template>
+  <WizardSteps @finish="handleFinish" />
+</template>

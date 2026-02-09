@@ -1,0 +1,5 @@
+const [error, setError] = useState<string | null>(null);
+
+{error && (
+  <div className="text-red-500 text-sm mt-2">{error}</div>
+)}

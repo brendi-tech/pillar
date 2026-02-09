@@ -1,0 +1,9 @@
+billing_settings: {
+  description: 'Access billing settings',
+  type: 'navigate',
+  path: '/settings/billing',
+  requiredContext: {
+    userRole: 'admin',
+    userState: 'active',  // Not during trial
+  },
+}

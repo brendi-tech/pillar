@@ -1,0 +1,18 @@
+{
+  "success": true,
+  "column": "name",
+  "distinct_values": [
+    "Mary",
+    "James",
+    "John",
+    "Patricia",
+    "Robert",
+    "Jennifer",
+    "Michael",
+    "Linda",
+    "William",
+    "Elizabeth"
+  ],
+  "count": 10,
+  "total_count": 1000
+}

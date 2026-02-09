@@ -1,0 +1,2 @@
+// In your app - only admins see the delete_user action
+pillar.setContext({ userRole: user.role }); // 'admin' or 'member'

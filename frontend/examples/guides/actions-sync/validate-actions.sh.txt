@@ -1,0 +1,6 @@
+# Validate the actions file loads correctly
+npx tsx -e "
+  const actions = require('./lib/pillar/actions.ts').default;
+  console.log('Found', Object.keys(actions).length, 'actions:');
+  Object.keys(actions).forEach(name => console.log(' -', name));
+"

@@ -1,0 +1,22 @@
+theme: {
+  colors: {
+    primary: '#2563eb',         // Brand color (buttons, links)
+    primaryHover: '#1d4ed8',    // Hover state
+    background: '#ffffff',       // Main background
+    backgroundSecondary: '#f9fafb', // Cards, inputs
+    text: '#111827',            // Primary text
+    textMuted: '#6b7280',       // Secondary text
+    border: '#e5e7eb',          // Borders
+    borderLight: '#f3f4f6',     // Subtle borders
+  },
+  darkColors: {
+    primary: '#3b82f6',
+    primaryHover: '#60a5fa',
+    background: '#111827',
+    backgroundSecondary: '#1f2937',
+    text: '#f9fafb',
+    textMuted: '#9ca3af',
+    border: '#374151',
+    borderLight: '#1f2937',
+  },
+}

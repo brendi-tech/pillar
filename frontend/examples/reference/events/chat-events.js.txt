@@ -1,0 +1,5 @@
+const pillar = Pillar.getInstance();
+
+pillar.on('chat:message:user', ({ message }) => {
+  analytics.track('user_question', { question: message });
+});

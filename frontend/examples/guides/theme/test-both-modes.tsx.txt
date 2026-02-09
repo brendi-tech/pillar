@@ -1,0 +1,6 @@
+// For testing
+setTheme({ mode: 'light' });
+// Verify...
+setTheme({ mode: 'dark' });
+// Verify...
+setTheme({ mode: 'auto' }); // Reset

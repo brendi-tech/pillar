@@ -1,0 +1,5 @@
+panel: {
+  mode: 'push',
+  hoverBreakpoint: 1200, // Switch to overlay below 1200px
+  hoverBackdrop: true,   // Show backdrop when overlaying
+}

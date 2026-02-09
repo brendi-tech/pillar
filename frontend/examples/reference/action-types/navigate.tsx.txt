@@ -1,0 +1,9 @@
+{
+  open_settings: {
+    description: 'Navigate to the settings page',
+    type: 'navigate',
+    path: '/settings',
+    autoRun: true,      // Navigate without clicking
+    autoComplete: true, // Mark done immediately
+  },
+}

@@ -1,0 +1,9 @@
+{
+  "success": true,
+  "chart_id": 195,
+  "chart_name": "Top Given Names by Popularity",
+  "chart_type": "echarts_bar",
+  "dataset_id": 2,
+  "url": "/explore/?slice_id=195",
+  "message": "Chart created successfully"
+}

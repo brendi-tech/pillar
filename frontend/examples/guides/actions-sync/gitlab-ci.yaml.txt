@@ -1,0 +1,25 @@
+# .gitlab-ci.yml
+stages:
+  - build
+  - sync
+  - deploy
+
+build:
+  stage: build
+  script:
+    - npm ci
+    - npm run build
+
+sync-pillar:
+  stage: sync
+  script:
+    - npx pillar-sync --actions ./lib/pillar/actions.ts
+  variables:
+    PILLAR_SLUG: $PILLAR_SLUG
+    PILLAR_SECRET: $PILLAR_SECRET
+    GIT_SHA: $CI_COMMIT_SHA
+
+deploy:
+  stage: deploy
+  script:
+    - npm run deploy

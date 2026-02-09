@@ -1,0 +1,21 @@
+interface Task {
+  /** Unique identifier for this task execution */
+  id: string;
+  
+  /** The action name that triggered this task */
+  name: string;
+  
+  /** Data extracted by the AI, matching the action's dataSchema */
+  data: Record<string, unknown>;
+  
+  /** Complete the task and report the result */
+  complete: (result: TaskResult) => void;
+}
+
+interface TaskResult {
+  /** Whether the task completed successfully */
+  success: boolean;
+  
+  /** Optional message to display to the user */
+  message?: string;
+}

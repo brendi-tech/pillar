@@ -1,0 +1,9 @@
+<PillarProvider
+  config={{
+    edgeTrigger: {
+      enabled: false,
+    },
+  }}
+>
+  <CustomHelpButton />
+</PillarProvider>

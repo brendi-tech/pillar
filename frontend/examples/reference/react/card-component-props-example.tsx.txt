@@ -1,0 +1,16 @@
+import type { CardComponentProps } from '@pillar-ai/react';
+
+interface InviteData {
+  emails: string[];
+  role: 'admin' | 'member';
+}
+
+export function InviteMembersCard({ data, onConfirm, onCancel }: CardComponentProps<InviteData>) {
+  return (
+    <div>
+      <p>Invite {data.emails.length} members as {data.role}</p>
+      <button onClick={onCancel}>Cancel</button>
+      <button onClick={() => onConfirm(data)}>Confirm</button>
+    </div>
+  );
+}

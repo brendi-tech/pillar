@@ -1,0 +1,23 @@
+theme: {
+  mode: 'auto',
+  colors: {
+    primary: '#2563eb',
+    primaryHover: '#1d4ed8',
+    background: '#ffffff',
+    backgroundSecondary: '#f9fafb',
+    text: '#111827',
+    textMuted: '#6b7280',
+    border: '#e5e7eb',
+    borderLight: '#f3f4f6',
+  },
+  darkColors: {
+    primary: '#3b82f6',
+    primaryHover: '#60a5fa',
+    background: '#111827',
+    backgroundSecondary: '#1f2937',
+    text: '#f9fafb',
+    textMuted: '#9ca3af',
+    border: '#374151',
+    borderLight: '#1f2937',
+  },
+}

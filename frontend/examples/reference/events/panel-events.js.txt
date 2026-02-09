@@ -1,0 +1,9 @@
+const pillar = Pillar.getInstance();
+
+pillar.on('panel:open', () => {
+  analytics.track('help_panel_opened');
+});
+
+pillar.on('panel:close', () => {
+  analytics.track('help_panel_closed');
+});

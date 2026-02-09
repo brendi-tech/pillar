@@ -1,0 +1,10 @@
+function ThemeSync() {
+  const { setTheme } = usePillar();
+  const { theme } = useTheme(); // Your app's theme hook
+  
+  useEffect(() => {
+    setTheme({ mode: theme === 'dark' ? 'dark' : 'light' });
+  }, [theme, setTheme]);
+  
+  return null;
+}

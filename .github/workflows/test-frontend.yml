@@ -1,0 +1,85 @@
+name: Tests - Frontend
+
+on:
+  pull_request:
+    paths:
+      - 'frontend/**'
+      - 'packages/sdk/**'
+      - 'packages/sdk-react/**'
+      - '.github/workflows/test-frontend.yml'
+
+concurrency:
+  group: test-frontend-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  test:
+    name: Run Frontend Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            frontend/package-lock.json
+      
+      - name: Install root workspace dependencies
+        run: npm install --ignore-scripts
+      
+      - name: Build SDK packages
+        run: |
+          # Build @pillar/sdk first (sdk-react depends on it)
+          npm run build:sdk
+          
+          # Build @pillar/react (depends on @pillar/sdk)
+          npm run build:sdk-react
+      
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm install
+      
+      - name: Run type check
+        run: |
+          cd frontend
+          npm run type-check
+      
+      - name: Run linting
+        run: |
+          cd frontend
+          npm run lint
+      
+      - name: Run tests
+        run: |
+          cd frontend
+          npm test
+      
+      - name: Test Summary
+        if: always()
+        run: |
+          echo "## Frontend Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Status:** ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Test Configuration" >> $GITHUB_STEP_SUMMARY
+          echo "- Node.js: 20" >> $GITHUB_STEP_SUMMARY
+          echo "- Test Framework: Vitest" >> $GITHUB_STEP_SUMMARY
+          echo "- TypeScript: Enabled" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "All tests passed!" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "Tests failed. Check logs above for details." >> $GITHUB_STEP_SUMMARY
+          fi

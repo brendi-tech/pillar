@@ -1,0 +1,15 @@
+{
+  invite_member: {
+    description: 'Open the invite team member modal',
+    type: 'trigger_action',
+    examples: ['invite someone', 'add a user'],
+    dataSchema: {
+      type: 'object',
+      properties: {
+        email: { type: 'string', description: 'Email to invite' },
+        role: { type: 'string', enum: ['admin', 'member'] },
+      },
+    },
+    handler: (data) => openInviteModal(data),
+  },
+}

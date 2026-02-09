@@ -1,0 +1,14 @@
+// app/layout.tsx
+import { PillarSDKProvider } from '@/providers/PillarSDKProvider';
+
+export default function RootLayout({ children }) {
+  return (
+    <html>
+      <body>
+        <PillarSDKProvider>
+          {children} {/* Your page content */}
+        </PillarSDKProvider>
+      </body>
+    </html>
+  );
+}

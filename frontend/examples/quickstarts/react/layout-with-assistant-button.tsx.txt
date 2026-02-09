@@ -1,0 +1,8 @@
+// app/layout.tsx
+import { AssistantButton } from '@/components/AssistantButton';
+
+// Inside PillarSDKProvider:
+<PillarSDKProvider>
+  {children} {/* Your page content */}
+  <AssistantButton />
+</PillarSDKProvider>

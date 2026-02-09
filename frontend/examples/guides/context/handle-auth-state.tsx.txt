@@ -1,0 +1,7 @@
+function handleLogout() {
+  pillar?.setContext({
+    userRole: undefined,
+    userState: undefined,
+  });
+  // Continue logout...
+}

@@ -1,0 +1,970 @@
+/* ============================================================================
+   Conversation Detail Drawer Styles
+   Full-width modal with three-panel layout:
+   - Chat Thread (25%)
+   - Reasoning Timeline (25%)
+   - Correction Panel (50%)
+   ============================================================================ */
+
+/* Hide Pillar SDK widget when this drawer is open */
+/* Target the SDK's floating button and panel */
+body:has(.conversation-drawer-content) .pillar-floating-button,
+body:has(.conversation-drawer-content) .pillar-panel {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Dialog content overrides - nearly full viewport */
+.conversation-drawer-content {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  max-width: 95vw !important;
+  width: 95vw !important;
+}
+
+/* Three-panel layout: 25% / 25% / 50% */
+.conversation-drawer-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr 2fr;
+  gap: 0;
+  height: 100%;
+  min-height: 0;
+}
+
+/* Left Panel: Chat Messages (25%) */
+.conversation-chat-panel {
+  border-right: 1px solid hsl(var(--border));
+  background: hsl(var(--background));
+  overflow: hidden;
+}
+
+.conversation-messages-container {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Middle Panel: Reasoning Timeline (25%) */
+.conversation-reasoning-panel {
+  border-right: 1px solid hsl(var(--border));
+  background: hsl(var(--muted) / 0.15);
+  overflow: hidden;
+}
+
+.conversation-reasoning-panel-header {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid hsl(var(--border));
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.conversation-reasoning-panel-content {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Right Panel: Correction Form (50%) */
+.conversation-correction-panel {
+  background: hsl(var(--background));
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.conversation-correction-panel-header {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid hsl(var(--border));
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.conversation-correction-panel-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+  min-height: 0;
+}
+
+/* Legacy sidebar support - can remove after migration */
+.conversation-sidebar {
+  background: hsl(var(--muted) / 0.3);
+  overflow: hidden;
+}
+
+.conversation-sidebar-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.25rem;
+}
+
+/* ============================================================================
+   Message Styles
+   ============================================================================ */
+
+.conversation-message {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.conversation-message--user {
+  flex-direction: row-reverse;
+}
+
+.conversation-message--selected {
+  background: hsl(var(--primary) / 0.05);
+  margin: -0.5rem;
+  padding: 0.5rem;
+  border-radius: var(--radius);
+}
+
+/* Avatar */
+.conversation-message-avatar {
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: hsl(var(--muted));
+  color: hsl(var(--muted-foreground));
+}
+
+.conversation-message-avatar--user {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+
+/* Message content area */
+.conversation-message-content {
+  flex: 1;
+  min-width: 0;
+  max-width: 85%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.conversation-message--user .conversation-message-content {
+  align-items: flex-end;
+}
+
+/* Message header */
+.conversation-message-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.conversation-message--user .conversation-message-header {
+  flex-direction: row-reverse;
+}
+
+.conversation-message-time {
+  font-size: 0.75rem;
+  color: hsl(var(--muted-foreground));
+}
+
+/* User bubble */
+.conversation-user-bubble {
+  display: inline-block;
+  padding: 0.625rem 0.875rem;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  border-radius: 1rem 1rem 0.25rem 1rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Assistant wrapper */
+.conversation-assistant-wrapper {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+/* Assistant content (markdown) */
+.conversation-assistant-content {
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: hsl(var(--foreground));
+}
+
+.conversation-assistant-content p {
+  margin: 0 0 0.75rem;
+}
+
+.conversation-assistant-content p:last-child {
+  margin-bottom: 0;
+}
+
+.conversation-assistant-content h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+  margin: 1rem 0 0.5rem;
+}
+
+.conversation-assistant-content h3 {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+  margin: 0.875rem 0 0.375rem;
+}
+
+.conversation-assistant-content h4 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+  margin: 0.75rem 0 0.375rem;
+}
+
+.conversation-assistant-content ul,
+.conversation-assistant-content ol {
+  margin: 0 0 0.75rem;
+  padding-left: 1.5rem;
+  list-style-position: outside;
+}
+
+.conversation-assistant-content ul {
+  list-style-type: disc;
+}
+
+.conversation-assistant-content ol {
+  list-style-type: decimal;
+}
+
+.conversation-assistant-content li {
+  margin-bottom: 0.25rem;
+}
+
+.conversation-assistant-content code {
+  padding: 0.125rem 0.375rem;
+  font-size: 0.75rem;
+  background: hsl(var(--muted));
+  border-radius: 0.25rem;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  color: hsl(var(--foreground));
+}
+
+.conversation-assistant-content pre {
+  margin: 0.75rem 0;
+  padding: 0.75rem 0.875rem;
+  background: hsl(var(--muted));
+  border-radius: 0.5rem;
+  overflow-x: auto;
+}
+
+.conversation-assistant-content pre code {
+  padding: 0;
+  background: none;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.conversation-assistant-content a {
+  color: hsl(var(--primary));
+  text-decoration: none;
+}
+
+.conversation-assistant-content a:hover {
+  text-decoration: underline;
+}
+
+.conversation-assistant-content strong {
+  font-weight: 600;
+  color: hsl(var(--foreground));
+}
+
+.conversation-assistant-content em {
+  font-style: italic;
+}
+
+/* Action indicator (for empty assistant messages) */
+.conversation-action-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: hsl(var(--muted) / 0.5);
+  border-radius: var(--radius);
+  border: 1px dashed hsl(var(--border));
+}
+
+.conversation-action-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: hsl(var(--primary) / 0.1);
+  color: hsl(var(--primary));
+}
+
+/* Feedback indicator */
+.conversation-feedback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.conversation-feedback--positive {
+  background: hsl(142 76% 36% / 0.1);
+  color: hsl(142 76% 36%);
+}
+
+.conversation-feedback--negative {
+  background: hsl(24 94% 50% / 0.1);
+  color: hsl(24 94% 50%);
+}
+
+/* Message extras */
+.conversation-message-extras {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+/* Sources */
+.conversation-sources {
+  margin-top: 0.25rem;
+}
+
+.conversation-sources-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0;
+  font-size: 0.75rem;
+  color: hsl(var(--muted-foreground));
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.conversation-sources-trigger:hover {
+  color: hsl(var(--foreground));
+}
+
+.conversation-sources-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.conversation-source-item {
+  padding: 0.5rem 0.75rem;
+  background: hsl(var(--muted) / 0.5);
+  border-radius: var(--radius);
+  border: 1px solid hsl(var(--border));
+}
+
+/* Reasoning trace */
+.conversation-reasoning {
+  margin-top: 0.25rem;
+}
+
+.conversation-reasoning-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0;
+  font-size: 0.75rem;
+  color: hsl(var(--muted-foreground));
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.conversation-reasoning-trigger:hover {
+  color: hsl(var(--foreground));
+}
+
+.conversation-reasoning-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.conversation-reasoning-step {
+  padding: 0.5rem 0.75rem;
+  background: hsl(220 70% 50% / 0.05);
+  border-radius: var(--radius);
+  border: 1px solid hsl(220 70% 50% / 0.2);
+  font-size: 0.75rem;
+}
+
+.conversation-reasoning-step p {
+  margin: 0 0 0.25rem;
+}
+
+.conversation-reasoning-step p:last-child {
+  margin-bottom: 0;
+}
+
+/* Reasoning iterations */
+.reasoning-iteration {
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px dashed hsl(var(--border));
+}
+
+.reasoning-iteration:last-child {
+  padding-bottom: 0;
+  margin-bottom: 0;
+  border-bottom: none;
+}
+
+/* Feedback comment */
+.conversation-feedback-comment {
+  padding: 0.5rem 0.75rem;
+  background: hsl(24 94% 50% / 0.05);
+  border-radius: var(--radius);
+  border: 1px solid hsl(24 94% 50% / 0.2);
+  color: hsl(24 94% 40%);
+}
+
+/* Correction select button */
+.conversation-correction-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  color: hsl(var(--muted-foreground));
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.conversation-correction-select:hover {
+  color: hsl(var(--primary));
+  background: hsl(var(--primary) / 0.05);
+  border-color: hsl(var(--primary) / 0.2);
+}
+
+.conversation-correction-select--active {
+  color: hsl(var(--primary));
+  background: hsl(var(--primary) / 0.1);
+  border-color: hsl(var(--primary));
+}
+
+/* Loading dots */
+.conversation-loading-dots {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 0;
+}
+
+.conversation-loading-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: hsl(var(--muted-foreground));
+  animation: conversation-bounce 1.4s infinite ease-in-out both;
+}
+
+.conversation-loading-dot:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.conversation-loading-dot:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+@keyframes conversation-bounce {
+  0%,
+  80%,
+  100% {
+    transform: scale(0.6);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* ============================================================================
+   Quote Cards - Selected context in correction panel
+   ============================================================================ */
+
+.correction-quotes-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.correction-quote-card {
+  position: relative;
+  padding: 0.625rem 0.75rem;
+  padding-right: 2rem;
+  background: hsl(var(--muted) / 0.5);
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  font-size: 0.8125rem;
+}
+
+.correction-quote-card--reasoning {
+  background: hsl(220 70% 50% / 0.05);
+  border-color: hsl(220 70% 50% / 0.2);
+}
+
+.correction-quote-text {
+  color: hsl(var(--foreground));
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.correction-quote-source {
+  margin-top: 0.25rem;
+  font-size: 0.6875rem;
+  color: hsl(var(--muted-foreground));
+}
+
+.correction-quote-remove {
+  position: absolute;
+  top: 0.375rem;
+  right: 0.375rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  border-radius: 50%;
+  color: hsl(var(--muted-foreground));
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.correction-quote-remove:hover {
+  background: hsl(var(--destructive) / 0.1);
+  color: hsl(var(--destructive));
+}
+
+.correction-empty-context {
+  padding: 1rem;
+  text-align: center;
+  border: 2px dashed hsl(var(--border));
+  border-radius: var(--radius);
+  color: hsl(var(--muted-foreground));
+  font-size: 0.8125rem;
+}
+
+/* ============================================================================
+   Text Selection Popover
+   ============================================================================ */
+
+.text-selection-popover {
+  position: fixed;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.375rem 0.5rem;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  animation: popover-in 0.15s ease;
+  pointer-events: auto;
+}
+
+@keyframes popover-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.text-selection-popover button {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #111827;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.text-selection-popover button:hover {
+  background: #f3f4f6;
+}
+
+/* ============================================================================
+   Reasoning Timeline Items
+   ============================================================================ */
+
+.timeline-user-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  margin: 0.5rem 0;
+  background: hsl(var(--primary) / 0.05);
+  border-radius: var(--radius);
+  font-size: 0.75rem;
+  color: hsl(var(--foreground));
+}
+
+.timeline-user-divider-icon {
+  flex-shrink: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+
+.timeline-user-divider-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.timeline-step {
+  position: relative;
+  padding: 0.5rem 0.75rem;
+  padding-left: 1.5rem;
+  background: hsl(var(--background));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  font-size: 0.75rem;
+  cursor: text;
+  transition: all 0.15s ease;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.timeline-step::before {
+  content: '';
+  position: absolute;
+  left: 0.625rem;
+  top: 0.75rem;
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 50%;
+  background: hsl(var(--muted-foreground));
+}
+
+.timeline-step--action_search::before {
+  background: hsl(330 70% 50%);
+}
+
+.timeline-step--decision::before {
+  background: hsl(270 70% 50%);
+}
+
+.timeline-step--search::before {
+  background: hsl(210 100% 50%);
+}
+
+.timeline-step--source_eval::before {
+  background: hsl(35 100% 50%);
+}
+
+.timeline-step--answer::before {
+  background: hsl(142 76% 36%);
+}
+
+.timeline-step:hover {
+  background: hsl(var(--accent));
+  border-color: hsl(var(--accent-foreground) / 0.2);
+}
+
+.timeline-step--highlighted {
+  background: hsl(var(--primary) / 0.08);
+  border-color: hsl(var(--primary) / 0.3);
+}
+
+.timeline-step-header {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-bottom: 0.25rem;
+}
+
+.timeline-step-type {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  font-size: 0.625rem;
+}
+
+.timeline-step-time {
+  color: hsl(var(--muted-foreground));
+  font-size: 0.625rem;
+}
+
+.timeline-step-content {
+  color: hsl(var(--muted-foreground));
+  line-height: 1.4;
+}
+
+.timeline-step-content code {
+  padding: 0.125rem 0.25rem;
+  background: hsl(var(--muted));
+  border-radius: 0.25rem;
+  font-size: 0.6875rem;
+}
+
+/* Action search step - collapsible candidates */
+.timeline-action-search-header {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.timeline-action-expand-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 0.125rem;
+  color: hsl(var(--muted-foreground));
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.timeline-action-expand-btn:hover {
+  color: hsl(var(--foreground));
+  background: hsl(var(--accent));
+}
+
+.timeline-action-candidate {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-top: 0.25rem;
+}
+
+.timeline-action-candidate--top {
+  margin-top: 0.375rem;
+}
+
+.timeline-action-candidates-expanded {
+  display: flex;
+  flex-direction: column;
+  padding-left: 0.25rem;
+  margin-left: 0.25rem;
+  border-left: 1px solid hsl(var(--border));
+}
+
+/* Rerank indicator badge */
+.timeline-rerank-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  font-size: 0.625rem;
+  color: hsl(var(--muted-foreground));
+  cursor: help;
+}
+
+/* Rerank info in expanded view */
+.timeline-rerank-info {
+  font-size: 0.625rem;
+  color: hsl(var(--muted-foreground));
+  padding: 0.25rem 0;
+  font-style: italic;
+}
+
+/* Decision step styles */
+.timeline-decision-header {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex-wrap: wrap;
+}
+
+.timeline-decision-thought {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.6875rem;
+  color: hsl(var(--muted-foreground));
+  line-height: 1.4;
+}
+
+.timeline-empty {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: hsl(var(--muted-foreground));
+  font-size: 0.8125rem;
+}
+
+.timeline-empty-icon {
+  margin-bottom: 0.5rem;
+  opacity: 0.5;
+}
+
+/* Message click highlight sync */
+.conversation-message--highlighted {
+  background: hsl(var(--primary) / 0.08);
+  margin: -0.5rem;
+  padding: 0.5rem;
+  border-radius: var(--radius);
+  border: 1px solid hsl(var(--primary) / 0.2);
+}
+
+/* ============================================================================
+   Responsive
+   ============================================================================ */
+
+@media (max-width: 1200px) {
+  .conversation-drawer-layout {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr auto;
+  }
+
+  .conversation-reasoning-panel {
+    border-right: none;
+    border-bottom: 1px solid hsl(var(--border));
+  }
+
+  .conversation-correction-panel {
+    grid-column: 1 / -1;
+    max-height: 400px;
+  }
+}
+
+@media (max-width: 768px) {
+  .conversation-drawer-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr auto auto;
+  }
+
+  .conversation-chat-panel {
+    border-right: none;
+    border-bottom: 1px solid hsl(var(--border));
+    min-height: 250px;
+    max-height: 300px;
+  }
+
+  .conversation-reasoning-panel {
+    max-height: 200px;
+  }
+
+  .conversation-correction-panel {
+    max-height: 350px;
+  }
+}
+
+/* ============================================================================
+   Reasoning Step Selection Styles
+   ============================================================================ */
+
+/* Selectable step card */
+.conversation-reasoning-step--selectable {
+  position: relative;
+  cursor: default;
+  transition: all 0.15s ease;
+}
+
+.conversation-reasoning-step--selectable:hover {
+  background: hsl(220 70% 50% / 0.08);
+  border-color: hsl(220 70% 50% / 0.3);
+}
+
+/* Selected step */
+.conversation-reasoning-step--selected {
+  background: hsl(var(--primary) / 0.1);
+  border-color: hsl(var(--primary));
+  box-shadow: 0 0 0 1px hsl(var(--primary) / 0.2);
+}
+
+.conversation-reasoning-step--selected:hover {
+  background: hsl(var(--primary) / 0.12);
+}
+
+/* Correct step button */
+.correct-step-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  margin-top: 0.5rem;
+  font-size: 0.625rem;
+  font-weight: 500;
+  color: hsl(var(--muted-foreground));
+  background: hsl(var(--background));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.correct-step-btn:hover {
+  color: hsl(var(--primary));
+  background: hsl(var(--primary) / 0.05);
+  border-color: hsl(var(--primary) / 0.3);
+}
+
+.correct-step-btn--active {
+  color: hsl(var(--primary-foreground));
+  background: hsl(var(--primary));
+  border-color: hsl(var(--primary));
+}
+
+.correct-step-btn--active:hover {
+  background: hsl(var(--primary) / 0.9);
+}

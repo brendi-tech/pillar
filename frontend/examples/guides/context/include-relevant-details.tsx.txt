@@ -1,0 +1,9 @@
+pillar?.setContext({
+  currentPage: '/projects/123/settings',
+  currentFeature: 'Project Settings',
+  userRole: 'owner',
+  custom: {
+    projectId: '123',
+    projectName: 'My Project',
+  },
+});

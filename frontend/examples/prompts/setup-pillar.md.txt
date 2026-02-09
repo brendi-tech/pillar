@@ -1,0 +1,99 @@
+# Set Up Pillar SDK for My App
+
+Analyze my codebase and create a complete Pillar SDK integration with actions, context sync, and handlers.
+
+## What Pillar Does
+
+Pillar provides:
+- A co-pilot chat panel that answers user questions using your knowledge base
+- Suggested actions that users can execute directly in your app
+- Plans that guide users through multi-step workflows
+
+## Your Task
+
+### 1. Analyze My Project
+- Identify my framework (Next.js App Router, Next.js Pages, Vite, CRA, etc.)
+- Find the right place to add PillarProvider (layout.tsx, App.tsx, _app.tsx, etc.)
+- If using Next.js App Router, create a client wrapper component in providers/
+
+### 2. Install and Configure
+- Install packages: `npm install @pillar-ai/sdk @pillar-ai/react`
+- Add PillarProvider to the app root
+- Create .env.local with NEXT_PUBLIC_PILLAR_PRODUCT_KEY set to your product key
+
+### 3. Generate Actions (10-15 based on my app)
+Look at my routes, features, and modals to generate actions:
+
+```tsx
+// lib/pillar/actions.ts
+import { defineActions } from '@pillar-ai/sdk';
+
+export const actions = defineActions({
+  // Navigation actions based on my routes
+  // Trigger actions for modals/wizards I have
+  // Admin-only actions with requiredContext
+});
+```
+
+### 4. Create RouteContextSync Component
+Sync the current route to Pillar so the AI knows where the user is:
+
+```tsx
+// components/RouteContextSync.tsx
+'use client';
+import { usePillar } from '@pillar-ai/react';
+import { usePathname } from 'next/navigation';
+
+export function RouteContextSync() {
+  const { pillar } = usePillar();
+  const pathname = usePathname();
+  
+  useEffect(() => {
+    pillar?.setContext({ currentPage: pathname });
+  }, [pillar, pathname]);
+  
+  return null;
+}
+```
+
+### 5. Create PillarActionHandlers Component
+Handle action execution with proper routing:
+
+```tsx
+// components/PillarActionHandlers.tsx
+'use client';
+import { usePillar } from '@pillar-ai/react';
+import { useRouter } from 'next/navigation';
+
+export function PillarActionHandlers() {
+  const { pillar } = usePillar();
+  const router = useRouter();
+  
+  useEffect(() => {
+    if (!pillar) return;
+    const handlers = [
+      pillar.onTask('navigate', ({ path }) => {
+        router.push(path);
+        return { success: true };
+      }),
+      // Add handlers for trigger_action types
+    ];
+    return () => handlers.forEach(unsub => unsub?.());
+  }, [pillar, router]);
+  
+  return null;
+}
+```
+
+### 6. Add Assistant Button (if sidebar is disabled)
+If the edge trigger sidebar is disabled, create a custom button to open the panel.
+
+## Start Here
+
+First, explore my codebase structure:
+1. Look at the routing structure (pages/, app/, or routes/)
+2. Find existing providers/layout patterns
+3. Identify modals, settings pages, and key features
+4. Look for auth patterns to understand user roles
+
+Then implement all the above components.

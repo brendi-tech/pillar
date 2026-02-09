@@ -1,0 +1,20 @@
+{
+  "success": true,
+  "dataset_id": 2,
+  "dataset_name": "birth_names",
+  "sample_size": 10,
+  "columns": ["ds", "gender", "name", "num", "state", "num_boys", "num_girls"],
+  "data": [
+    ["2008-01-01", "boy", "Michael", 25392, "CA", 25392, 0],
+    ["2008-01-01", "boy", "Jacob", 24582, "CA", 24582, 0],
+    ["2008-01-01", "boy", "Ethan", 22398, "CA", 22398, 0],
+    ["2008-01-01", "girl", "Emma", 21453, "CA", 0, 21453],
+    ["2008-01-01", "girl", "Isabella", 20561, "CA", 0, 20561],
+    ["2008-01-01", "boy", "Joshua", 19842, "CA", 19842, 0],
+    ["2008-01-01", "girl", "Sophia", 18987, "CA", 0, 18987],
+    ["2008-01-01", "boy", "Daniel", 18654, "CA", 18654, 0],
+    ["2008-01-01", "girl", "Olivia", 17832, "CA", 0, 17832],
+    ["2008-01-01", "boy", "William", 17456, "CA", 17456, 0]
+  ],
+  "message": "Retrieved 10 sample rows from birth_names"
+}

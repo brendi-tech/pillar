@@ -1,0 +1,7 @@
+const { setTheme } = usePillar();
+
+// Toggle mode
+setTheme({ mode: isDarkMode ? 'dark' : 'light' });
+
+// Update colors
+setTheme({ colors: { primary: '#10b981' } });

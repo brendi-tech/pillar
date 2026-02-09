@@ -1,0 +1,13 @@
+function SourceWizard({ onComplete }) {
+  const { pillar } = usePillar();
+
+  const handleFinish = (source) => {
+    // 1. Your app logic
+    onComplete(source);
+
+    // 2. Tell Pillar the action is done
+    pillar.completeAction('add_source', true, { sourceId: source.id });
+  };
+
+  return <WizardSteps onFinish={handleFinish} />;
+}

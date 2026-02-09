@@ -1,0 +1,21 @@
+Pillar.registerCard('invite_members', function(container, data, callbacks) {
+  container.innerHTML = `
+    <div class="invite-card">
+      <h3>Invite Members</h3>
+      <div class="emails">${data.emails.join(', ')}</div>
+      <button id="cancel">Cancel</button>
+      <button id="confirm">Send Invites</button>
+    </div>
+  `;
+
+  container.querySelector('#confirm').onclick = function() {
+    callbacks.onConfirm(data);
+  };
+
+  container.querySelector('#cancel').onclick = callbacks.onCancel;
+
+  // Return cleanup function
+  return function() {
+    container.innerHTML = '';
+  };
+});

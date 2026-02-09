@@ -1,0 +1,9 @@
+// React
+const { on } = usePillar();
+
+useEffect(() => {
+  const unsubscribe = on('panel:open', () => {
+    console.log('Panel opened');
+  });
+  return unsubscribe;
+}, [on]);

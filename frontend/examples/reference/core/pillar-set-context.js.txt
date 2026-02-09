@@ -1,0 +1,9 @@
+// Get the SDK instance (after Pillar.init() has completed)
+const pillar = Pillar.getInstance();
+
+pillar?.setContext({
+  currentPage: '/settings/billing',
+  currentFeature: 'Billing Settings',
+  userRole: 'admin',
+  custom: { plan: 'pro' },
+});

@@ -1,0 +1,12 @@
+{
+  copy_api_key: {
+    description: 'Copy the API key to clipboard',
+    type: 'copy_text',
+    dataSchema: {
+      type: 'object',
+      properties: {
+        text: { type: 'string', description: 'Text to copy' },
+      },
+    },
+  },
+}

@@ -1,0 +1,5 @@
+pillar.onTask('start_tour', () => {
+  pillar.close(); // Close panel first
+  startOnboardingTour();
+  return { success: true };
+});

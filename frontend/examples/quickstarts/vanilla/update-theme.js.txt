@@ -1,0 +1,10 @@
+// Get the SDK instance (after Pillar.init() has completed)
+const pillar = Pillar.getInstance();
+
+// Change mode
+pillar.setTheme({ mode: 'dark' });
+
+// Update colors
+pillar.setTheme({ 
+  colors: { primary: '#10b981' } 
+});

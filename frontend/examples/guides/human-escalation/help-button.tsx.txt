@@ -1,0 +1,11 @@
+import { usePillar } from '@pillar-ai/react';
+
+function HelpButton() {
+  const { open } = usePillar();
+  
+  return (
+    <button onClick={() => open({ tab: 'support' })}>
+      Contact Support
+    </button>
+  );
+}

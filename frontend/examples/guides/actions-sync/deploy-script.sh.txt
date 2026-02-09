@@ -1,0 +1,11 @@
+#!/bin/bash
+# deploy.sh - Run as part of your deployment
+
+# Build the app
+npm run build
+
+# Sync actions before deploying
+npx pillar-sync --actions ./lib/pillar/actions.ts
+
+# Deploy (e.g., to Vercel, AWS, etc.)
+vercel deploy --prod

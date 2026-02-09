@@ -1,0 +1,17 @@
+// ❌ Error: Hook used outside provider
+function BadComponent() {
+  const { isReady } = usePillar(); // Throws error
+}
+
+// ✅ Correct: Inside provider tree
+function App() {
+  return (
+    <PillarProvider productKey="..." publicKey="...">
+      <GoodComponent />
+    </PillarProvider>
+  );
+}
+
+function GoodComponent() {
+  const { isReady } = usePillar(); // Works!
+}

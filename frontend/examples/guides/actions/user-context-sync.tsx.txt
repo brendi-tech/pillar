@@ -1,0 +1,17 @@
+// In your app
+import { usePillar } from '@pillar-ai/react';
+
+function UserContextSync() {
+  const { pillar } = usePillar();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user && pillar) {
+      pillar.setContext({
+        userRole: user.role,  // 'admin', 'member', 'viewer', etc.
+      });
+    }
+  }, [pillar, user]);
+
+  return null;
+}

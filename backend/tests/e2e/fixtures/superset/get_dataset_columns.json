@@ -1,0 +1,57 @@
+{
+  "success": true,
+  "dataset_id": 2,
+  "dataset_name": "birth_names",
+  "columns": [
+    {
+      "name": "ds",
+      "type": "DATETIME",
+      "description": "Date of record",
+      "is_temporal": true,
+      "is_dimension": false
+    },
+    {
+      "name": "gender",
+      "type": "VARCHAR(16)",
+      "description": "Gender (boy/girl)",
+      "is_temporal": false,
+      "is_dimension": true
+    },
+    {
+      "name": "name",
+      "type": "VARCHAR(255)",
+      "description": "Given name",
+      "is_temporal": false,
+      "is_dimension": true
+    },
+    {
+      "name": "num",
+      "type": "BIGINT",
+      "description": "Number of births with this name",
+      "is_temporal": false,
+      "is_dimension": false
+    },
+    {
+      "name": "state",
+      "type": "VARCHAR(10)",
+      "description": "US state abbreviation",
+      "is_temporal": false,
+      "is_dimension": true
+    },
+    {
+      "name": "num_boys",
+      "type": "BIGINT",
+      "description": "Number of boys with this name",
+      "is_temporal": false,
+      "is_dimension": false
+    },
+    {
+      "name": "num_girls",
+      "type": "BIGINT",
+      "description": "Number of girls with this name",
+      "is_temporal": false,
+      "is_dimension": false
+    }
+  ],
+  "message": "Retrieved 7 columns for birth_names dataset"
+}

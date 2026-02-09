@@ -1,0 +1,9 @@
+const pillar = Pillar.getInstance();
+
+pillar.on('ready', () => {
+  console.log('Pillar SDK is ready');
+});
+
+pillar.on('error', ({ message, code }) => {
+  console.error(`Pillar error: ${message}`, code);
+});

@@ -1,0 +1,61 @@
+import { usePillar } from '@pillar-ai/react';
+
+function SupportTab() {
+  const { context, getChatContext, close } = usePillar();
+  const hasPaidPlan = context?.user?.plan === 'pro' || context?.user?.plan === 'enterprise';
+  
+  function handleLiveChat() {
+    const chatContext = getChatContext();
+    // Open your live chat with conversation history
+    openLiveChat(chatContext);
+    close();
+  }
+  
+  function handleEmailSupport() {
+    const chatContext = getChatContext();
+    // Navigate to email form with context
+    window.location.href = `/support/email?conversation=${chatContext?.conversationId || ''}`;
+  }
+  
+  function handleCommunity() {
+    window.open('https://community.yourapp.com', '_blank');
+  }
+  
+  return (
+    <div className="support-options">
+      <h3>Get Help</h3>
+      
+      {hasPaidPlan ? (
+        <>
+          <button onClick={handleLiveChat}>
+            <HeadsetIcon />
+            <span>Live Chat</span>
+            <span className="badge">Priority</span>
+          </button>
+          <button onClick={handleEmailSupport}>
+            <MailIcon />
+            <span>Email Support</span>
+            <span className="response-time">~2 hour response</span>
+          </button>
+        </>
+      ) : (
+        <>
+          <button onClick={handleEmailSupport}>
+            <MailIcon />
+            <span>Email Support</span>
+            <span className="response-time">~24 hour response</span>
+          </button>
+          <div className="upgrade-prompt">
+            <p>Upgrade to Pro for priority live chat support</p>
+            <a href="/pricing">View Plans</a>
+          </div>
+        </>
+      )}
+      
+      <button onClick={handleCommunity}>
+        <UsersIcon />
+        <span>Community Forum</span>
+      </button>
+    </div>
+  );
+}

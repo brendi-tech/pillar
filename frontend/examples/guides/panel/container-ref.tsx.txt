@@ -1,0 +1,9 @@
+const containerRef = useRef<HTMLDivElement>(null);
+
+<PillarProvider
+  config={{
+    panel: { container: containerRef.current }
+  }}
+>
+  <div ref={containerRef} />
+</PillarProvider>

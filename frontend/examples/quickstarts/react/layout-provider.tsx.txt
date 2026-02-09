@@ -1,0 +1,14 @@
+// app/layout.tsx
+import { PillarSDKProvider } from '@/providers/PillarSDKProvider';
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <body>
+        <PillarSDKProvider>
+          {children} {/* Your page content renders here */}
+        </PillarSDKProvider>
+      </body>
+    </html>
+  );
+}

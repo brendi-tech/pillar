@@ -1,0 +1,4 @@
+theme: {
+  colors: { primary: '#8b5cf6' },
+  darkColors: { primary: '#a78bfa' },
+}

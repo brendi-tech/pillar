@@ -1,0 +1,7 @@
+config={{
+  sidebarTabs: [
+    { id: 'assistant', label: 'Co-pilot', icon: 'sparkle' },
+    { id: 'chat', label: 'Live Chat', icon: 'chat' },
+    { id: 'email', label: 'Email Us', icon: 'mail' },
+  ],
+}}

@@ -1,0 +1,7 @@
+<button id="assistant-button">Ask Assistant</button>
+
+<script>
+  document.getElementById('assistant-button').onclick = function() {
+    Pillar.toggle();
+  };
+</script>

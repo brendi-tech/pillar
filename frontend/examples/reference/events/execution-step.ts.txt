@@ -1,0 +1,11 @@
+interface ExecutionStep {
+  id: string;
+  index: number;
+  description: string;
+  action_name: string;
+  action_data: Record<string, unknown>;
+  status: 'pending' | 'active' | 'completed' | 'skipped' | 'failed';
+  auto_run: boolean;
+  auto_complete: boolean;
+  requires_user_confirmation: boolean;
+}

@@ -1,0 +1,9 @@
+// Clear specific keys
+pillar?.setContext({
+  errorState: undefined,
+});
+
+// Or set completely new context
+pillar?.setContext({
+  currentPage: '/dashboard',
+});

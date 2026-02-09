@@ -1,0 +1,7 @@
+// Your action definition
+{
+  name: 'delete_user',
+  description: 'Delete a user from the organization',
+  requiredContext: { userRole: 'admin' },
+  // ...
+}

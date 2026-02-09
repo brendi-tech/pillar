@@ -1,0 +1,24 @@
+import { PillarProvider } from '@pillar-ai/react';
+import { SupportTab } from './components/SupportTab';
+
+function App() {
+  return (
+    <PillarProvider
+      productKey="your-product-key"
+      publicKey="pk_..."
+      config={{
+        sidebarTabs: [
+          { id: 'assistant', label: 'Co-pilot', icon: 'sparkle' },
+          { 
+            id: 'support', 
+            label: 'Support', 
+            icon: 'headset',
+            renderTab: () => <SupportTab />
+          },
+        ],
+      }}
+    >
+      {/* Your app */}
+    </PillarProvider>
+  );
+}

@@ -1,0 +1,6 @@
+import { Pillar } from '@pillar-ai/sdk';
+
+function handleLogout() {
+  Pillar.destroy();
+  // Continue with logout...
+}

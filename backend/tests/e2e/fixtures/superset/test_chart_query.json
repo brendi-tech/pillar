@@ -1,0 +1,15 @@
+{
+  "success": true,
+  "query_valid": true,
+  "row_count": 100,
+  "columns": ["name", "total_births"],
+  "sample_results": [
+    {"name": "Michael", "total_births": 834567},
+    {"name": "Jacob", "total_births": 789234},
+    {"name": "Emma", "total_births": 756891},
+    {"name": "Ethan", "total_births": 698432},
+    {"name": "Isabella", "total_births": 654321}
+  ],
+  "execution_time_ms": 142,
+  "message": "Query executed successfully, returned 100 rows"
+}

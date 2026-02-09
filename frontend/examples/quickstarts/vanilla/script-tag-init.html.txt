@@ -1,0 +1,7 @@
+<script src="https://cdn.trypillar.com/sdk.js"></script>
+<script>
+  Pillar.init({
+    productKey: 'your-product-key',
+    publicKey: 'pk_live_xxx',
+  });
+</script>

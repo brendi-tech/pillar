@@ -1,0 +1,23 @@
+function PaymentForm() {
+  const { pillar } = usePillar();
+  const [error, setError] = useState(null);
+
+  const handlePaymentError = (err) => {
+    setError(err);
+    
+    // Tell Pillar about the error
+    pillar?.setContext({
+      errorState: {
+        code: err.code,
+        message: err.message,
+      },
+    });
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      {error && <ErrorMessage error={error} />}
+      {/* ... */}
+    </form>
+  );
+}
