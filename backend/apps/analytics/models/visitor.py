@@ -6,7 +6,7 @@ Used for:
 - Supporting anonymous-to-authenticated visitor transitions
 - Enabling cross-device conversation history retrieval
 """
-import uuid_utils
+import uuid_utils.compat as uuid_utils
 from django.db import models
 from common.models.base import TenantAwareModel
 

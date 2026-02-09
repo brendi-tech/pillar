@@ -8,7 +8,7 @@ Used for:
 - AI usage metrics
 - Query clustering and intent classification
 """
-import uuid_utils
+import uuid_utils.compat as uuid_utils
 from django.db import models
 from django.contrib.postgres.indexes import GinIndex
 from django.contrib.postgres.search import SearchVectorField

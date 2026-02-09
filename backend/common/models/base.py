@@ -1,7 +1,7 @@
 """
 Base model classes for all Django models.
 """
-import uuid_utils
+import uuid_utils.compat as uuid_utils
 from django.db import models
 from django.utils import timezone
 

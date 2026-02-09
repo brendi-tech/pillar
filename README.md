@@ -23,6 +23,8 @@
 
 ---
 
+> **⚠️ Beta Notice:** Pillar is in active development. APIs may change, features may break, and documentation may be out of date. We're iterating fast — if you run into issues, please [open an issue](https://github.com/pillarhq/pillar/issues) or reach out on [Discord](https://discord.gg/uhVFmGMW).
+
 # Pillar
 
 **The open-source product copilot. Build AI agents into your app that execute tasks, not just answer questions.**
@@ -106,166 +108,23 @@ cp .env.example .env
 docker compose up
 ```
 
-The API runs on port 8000, the admin dashboard on port 3000. See [Self-Hosting](#self-hosting) for details.
+The API runs on port 8000, the admin dashboard on port 3000. See [Self-Hosting](#self-hosting) for configuration details.
 
 ---
 
-## Feature Overview
+## Features
 
-| Feature | Description |
-|---------|-------------|
-| [**Actions**](#actions) | Navigate, pre-fill, trigger — the assistant executes, not just explains |
-| [**Knowledge Base**](#knowledge-base) | Ingest from websites, Zendesk, Intercom, files, YouTube, and more |
-| [**AI Chat**](#ai-chat) | Context-aware responses grounded in your documentation |
-| [**Custom Cards**](#custom-cards) | Render interactive UI for confirmations and data input inline in chat |
-| [**MCP Server**](#mcp-server) | Let Claude, ChatGPT, and AI tools access your product info |
-| [**Admin Dashboard**](#admin-dashboard) | Manage sources, review analytics, configure behavior |
+| Feature | Description | |
+|---------|-------------|-|
+| **Actions** | Navigate pages, pre-fill forms, call APIs — the assistant executes, not just explains | [Docs](https://trypillar.com/docs/features/actions) |
+| **Knowledge Base** | Ingest from websites, Zendesk, Intercom, files, YouTube, and more | [Docs](https://trypillar.com/docs/knowledge-base/overview) |
+| **AI Chat** | Streaming, context-aware responses grounded in your documentation | [Docs](https://trypillar.com/docs/features/chat) |
+| **Custom Cards** | Render interactive UI for confirmations and data input inline in chat | [Docs](https://trypillar.com/docs/features/custom-cards) |
+| **Human Escalation** | Hand off to Intercom, Zendesk, Freshdesk, or a custom support flow | [Docs](https://trypillar.com/docs/features/human-escalation) |
+| **MCP Server** | Let Claude, ChatGPT, Cursor, and other AI tools query your knowledge base | |
+| **Admin Dashboard** | Manage sources, review analytics, configure agent behavior and theming | |
 
----
-
-## Actions
-
-Actions are Pillar's core differentiator. Instead of telling users *how* to do something, Pillar *does it for them*.
-
-Define what your co-pilot can do, and Pillar matches user intent to actions:
-
-```tsx
-const actions = {
-  // Navigation — the co-pilot navigates the user
-  go_to_billing: {
-    type: 'navigate' as const,
-    label: 'Open Billing',
-    description: 'Navigate to billing and subscription settings',
-  },
-
-  // Trigger — the co-pilot runs your code
-  export_report: {
-    type: 'trigger' as const,
-    label: 'Export Report',
-    description: 'Export the current report to PDF or CSV',
-  },
-
-  // With data extraction — AI pulls parameters from conversation
-  invite_team_member: {
-    type: 'trigger' as const,
-    label: 'Invite Team Member',
-    description: 'Send an invitation to join the team',
-    dataSchema: {
-      email: { type: 'string' as const, required: true },
-      role: { type: 'string' as const, enum: ['admin', 'member', 'viewer'] },
-    },
-  },
-};
-```
-
-Handle execution in your existing code:
-
-```tsx
-<PillarProvider
-  productKey="your-product-key"
-  actions={actions}
-  onTask={(actionName, data) => {
-    if (actionName === 'invite_team_member') {
-      sendInvite(data.email, data.role);
-    }
-  }}
->
-```
-
-Actions run client-side with the user's session. They call your APIs with the user's existing auth. You control what's possible — Pillar orchestrates.
-
-For production, define actions in code and sync them via the `pillar-sync` CLI during CI/CD. See [Setting Up Actions](https://trypillar.com/docs/guides/actions) in the docs.
-
----
-
-## Knowledge Base
-
-Connect your existing content and Pillar keeps it in sync. The RAG pipeline handles chunking, embedding, and retrieval so the co-pilot's answers are grounded in your actual documentation.
-
-**Supported sources:**
-
-- **Websites** — Crawl your docs, help center, or marketing site
-- **Zendesk** — Articles and help center content
-- **Intercom** — Articles and conversation data
-- **YouTube** — Video transcripts
-- **Files** — PDF, Word, Markdown, plain text
-- **Cloud storage** — S3 and Google Cloud Storage
-- **Snippets** — Custom text for corrections, FAQs, and AI instructions
-
-Sources sync automatically on a schedule you configure. Add new sources from the admin dashboard or API.
-
-Learn more in the [Knowledge Base docs](https://trypillar.com/docs/knowledge-base/overview).
-
----
-
-## AI Chat
-
-The co-pilot provides streaming, context-aware responses grounded in your knowledge base. It knows the user's current page, selected text, and application state.
-
-**Key capabilities:**
-
-- **Streaming responses** with source citations
-- **Suggested questions** based on the current page
-- **Conversation persistence** across sessions
-- **Feedback collection** (thumbs up/down) for continuous improvement
-- **Human escalation** — hand off to Intercom, Zendesk, Freshdesk, or a custom support form
-
-```tsx
-// The co-pilot is context-aware — tell it where the user is
-const { pillar } = usePillar();
-
-pillar.setContext({
-  currentPage: '/dashboard/analytics',
-  userRole: 'admin',
-  planTier: 'pro',
-});
-```
-
----
-
-## Custom Cards
-
-Render interactive UI components inline in the chat for confirmations, data input, and rich displays:
-
-```tsx
-import type { CardComponentProps } from '@pillar-ai/react';
-
-function InviteCard({ data, onConfirm, onCancel }: CardComponentProps<{ email: string; role: string }>) {
-  return (
-    <div className="card">
-      <p>Invite {data.email} as {data.role}?</p>
-      <button onClick={() => onConfirm()}>Send Invite</button>
-      <button onClick={onCancel}>Cancel</button>
-    </div>
-  );
-}
-
-<PillarProvider
-  productKey="your-product-key"
-  cards={{ invite_team_member: InviteCard }}
->
-```
-
-Cards use your existing design system and component library. No iframes, no styling conflicts.
-
----
-
-## MCP Server
-
-Pillar includes a built-in [Model Context Protocol](https://modelcontextprotocol.io/) server. This lets AI tools like Claude, ChatGPT, Cursor, and others query your product's knowledge base directly.
-
-Your documentation and help content become accessible to any MCP-compatible client — no extra integration work.
-
----
-
-## Admin Dashboard
-
-The admin dashboard gives you full control over your Pillar deployment:
-
-- **Sources** — Add, configure, and monitor knowledge base sources
-- **Analytics** — Track usage, popular questions, resolution rates
-- **Agent configuration** — Customize AI behavior, tone, and guidance
-- **Theming** — Match the co-pilot to your brand colors and style
+Explore all features in the [documentation](https://trypillar.com/docs/overview/introduction).
 
 ---
 
@@ -273,126 +132,14 @@ The admin dashboard gives you full control over your Pillar deployment:
 
 All SDK packages are [MIT-licensed](packages/sdk/LICENSE) — embed freely in proprietary applications.
 
-### React
+| Framework | Package | Install | Guide |
+|-----------|---------|---------|-------|
+| React | `@pillar-ai/react` | `npm install @pillar-ai/react` | [React Quickstart](https://trypillar.com/docs/quickstarts/react) |
+| Vue | `@pillar-ai/vue` | `npm install @pillar-ai/vue` | Coming soon |
+| Angular | `@pillar-ai/angular` | `npm install @pillar-ai/angular` | Coming soon |
+| Vanilla JS | `@pillar-ai/sdk` | `npm install @pillar-ai/sdk` | [Vanilla JS Quickstart](https://trypillar.com/docs/quickstarts/vanilla) |
 
-```bash
-npm install @pillar-ai/react
-```
-
-```tsx
-import { PillarProvider, usePillar, useHelpPanel } from '@pillar-ai/react';
-
-function App() {
-  return (
-    <PillarProvider
-      productKey="your-product-key"
-      actions={actions}
-      onTask={(actionName, data) => { /* handle actions */ }}
-      config={{
-        panel: { position: 'right', mode: 'push' },
-        theme: { mode: 'auto' },
-      }}
-    >
-      <YourApp />
-    </PillarProvider>
-  );
-}
-
-function HelpButton() {
-  const { toggle, isOpen } = useHelpPanel();
-  return <button onClick={toggle}>{isOpen ? 'Close' : 'Help'}</button>;
-}
-```
-
-Works with Next.js App Router, Pages Router, and any React setup. See the [React Guide](https://trypillar.com/docs/react/installation).
-
-### Vue
-
-```bash
-npm install @pillar-ai/vue
-```
-
-```vue
-<script setup lang="ts">
-import { PillarProvider, usePillar } from '@pillar-ai/vue';
-
-const { toggle, isOpen } = usePillar();
-</script>
-
-<template>
-  <PillarProvider
-    product-key="your-product-key"
-    :actions="actions"
-    :on-task="handleTask"
-  >
-    <YourApp />
-  </PillarProvider>
-</template>
-```
-
-Works with Vue 3 and Nuxt 3. See the [Vue Guide](https://trypillar.com/docs/vue/installation).
-
-### Angular
-
-```bash
-npm install @pillar-ai/angular
-```
-
-```typescript
-// app.config.ts
-import { APP_INITIALIZER, inject } from '@angular/core';
-import { PillarService } from '@pillar-ai/angular';
-
-function initPillar() {
-  const pillar = inject(PillarService);
-  return () => pillar.init({ productKey: 'your-product-key' });
-}
-
-export const appConfig = {
-  providers: [
-    { provide: APP_INITIALIZER, useFactory: initPillar, multi: true },
-  ],
-};
-```
-
-```typescript
-// component
-import { injectPillar } from '@pillar-ai/angular';
-
-export class HelpButtonComponent {
-  private pillar = injectPillar();
-  isPanelOpen = this.pillar.isPanelOpen;
-  toggle = this.pillar.toggle;
-}
-```
-
-Works with Angular 17+. See the [Angular Guide](https://trypillar.com/docs/angular/installation).
-
-### Vanilla JavaScript
-
-```bash
-npm install @pillar-ai/sdk
-```
-
-```javascript
-import { Pillar } from '@pillar-ai/sdk';
-
-const pillar = await Pillar.init({
-  productKey: 'your-product-key',
-});
-
-pillar.onTask('go_to_settings', (data) => {
-  router.push('/settings');
-});
-
-pillar.onTask('export_to_csv', async (data) => {
-  await downloadCSV();
-});
-
-pillar.open();
-```
-
-Or load via CDN:
+Or load via CDN with no build step:
 
 ```html
 <script src="https://cdn.trypillar.com/sdk.js"></script>
@@ -401,7 +148,7 @@ Or load via CDN:
 </script>
 ```
 
-See the [Vanilla JS Guide](https://trypillar.com/docs/quickstarts/vanilla).
+See the [React API Reference](https://trypillar.com/docs/reference/react) and [Core SDK Reference](https://trypillar.com/docs/reference/core) for full API docs.
 
 ---
 
@@ -440,32 +187,9 @@ cp .env.example .env
 docker compose up
 ```
 
-The API runs on port 8000 and the admin dashboard on port 3000.
+The API runs on port 8000 and the admin dashboard on port 3000. See `.env.example` for all configuration options.
 
-See `.env.example` for all configuration options. Required external services:
-
-- **Hatchet** for workflow orchestration (background jobs, sync pipelines)
-- **At least one AI provider** (OpenAI, Anthropic, or Google API key)
-- **Firecrawl** for web crawling sources (API key or self-hosted)
-
-### Local Development
-
-```bash
-# Start Postgres and Redis
-docker compose up -d db redis
-
-# Backend
-cd backend
-cp .env.example .env.local
-uv sync
-uv run python manage.py migrate
-uv run python manage.py runserver
-
-# Frontend (separate terminal)
-cd frontend
-npm install
-npm run dev
-```
+For local development setup, see the [Contributing Guide](CONTRIBUTING.md).
 
 ---
 
@@ -489,8 +213,10 @@ For enterprises that need to self-host without AGPL obligations, commercial lice
 ## Resources
 
 - [Documentation](https://trypillar.com/docs)
+- [Guides](https://trypillar.com/docs/guides)
 - [API Reference](https://trypillar.com/docs/reference/core)
 - [Blog](https://trypillar.com/blog)
+- [Discord](https://discord.gg/uhVFmGMW)
 - [GitHub Discussions](https://github.com/pillarhq/pillar/discussions)
 
 ---
