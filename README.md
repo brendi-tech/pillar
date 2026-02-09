@@ -12,15 +12,15 @@
   <a href="https://www.npmjs.com/package/@pillar-ai/sdk"><img src="https://img.shields.io/npm/dm/@pillar-ai/sdk" alt="npm downloads" /></a>
   <a href="https://github.com/pillarhq/pillar/stargazers"><img src="https://img.shields.io/github/stars/pillarhq/pillar" alt="GitHub stars" /></a>
   <a href="https://github.com/pillarhq/pillar/graphs/contributors"><img src="https://img.shields.io/github/contributors/pillarhq/pillar" alt="Contributors" /></a>
-  <a href="https://discord.gg/uhVFmGMW"><img src="https://img.shields.io/discord/1234567890?logo=discord&label=Discord" alt="Discord" /></a>
+  <a href="https://discord.gg/uhVFmGMW"><img src="https://img.shields.io/discord/1470491094847324538?logo=discord&label=Discord" alt="Discord" /></a>
 </p>
 
 <p align="center">
   <a href="https://trypillar.com/docs">Docs</a> ·
-  <a href="https://pillar.to/blog">Blog</a> ·
-  <a href="https://pillar.to">Website</a> ·
+  <a href="https://trypillar.com/blog">Blog</a> ·
+  <a href="https://trypillar.com">Website</a> ·
   <a href="https://discord.gg/uhVFmGMW">Discord</a> ·
-  <a href="https://x.com/trypillar">Twitter</a>
+  <a href="https://x.com/trypillar_ai">Twitter</a>
 </p>
 
 ---
@@ -29,7 +29,7 @@
 
 **The open-source product copilot. Build AI agents into your app that execute tasks, not just answer questions.**
 
-[Pillar](https://pillar.to) is an embeddable AI co-pilot SDK. Users say what they want, and Pillar uses your UI to make it happen — navigating pages, pre-filling forms, and calling your APIs. It runs client-side with the user's session, so there's no proxy servers or token forwarding.
+[Pillar](https://trypillar.com) is an embeddable AI co-pilot SDK. Users say what they want, and Pillar uses your UI to make it happen — navigating pages, pre-filling forms, and calling your APIs. It runs client-side with the user's session, so there's no proxy servers or token forwarding.
 
 *This repository contains the full Pillar platform: backend, admin dashboard, and all SDK packages.*
 
@@ -475,16 +475,16 @@ npm run dev
 
 | | Open Source | Cloud |
 |---|---|---|
-| **Deployment** | Self-hosted | Managed at [pillar.to](https://pillar.to) |
+| **Deployment** | Self-hosted | Managed at [trypillar.com](https://trypillar.com) |
 | **Infrastructure** | You manage | We manage |
 | **Updates** | Manual | Automatic |
 | **License** | AGPL-3.0 | Usage-based pricing |
 | **Support** | Community | Priority support |
 | **Features** | Full platform | Full platform + managed infra |
 
-The hosted version at [pillar.to](https://pillar.to) is the easiest way to get started. No infrastructure to manage, always up to date.
+The hosted version at [trypillar.com](https://trypillar.com) is the easiest way to get started. No infrastructure to manage, always up to date.
 
-For enterprises that need to self-host without AGPL obligations, commercial licenses are available. Contact [enterprise@pillar.to](mailto:enterprise@pillar.to).
+For enterprises that need to self-host without AGPL obligations, commercial licenses are available. Contact [support@trypillar.com](mailto:support@trypillar.com).
 
 ---
 
@@ -492,7 +492,7 @@ For enterprises that need to self-host without AGPL obligations, commercial lice
 
 - [Documentation](https://trypillar.com/docs)
 - [API Reference](https://trypillar.com/docs/reference/core)
-- [Blog](https://pillar.to/blog)
+- [Blog](https://trypillar.com/blog)
 - [GitHub Discussions](https://github.com/pillarhq/pillar/discussions)
 
 ---
