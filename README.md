@@ -10,8 +10,6 @@
   <a href="https://github.com/pillarhq/pillar/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-AGPL--3.0-blue" alt="License" /></a>
   <a href="https://www.npmjs.com/package/@pillar-ai/sdk"><img src="https://img.shields.io/npm/v/@pillar-ai/sdk" alt="npm version" /></a>
   <a href="https://www.npmjs.com/package/@pillar-ai/sdk"><img src="https://img.shields.io/npm/dm/@pillar-ai/sdk" alt="npm downloads" /></a>
-  <a href="https://github.com/pillarhq/pillar/stargazers"><img src="https://img.shields.io/github/stars/pillarhq/pillar" alt="GitHub stars" /></a>
-  <a href="https://github.com/pillarhq/pillar/graphs/contributors"><img src="https://img.shields.io/github/contributors/pillarhq/pillar" alt="Contributors" /></a>
   <a href="https://discord.gg/uhVFmGMW"><img src="https://img.shields.io/discord/1470491094847324538?logo=discord&label=Discord" alt="Discord" /></a>
 </p>
 
