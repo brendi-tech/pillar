@@ -1,6 +1,5 @@
 "use client";
 
-import { PageHeader } from "@/components/shared";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { actionDetailQuery } from "@/queries/actions.queries";
 import type { ImplementationStatus } from "@/types/actions";
 import {
@@ -29,8 +29,10 @@ import {
   Clock,
   Code2,
   Copy,
+  Database,
   ExternalLink,
   Layout,
+  LayoutPanelLeft,
   Pencil,
   PlayCircle,
   RefreshCw,
@@ -48,45 +50,43 @@ const ICON_COMPONENTS: Record<string, LucideIcon> = {
   layout: Layout,
   "edit-3": Pencil,
   zap: Zap,
+  database: Database,
   copy: Copy,
   "external-link": ExternalLink,
   "play-circle": PlayCircle,
+  "layout-panel-left": LayoutPanelLeft,
 };
 
-function getImplementationStatusDisplay(status: ImplementationStatus): {
-  className: string;
-  icon: React.ReactNode;
-  description: string;
-} {
+function getImplementationStatusDisplay(status: ImplementationStatus) {
   switch (status) {
     case "verified":
       return {
         className:
           "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400",
-        icon: <CheckCircle2 className="h-4 w-4" />,
+        icon: <CheckCircle2 className="h-3.5 w-3.5" />,
         description:
-          "The customer has successfully implemented this action handler.",
+          "Handler implemented and confirmed working.",
       };
     case "failing":
       return {
         className:
           "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
-        icon: <XCircle className="h-4 w-4" />,
-        description: "The last execution reported a failure.",
+        icon: <XCircle className="h-3.5 w-3.5" />,
+        description: "Last execution reported a failure.",
       };
     case "stale":
       return {
         className:
           "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
-        icon: <Clock className="h-4 w-4" />,
-        description: "No confirmations received in the last 30 days.",
+        icon: <Clock className="h-3.5 w-3.5" />,
+        description: "No confirmations in the last 30 days.",
       };
     default:
       return {
         className:
           "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
-        icon: <CircleHelp className="h-4 w-4" />,
-        description: "No execution confirmations have been received yet.",
+        icon: <CircleHelp className="h-3.5 w-3.5" />,
+        description: "No execution confirmations received yet.",
       };
   }
 }
@@ -94,8 +94,8 @@ function getImplementationStatusDisplay(status: ImplementationStatus): {
 /**
  * Action Detail Page - Read-Only View
  *
- * Code-First Actions: Displays action details synced from code.
- * No editing is allowed - all changes must be made in client code.
+ * Single-column layout optimized for the constrained detail panel.
+ * All action metadata is visible without scrolling through card chrome.
  */
 export function ActionDetailPage({ actionId }: ActionDetailPageProps) {
   const {
@@ -108,9 +108,12 @@ export function ActionDetailPage({ actionId }: ActionDetailPageProps) {
   if (isLoading) {
     return (
       <div className="h-full overflow-auto">
-        <div className="space-y-6 p-6">
-          <div className="h-8 w-32 animate-pulse rounded bg-muted" />
-          <div className="h-64 animate-pulse rounded-lg bg-muted" />
+        <div className="space-y-4 p-6">
+          <div className="h-7 w-48 animate-pulse rounded bg-muted" />
+          <div className="h-4 w-32 animate-pulse rounded bg-muted" />
+          <div className="h-px bg-border" />
+          <div className="h-20 animate-pulse rounded-lg bg-muted" />
+          <div className="h-32 animate-pulse rounded-lg bg-muted" />
         </div>
       </div>
     );
@@ -145,257 +148,321 @@ export function ActionDetailPage({ actionId }: ActionDetailPageProps) {
 
   const actionIconName = getActionTypeIcon(action.action_type);
   const ActionIcon = ICON_COMPONENTS[actionIconName] || Zap;
+  const implStatus = getImplementationStatusDisplay(action.implementation_status);
 
   return (
-    <div className="@container h-full overflow-auto">
-      <div className="space-y-6 p-6">
-        <PageHeader
-          title={deriveActionLabel(action.name)}
-          description={`Action: ${action.name}`}
-        />
+    <div className="h-full overflow-auto">
+      <div className="mx-auto max-w-2xl space-y-6 p-6">
+        {/* ── Header ── */}
+        <div>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h1 className="text-xl font-semibold tracking-tight">
+                {deriveActionLabel(action.name)}
+              </h1>
+              <p className="mt-0.5 font-mono text-xs text-muted-foreground">
+                {action.name}
+              </p>
+            </div>
+          </div>
 
-        {/* Code-First Notice */}
+          {/* Inline badges */}
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <Badge
+              variant={action.status === "published" ? "default" : "secondary"}
+            >
+              {action.status}
+            </Badge>
+            <Badge variant="outline" className="gap-1.5">
+              <ActionIcon className="h-3 w-3" />
+              {ACTION_TYPE_LABELS[action.action_type]}
+            </Badge>
+            {action.has_embedding && (
+              <Badge
+                variant="outline"
+                className="text-emerald-700 border-emerald-200 dark:text-emerald-400 dark:border-emerald-800"
+              >
+                Embedded
+              </Badge>
+            )}
+            {!action.has_embedding && (
+              <Badge
+                variant="outline"
+                className="text-muted-foreground"
+              >
+                No embedding
+              </Badge>
+            )}
+          </div>
+        </div>
+
+        {/* ── Code-First Notice ── */}
         <Alert>
           <Code2 className="h-4 w-4" />
           <AlertTitle>Code-First Action</AlertTitle>
           <AlertDescription>
-            This action is defined in your client code. To modify it, update the
-            action definition in your codebase and deploy to sync changes.
+            Defined in client code. Update the action definition in your
+            codebase and deploy to sync changes.
           </AlertDescription>
         </Alert>
 
-        {/* Action Details */}
-        <div className="grid gap-6 @min-[700px]:grid-cols-3">
-          {/* Main Details */}
-          <div className="space-y-6 @min-[700px]:col-span-2">
-            {/* Description */}
+        {/* ── Metadata Row ── */}
+        <div className="rounded-lg border bg-card p-4">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm">
+            {/* Path / URL */}
+            {action.action_type === "navigate" && action.path_template && (
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="shrink-0 text-muted-foreground">Path</span>
+                <code className="truncate rounded bg-muted px-2 py-0.5 text-xs">
+                  {action.path_template}
+                </code>
+              </div>
+            )}
+            {action.action_type === "external_link" && action.external_url && (
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="shrink-0 text-muted-foreground">URL</span>
+                <code className="truncate rounded bg-muted px-2 py-0.5 text-xs">
+                  {action.external_url}
+                </code>
+              </div>
+            )}
+
+            {/* Execution flags */}
+            <div className="flex items-center gap-3">
+              <span
+                className={`inline-flex items-center gap-1 text-xs ${action.auto_run ? "text-foreground" : "text-muted-foreground/50"}`}
+              >
+                <span
+                  className={`h-1.5 w-1.5 rounded-full ${action.auto_run ? "bg-emerald-500" : "bg-muted-foreground/30"}`}
+                />
+                Auto-run
+              </span>
+              <span
+                className={`inline-flex items-center gap-1 text-xs ${action.auto_complete ? "text-foreground" : "text-muted-foreground/50"}`}
+              >
+                <span
+                  className={`h-1.5 w-1.5 rounded-full ${action.auto_complete ? "bg-emerald-500" : "bg-muted-foreground/30"}`}
+                />
+                Auto-complete
+              </span>
+              <span
+                className={`inline-flex items-center gap-1 text-xs ${action.returns_data ? "text-foreground" : "text-muted-foreground/50"}`}
+              >
+                <span
+                  className={`h-1.5 w-1.5 rounded-full ${action.returns_data ? "bg-blue-500" : "bg-muted-foreground/30"}`}
+                />
+                Returns data
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Description ── */}
+        <div>
+          <h3 className="mb-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            Description
+          </h3>
+          <p className="text-sm leading-relaxed">{action.description}</p>
+        </div>
+
+        {/* ── Examples ── */}
+        {action.examples && action.examples.length > 0 && (
+          <div>
+            <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Example Phrases
+              <span className="ml-1.5 font-normal normal-case tracking-normal">
+                &mdash; improve search ranking, not seen by the AI
+              </span>
+            </h3>
+            <div className="flex flex-wrap gap-1.5">
+              {action.examples.map((example, i) => (
+                <span
+                  key={i}
+                  className="inline-block rounded-full border bg-muted/50 px-2.5 py-0.5 text-xs text-muted-foreground"
+                >
+                  {example}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── Data Schema ── */}
+        {action.data_schema &&
+          Object.keys(action.data_schema).length > 0 && (
             <Card>
-              <CardHeader>
-                <CardTitle>Description</CardTitle>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm">Data Schema</CardTitle>
                 <CardDescription>
-                  The AI uses this to understand when to suggest this action
+                  Parameters the AI extracts from user messages
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-sm">{action.description}</p>
-              </CardContent>
-            </Card>
-
-            {/* Action Type & Configuration */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Action Type</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="rounded-lg bg-primary/10 p-2">
-                    <ActionIcon className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <div className="font-medium">
-                      {ACTION_TYPE_LABELS[action.action_type]}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {action.action_type}
-                    </div>
-                  </div>
-                </div>
-
-                {action.action_type === "navigate" && action.path_template && (
-                  <div>
-                    <div className="text-sm font-medium text-muted-foreground mb-1">
-                      Path Template
-                    </div>
-                    <code className="block rounded bg-muted px-3 py-2 text-sm">
-                      {action.path_template}
-                    </code>
-                  </div>
-                )}
-
-                {action.action_type === "external_link" &&
-                  action.external_url && (
-                    <div>
-                      <div className="text-sm font-medium text-muted-foreground mb-1">
-                        External URL
-                      </div>
-                      <code className="block rounded bg-muted px-3 py-2 text-sm">
-                        {action.external_url}
-                      </code>
-                    </div>
-                  )}
-              </CardContent>
-            </Card>
-
-            {/* Execution Behavior */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Execution Behavior</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-4 @sm:grid-cols-2">
-                  <div className="flex items-center justify-between rounded-lg border p-3">
-                    <span className="text-sm">Auto-run when suggested</span>
-                    <Badge variant={action.auto_run ? "default" : "secondary"}>
-                      {action.auto_run ? "Yes" : "No"}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between rounded-lg border p-3">
-                    <span className="text-sm">
-                      Auto-complete after execution
-                    </span>
-                    <Badge
-                      variant={action.auto_complete ? "default" : "secondary"}
-                    >
-                      {action.auto_complete ? "Yes" : "No"}
-                    </Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Data Schema (if defined) */}
-            {action.data_schema &&
-              Object.keys(action.data_schema).length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Data Schema</CardTitle>
-                    <CardDescription>
-                      Data the AI extracts from user messages
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <pre className="overflow-x-auto rounded bg-muted p-3 text-xs">
-                      {JSON.stringify(action.data_schema, null, 2)}
-                    </pre>
-                  </CardContent>
-                </Card>
-              )}
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Status */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Status</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Badge
-                  variant={
-                    action.status === "published" ? "default" : "secondary"
-                  }
-                  className="text-sm"
-                >
-                  {action.status}
-                </Badge>
-              </CardContent>
-            </Card>
-
-            {/* Implementation Status - only for published */}
-            {action.status === "published" && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Implementation</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <Badge
-                    className={`flex w-fit items-center gap-1 ${getImplementationStatusDisplay(action.implementation_status).className}`}
-                  >
-                    {
-                      getImplementationStatusDisplay(
-                        action.implementation_status
-                      ).icon
-                    }
-                    {IMPLEMENTATION_STATUS_LABELS[action.implementation_status]}
-                  </Badge>
-                  <p className="text-xs text-muted-foreground">
-                    {
-                      getImplementationStatusDisplay(
-                        action.implementation_status
-                      ).description
-                    }
-                  </p>
-
-                  <div className="grid grid-cols-2 gap-2 pt-2">
-                    <div className="text-center">
-                      <div className="text-lg font-semibold text-emerald-600">
-                        {action.confirmation_success_count}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        Successes
-                      </div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-lg font-semibold text-red-600">
-                        {action.confirmation_failure_count}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        Failures
-                      </div>
-                    </div>
-                  </div>
-
-                  {action.last_confirmed_at && (
-                    <div className="text-xs text-muted-foreground pt-2 border-t">
-                      Last confirmed{" "}
-                      {formatDistanceToNow(new Date(action.last_confirmed_at), {
-                        addSuffix: true,
-                      })}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Statistics */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Statistics</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <dl className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <dt className="text-muted-foreground">Executions</dt>
-                    <dd className="font-medium">{action.execution_count}</dd>
-                  </div>
-                  {action.last_executed_at && (
-                    <div className="flex justify-between">
-                      <dt className="text-muted-foreground">Last executed</dt>
-                      <dd className="font-medium">
-                        {formatDistanceToNow(
-                          new Date(action.last_executed_at),
-                          {
-                            addSuffix: true,
-                          }
-                        )}
-                      </dd>
-                    </div>
-                  )}
-                  <div className="flex justify-between">
-                    <dt className="text-muted-foreground">Has embedding</dt>
-                    <dd className="font-medium">
-                      {action.has_embedding ? "Yes" : "No"}
-                    </dd>
-                  </div>
-                </dl>
-              </CardContent>
-            </Card>
-
-            {/* SDK Implementation Hint */}
-            <Card>
-              <CardHeader>
-                <CardTitle>SDK Handler</CardTitle>
-              </CardHeader>
-              <CardContent>
                 <pre className="overflow-x-auto rounded bg-muted p-3 text-xs">
-                  {`pillar.onAction('${action.name}', (data) => {
-  // Your handler code
-});`}
+                  {JSON.stringify(action.data_schema, null, 2)}
                 </pre>
               </CardContent>
             </Card>
-          </div>
-        </div>
+          )}
+
+        {/* ── Default Data ── */}
+        {action.default_data &&
+          Object.keys(action.default_data).length > 0 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm">Default Data</CardTitle>
+                <CardDescription>
+                  Fallback values when the AI doesn&apos;t extract specifics
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <pre className="overflow-x-auto rounded bg-muted p-3 text-xs">
+                  {JSON.stringify(action.default_data, null, 2)}
+                </pre>
+              </CardContent>
+            </Card>
+          )}
+
+        {/* ── Parameter Examples ── */}
+        {action.parameter_examples &&
+          action.parameter_examples.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm">Parameter Examples</CardTitle>
+                <CardDescription>
+                  Example parameter sets for this action
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {action.parameter_examples.map((example, i) => (
+                  <div key={i} className="rounded-lg border p-3">
+                    {example.description && (
+                      <div className="mb-2 text-xs font-medium">
+                        {example.description}
+                      </div>
+                    )}
+                    <pre className="overflow-x-auto rounded bg-muted p-2 text-xs">
+                      {JSON.stringify(example.parameters, null, 2)}
+                    </pre>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
+        {/* ── Required Context ── */}
+        {action.required_context &&
+          Object.keys(action.required_context).length > 0 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm">Required Context</CardTitle>
+                <CardDescription>
+                  Only surfaces when user context matches these requirements
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <pre className="overflow-x-auto rounded bg-muted p-3 text-xs">
+                  {JSON.stringify(action.required_context, null, 2)}
+                </pre>
+              </CardContent>
+            </Card>
+          )}
+
+        {/* ── Implementation & Statistics (merged) ── */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm">Implementation & Statistics</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Implementation status row */}
+            {action.status === "published" && (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Badge
+                    className={`flex items-center gap-1 ${implStatus.className}`}
+                  >
+                    {implStatus.icon}
+                    {IMPLEMENTATION_STATUS_LABELS[action.implementation_status]}
+                  </Badge>
+                  <span className="text-xs text-muted-foreground">
+                    {implStatus.description}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Stats grid */}
+            <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-4">
+              <div>
+                <dt className="text-xs text-muted-foreground">Executions</dt>
+                <dd className="font-medium tabular-nums">{action.execution_count}</dd>
+              </div>
+              {action.status === "published" && (
+                <>
+                  <div>
+                    <dt className="text-xs text-muted-foreground">Successes</dt>
+                    <dd className="font-medium tabular-nums text-emerald-600">
+                      {action.confirmation_success_count}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-muted-foreground">Failures</dt>
+                    <dd className="font-medium tabular-nums text-red-600">
+                      {action.confirmation_failure_count}
+                    </dd>
+                  </div>
+                </>
+              )}
+              {action.last_executed_at && (
+                <div>
+                  <dt className="text-xs text-muted-foreground">Last executed</dt>
+                  <dd className="font-medium">
+                    {formatDistanceToNow(new Date(action.last_executed_at), {
+                      addSuffix: true,
+                    })}
+                  </dd>
+                </div>
+              )}
+            </dl>
+
+            {/* Timestamps footer */}
+            <Separator />
+            <div className="flex gap-4 text-xs text-muted-foreground">
+              <span>
+                Created{" "}
+                {formatDistanceToNow(new Date(action.created_at), {
+                  addSuffix: true,
+                })}
+              </span>
+              <span>
+                Updated{" "}
+                {formatDistanceToNow(new Date(action.updated_at), {
+                  addSuffix: true,
+                })}
+              </span>
+              {action.last_confirmed_at && (
+                <span>
+                  Confirmed{" "}
+                  {formatDistanceToNow(new Date(action.last_confirmed_at), {
+                    addSuffix: true,
+                  })}
+                </span>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* ── SDK Handler ── */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm">SDK Handler</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <pre className="overflow-x-auto rounded bg-muted p-3 text-xs">
+              {`pillar.onAction('${action.name}', (data) => {\n  // Your handler code\n});`}
+            </pre>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

@@ -33,7 +33,6 @@ import type {
 } from "@/types/actions";
 import {
   ACTION_TYPE_LABELS,
-  ACTION_SOURCE_LABELS,
   deriveActionLabel,
   getActionTypeIcon,
 } from "@/types/actions";
@@ -428,17 +427,6 @@ export function ActionForm({
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 Action Description
-                {initialData?.source && (
-                  <Badge 
-                    variant="secondary" 
-                    className={initialData.source === 'code' 
-                      ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' 
-                      : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'
-                    }
-                  >
-                    {ACTION_SOURCE_LABELS[initialData.source]}
-                  </Badge>
-                )}
               </CardTitle>
               <CardDescription>
                 The AI uses this to understand when to suggest this action

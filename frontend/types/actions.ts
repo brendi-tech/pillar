@@ -10,19 +10,16 @@ export type ActionType =
   | 'open_modal'      // Open a modal/dialog
   | 'fill_form'       // Fill form fields with data
   | 'trigger_action'  // Trigger a custom action (generic)
+  | 'query'           // Query data from the client and return to the agent
   | 'copy_text'       // Copy text to clipboard
   | 'external_link'   // Open external link in new tab
-  | 'start_tutorial'; // Start a tutorial/walkthrough
+  | 'start_tutorial'  // Start a tutorial/walkthrough
+  | 'inline_ui';      // Render inline UI via a custom card
 
 /**
  * Action publishing status.
  */
 export type ActionStatus = 'draft' | 'published' | 'archived';
-
-/**
- * Source of action definition.
- */
-export type ActionSource = 'admin' | 'code';
 
 /**
  * Deployment platform types.
@@ -45,23 +42,23 @@ export type ImplementationStatus = 'unknown' | 'verified' | 'failing' | 'stale';
  */
 export interface Action {
   id: string;
-  organization: string;
-  help_center_config: string;
+  product: string;
   
   // Identification
   name: string;           // Unique identifier (e.g., 'open_invite_flow')
   description: string;    // AI context for when to suggest this action
+  examples: string[];     // Trigger phrases that improve search ranking
   has_embedding: boolean; // Whether the action has a semantic embedding
   
   // Type & Config
   action_type: ActionType;
-  action_type_display: string;
   path_template?: string;  // For navigate type
   external_url?: string;   // For external_link type
   
   // Data Payload
   data_schema?: Record<string, unknown>;
   default_data?: Record<string, unknown>;
+  parameter_examples?: Array<{ description: string; parameters: Record<string, unknown> }>;
   
   // Context Requirements
   required_context: Record<string, unknown>;
@@ -69,10 +66,10 @@ export interface Action {
   // Execution Behavior
   auto_run: boolean;        // If true, action executes immediately when suggested
   auto_complete: boolean;   // If true, action completes without host confirmation
+  returns_data: boolean;    // If true, handler returns data for the agent
   
   // Status
   status: ActionStatus;
-  status_display: string;
   
   // Analytics
   execution_count: number;
@@ -80,7 +77,6 @@ export interface Action {
   
   // Implementation Tracking
   implementation_status: ImplementationStatus;
-  implementation_status_display: string;
   confirmation_success_count: number;
   confirmation_failure_count: number;
   last_confirmed_at: string | null;
@@ -90,10 +86,6 @@ export interface Action {
   // Timestamps
   created_at: string;
   updated_at: string;
-
-  // Source tracking
-  source: ActionSource;
-  source_display?: string;
 }
 
 // ============================================================================
@@ -294,9 +286,11 @@ export const ACTION_TYPE_LABELS: Record<ActionType, string> = {
   open_modal: 'Open Modal/Dialog',
   fill_form: 'Fill Form Fields',
   trigger_action: 'Trigger Custom Action',
+  query: 'Query Data',
   copy_text: 'Copy to Clipboard',
   external_link: 'Open External Link',
   start_tutorial: 'Start Tutorial',
+  inline_ui: 'Inline UI',
 };
 
 /**
@@ -308,9 +302,11 @@ export const ACTION_TYPE_ICONS: Record<ActionType, string> = {
   open_modal: 'layout',
   fill_form: 'edit-3',
   trigger_action: 'zap',
+  query: 'database',
   copy_text: 'copy',
   external_link: 'external-link',
   start_tutorial: 'play-circle',
+  inline_ui: 'layout-panel-left',
 };
 
 /**
@@ -321,9 +317,11 @@ export const ACTION_TYPE_DESCRIPTIONS: Record<ActionType, string> = {
   open_modal: 'Open a modal, dialog, or slide-over panel',
   fill_form: 'Pre-fill form fields with specific values',
   trigger_action: 'Execute a custom action handler in your app',
+  query: 'Query data from the client and return results to the agent',
   copy_text: 'Copy text content to the user\'s clipboard',
   external_link: 'Open an external URL in a new browser tab',
   start_tutorial: 'Start an interactive tutorial or product walkthrough',
+  inline_ui: 'Render inline UI via a custom card component',
 };
 
 /**
@@ -344,21 +342,6 @@ export const ACTION_STATUS_COLORS: Record<ActionStatus, string> = {
   archived: 'gray',
 };
 
-/**
- * Human-readable labels for action sources.
- */
-export const ACTION_SOURCE_LABELS: Record<ActionSource, string> = {
-  admin: 'Admin UI',
-  code: 'Code',
-};
-
-/**
- * Colors for action source badges.
- */
-export const ACTION_SOURCE_COLORS: Record<ActionSource, string> = {
-  admin: 'secondary',
-  code: 'blue',
-};
 
 /**
  * Human-readable labels for deployment platforms.

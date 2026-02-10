@@ -24,8 +24,10 @@ import {
   ChevronRight,
   Code2,
   Copy,
+  Database,
   ExternalLink,
   Layout,
+  LayoutPanelLeft,
   Pencil,
   PlayCircle,
   RefreshCw,
@@ -54,9 +56,11 @@ const ACTION_TYPE_ICON_COMPONENTS: Record<ActionType, LucideIcon> = {
   open_modal: Layout,
   fill_form: Pencil,
   trigger_action: Zap,
+  query: Database,
   copy_text: Copy,
   external_link: ExternalLink,
   start_tutorial: PlayCircle,
+  inline_ui: LayoutPanelLeft,
 };
 
 /**
@@ -95,9 +99,11 @@ function groupActionsByType(actions: Action[]): Record<ActionType, Action[]> {
     open_modal: [],
     fill_form: [],
     trigger_action: [],
+    query: [],
     copy_text: [],
     external_link: [],
     start_tutorial: [],
+    inline_ui: [],
   };
 
   for (const action of actions) {

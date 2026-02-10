@@ -59,6 +59,7 @@ class PlatformSerializer(serializers.ModelSerializer):
 
 class ActionSerializer(serializers.ModelSerializer):
     """Serializer for Action model."""
+    has_embedding = serializers.SerializerMethodField()
     
     class Meta:
         model = Action
@@ -67,10 +68,21 @@ class ActionSerializer(serializers.ModelSerializer):
             'implementation_status', 'path_template', 'external_url',
             'data_schema', 'default_data', 'parameter_examples', 'required_context',
             'auto_run', 'auto_complete', 'returns_data',
+            'examples', 'has_embedding',
             'execution_count', 'last_executed_at',
-            'created_at', 'updated_at'
+            'confirmation_success_count', 'confirmation_failure_count',
+            'last_confirmed_at', 'last_confirmation_status', 'last_confirmation_error',
+            'created_at', 'updated_at',
         ]
-        read_only_fields = ['id', 'execution_count', 'last_executed_at', 'created_at', 'updated_at']
+        read_only_fields = [
+            'id', 'execution_count', 'last_executed_at',
+            'confirmation_success_count', 'confirmation_failure_count',
+            'last_confirmed_at', 'last_confirmation_status', 'last_confirmation_error',
+            'has_embedding', 'created_at', 'updated_at',
+        ]
+
+    def get_has_embedding(self, obj):
+        return obj.description_embedding is not None
 
 
 class ActionExecutionLogSerializer(serializers.ModelSerializer):
