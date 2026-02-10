@@ -118,9 +118,6 @@ export function PillarSDKProvider({ children }: PillarSDKProviderProps) {
           :host {
             --pillar-font-family: "Suisse Intl", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
           }
-          .pillar-panel {
-            border-radius: 0;
-          }
           ._pillar-content::-webkit-scrollbar-thumb {
             border-radius: 4px;
           }

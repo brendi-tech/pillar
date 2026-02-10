@@ -22,32 +22,32 @@
   --pillar-primary-hover: #1d4ed8;
   --pillar-primary-light: #eff6ff;
   --pillar-primary-light-hover: #dbeafe;
-  
+
   --pillar-bg: #ffffff;
   --pillar-bg-secondary: #f9fafb;
   --pillar-bg-tertiary: #f3f4f6;
-  
+
   --pillar-text: #1a1a1a;
   --pillar-text-secondary: #374151;
   --pillar-text-muted: #6b7280;
   --pillar-text-placeholder: #9ca3af;
-  
+
   --pillar-border: #e5e7eb;
   --pillar-border-light: #f3f4f6;
-  
+
   /* Shadows */
   --pillar-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --pillar-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  
+
   /* Code blocks */
   --pillar-code-bg: #1f2937;
   --pillar-code-text: #e5e7eb;
-  
+
   /* Scrollbar */
   --pillar-scrollbar-track: transparent;
   --pillar-scrollbar-thumb: #d1d5db;
   --pillar-scrollbar-thumb-hover: #9ca3af;
-  
+
   /* Spacing (can be customized) */
   --pillar-panel-width: 380px;
   --pillar-spacing-xs: 4px;
@@ -56,17 +56,19 @@
   --pillar-spacing-lg: 16px;
   --pillar-spacing-xl: 20px;
   --pillar-spacing-2xl: 24px;
-  
+
   /* Border radius */
   --pillar-radius-sm: 4px;
   --pillar-radius-md: 6px;
   --pillar-radius-lg: 8px;
   --pillar-radius-xl: 10px;
   --pillar-radius-full: 9999px;
-  
+
   /* Typography */
-  --pillar-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --pillar-font-mono: 'SF Mono', Consolas, monospace;
+  --pillar-font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
+  --pillar-font-mono: "SF Mono", Consolas, monospace;
   --pillar-font-size-xs: 11px;
   --pillar-font-size-sm: 12px;
   --pillar-font-size-base: 14px;
@@ -74,7 +76,7 @@
   --pillar-font-size-lg: 16px;
   --pillar-font-size-xl: 18px;
   --pillar-font-size-2xl: 20px;
-  
+
   /* Animation */
   --pillar-transition-fast: 0.15s ease;
   --pillar-transition-normal: 0.3s ease;
@@ -94,25 +96,25 @@
   --pillar-primary-hover: #60a5fa;
   --pillar-primary-light: #1e3a5f;
   --pillar-primary-light-hover: #1e4976;
-  
+
   --pillar-bg: #1a1a1a;
   --pillar-bg-secondary: #262626;
   --pillar-bg-tertiary: #333333;
-  
+
   --pillar-text: #f5f5f5;
   --pillar-text-secondary: #e5e5e5;
   --pillar-text-muted: #a3a3a3;
   --pillar-text-placeholder: #737373;
-  
+
   --pillar-border: #404040;
   --pillar-border-light: #333333;
-  
+
   --pillar-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
   --pillar-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
-  
+
   --pillar-code-bg: #0d0d0d;
   --pillar-code-text: #e5e7eb;
-  
+
   --pillar-scrollbar-thumb: #525252;
   --pillar-scrollbar-thumb-hover: #737373;
 }
@@ -203,7 +205,9 @@
   border: none;
   border-radius: var(--pillar-radius-md);
   cursor: pointer;
-  transition: color var(--pillar-transition-fast), background var(--pillar-transition-fast);
+  transition:
+    color var(--pillar-transition-fast),
+    background var(--pillar-transition-fast);
 }
 
 ._pillar-icon-btn:hover {
@@ -280,7 +284,9 @@
   border: 1px solid var(--pillar-border);
   border-radius: var(--pillar-radius-lg);
   cursor: pointer;
-  transition: background var(--pillar-transition-fast), border-color var(--pillar-transition-fast);
+  transition:
+    background var(--pillar-transition-fast),
+    border-color var(--pillar-transition-fast);
 }
 
 ._pillar-question-chip:hover {
@@ -294,7 +300,9 @@
 ._pillar-question-chip-arrow {
   color: var(--pillar-text-muted);
   margin-left: var(--pillar-spacing-sm);
-  transition: color var(--pillar-transition-fast), transform var(--pillar-transition-fast);
+  transition:
+    color var(--pillar-transition-fast),
+    transform var(--pillar-transition-fast);
 }
 
 ._pillar-question-chip:hover ._pillar-question-chip-arrow {
@@ -494,7 +502,9 @@
   background: var(--pillar-bg-secondary);
   border: 1px solid var(--pillar-border);
   border-radius: var(--pillar-radius-xl);
-  transition: border-color var(--pillar-transition-fast), box-shadow var(--pillar-transition-fast);
+  transition:
+    border-color var(--pillar-transition-fast),
+    box-shadow var(--pillar-transition-fast);
 }
 
 ._pillar-chat-input-wrapper:focus-within {
@@ -547,7 +557,9 @@
   border: 1px solid var(--pillar-border);
   border-radius: var(--pillar-radius-xl);
   padding: 4px;
-  transition: border-color var(--pillar-transition-fast), box-shadow var(--pillar-transition-fast);
+  transition:
+    border-color var(--pillar-transition-fast),
+    box-shadow var(--pillar-transition-fast);
 }
 
 ._pillar-chat-view-input-wrapper:focus-within {
@@ -685,7 +697,9 @@
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
   outline: none;
   gap: 8px;
   writing-mode: vertical-rl;
@@ -746,7 +760,9 @@
 }
 
 @keyframes pillar-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ============================================================================
@@ -784,7 +800,9 @@
   background: var(--pillar-bg-secondary);
   border: 1px solid var(--pillar-border);
   border-radius: var(--pillar-radius-xl);
-  transition: border-color var(--pillar-transition-fast), box-shadow var(--pillar-transition-fast);
+  transition:
+    border-color var(--pillar-transition-fast),
+    box-shadow var(--pillar-transition-fast);
 }
 
 ._pillar-unified-input-wrapper:focus-within {
@@ -1108,8 +1126,12 @@
 
 /* Spinner Animation for Executing Step */
 @keyframes pillar-plan-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .pillar-plan-step--awaiting_result .pillar-plan-step__icon svg {
@@ -1124,19 +1146,25 @@
   position: relative;
   display: inline-block;
   padding: 8px 12px;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
   font-size: 14px;
   font-weight: 500;
   line-height: 1.3;
   color: #ffffff;
   background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3), 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow:
+    0 4px 12px rgba(99, 102, 241, 0.3),
+    0 2px 4px rgba(0, 0, 0, 0.1);
   cursor: pointer;
   user-select: none;
   opacity: 0;
   transform: translateY(4px) scale(0.95);
-  transition: opacity 0.15s ease, transform 0.15s ease;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
 }
 
 .pillar-text-selection-popover.pillar-text-selection-popover--visible {
