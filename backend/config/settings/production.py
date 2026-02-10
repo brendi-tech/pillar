@@ -40,6 +40,7 @@ _marketing_origins = [
     'https://pillar.bot',
     'https://www.pillar.bot',
     # Demo sites
+    'https://superset.trypillar.com',
     'https://superset-demo-45583431749.us-central1.run.app',
 ]
 

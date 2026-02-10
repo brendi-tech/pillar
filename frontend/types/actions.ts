@@ -83,6 +83,9 @@ export interface Action {
   last_confirmation_status: string;
   last_confirmation_error: string;
   
+  // Source
+  source?: 'code' | 'ui';  // 'code' = synced from SDK manifest, 'ui' = created in dashboard
+  
   // Timestamps
   created_at: string;
   updated_at: string;

@@ -741,139 +741,29 @@ async def _append_display_step(
         logger.warning(f"Failed to append display step: {e}")
 
 
-def _extract_turn_messages(
+async def _noop_persist(*args, **kwargs):
+    """No-op placeholder -- persistence is handled by periodic flush in streamable_http."""
+    pass
+
+
+def _build_state_checkpoint(
     messages: list[dict],
     turn_start_idx: int,
-    final_content: str,
-) -> list[dict]:
-    """
-    Extract this turn's messages from the full messages array for persistence.
-    
-    The agentic loop builds up a messages array: [system, ...history..., user, ...turn...].
-    Everything from turn_start_idx onward is this turn's tool interactions
-    (assistant tool_calls + tool results). We extract those and append the
-    final assistant text response to create a complete turn record.
-    
-    The returned list is stored as llm_message on the assistant ChatMessage.
-    On the next turn, _load_conversation_history extends these directly into
-    the conversation, giving the LLM full context of what happened.
-    
-    Args:
-        messages: Full messages array from the agentic loop
-        turn_start_idx: Index where this turn's messages begin
-            (right after the user message)
-        final_content: The final streamed text response
-    
-    Returns:
-        List of message dicts in standard chat completions format
-    """
-    # Extract tool interaction messages from this turn
-    turn_messages = list(messages[turn_start_idx:])
-    
-    # Append the final assistant text response
-    # (this was streamed to the client, not added to the messages array)
-    if final_content:
-        turn_messages.append({
-            "role": "assistant",
-            "content": final_content,
-        })
-    
-    logger.info(
-        f"[_extract_turn_messages] Extracted {len(turn_messages)} turn messages "
-        f"(from idx {turn_start_idx}, total messages={len(messages)}, "
-        f"final_content={len(final_content)} chars)"
-    )
-    
-    return turn_messages
-
-
-async def _persist_final_assistant_message(
-    conversation_id: str,
-    assistant_message_id: str | None,
-    final_content: str,
-    llm_message: list[dict] | dict,
     display_trace: list[dict],
-    model_used: str = '',
-    prompt_tokens: int | None = None,
-    completion_tokens: int | None = None,
-    organization_id: str = '',
-) -> str:
-    """
-    Create or update the final assistant ChatMessage with all accumulated data.
-    
-    Called at the end of a turn to persist the complete assistant message.
-    llm_message is a list of this turn's messages in standard chat completions
-    format (assistant tool_calls + tool results + final assistant response),
-    ready for direct replay into the LLM conversation on the next turn.
-    display_trace is the human-readable timeline for UI display.
-    
-    Returns the message ID.
-    """
-    if not conversation_id:
-        logger.warning("[_persist_final_assistant_message] No conversation_id, skipping persist")
-        return assistant_message_id or ''
-    
-    from apps.analytics.models import ChatMessage
-    import json
-    
-    # Debug logging
-    turn_msg_count = len(llm_message) if isinstance(llm_message, list) else 1
-    turn_msg_roles = [m.get('role') for m in llm_message] if isinstance(llm_message, list) else ['unknown']
-    display_trace_types = [s.get('step_type') for s in display_trace] if display_trace else []
-    
-    logger.info(f"[_persist_final_assistant_message] Persisting assistant message:")
-    logger.info(f"  conversation_id={conversation_id}")
-    logger.info(f"  assistant_message_id={assistant_message_id}")
-    logger.info(f"  content_length={len(final_content)}")
-    logger.info(f"  llm_message turn_messages={turn_msg_count}, roles={turn_msg_roles}")
-    logger.info(f"  display_trace_steps={len(display_trace)} types={display_trace_types}")
-    logger.info(f"  model_used={model_used}, tokens=({prompt_tokens}, {completion_tokens})")
-    
-    # Log a sample of llm_message for debugging (truncated)
-    if llm_message:
-        llm_msg_preview = json.dumps(llm_message, default=str)[:500]
-        logger.debug(f"[_persist_final_assistant_message] llm_message preview: {llm_msg_preview}...")
-    
-    if assistant_message_id:
-        # Update existing assistant message
-        update_fields = {
-            'content': final_content,
-            'llm_message': llm_message,
-            'display_trace': display_trace,
-        }
-        if model_used:
-            update_fields['model_used'] = model_used
-        if prompt_tokens is not None:
-            update_fields['prompt_tokens'] = prompt_tokens
-        if completion_tokens is not None:
-            update_fields['completion_tokens'] = completion_tokens
-            if prompt_tokens is not None:
-                update_fields['total_tokens'] = prompt_tokens + completion_tokens
-        
-        await ChatMessage.objects.filter(id=assistant_message_id).aupdate(**update_fields)
-        logger.info(f"[_persist_final_assistant_message] Updated existing message {assistant_message_id}")
-        return assistant_message_id
-    else:
-        # Create new assistant message
-        msg = await ChatMessage.objects.acreate(
-            organization_id=organization_id,
-            conversation_id=conversation_id,
-            role=ChatMessage.Role.ASSISTANT,
-            content=final_content,
-            llm_message=llm_message,
-            display_trace=display_trace,
-            model_used=model_used,
-            prompt_tokens=prompt_tokens,
-            completion_tokens=completion_tokens,
-            total_tokens=(prompt_tokens or 0) + (completion_tokens or 0) if prompt_tokens or completion_tokens else None,
-        )
-        logger.info(f"[_persist_final_assistant_message] Created new message {msg.id}")
-        return str(msg.id)
-
-
-async def _noop_persist(*args, **kwargs):
-    """No-op placeholder for incremental persistence calls during migration."""
-    pass
+    agent_context,
+    model_name: str,
+) -> dict:
+    """Build a state_checkpoint event from current loop state."""
+    return {
+        "type": "state_checkpoint",
+        "llm_messages": messages[turn_start_idx:],
+        "display_trace": display_trace,
+        "registered_actions": agent_context.registered_actions,
+        "model_used": model_name,
+        "prompt_tokens": agent_context.token_budget.total_prompt_tokens if agent_context.token_budget else None,
+        "completion_tokens": agent_context.token_budget.total_completion_tokens if agent_context.token_budget else None,
+        "peak_context_occupancy": round(agent_context.token_budget.peak_occupancy_pct, 2) if agent_context.token_budget else None,
+    }
 
 
 async def run_agentic_loop(
@@ -1172,31 +1062,11 @@ async def run_agentic_loop(
                 total_tokens_completion=agent_context.token_budget.total_completion_tokens if agent_context.token_budget else 0,
             )
 
-            # Extract this turn's messages for conversation replay.
-            # Stores the complete tool interaction chain (assistant tool_calls,
-            # tool results, final response) so the next turn has full context.
-            llm_message = _extract_turn_messages(
-                messages=messages,
-                turn_start_idx=turn_start_idx,
-                final_content=final_content,
-            )
-
-            # Persist final assistant message
-            current_assistant_message_id = await _persist_final_assistant_message(
-                conversation_id=conversation_id,
-                assistant_message_id=current_assistant_message_id,
-                final_content=final_content,
-                llm_message=llm_message,
-                display_trace=display_trace,
-                model_used=model_name,
-                prompt_tokens=agent_context.token_budget.total_prompt_tokens if agent_context.token_budget else None,
-                completion_tokens=agent_context.token_budget.total_completion_tokens if agent_context.token_budget else None,
-                organization_id=org_id,
-            )
+            # Final state checkpoint so flush picks up everything
+            yield _build_state_checkpoint(messages, turn_start_idx, display_trace, agent_context, model_name)
 
             yield {
                 "type": "complete",
-                "conversation_history": messages,
                 "registered_actions": agent_context.registered_actions,
                 "display_trace": display_trace,
                 "thinking_text": all_thinking_text.strip(),
@@ -2025,6 +1895,9 @@ async def run_agentic_loop(
             if thinking_started:
                 yield emit_thinking_done(thinking_id)
 
+        # End of iteration -- checkpoint state for periodic flush
+        yield _build_state_checkpoint(messages, turn_start_idx, display_trace, agent_context, model_name)
+
     # Max iterations reached - generate fallback response
     logger.warning(f"[AgenticLoop] Max iterations ({MAX_AGENT_ITERATIONS}) reached")
 
@@ -2081,32 +1954,11 @@ async def run_agentic_loop(
         total_tokens_completion=agent_context.token_budget.total_completion_tokens if agent_context.token_budget else 0,
     )
 
-    # Extract turn messages for conversation replay (max iterations case)
-    max_iter_content = "[Max iterations reached - response generated from available context]"
-    
-    llm_message = _extract_turn_messages(
-        messages=messages,
-        turn_start_idx=turn_start_idx,
-        final_content=max_iter_content,
-    )
-    
-    # Persist final assistant message to ChatMessage table (with streamed/fallback content placeholder)
-    current_assistant_message_id = await _persist_final_assistant_message(
-        conversation_id=conversation_id,
-        assistant_message_id=current_assistant_message_id,
-        final_content=max_iter_content,
-        llm_message=llm_message,
-        display_trace=display_trace,
-        model_used=model_name,
-        prompt_tokens=agent_context.token_budget.total_prompt_tokens if agent_context.token_budget else None,
-        completion_tokens=agent_context.token_budget.total_completion_tokens if agent_context.token_budget else None,
-        organization_id=org_id,
-    )
+    # Final state checkpoint so flush picks up everything
+    yield _build_state_checkpoint(messages, turn_start_idx, display_trace, agent_context, model_name)
 
-    # display_trace is already logged via session_logger.log_session_complete above
     yield {
         "type": "complete",
-        "conversation_history": messages,
         "registered_actions": agent_context.registered_actions,
         "display_trace": display_trace,
         "thinking_text": all_thinking_text.strip(),

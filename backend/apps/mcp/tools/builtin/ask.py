@@ -174,12 +174,13 @@ class AskTool(Tool):
         Always searches both articles and actions, then lets the LLM
         decide how to best respond based on all available context.
         """
-        query = arguments.get('query')
-        if not query:
+        query = arguments.get('query', '')
+        images = arguments.get('images', [])
+        if not query and not images:
             return {
                 'success': False,
-                'error': 'query parameter is required',
-                'content': [{'type': 'text', 'text': 'Error: query parameter is required'}],
+                'error': 'A message or image is required',
+                'content': [{'type': 'text', 'text': 'Error: A message or image is required'}],
                 'isError': True
             }
 
@@ -342,9 +343,10 @@ class AskTool(Tool):
         import time
         start_time = time.time()
         
-        query = arguments.get('query')
-        if not query:
-            yield {'type': 'error', 'message': 'query parameter is required'}
+        query = arguments.get('query', '')
+        images = arguments.get('images', [])
+        if not query and not images:
+            yield {'type': 'error', 'message': 'A message or image is required'}
             return
 
         if not help_center_config:
@@ -354,7 +356,6 @@ class AskTool(Tool):
         top_k = arguments.get('top_k', 5)
         conversation_id = arguments.get('conversation_id')
         user_context = arguments.get('user_context', [])
-        images = arguments.get('images', [])
         context = arguments.get('context', {})
         # Registered actions from previous turns (for dynamic action tools)
         client_registered_actions = arguments.get('registered_actions', [])
@@ -374,6 +375,10 @@ class AskTool(Tool):
             logger.info(f"[AskTool] Received context: {context}")
         if user_profile:
             logger.info(f"[AskTool] Received user_profile: {user_profile}")
+        
+        # Default query for image-only messages
+        if not query and images:
+            query = "[Image provided]"
         
         logger.info(f"[AskTool] execute_stream called with query='{query[:50]}...', images={len(images) if images else 0}")
         logger.debug(f"[AskTool] Full arguments: {arguments}")
@@ -567,70 +572,13 @@ class AskTool(Tool):
                     yield event
                     return
                 elif event_type == 'complete':
-                    # Ensure DB task completed before firing pipeline
+                    # Ensure DB task completed so assistant message row exists
                     if db_task:
                         try:
                             await db_task
                             logger.debug("[AskTool] DB task completed successfully")
                         except Exception as e:
                             logger.error(f"[AskTool] Failed to create conversation: {e}")
-                            # User still gets response, just no analytics
-                    
-                    # Capture display_trace from complete event
-                    # (preferred over the legacy display_trace event)
-                    if event.get('display_trace'):
-                        display_trace = event['display_trace']
-                    
-                    # Calculate response time
-                    response_time_ms = int((time.time() - start_time) * 1000)
-                    full_response = ''.join(response_tokens)
-                    
-                    # Convert sources to chunks_retrieved format
-                    chunks_retrieved = [
-                        {
-                            'chunk_id': str(s.get('chunk_id', s.get('id', ''))),
-                            'score': s.get('score', 0),
-                            'source_article_id': str(s.get('article_id', s.get('id', ''))),
-                        }
-                        for s in sources_retrieved
-                    ]
-                    
-                    # Fire async pipeline for assistant message
-                    from apps.analytics.services.post_message_pipeline import (
-                        PostMessagePipeline, PostMessageContext
-                    )
-                    
-                    # Extract token_summary from display_trace
-                    token_summary = next(
-                        (step for step in display_trace if step.get('step_type') == 'token_summary'),
-                        {}
-                    )
-                    prompt_tokens = token_summary.get('total_prompt_tokens')
-                    completion_tokens = token_summary.get('total_completion_tokens')
-                    total_tokens = (
-                        (prompt_tokens or 0) + (completion_tokens or 0)
-                    ) if (prompt_tokens or completion_tokens) else None
-                    peak_context_occupancy = token_summary.get('peak_occupancy_pct')
-                    
-                    await PostMessagePipeline.execute(PostMessageContext(
-                        conversation_id=conv_id,
-                        message_id=assistant_msg_id,
-                        organization_id=str(organization.id),
-                        product_id=str(help_center_config.id),
-                        is_assistant_message=True,
-                        logging_enabled=not skip_analytics,
-                        # Assistant message data for finalization (UPDATE, not CREATE)
-                        response=full_response,
-                        response_time_ms=response_time_ms,
-                        chunks_retrieved=chunks_retrieved,
-                        model_used=getattr(agent_service, 'model_name', ''),
-                        display_trace=display_trace,
-                        # Token usage tracking
-                        prompt_tokens=prompt_tokens,
-                        completion_tokens=completion_tokens,
-                        total_tokens=total_tokens,
-                        peak_context_occupancy=peak_context_occupancy,
-                    ))
                     
                     # Yield complete with conversation IDs
                     complete_event = dict(event)
@@ -755,15 +703,23 @@ class AskTool(Tool):
                         f"content_length={len(msg.content)}"
                     )
                 elif msg.role == ChatMessage.Role.ASSISTANT:
-                    if msg.llm_message and isinstance(msg.llm_message, list):
-                        # New format: list of turn messages (tool_calls + results + final)
-                        messages.extend(msg.llm_message)
+                    llm_data = msg.llm_message or {}
+                    if isinstance(llm_data, dict) and "messages" in llm_data:
+                        # New format: dict with messages + registered_actions
+                        messages.extend(llm_data["messages"])
                         logger.info(
                             f"[AskTool._load_history] Assistant msg {msg.id}: "
-                            f"extended {len(msg.llm_message)} turn messages"
+                            f"extended {len(llm_data['messages'])} turn messages"
+                        )
+                    elif isinstance(llm_data, list) and llm_data:
+                        # Legacy list format
+                        messages.extend(llm_data)
+                        logger.info(
+                            f"[AskTool._load_history] Assistant msg {msg.id}: "
+                            f"extended {len(llm_data)} turn messages (legacy list)"
                         )
                     else:
-                        # Legacy/fallback: just use the text content
+                        # Fallback: just use the text content
                         messages.append({
                             'role': 'assistant',
                             'content': msg.content,

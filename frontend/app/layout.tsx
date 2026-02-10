@@ -123,8 +123,8 @@ export async function generateMetadata(): Promise<Metadata> {
   // Default
   return {
     ...baseMetadata,
-    title: "Pillar",
-    description: "The Product Copilot",
+    title: "Pillar - The Product Copilot",
+    description: "Turn user requests into client-side actions. Pillar navigates your UI, builds dashboards, and executes more actions to carry out tasks automatically.",
   };
 }
 

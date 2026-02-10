@@ -76,7 +76,7 @@ async def resume_conversation(request, conversation_id: str):
     """
     import asyncio
     from django.utils import timezone
-    from apps.mcp.services.session_resumption import get_resumable_session, clear_interrupted_status
+    from apps.mcp.services.session_resumption import get_resumable_session, clear_disconnected_status
     from apps.mcp.services.mcp_server import MCPServer
     from apps.mcp.services.mcp_server.utils import get_effective_language
     
@@ -114,20 +114,17 @@ async def resume_conversation(request, conversation_id: str):
             }, status=400)
             return add_cors_headers(response, request)
         
-        # Build continuation prompt
-        from apps.mcp.services.prompts.agentic_prompts import build_session_resume_prompt
-        
-        continuation_prompt = build_session_resume_prompt(
-            user_message=session.get("user_message", ""),
-            accomplished=session.get("accomplished", []),
-            partial_response=session.get("partial_response", ""),
-            current_context=user_context,
+        # Simple continuation prompt
+        user_message = session.get("user_message", "")
+        continuation_prompt = (
+            f"{user_message}\n\n"
+            "Continue completing the user's request. Don't repeat work already done."
         )
         
-        # Clear the interrupted status before starting new stream
+        # Clear the disconnected status before starting new stream
         message_id = session.get("message_id")
         if message_id:
-            await clear_interrupted_status(message_id)
+            await clear_disconnected_status(message_id)
         
         # Initialize MCP server
         effective_language = get_effective_language(request, help_center_config)
@@ -144,11 +141,11 @@ async def resume_conversation(request, conversation_id: str):
             from apps.mcp.services.agent import AgentAnswerServiceReActAsync
             from apps.mcp.services.agent.agentic_loop import run_agentic_loop
             
-            # Create agent service
+            # Create agent service with saved conversation history
             agent_service = AgentAnswerServiceReActAsync(
                 help_center_config=help_center_config,
                 organization=organization,
-                conversation_history=[],  # Fresh start with continuation prompt
+                conversation_history=session.get("llm_messages", []),
                 registered_actions=session.get("registered_actions", []),
             )
             

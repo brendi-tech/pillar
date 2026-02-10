@@ -9,7 +9,6 @@ from apps.mcp.services.prompts.agentic_prompts import (
     format_sources_for_prompt,
     format_conversation_history,
     build_agentic_prompt,
-    build_session_resume_prompt,
 )
 from apps.mcp.services.prompts.personality import PERSONALITY_PRESETS
 from apps.mcp.services.prompts.environment_context import build_environment_context
@@ -30,7 +29,6 @@ __all__ = [
     'format_sources_for_prompt',
     'format_conversation_history',
     'build_agentic_prompt',
-    'build_session_resume_prompt',
     
     # Environment context
     'build_environment_context',

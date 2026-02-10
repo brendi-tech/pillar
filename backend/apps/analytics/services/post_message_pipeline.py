@@ -51,39 +51,6 @@ def register_task(fn: Callable):
     return fn
 
 
-@register_task
-async def finalize_assistant_message(ctx: PostMessageContext):
-    """Finalize pre-created assistant message with metadata after streaming completes."""
-    if not ctx.is_assistant_message:
-        return
-    
-    if not ctx.response:
-        logger.warning(f"[PostMessagePipeline] No response to log for conversation {ctx.conversation_id}")
-        return
-    
-    from apps.analytics.services import ConversationLoggingService
-    
-    try:
-        await ConversationLoggingService().log_assistant_response(
-            conversation_id=ctx.conversation_id,
-            organization_id=ctx.organization_id,
-            product_id=ctx.product_id,
-            response=ctx.response,
-            response_time_ms=ctx.response_time_ms,
-            chunks_retrieved=ctx.chunks_retrieved,
-            model_used=ctx.model_used,
-            message_id=ctx.message_id,
-            display_trace=ctx.display_trace,
-            prompt_tokens=ctx.prompt_tokens,
-            completion_tokens=ctx.completion_tokens,
-            total_tokens=ctx.total_tokens,
-            peak_context_occupancy=ctx.peak_context_occupancy,
-        )
-        logger.debug(f"[PostMessagePipeline] Finalized assistant message {ctx.message_id} for conversation {ctx.conversation_id}")
-    except Exception as e:
-        logger.error(f"[PostMessagePipeline] Failed to finalize assistant message: {e}", exc_info=True)
-
-
 class PostMessagePipeline:
     """
     Fire-and-forget pipeline for post-message background tasks.

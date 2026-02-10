@@ -179,7 +179,11 @@ Keep working until the user's request is fully resolved. Use results from earlie
 
 <usefulness>
 Your goal is to actually help the user, not just call tools successfully. A successful action isn't the same as a useful outcome. If data is sparse or meaningless, say so rather than producing empty results. The user is better served by honest feedback than technically correct but useless output.
-</usefulness>"""
+</usefulness>
+
+<show_your_work>
+After completing a task, navigate the user to where they can see the result. If you built a dashboard, navigate to it. If you created a report, open it. The user should end up looking at the thing you made.
+</show_your_work>"""
     
     # Add environment context to system prompt if available
     if environment:
@@ -191,20 +195,8 @@ Your goal is to actually help the user, not just call tools successfully. A succ
     if product_guidance:
         system_prompt_text += f"\n\n<product_guidance>\n{product_guidance}\n</product_guidance>"
     
-    # Handle images in system message
-    if images:
-        system_content = [{"type": "text", "text": system_prompt_text}]
-        for img in images:
-            img_data = img.get("data", "")
-            media_type = img.get("media_type", "image/png")
-            if img_data:
-                system_content.append({
-                    "type": "image_url",
-                    "image_url": {"url": f"data:{media_type};base64,{img_data}"}
-                })
-        messages.append({"role": "system", "content": system_content})
-    else:
-        messages.append({"role": "system", "content": system_prompt_text})
+    # System message is always plain text
+    messages.append({"role": "system", "content": system_prompt_text})
     
     # Add prior conversation history if provided.
     # Always full-fidelity: messages with tool_calls, tool results, reasoning_details
@@ -212,8 +204,22 @@ Your goal is to actually help the user, not just call tools successfully. A succ
     if conversation_history:
         messages.extend(conversation_history)
     
-    # Add user message with question
-    messages.append({"role": "user", "content": question})
+    # Add user message with question - include images as multimodal content if present
+    if images:
+        user_content = [{"type": "text", "text": question}]
+        for img in images:
+            img_url = img.get("url")
+            if img_url:
+                user_content.append({
+                    "type": "image_url",
+                    "image_url": {
+                        "url": img_url,
+                        "detail": img.get("detail", "low")
+                    }
+                })
+        messages.append({"role": "user", "content": user_content})
+    else:
+        messages.append({"role": "user", "content": question})
     
     return messages
 
@@ -445,61 +451,6 @@ def format_execute_result_content(
 
 
 # =============================================================================
-# SESSION RESUMPTION
-# =============================================================================
 
-
-def build_session_resume_prompt(
-    user_message: str,
-    accomplished: list[dict],
-    partial_response: str,
-    current_context: dict | None = None,
-) -> str:
-    """
-    Build prompt for resuming an interrupted session.
-    
-    Used when the user's session was interrupted (page navigation, disconnect)
-    and they want to continue where they left off. The agent receives context
-    about what was accomplished and continues intelligently.
-    
-    Args:
-        user_message: Original user question/request
-        accomplished: List of actions executed with result summaries
-        partial_response: Response tokens sent before disconnect
-        current_context: Optional current page context (may differ from original)
-        
-    Returns:
-        Continuation prompt string for the agentic loop
-    """
-    # Format accomplished actions
-    if accomplished:
-        accomplished_text = "\n".join([
-            f"- {item.get('action', 'unknown')}: {item.get('result_summary', 'completed')}"
-            for item in accomplished
-        ])
-    else:
-        accomplished_text = "No actions executed yet."
-    
-    # Format context changes
-    context_section = ""
-    if current_context:
-        page_url = current_context.get('page_url') or current_context.get('pageUrl', '')
-        if page_url:
-            context_section = f"\n\n<current_context>\nThe user is now on: {page_url}\n</current_context>"
-    
-    # Format partial response
-    partial_section = ""
-    if partial_response:
-        partial_section = f"\n\n<partial_response>\n{partial_response}\n</partial_response>"
-    
-    return f"""The user's session was interrupted. Continue where you left off.
-
-<original_request>
-{user_message}
-</original_request>
-
-<accomplished>
-{accomplished_text}
-</accomplished>{partial_section}{context_section}
-
-Continue completing the user's original request. Don't repeat work that was already done successfully. If the context has changed (different page), adapt accordingly."""
+# NOTE: build_session_resume_prompt was removed -- session resumption now uses
+# simple continuation prompt in session_resume.py

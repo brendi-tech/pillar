@@ -352,7 +352,8 @@ class ChatMessage(TenantAwareModel):
     class StreamingStatus(models.TextChoices):
         STREAMING = 'streaming', 'Still streaming'
         COMPLETED = 'completed', 'Completed'
-        INTERRUPTED = 'interrupted', 'Interrupted mid-stream'
+        INTERRUPTED = 'interrupted', 'Interrupted mid-stream'  # Legacy, no longer written
+        DISCONNECTED = 'disconnected', 'Client disconnected'
 
     streaming_status = models.CharField(
         max_length=20,

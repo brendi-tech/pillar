@@ -37,13 +37,13 @@
 
 Pillar works across SaaS and web apps. A user could ask:
 
-> "Close the Walmart deal as won in Salesforce and notify implementation"
+> **Their Banking App:** "Send my cleaner $200"
 
-> "Add a weekly signups chart to my Amplitude dashboard"
+> **Their CRM:** "Close the Walmart deal as won and notify implementation"
 
-> "Create a P1 bug in Linear for the checkout crash and add it to this sprint"
+> **Their Analytics Dashboard:** "Add a weekly signups chart to my dashboard"
 
-> "How do I change my direct deposit in Rippling?"
+> **Their PM Tool:** "Create a P1 bug for this checkout crash and add it to this sprint"
 
 Pillar understands the intent, builds a multi-step plan, and executes it using your UI — the same way the user would, but hands-free.
 
