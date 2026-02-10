@@ -50,9 +50,9 @@
 
 ### Cloud (Fastest)
 
-> **⚠️ Beta Onboarding:** Cloud access is currently manual while we learn from early teams. Join the waitlist at [tripolar.com](https://tripolar.com), and we will reach out to onboard you.
+> **⚠️ Beta Onboarding:** Cloud access is currently manual while we learn from early teams. Join the waitlist at [trypillar.com](https://trypillar.com), and we will reach out to onboard you.
 >
-> By default, you will get a forward deployed engineer to help with setup. If you prefer onboarding without one, include that in your waitlist request and we will support that too.
+> By default, you'll get an engineer from Pillar to help with setup. If you prefer onboarding without engineering support, include that in your waitlist request and we will support that too.
 
 Once your product is onboarded and you have your **Product Key**, install the SDK:
 
