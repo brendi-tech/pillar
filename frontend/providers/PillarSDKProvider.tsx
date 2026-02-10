@@ -59,7 +59,7 @@ interface PillarSDKProviderProps {
  */
 export function PillarSDKProvider({ children }: PillarSDKProviderProps) {
   // Use environment variables with fallbacks for local development
-  // The SDK calls /api/v1/help-center endpoints which are served by hc-backend
+  // The SDK calls /api/v1/help-center endpoints which are served by backend
   const apiBaseUrl =
     process.env.NEXT_PUBLIC_PILLAR_API_URL || "http://localhost:8003";
   const productKey =

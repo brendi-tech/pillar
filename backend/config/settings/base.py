@@ -302,7 +302,7 @@ CHANNEL_LAYERS = {
 # ==============================================================================
 # HATCHET CONFIGURATION (for background tasks)
 # ==============================================================================
-# HC_HATCHET_* vars allow hc-backend to use a separate Hatchet tenant from main backend
+# HC_HATCHET_* vars allow backend to use a separate Hatchet tenant from main backend
 HATCHET_ENABLED = os.environ.get('HC_HATCHET_ENABLED', os.environ.get('HATCHET_ENABLED', 'true')).lower() == 'true'
 HATCHET_CLIENT_TOKEN = os.environ.get('HC_HATCHET_CLIENT_TOKEN', os.environ.get('HATCHET_CLIENT_TOKEN', ''))
 HATCHET_SERVER_URL = os.environ.get('HC_HATCHET_SERVER_URL', os.environ.get('HATCHET_SERVER_URL', 'https://app.hatchet.run'))

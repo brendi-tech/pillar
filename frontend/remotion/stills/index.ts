@@ -1,4 +1,4 @@
-// Documentation stills (hc-frontend components)
+// Documentation stills (frontend components)
 export { SidebarStill } from "./SidebarStill";
 export { AskAIStill } from "./AskAIStill";
 

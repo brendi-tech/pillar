@@ -75,14 +75,33 @@ const nextConfig: NextConfig = {
 
   // Cache headers for static assets
   async headers() {
+    // In development, avoid custom immutable caching headers so HMR and
+    // hydration always use fresh client bundles.
+    if (process.env.NODE_ENV !== "production") {
+      return [];
+    }
+
     return [
       {
-        // Static assets in public folder (images, fonts)
-        source: "/:path*\\.(ico|jpg|jpeg|png|gif|webp|svg|woff|woff2|otf|ttf|eot)",
+        // Versioned static assets (opt-in): place files under
+        // /public/marketing/versioned and bump filename/path when content changes.
+        // These are safe to cache aggressively.
+        source: "/marketing/versioned/:path*\\.(ico|jpg|jpeg|png|gif|webp|svg|woff|woff2|otf|ttf|eot)",
         headers: [
           {
             key: "Cache-Control",
             value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      {
+        // Static assets in public folder (images, fonts)
+        // Keep this short-lived so updates roll out quickly.
+        source: "/:path*\\.(ico|jpg|jpeg|png|gif|webp|svg|woff|woff2|otf|ttf|eot)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=86400, stale-while-revalidate=604800",
           },
         ],
       },
@@ -92,7 +111,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: "Cache-Control",
-            value: "public, max-age=31536000, immutable",
+            value: "public, max-age=86400, stale-while-revalidate=604800",
           },
         ],
       },

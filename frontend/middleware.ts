@@ -9,6 +9,9 @@ const debugMiddleware = (message: string, data?: Record<string, unknown>) => {
   console.log(`[${timestamp}] [MIDDLEWARE] ${message}`, data ?? '');
 };
 
+// Short edge cache for marketing HTML/RSC responses.
+const MARKETING_EDGE_CACHE_CONTROL = 'public, s-maxage=300, stale-while-revalidate=3600';
+
 /**
  * Middleware for Help Center Admin
  *
@@ -197,11 +200,15 @@ export function middleware(request: NextRequest) {
       rewriteHeaders.set('x-hostname', hostname);
       rewriteHeaders.set('x-persona-slug', '');
       
-      return NextResponse.rewrite(newUrl, {
+      const rewriteResponse = NextResponse.rewrite(newUrl, {
         request: {
           headers: rewriteHeaders,
         },
       });
+
+      // Cache marketing HTML/RSC briefly at the edge.
+      rewriteResponse.headers.set('Cache-Control', MARKETING_EDGE_CACHE_CONTROL);
+      return rewriteResponse;
     }
   }
 
@@ -227,6 +234,11 @@ export function middleware(request: NextRequest) {
   response.headers.set('x-pathname', pathname);
   response.headers.set('x-is-admin', isAdmin ? 'true' : 'false');
   response.headers.set('x-is-marketing', isMarketing ? 'true' : 'false');
+
+  // Apply short edge cache to direct /marketing requests too.
+  if (isMarketing && pathname.startsWith('/marketing')) {
+    response.headers.set('Cache-Control', MARKETING_EDGE_CACHE_CONTROL);
+  }
 
   const duration = performance.now() - startTime;
   debugMiddleware(`Completed in ${duration.toFixed(1)}ms`);

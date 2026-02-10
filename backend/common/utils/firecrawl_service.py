@@ -137,7 +137,7 @@ class FirecrawlService:
             url: The website URL to crawl
             crawl_depth: Maximum number of pages to crawl (None for unlimited)
             site_crawl: SiteCrawl model instance for webhook configuration (backend)
-            source_sync: SourceSync model instance for webhook configuration (hc-backend)
+            source_sync: SourceSync model instance for webhook configuration (backend)
             config: Additional crawl configuration
             language: Preferred language for content extraction
             
@@ -699,7 +699,7 @@ class FirecrawlService:
         
         Supports both:
         - SiteCrawl (backend) - for main product crawling
-        - SourceSync (hc-backend) - for help center source crawling
+        - SourceSync (backend) - for help center source crawling
         
         Note: The webhook secret is NOT sent to Firecrawl. Instead, it must be configured
         in the Firecrawl dashboard. Firecrawl uses their copy of the secret to sign webhooks
@@ -742,14 +742,14 @@ class FirecrawlService:
         metadata = {"crawl_uuid": crawl_id}
         
         # Check record type to set appropriate metadata
-        # KnowledgeSource (hc-backend direct) - has source_type and url, but not source_id
+        # KnowledgeSource (backend direct) - has source_type and url, but not source_id
         if hasattr(crawl_record, 'source_type') and hasattr(crawl_record, 'url'):
-            # KnowledgeSource passed directly from hc-backend crawl_async
+            # KnowledgeSource passed directly from backend crawl_async
             # The crawl_uuid is already the source ID
             metadata["source_uuid"] = crawl_id
             metadata["crawl_type"] = "knowledge_source"
         elif hasattr(crawl_record, 'source_id'):
-            # SourceSync from hc-backend (legacy)
+            # SourceSync from backend (legacy)
             source_id = str(crawl_record.source_id) if crawl_record.source_id else None
             if source_id:
                 metadata["source_uuid"] = source_id

@@ -8,16 +8,16 @@ Tests are marked with @pytest.mark.integration and skip if OPENROUTER_API_KEY is
 
 Run with:
     # All integration tests
-    pytest hc-backend/apps/mcp/tests/test_native_tool_calling_integration.py -v
+    pytest backend/apps/mcp/tests/test_native_tool_calling_integration.py -v
 
     # Only flagship models
-    pytest hc-backend/apps/mcp/tests/test_native_tool_calling_integration.py -v -k "flagship"
+    pytest backend/apps/mcp/tests/test_native_tool_calling_integration.py -v -k "flagship"
 
     # Only budget models
-    pytest hc-backend/apps/mcp/tests/test_native_tool_calling_integration.py -v -k "budget"
+    pytest backend/apps/mcp/tests/test_native_tool_calling_integration.py -v -k "budget"
 
     # Specific provider
-    pytest hc-backend/apps/mcp/tests/test_native_tool_calling_integration.py -v -k "openai"
+    pytest backend/apps/mcp/tests/test_native_tool_calling_integration.py -v -k "openai"
 """
 import pytest
 from typing import Dict, List, Optional, Tuple

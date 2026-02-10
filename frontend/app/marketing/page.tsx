@@ -1,4 +1,4 @@
-import { MarketingPage } from "@/components/marketing";
+import { MarketingPage } from "@/components/MarketingPage/MarketingPage";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {

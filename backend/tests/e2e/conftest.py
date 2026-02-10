@@ -14,7 +14,7 @@ Requirements:
 
 Usage (local):
     export $(grep -v '^#' .env.prod | xargs)
-    cd hc-backend
+    cd backend
     DJANGO_SETTINGS_MODULE=config.settings.development uv run pytest tests/e2e/ -m e2e -v -s --confcutdir=tests/e2e -p no:django
 
 Usage (CI):

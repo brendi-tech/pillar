@@ -1,5 +1,5 @@
 """
-Pytest fixtures for hc-backend tests.
+Pytest fixtures for backend tests.
 
 These fixtures provide test data for model, API, middleware, and permission tests.
 """

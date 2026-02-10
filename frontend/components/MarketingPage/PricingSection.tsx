@@ -86,9 +86,11 @@ const pricingTiers: PricingTier[] = [
  */
 interface PricingSectionProps {
   onOpenWaitlist?: () => void;
+  /** Hide the "[05] PRICING" numbered heading (used on standalone pricing page) */
+  hideNumberedHeading?: boolean;
 }
 
-export function PricingSection({ onOpenWaitlist }: PricingSectionProps) {
+export function PricingSection({ onOpenWaitlist, hideNumberedHeading }: PricingSectionProps) {
   return (
     <div className="relative">
       {/* Gradient line outside, solid blue inside container */}
@@ -96,9 +98,11 @@ export function PricingSection({ onOpenWaitlist }: PricingSectionProps) {
       <div className="absolute top-0 left-0 h-[1px] z-10" style={{ width: "calc((100% - 1334px) / 2)", background: "linear-gradient(90deg, rgba(212,212,212,0) 0%, #D4D4D4 60%, #D4D4D4 100%)" }} />
       <div className="absolute top-0 right-0 h-[1px] z-10" style={{ width: "calc((100% - 1334px) / 2)", background: "linear-gradient(90deg, #D4D4D4 0%, #D4D4D4 40%, rgba(212,212,212,0) 100%)" }} />
       <section className="bg-[#000622] py-16 md:py-24 max-w-marketingSection mx-auto border-x border-marketing relative">
-        <NumberedHeading className="bg-[#0F253D] text-[#58A6FF] absolute top-0 lg:left-[64px] left-1/2 -translate-x-1/2 lg:translate-x-0 z-10">
-          [05] PRICING
-        </NumberedHeading>
+        {!hideNumberedHeading && (
+          <NumberedHeading className="bg-[#0F253D] text-[#58A6FF] absolute top-0 lg:left-[64px] left-1/2 -translate-x-1/2 lg:translate-x-0 z-10">
+            [05] PRICING
+          </NumberedHeading>
+        )}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
           <div className="mb-12 md:mb-16">

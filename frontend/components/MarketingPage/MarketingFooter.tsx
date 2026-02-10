@@ -21,6 +21,24 @@ export function MarketingFooter() {
           {/* Right: Links */}
           <div className="flex items-center gap-8 text-sm text-[#1A1A1A]">
             <Link
+              href="/docs"
+              className="hover:text-[#6B6B6B] transition-colors"
+            >
+              Docs
+            </Link>
+            <Link
+              href="/blog"
+              className="hover:text-[#6B6B6B] transition-colors"
+            >
+              Blog
+            </Link>
+            <Link
+              href="/pricing"
+              className="hover:text-[#6B6B6B] transition-colors"
+            >
+              Pricing
+            </Link>
+            <Link
               href="/privacy"
               className="hover:text-[#6B6B6B] transition-colors"
             >

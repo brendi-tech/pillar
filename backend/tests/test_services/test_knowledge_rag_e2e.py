@@ -7,7 +7,7 @@ the full RAG pipeline works end-to-end.
 Usage:
     # Local - load env first, then run with e2e settings
     export $(grep -v '^#' .env.local | xargs)
-    cd hc-backend
+    cd backend
     .venv/bin/python -m pytest tests/test_services/test_knowledge_rag_e2e.py -m e2e -v
 
 Requirements:

@@ -27,7 +27,7 @@ export const RemotionRoot: React.FC = () => {
   return (
     <>
       {/* ============================================
-          Documentation Components (hc-frontend)
+          Documentation Components (frontend)
           ============================================ */}
       
       {/* Documentation sidebar */}

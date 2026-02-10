@@ -13,7 +13,7 @@ This approach:
 Usage:
     # Load environment and run
     export $(grep -v '^#' .env.local | xargs)
-    cd hc-backend
+    cd backend
     uv run pytest tests/e2e/test_superset_agent_e2e.py -m e2e -v -s
 
 Requirements:

@@ -1,5 +1,5 @@
 # Help Center Frontend Dockerfile - Next.js SSR
-# Build context is hc-frontend/. SDK packages are installed from npm.
+# Build context is frontend/. SDK packages are installed from npm.
 FROM node:20-alpine AS base
 
 # Install dependencies only when needed
