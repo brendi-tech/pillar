@@ -80,7 +80,16 @@ export function TopHeroSection({ onOpenWaitlist }: TopHeroSectionProps) {
             The Product Copilot
           </h1>
           <p className="text-center text-base sm:text-lg md:text-[1.375rem] text-white mt-2 max-w-3xl mx-auto px-4 md:px-0">
-            Pillar is the SDK for building AI agents into your product.
+            Pillar is the{" "}
+            <a
+              href="https://github.com/pillarhq/pillar"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline decoration-white/40 underline-offset-2 hover:decoration-white/80 transition-all duration-200"
+            >
+              Open Source
+            </a>{" "}
+            SDK for building AI agents into your product.
             <br className="hidden md:inline" />{" "}
             It takes action, and gets work done for your users.
           </p>
