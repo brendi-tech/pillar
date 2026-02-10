@@ -50,9 +50,11 @@
 
 ### Cloud (Fastest)
 
-Sign up at [app.trypillar.com](https://app.trypillar.com), create a product, and grab your **Product Key**.
+> **⚠️ Beta Onboarding:** Cloud access is currently manual while we learn from early teams. Join the waitlist at [tripolar.com](https://tripolar.com), and we will reach out to onboard you.
+>
+> By default, you will get a forward deployed engineer to help with setup. If you prefer onboarding without one, include that in your waitlist request and we will support that too.
 
-Install the SDK:
+Once your product is onboarded and you have your **Product Key**, install the SDK:
 
 ```bash
 npm install @pillar-ai/react
