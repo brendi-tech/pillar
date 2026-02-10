@@ -5,7 +5,6 @@ export const metadata: Metadata = {
   title: "Pillar - The Product Copilot",
   description:
     "Turn user requests into client-side actions. Pillar navigates your UI, builds dashboards, and executes more actions to carry out tasks automatically.",
-  metadataBase: new URL("https://trypillar.com"),
   alternates: {
     canonical: "/",
   },
@@ -17,12 +16,21 @@ export const metadata: Metadata = {
     siteName: "Pillar",
     type: "website",
     locale: "en_US",
+    images: [
+      {
+        url: "/og-card.png",
+        width: 1280,
+        height: 640,
+        alt: "Pillar - The open-source product copilot",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Pillar - The Product Copilot",
     description:
       "Turn user requests into client-side actions. Pillar navigates your UI, builds dashboards, and executes more actions to carry out tasks automatically.",
+    images: ["/og-card.png"],
   },
   robots: {
     index: true,

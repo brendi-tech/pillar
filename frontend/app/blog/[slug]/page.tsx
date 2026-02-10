@@ -42,17 +42,17 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
       type: 'article',
       publishedTime: post.frontmatter.date,
       ...(post.frontmatter.author && { authors: [post.frontmatter.author] }),
-      ...(post.frontmatter.image && {
-        images: [{ url: post.frontmatter.image }],
-      }),
+      images: [
+        post.frontmatter.image
+          ? { url: post.frontmatter.image }
+          : { url: '/og-card.png', width: 1280, height: 640, alt: 'Pillar - The open-source product copilot' },
+      ],
     },
     twitter: {
       card: 'summary_large_image',
       title: post.frontmatter.title,
       description,
-      ...(post.frontmatter.image && {
-        images: [post.frontmatter.image],
-      }),
+      images: [post.frontmatter.image || '/og-card.png'],
     },
   };
 }

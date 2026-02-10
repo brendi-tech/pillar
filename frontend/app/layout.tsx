@@ -96,9 +96,14 @@ export async function generateMetadata(): Promise<Metadata> {
   const isAdmin = await isAdminRequest();
   const isMarketing = await isMarketingRequest();
 
+  const baseMetadata = {
+    metadataBase: new URL("https://trypillar.com"),
+  };
+
   // Admin subdomain
   if (isAdmin) {
     return {
+      ...baseMetadata,
       title: "Pillar Admin",
       description: "Manage your AI product copilot with Pillar.",
     };
@@ -107,6 +112,7 @@ export async function generateMetadata(): Promise<Metadata> {
   // Marketing (root domain)
   if (isMarketing) {
     return {
+      ...baseMetadata,
       title: "Pillar - The Product Copilot",
       description:
         "Turn user requests into client-side actions. Pillar navigates your UI, builds dashboards, and executes more actions to carry out tasks automatically.",
@@ -116,6 +122,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
   // Default
   return {
+    ...baseMetadata,
     title: "Pillar",
     description: "The Product Copilot",
   };

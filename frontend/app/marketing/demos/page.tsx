@@ -7,7 +7,6 @@ export const metadata: Metadata = {
   title: "Demos | Pillar",
   description:
     "Watch Pillar demos across banking, CRM, analytics, and more. Each demo shows how Pillar turns a plain-language request into completed actions.",
-  metadataBase: new URL("https://trypillar.com"),
   alternates: {
     canonical: "/demos",
   },
@@ -19,12 +18,21 @@ export const metadata: Metadata = {
     siteName: "Pillar",
     type: "website",
     locale: "en_US",
+    images: [
+      {
+        url: "/og-card.png",
+        width: 1280,
+        height: 640,
+        alt: "Pillar - The open-source product copilot",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Demos | Pillar",
     description:
       "Watch Pillar demos across banking, CRM, analytics, and more. Each demo shows how Pillar turns a plain-language request into completed actions.",
+    images: ["/og-card.png"],
   },
 };
 

@@ -21,7 +21,7 @@ export function DocsCopyButton() {
     // Get the page title from the first h1, or from the document title
     const h1 = article.querySelector("h1");
     const title = h1?.textContent || document.title.replace(" | Pillar Docs", "");
-    const content = article.innerText || article.textContent || "";
+    const content = (article as HTMLElement).innerText || article.textContent || "";
     return `# ${title}\n\n${content}`;
   }, []);
 

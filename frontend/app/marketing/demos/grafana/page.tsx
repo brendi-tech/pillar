@@ -5,7 +5,6 @@ export const metadata: Metadata = {
   title: "Grafana Copilot Demo | Pillar",
   description:
     "Experience Pillar's AI-powered Grafana plugin. Navigate dashboards, write queries, and create visualizations with natural language.",
-  metadataBase: new URL("https://trypillar.com"),
   alternates: {
     canonical: "/demos/grafana",
   },
@@ -17,12 +16,21 @@ export const metadata: Metadata = {
     siteName: "Pillar",
     type: "website",
     locale: "en_US",
+    images: [
+      {
+        url: "/og-card.png",
+        width: 1280,
+        height: 640,
+        alt: "Pillar - The open-source product copilot",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Grafana Copilot Demo | Pillar",
     description:
       "Experience Pillar's AI-powered Grafana plugin. Navigate dashboards, write queries, and create visualizations with natural language.",
+    images: ["/og-card.png"],
   },
 };
 
