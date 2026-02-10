@@ -47,7 +47,7 @@ Pillar works across SaaS and web apps. A user could ask:
 
 Pillar understands the intent, builds a multi-step plan, and executes it using your UI — the same way the user would, but hands-free.
 
-*This repository contains the full Pillar platform: backend, admin dashboard, and all SDK packages.*
+*This repository contains the Pillar platform: backend API and admin dashboard. SDK packages are maintained separately — see [`sdk`](https://github.com/pillarhq/sdk), [`sdk-react`](https://github.com/pillarhq/sdk-react), and [`sdk-vue`](https://github.com/pillarhq/sdk-vue).*
 
 ---
 
@@ -121,8 +121,8 @@ That's it. Users can now ask the co-pilot to navigate to settings or export data
 ```bash
 git clone https://github.com/pillarhq/pillar.git
 cd pillar
-cp .env.example .env
-# Edit .env with your API keys
+cp backend/.env.example backend/.env
+# Edit backend/.env with your API keys
 docker compose up
 ```
 
@@ -148,7 +148,7 @@ Explore all features in the [documentation](https://trypillar.com/docs/overview/
 
 ## SDKs
 
-All SDK packages are [MIT-licensed](packages/sdk/LICENSE) — embed freely in proprietary applications.
+All SDK packages are MIT-licensed — embed freely in proprietary applications. Source code lives in standalone repos under [github.com/pillarhq](https://github.com/pillarhq).
 
 | Framework | Package | Install | Guide |
 |-----------|---------|---------|-------|
@@ -175,13 +175,9 @@ See the [React API Reference](https://trypillar.com/docs/reference/react) and [C
 ```
 backend/          Django API, RAG pipeline, MCP server, Hatchet workflows
 frontend/         Next.js admin dashboard
-packages/
-  sdk/            Core JavaScript SDK (MIT)
-  sdk-react/      React bindings (MIT)
-  sdk-vue/        Vue bindings (MIT)
-  sdk-angular/    Angular bindings (MIT)
-  pillar-ui/      Embeddable UI components (MIT)
 ```
+
+SDKs are maintained in separate repos: [`sdk`](https://github.com/pillarhq/sdk), [`sdk-react`](https://github.com/pillarhq/sdk-react), [`sdk-vue`](https://github.com/pillarhq/sdk-vue).
 
 **Stack:** Django + DRF, PostgreSQL + pgvector, Redis, Hatchet (workflow orchestration), Next.js, TypeScript
 
@@ -200,12 +196,12 @@ packages/
 ```bash
 git clone https://github.com/pillarhq/pillar.git
 cd pillar
-cp .env.example .env
-# Edit .env with your API keys and configuration
+cp backend/.env.example backend/.env
+# Edit backend/.env with your API keys and configuration
 docker compose up
 ```
 
-The API runs on port 8000 and the admin dashboard on port 3000. See `.env.example` for all configuration options.
+The API runs on port 8000 and the admin dashboard on port 3000. See `backend/.env.example` for all configuration options.
 
 For local development setup, see the [Contributing Guide](.github/CONTRIBUTING.md).
 
