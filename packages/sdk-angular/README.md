@@ -1,8 +1,25 @@
 # @pillar-ai/angular
 
-Angular bindings for [Pillar](https://trypillar.com) Embedded Help SDK.
+Angular SDK for the [Pillar](https://trypillar.com) open-source AI copilot — embed a product assistant in your Angular app that executes tasks, not just answers questions. [GitHub](https://github.com/pillarhq/pillar) · [Docs](https://trypillar.com/docs)
 
-Add contextual AI help and documentation to your Angular application with just a few lines of code.
+[![npm version](https://img.shields.io/npm/v/@pillar-ai/angular)](https://www.npmjs.com/package/@pillar-ai/angular)
+[![npm downloads](https://img.shields.io/npm/dm/@pillar-ai/angular)](https://www.npmjs.com/package/@pillar-ai/angular)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue)](https://www.typescriptlang.org/)
+
+## What is Pillar?
+
+Pillar is a product copilot for SaaS and web applications. Users say what they want, and Pillar uses your UI to make it happen — navigating pages, pre-filling forms, and calling your APIs.
+
+For example, a user could ask:
+
+> "Close the Walmart deal as won in Salesforce and notify implementation"
+
+> "Create a P1 bug in Linear for the checkout crash and add it to this sprint"
+
+> "How do I set up a webhook in Stripe?"
+
+Pillar understands the intent, builds a multi-step plan, and executes it client-side with the user's session.
 
 ## Requirements
 

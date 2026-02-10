@@ -1,9 +1,13 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/pillarhq/pillar/main/img/logo-light.svg" />
-    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/pillarhq/pillar/main/img/logo-dark.svg" />
-    <img alt="Pillar" src="https://raw.githubusercontent.com/pillarhq/pillar/main/img/logo-dark.svg" width="200" />
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/pillarhq/pillar/main/.github/img/logo-light.svg" />
+    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/pillarhq/pillar/main/.github/img/logo-dark.svg" />
+    <img alt="Pillar" src="https://raw.githubusercontent.com/pillarhq/pillar/main/.github/img/logo-dark.svg" width="200" />
   </picture>
+</p>
+
+<p align="center">
+  <a href="https://trypillar.com"><strong>Pillar is an open-source AI copilot SDK for SaaS — a product assistant that executes tasks, not just answers questions</strong></a>
 </p>
 
 <p align="center">
@@ -30,6 +34,18 @@
 **The open-source product copilot. Build AI agents into your app that execute tasks, not just answer questions.**
 
 [Pillar](https://trypillar.com) is an embeddable AI co-pilot SDK. Users say what they want, and Pillar uses your UI to make it happen — navigating pages, pre-filling forms, and calling your APIs. It runs client-side with the user's session, so there's no proxy servers or token forwarding.
+
+Pillar works across SaaS and web apps. A user could ask:
+
+> "Close the Walmart deal as won in Salesforce and notify implementation"
+
+> "Add a weekly signups chart to my Amplitude dashboard"
+
+> "Create a P1 bug in Linear for the checkout crash and add it to this sprint"
+
+> "How do I change my direct deposit in Rippling?"
+
+Pillar understands the intent, builds a multi-step plan, and executes it using your UI — the same way the user would, but hands-free.
 
 *This repository contains the full Pillar platform: backend, admin dashboard, and all SDK packages.*
 
@@ -191,7 +207,7 @@ docker compose up
 
 The API runs on port 8000 and the admin dashboard on port 3000. See `.env.example` for all configuration options.
 
-For local development setup, see the [Contributing Guide](CONTRIBUTING.md).
+For local development setup, see the [Contributing Guide](.github/CONTRIBUTING.md).
 
 ---
 
@@ -225,7 +241,7 @@ For enterprises that need to self-host without AGPL obligations, commercial lice
 
 ## Contributing
 
-We welcome contributions! Please read our [Contributing Guide](CONTRIBUTING.md) before submitting a pull request.
+We welcome contributions! Please read our [Contributing Guide](.github/CONTRIBUTING.md) before submitting a pull request.
 
 ---
 
@@ -236,7 +252,7 @@ This project uses a dual license model:
 - **AGPL-3.0** for the core product (backend + frontend). If you modify Pillar and run it as a service, you must release your modifications under AGPL-3.0. Using Pillar's API from your application does not trigger this obligation.
 - **MIT** for SDK packages in `packages/`. You can freely embed these in your proprietary applications.
 
-See [LICENSE](LICENSE) for the full AGPL-3.0 text and [NOTICE](NOTICE) for third-party attributions.
+See [LICENSE](LICENSE) for the full AGPL-3.0 text. Third-party dependency details are in `backend/pyproject.toml` and `frontend/package.json`.
 
 ---
 

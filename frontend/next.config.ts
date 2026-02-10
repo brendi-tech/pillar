@@ -117,7 +117,7 @@ const nextConfig: NextConfig = {
       },
       {
         // SEO metadata files - cache for 1 hour
-        source: "/(robots.txt|sitemap.xml)",
+        source: "/(robots.txt|sitemap.xml|llms.txt)",
         headers: [
           {
             key: "Cache-Control",

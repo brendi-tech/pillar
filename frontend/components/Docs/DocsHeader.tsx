@@ -1,9 +1,7 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { PillarLogoWithName } from "@/components/marketing/LandingPage/PillarLogoWithName";
-import { usePillar } from "@pillar-ai/react";
-import { Search, Sparkles } from "lucide-react";
+import { Search } from "lucide-react";
 import Link from "next/link";
 
 interface DocsHeaderProps {
@@ -11,8 +9,6 @@ interface DocsHeaderProps {
 }
 
 export function DocsHeader({ onOpenSearch }: DocsHeaderProps) {
-  const { open } = usePillar();
-
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       {/* Full-width container with centered search */}
@@ -38,16 +34,6 @@ export function DocsHeader({ onOpenSearch }: DocsHeaderProps) {
             </kbd>
           </button>
 
-          {/* Ask AI Button */}
-          <Button
-            onClick={() => open()}
-            variant="outline"
-            size="sm"
-            className="gap-2"
-          >
-            <Sparkles className="h-4 w-4" />
-            <span className="hidden sm:inline">Ask AI</span>
-          </Button>
         </div>
       </div>
     </header>

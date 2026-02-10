@@ -5,90 +5,131 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Copy, ChevronDown, Terminal } from "lucide-react";
-import { useState } from "react";
+import { Check, Copy, ChevronDown, ExternalLink, Terminal } from "lucide-react";
+import { useCallback, useState } from "react";
 
-interface DocsCopyButtonProps {
-  content: string; // Markdown content of the page
-  title: string;
-}
-
-export function DocsCopyButton({ content, title }: DocsCopyButtonProps) {
+export function DocsCopyButton() {
   const [copied, setCopied] = useState(false);
 
+  const getPageContent = useCallback(() => {
+    // Extract text content from the article element on the page
+    const article = document.querySelector("article.prose-hc");
+    if (!article) return "";
+    // Get the page title from the first h1, or from the document title
+    const h1 = article.querySelector("h1");
+    const title = h1?.textContent || document.title.replace(" | Pillar Docs", "");
+    const content = article.innerText || article.textContent || "";
+    return `# ${title}\n\n${content}`;
+  }, []);
+
   const handleCopyPage = async () => {
-    await navigator.clipboard.writeText(`# ${title}\n\n${content}`);
+    const text = getPageContent();
+    await navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleOpenChatGPT = () => {
+    const pageUrl = encodeURIComponent(window.location.href);
+    const chatUrl = `https://chatgpt.com/?hints=search&q=Read+this+page+and+answer+my+questions:+${pageUrl}`;
+    window.open(chatUrl, "_blank");
+  };
+
+  const handleOpenClaude = () => {
+    const pageUrl = encodeURIComponent(window.location.href);
+    const claudeUrl = `https://claude.ai/new?q=Read+this+page+and+answer+my+questions:+${pageUrl}`;
+    window.open(claudeUrl, "_blank");
+  };
+
   const handleConnectCursor = () => {
-    // Cursor MCP install protocol: cursor://anysphere.cursor-deeplink/mcp/install?...
-    const mcpConfig = {
-      name: "pillar-docs",
-      command: "npx",
-      args: [
-        "-y",
-        "@anthropic-ai/mcp-remote@latest",
-        "https://api.tri-pillar.com/mcp/pillar-docs/sse",
-      ],
+    const config = {
+      url: "https://api.tri-pillar.com/mcp/pillar-docs/sse",
     };
-    const url = `cursor://anysphere.cursor-deeplink/mcp/install?name=${mcpConfig.name}&config=${encodeURIComponent(JSON.stringify(mcpConfig))}`;
-    window.open(url, "_blank");
+    const configBase64 = btoa(JSON.stringify(config));
+    const encodedName = encodeURIComponent("pillar-docs");
+    window.location.href = `cursor://anysphere.cursor-mcp/install?name=${encodedName}&config=${configBase64}`;
   };
 
   const handleConnectVSCode = () => {
-    // VS Code MCP install (similar pattern)
-    const mcpConfig = {
-      name: "pillar-docs",
-      command: "npx",
-      args: [
-        "-y",
-        "@anthropic-ai/mcp-remote@latest",
-        "https://api.tri-pillar.com/mcp/pillar-docs/sse",
-      ],
+    const config = {
+      url: "https://api.tri-pillar.com/mcp/pillar-docs/sse",
     };
-    const url = `vscode://anthropic.claude-mcp/install?config=${encodeURIComponent(JSON.stringify(mcpConfig))}`;
-    window.open(url, "_blank");
+    const configBase64 = btoa(JSON.stringify(config));
+    const encodedName = encodeURIComponent("pillar-docs");
+    window.location.href = `vscode://anthropic.claude-mcp/install?name=${encodedName}&config=${configBase64}`;
   };
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2">
-          <Copy className="h-4 w-4" />
-          {copied ? "Copied!" : "Copy page"}
-          <ChevronDown className="h-3 w-3" />
+          {copied ? (
+            <>
+              <Check className="h-4 w-4" />
+              Copied!
+            </>
+          ) : (
+            <>
+              <Copy className="h-4 w-4" />
+              Copy page
+            </>
+          )}
+          <ChevronDown className="h-3 w-3 opacity-50" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
+      <DropdownMenuContent align="end" className="w-64">
         <DropdownMenuItem onClick={handleCopyPage}>
           <Copy className="h-4 w-4 mr-2" />
-          <div>
-            <div className="font-medium">Copy page</div>
-            <div className="text-xs text-muted-foreground">
+          <div className="flex flex-col">
+            <span className="font-medium">Copy page</span>
+            <span className="text-xs text-muted-foreground">
               Copy page as Markdown for LLMs
-            </div>
+            </span>
           </div>
         </DropdownMenuItem>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuItem onClick={handleOpenChatGPT}>
+          <ExternalLink className="h-4 w-4 mr-2" />
+          <div className="flex flex-col">
+            <span className="font-medium">Open in ChatGPT</span>
+            <span className="text-xs text-muted-foreground">
+              Ask questions about this page
+            </span>
+          </div>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleOpenClaude}>
+          <ExternalLink className="h-4 w-4 mr-2" />
+          <div className="flex flex-col">
+            <span className="font-medium">Open in Claude</span>
+            <span className="text-xs text-muted-foreground">
+              Ask questions about this page
+            </span>
+          </div>
+        </DropdownMenuItem>
+
+        <DropdownMenuSeparator />
+
         <DropdownMenuItem onClick={handleConnectCursor}>
           <Terminal className="h-4 w-4 mr-2" />
-          <div>
-            <div className="font-medium">Connect to Cursor</div>
-            <div className="text-xs text-muted-foreground">
+          <div className="flex flex-col">
+            <span className="font-medium">Connect to Cursor</span>
+            <span className="text-xs text-muted-foreground">
               Install MCP Server on Cursor
-            </div>
+            </span>
           </div>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handleConnectVSCode}>
           <Terminal className="h-4 w-4 mr-2" />
-          <div>
-            <div className="font-medium">Connect to VS Code</div>
-            <div className="text-xs text-muted-foreground">
+          <div className="flex flex-col">
+            <span className="font-medium">Connect to VS Code</span>
+            <span className="text-xs text-muted-foreground">
               Install MCP Server on VS Code
-            </div>
+            </span>
           </div>
         </DropdownMenuItem>
       </DropdownMenuContent>

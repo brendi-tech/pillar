@@ -238,8 +238,8 @@ class KnowledgeWebhookProcessor:
                 external_id=external_id,
             )
             
-            # Check if content changed
-            if existing.content_hash == content_hash:
+            # Skip only if content unchanged AND already successfully indexed
+            if existing.content_hash == content_hash and existing.status == KnowledgeItem.Status.INDEXED:
                 return 'skipped'
             
             # Update existing

@@ -7,9 +7,52 @@ import { getAllBlogPosts } from "@/lib/blog-content";
  * Includes:
  * - Marketing pages (/, /assistant)
  * - Blog index and individual posts
+ * - Documentation pages
+ * - LLM discoverability pages
  *
  * Next.js automatically serves this at /sitemap.xml
  */
+
+/** All canonical documentation page paths (excluding redirect sources). */
+const DOC_PAGES = [
+  // Overview
+  "overview/introduction",
+  "overview/how-it-works",
+  // Quickstarts
+  "quickstarts/react",
+  "quickstarts/vanilla",
+  // Features
+  "features/actions",
+  "features/chat",
+  "features/custom-cards",
+  "features/human-escalation",
+  "features/knowledge-base",
+  // Guides
+  "guides/actions",
+  "guides/actions-sync",
+  "guides/agent-guidance",
+  "guides/context",
+  "guides/custom-cards",
+  "guides/edge-trigger",
+  "guides/human-escalation",
+  "guides/panel",
+  "guides/testing",
+  "guides/text-selection",
+  "guides/theme",
+  // Knowledge Base
+  "knowledge-base/overview",
+  "knowledge-base/website",
+  "knowledge-base/files",
+  "knowledge-base/cloud-storage",
+  "knowledge-base/snippets",
+  // Reference
+  "reference/core",
+  "reference/react",
+  "reference/action-types",
+  "reference/events",
+  "reference/theme-options",
+];
+
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = "https://trypillar.com";
 
@@ -30,10 +73,22 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.9,
     },
     {
+      url: `${baseUrl}/demos`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.7,
+    },
+    {
       url: `${baseUrl}/blog`,
       lastModified: new Date(),
       changeFrequency: "weekly",
       priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/for-llms`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.5,
     },
   ];
 
@@ -44,5 +99,26 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.6,
   }));
 
-  return [...staticPages, ...blogPages];
+  const docPages: MetadataRoute.Sitemap = DOC_PAGES.map((page) => ({
+    url: `${baseUrl}/docs/${page}`,
+    lastModified: new Date(),
+    changeFrequency: "monthly" as const,
+    priority: 0.7,
+  }));
+
+  const demoPages: MetadataRoute.Sitemap = [
+    "banking",
+    "crm",
+    "analytics",
+    "pm",
+    "hr",
+    "grafana",
+  ].map((slug) => ({
+    url: `${baseUrl}/demos/${slug}`,
+    lastModified: new Date(),
+    changeFrequency: "monthly" as const,
+    priority: 0.6,
+  }));
+
+  return [...staticPages, ...blogPages, ...docPages, ...demoPages];
 }

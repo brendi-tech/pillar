@@ -20,7 +20,7 @@ export function DocsLayoutClient({ children }: DocsLayoutClientProps) {
       {/* Command palette modal */}
       <DocsSearchCommand open={searchOpen} onOpenChange={setSearchOpen} />
 
-      {/* Desktop header with logo, search, Ask AI */}
+      {/* Desktop header with logo and search */}
       <div className="hidden lg:block sticky top-0 w-full z-1">
         <DocsHeader onOpenSearch={() => setSearchOpen(true)} />
       </div>

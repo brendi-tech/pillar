@@ -1,7 +1,7 @@
 {
   "name": "@pillar-ai/react",
   "version": "0.1.8",
-  "description": "React bindings for Pillar Embedded Help SDK",
+  "description": "React SDK for Pillar product copilot — AI assistant for SaaS and web apps",
   "type": "module",
   "main": "./dist/index.esm.js",
   "module": "./dist/index.esm.js",
@@ -27,11 +27,14 @@
   },
   "keywords": [
     "react",
-    "help",
-    "documentation",
-    "support",
-    "chat",
-    "ai"
+    "copilot",
+    "assistant",
+    "ai",
+    "sdk",
+    "saas",
+    "embedded",
+    "agent",
+    "nextjs"
   ],
   "author": "Pillar Team",
   "license": "MIT",

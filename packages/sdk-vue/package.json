@@ -1,7 +1,7 @@
 {
   "name": "@pillar-ai/vue",
   "version": "0.1.8",
-  "description": "Vue bindings for Pillar Embedded Help SDK",
+  "description": "Vue 3 SDK for Pillar product copilot — AI assistant for SaaS and web apps",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.esm.js",
@@ -27,11 +27,14 @@
   "keywords": [
     "vue",
     "vue3",
-    "help",
-    "documentation",
-    "support",
-    "chat",
-    "ai"
+    "copilot",
+    "assistant",
+    "ai",
+    "sdk",
+    "saas",
+    "embedded",
+    "agent",
+    "nuxt"
   ],
   "author": "Pillar Team",
   "license": "MIT",

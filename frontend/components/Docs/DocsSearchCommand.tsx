@@ -7,11 +7,9 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-  CommandSeparator,
 } from "@/components/ui/command";
 import { searchDocs, type SearchResult } from "@/lib/docs-search-api";
-import { usePillar } from "@pillar-ai/react";
-import { Hash, Sparkles } from "lucide-react";
+import { Hash } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
@@ -28,7 +26,6 @@ export function DocsSearchCommand({
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
-  const { open: openPanel } = usePillar();
   const router = useRouter();
 
   // Reset state when dialog closes
@@ -85,16 +82,6 @@ export function DocsSearchCommand({
     [onOpenChange, router]
   );
 
-  const handleAskAI = useCallback(() => {
-    onOpenChange(false);
-    if (query.trim()) {
-      // Send the full phrased question to match what the user sees in the UI
-      openPanel({ search: `Can you tell me about "${query.trim()}"?` });
-    } else {
-      openPanel(); // Just opens panel
-    }
-  }, [onOpenChange, query, openPanel]);
-
   // Parse breadcrumb from URL or source_name
   const getBreadcrumb = (result: SearchResult): string => {
     if (result.source_name) {
@@ -113,7 +100,7 @@ export function DocsSearchCommand({
       open={open}
       onOpenChange={onOpenChange}
       title="Search documentation"
-      description="Search for docs or ask AI"
+      description="Search documentation"
       className="max-w-[600px]"
     >
       <CommandInput
@@ -163,21 +150,6 @@ export function DocsSearchCommand({
           </CommandGroup>
         )}
 
-        <CommandSeparator />
-
-        <CommandGroup heading="Ask AI assistant">
-          <CommandItem
-            onSelect={handleAskAI}
-            className="flex items-center gap-3 py-3"
-          >
-            <Sparkles className="h-4 w-4 text-primary" />
-            <span>
-              {query.trim()
-                ? `Can you tell me about "${query.trim()}"?`
-                : "Ask AI assistant"}
-            </span>
-          </CommandItem>
-        </CommandGroup>
       </CommandList>
     </CommandDialog>
   );

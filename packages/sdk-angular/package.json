@@ -1,7 +1,7 @@
 {
   "name": "@pillar-ai/angular",
   "version": "0.1.8",
-  "description": "Angular bindings for Pillar Embedded Help SDK",
+  "description": "Angular SDK for Pillar product copilot — AI assistant for SaaS and web apps",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
@@ -26,11 +26,13 @@
   },
   "keywords": [
     "angular",
-    "help",
-    "documentation",
-    "support",
-    "chat",
-    "ai"
+    "copilot",
+    "assistant",
+    "ai",
+    "sdk",
+    "saas",
+    "embedded",
+    "agent"
   ],
   "author": "Pillar Team",
   "license": "MIT",

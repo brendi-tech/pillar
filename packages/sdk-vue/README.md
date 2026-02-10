@@ -1,6 +1,6 @@
 # @pillar-ai/vue
 
-Vue 3 bindings for Pillar — Cursor for your product.
+Vue 3 SDK for the [Pillar](https://trypillar.com) open-source AI copilot — embed a product assistant in your Vue or Nuxt app that executes tasks, not just answers questions. [GitHub](https://github.com/pillarhq/pillar) · [Docs](https://trypillar.com/docs)
 
 [![npm version](https://img.shields.io/npm/v/@pillar-ai/vue)](https://www.npmjs.com/package/@pillar-ai/vue)
 [![npm downloads](https://img.shields.io/npm/dm/@pillar-ai/vue)](https://www.npmjs.com/package/@pillar-ai/vue)
@@ -9,7 +9,17 @@ Vue 3 bindings for Pillar — Cursor for your product.
 
 ## What is Pillar?
 
-Pillar is an embedded AI co-pilot that helps users complete tasks, not just answer questions. Users say what they want, and Pillar uses your UI to make it happen — navigating pages, pre-filling forms, and calling your APIs.
+Pillar is a product copilot for SaaS and web applications. Users say what they want, and Pillar uses your UI to make it happen — navigating pages, pre-filling forms, and calling your APIs.
+
+For example, a user could ask:
+
+> "Close the Walmart deal as won in Salesforce and notify implementation"
+
+> "Add a weekly signups chart to my Amplitude dashboard"
+
+> "How do I change my direct deposit in Rippling?"
+
+Pillar understands the intent, builds a multi-step plan, and executes it client-side with the user's session.
 
 ## Features
 

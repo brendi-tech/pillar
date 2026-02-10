@@ -25,9 +25,35 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
     return { title: 'Not Found | Pillar Blog' };
   }
 
+  const description = post.frontmatter.description || post.frontmatter.subtitle || post.frontmatter.title;
+  const url = `https://trypillar.com/blog/${slug}`;
+
   return {
     title: `${post.frontmatter.title} | Pillar Blog`,
-    description: post.frontmatter.description || post.frontmatter.subtitle,
+    description,
+    alternates: {
+      canonical: url,
+    },
+    openGraph: {
+      title: post.frontmatter.title,
+      description,
+      url,
+      siteName: 'Pillar',
+      type: 'article',
+      publishedTime: post.frontmatter.date,
+      ...(post.frontmatter.author && { authors: [post.frontmatter.author] }),
+      ...(post.frontmatter.image && {
+        images: [{ url: post.frontmatter.image }],
+      }),
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: post.frontmatter.title,
+      description,
+      ...(post.frontmatter.image && {
+        images: [post.frontmatter.image],
+      }),
+    },
   };
 }
 
@@ -39,8 +65,39 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     notFound();
   }
 
+  const articleJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: post.frontmatter.title,
+    description: post.frontmatter.description || post.frontmatter.subtitle || post.frontmatter.title,
+    datePublished: post.frontmatter.date,
+    url: `https://trypillar.com/blog/${slug}`,
+    ...(post.frontmatter.author && {
+      author: {
+        '@type': 'Person',
+        name: post.frontmatter.author,
+      },
+    }),
+    ...(post.frontmatter.image && {
+      image: post.frontmatter.image,
+    }),
+    publisher: {
+      '@type': 'Organization',
+      name: 'Pillar',
+      url: 'https://trypillar.com',
+      logo: {
+        '@type': 'ImageObject',
+        url: 'https://trypillar.com/pillar-logo.png',
+      },
+    },
+  };
+
   return (
     <article className="max-w-3xl mx-auto">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
+      />
       <div className="mb-8">
         <Link 
           href="/blog"

@@ -172,6 +172,12 @@ export default async function RootLayout({
         <html lang="en" suppressHydrationWarning>
           <head>
             <link rel="icon" href="/favicon.ico" sizes="32x32" />
+            <link
+              rel="alternate"
+              type="application/rss+xml"
+              title="Pillar Blog"
+              href="https://trypillar.com/blog/feed.xml"
+            />
           </head>
           <GoogleAnalytics gaId="G-VRNTGFMQMR" />
           <body className={bodyClasses} style={bodyStyle}>
@@ -194,6 +200,12 @@ export default async function RootLayout({
       <html lang="en" suppressHydrationWarning>
         <head>
           <link rel="icon" href="/favicon.ico" sizes="32x32" />
+          <link
+            rel="alternate"
+            type="application/rss+xml"
+            title="Pillar Blog"
+            href="https://trypillar.com/blog/feed.xml"
+          />
         </head>
         <GoogleAnalytics gaId="G-VRNTGFMQMR" />
         <body className={bodyClasses} style={bodyStyle}>

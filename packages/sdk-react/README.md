@@ -1,6 +1,6 @@
 # @pillar-ai/react
 
-React bindings for Pillar — Cursor for your product.
+React SDK for the [Pillar](https://trypillar.com) open-source AI copilot — embed a product assistant in your React or Next.js app that executes tasks, not just answers questions. [GitHub](https://github.com/pillarhq/pillar) · [Docs](https://trypillar.com/docs)
 
 [![npm version](https://img.shields.io/npm/v/@pillar-ai/react)](https://www.npmjs.com/package/@pillar-ai/react)
 [![npm downloads](https://img.shields.io/npm/dm/@pillar-ai/react)](https://www.npmjs.com/package/@pillar-ai/react)
@@ -9,7 +9,17 @@ React bindings for Pillar — Cursor for your product.
 
 ## What is Pillar?
 
-Pillar is an embedded AI co-pilot that helps users complete tasks, not just answer questions. Users say what they want, and Pillar uses your UI to make it happen — navigating pages, pre-filling forms, and calling your APIs.
+Pillar is a product copilot for SaaS and web applications. Users say what they want, and Pillar uses your UI to make it happen — navigating pages, pre-filling forms, and calling your APIs.
+
+For example, a user could ask:
+
+> "Close the Walmart deal as won in Salesforce and notify implementation"
+
+> "Add a weekly signups chart to my Amplitude dashboard"
+
+> "Create a P1 bug in Linear for the checkout crash and add it to this sprint"
+
+Pillar understands the intent, builds a multi-step plan, and executes it client-side with the user's session.
 
 ## Features
 

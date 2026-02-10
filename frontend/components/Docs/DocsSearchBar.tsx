@@ -1,9 +1,7 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Sparkles } from "lucide-react";
-import { usePillar } from "@pillar-ai/react";
+import { Search } from "lucide-react";
 import { useState, useCallback } from "react";
 
 interface DocsSearchBarProps {
@@ -12,22 +10,14 @@ interface DocsSearchBarProps {
 }
 
 export function DocsSearchBar({ compact = false }: DocsSearchBarProps) {
-  const { open } = usePillar();
   const [query, setQuery] = useState("");
 
   const handleSearch = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault();
-      if (query.trim()) {
-        open({ search: query.trim() });
-      }
     },
-    [query, open]
+    []
   );
-
-  const handleAskAI = useCallback(() => {
-    open();
-  }, [open]);
 
   if (compact) {
     // Compact vertical layout for sidebar
@@ -47,17 +37,6 @@ export function DocsSearchBar({ compact = false }: DocsSearchBarProps) {
             ⌘K
           </kbd>
         </form>
-
-        {/* Ask AI Button */}
-        <Button
-          onClick={handleAskAI}
-          variant="outline"
-          size="sm"
-          className="w-full gap-2 border-muted-foreground/20"
-        >
-          <Sparkles className="h-4 w-4" />
-          Ask AI
-        </Button>
       </div>
     );
   }
@@ -79,17 +58,6 @@ export function DocsSearchBar({ compact = false }: DocsSearchBarProps) {
           ⌘K
         </kbd>
       </form>
-
-      {/* Ask AI Button */}
-      <Button
-        onClick={handleAskAI}
-        variant="outline"
-        size="sm"
-        className="gap-2 border-muted-foreground/20 shrink-0"
-      >
-        <Sparkles className="h-4 w-4" />
-        Ask AI
-      </Button>
     </div>
   );
 }
