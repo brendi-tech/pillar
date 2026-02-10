@@ -40,7 +40,7 @@
 - **One install, fully yours**: `npm install` and go. Define actions, customize UI and behavior — all in your own code. No black boxes.
 - **Actions, not just answers**: Navigate pages, pre-fill forms, call APIs. The assistant does things on behalf of users, not just explains how.
 - **Client-side execution**: Runs in the user's browser with their session. Same auth, no proxy servers, no token forwarding.
-- **Managed knowledge**: Crawls your docs and integrates with Zendesk, Intercom, YouTube, files, and more. RAG that stays fresh automatically.
+- **Managed knowledge**: Crawls your docs and integrates with your content sources — websites, files, cloud storage, and snippets. RAG that stays fresh automatically.
 - **MCP server included**: Claude, ChatGPT, and other AI tools can query your product's knowledge base out of the box.
 - **Multi-framework SDKs**: React, Vue, Angular, and vanilla JS. All MIT-licensed, embed freely in proprietary apps.
 
@@ -119,7 +119,7 @@ The API runs on port 8000, the admin dashboard on port 3000. See [Self-Hosting](
 | Feature | Description | |
 |---------|-------------|-|
 | **Actions** | Navigate pages, pre-fill forms, call APIs — the assistant executes, not just explains | [Docs](https://trypillar.com/docs/features/actions) |
-| **Knowledge Base** | Ingest from websites, Zendesk, Intercom, files, YouTube, and more | [Docs](https://trypillar.com/docs/knowledge-base/overview) |
+| **Knowledge Base** | Ingest from websites, files, cloud storage (S3/GCS), and snippets | [Docs](https://trypillar.com/docs/knowledge-base/overview) |
 | **AI Chat** | Streaming, context-aware responses grounded in your documentation | [Docs](https://trypillar.com/docs/features/chat) |
 | **Custom Cards** | Render interactive UI for confirmations and data input inline in chat | [Docs](https://trypillar.com/docs/features/custom-cards) |
 | **Human Escalation** | Hand off to Intercom, Zendesk, Freshdesk, or a custom support flow | [Docs](https://trypillar.com/docs/features/human-escalation) |
