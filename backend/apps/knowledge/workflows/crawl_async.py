@@ -265,7 +265,7 @@ async def process_async_crawl_workflow(workflow_input: CrawlProcessInput, contex
     try:
         logger.info(f"[KNOWLEDGE CRAWL] Processing crawl for source {source_id}")
         
-        source = await KnowledgeSource.objects.select_related('organization').aget(id=source_id)
+        source = await KnowledgeSource.objects.select_related('organization', 'product').aget(id=source_id)
         
         crawl_config = source.crawl_config or {}
         job_id = crawl_config.get('firecrawl_job_id')
