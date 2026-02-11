@@ -74,6 +74,13 @@ const demos = [
     prompt: "Try a live, interactive demo",
     description: "An iframe demo with a writeup and guided prompts.",
   },
+  {
+    slug: "superset",
+    title: "Superset Copilot (Interactive)",
+    prompt: "Try a live, interactive demo",
+    description:
+      "Explore dashboards, create charts, and query data with the Pillar AI assistant inside Apache Superset.",
+  },
 ];
 
 export default function Page() {

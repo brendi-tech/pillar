@@ -2,6 +2,7 @@
 
 import { ChatShowcase } from "./ChatShowcase";
 import { GridBackground } from "./GridBackground";
+import { LiveDemoBar } from "./LiveDemoBar";
 import { NumberedHeading } from "./NumberedHeading";
 
 /**
@@ -60,6 +61,9 @@ export function DemoSection() {
 
             {/* Chat Showcase Demo */}
             <ChatShowcase />
+
+            {/* Live demo links */}
+            <LiveDemoBar />
           </div>
         </div>
       </section>

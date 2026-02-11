@@ -5,15 +5,15 @@ import { MarketingNavbar } from "@/components/MarketingPage/MarketingNavbar";
 import { ExternalLink } from "lucide-react";
 import Link from "next/link";
 
-const GRAFANA_DEMO_URL =
-  process.env.NEXT_PUBLIC_GRAFANA_DEMO_URL ||
-  "https://grafana-copilot-demo-xxxxxxxxxx-uc.a.run.app";
+const SUPERSET_DEMO_URL =
+  process.env.NEXT_PUBLIC_SUPERSET_DEMO_URL ||
+  "https://superset.trypillar.com";
 
 /**
- * GrafanaDemoPage - Minimal demo page that lets the live Grafana iframe
+ * SupersetDemoPage - Minimal demo page that lets the live Superset iframe
  * speak for itself. Just navbar, a slim header, and the full-height embed.
  */
-export function GrafanaDemoPage() {
+export function SupersetDemoPage() {
   return (
     <div className="min-h-screen bg-[#F3EFE8] flex flex-col">
       <MarketingNavbar />
@@ -29,11 +29,11 @@ export function GrafanaDemoPage() {
           </Link>
           <span className="text-[#D4D4D4]">/</span>
           <h1 className="text-sm font-medium text-[#1A1A1A]">
-            Grafana Copilot
+            Superset Copilot
           </h1>
         </div>
         <Link
-          href={GRAFANA_DEMO_URL}
+          href={SUPERSET_DEMO_URL}
           target="_blank"
           className="inline-flex items-center gap-1.5 text-sm text-[#6B6B6B] hover:text-[#1A1A1A] transition-colors"
         >
@@ -55,11 +55,11 @@ export function GrafanaDemoPage() {
               </div>
               <div className="flex-1 flex justify-center">
                 <div className="bg-[#333] rounded-md px-4 py-0.5 text-xs text-[#999] max-w-sm w-full text-center">
-                  trypillar.com/demos/grafana
+                  superset.trypillar.com
                 </div>
               </div>
               <Link
-                href={GRAFANA_DEMO_URL}
+                href={SUPERSET_DEMO_URL}
                 target="_blank"
                 className="text-[#999] hover:text-white transition-colors"
                 title="Open in new tab"
@@ -69,9 +69,9 @@ export function GrafanaDemoPage() {
             </div>
 
             <iframe
-              src={GRAFANA_DEMO_URL}
+              src={SUPERSET_DEMO_URL}
               className="w-full h-full border-0 pt-9"
-              title="Grafana Copilot Demo"
+              title="Superset Copilot Demo"
               allow="clipboard-write"
               loading="lazy"
             />

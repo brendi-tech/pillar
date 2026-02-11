@@ -15,6 +15,7 @@
   <a href="https://www.npmjs.com/package/@pillar-ai/sdk"><img src="https://img.shields.io/npm/v/@pillar-ai/sdk" alt="npm version" /></a>
   <a href="https://www.npmjs.com/package/@pillar-ai/sdk"><img src="https://img.shields.io/npm/dm/@pillar-ai/sdk" alt="npm downloads" /></a>
   <a href="https://discord.gg/uhVFmGMW"><img src="https://img.shields.io/discord/1470491094847324538?logo=discord&label=Discord" alt="Discord" /></a>
+  <a href="https://github.com/pillarhq/pillar/commits/main"><img src="https://img.shields.io/github/last-commit/pillarhq/pillar" alt="Last Commit" /></a>
 </p>
 
 <p align="center">
