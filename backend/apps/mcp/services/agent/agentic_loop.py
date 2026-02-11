@@ -1368,6 +1368,10 @@ async def run_agentic_loop(
             
             logger.info(f"[AgenticLoop] Getting full article: {item_id}")
             
+            tool_event = emit_tool_call_start("get_article", arguments)
+            tool_id = tool_event["data"]["id"]
+            yield tool_event
+            
             tool_start = time.time()
             result = await tool_executor.execute_get_article(item_id)
             
@@ -1379,19 +1383,7 @@ async def run_agentic_loop(
             )
             
             is_success = "error" not in result
-            display_trace.append({
-                "step_type": "tool_result",
-                "iteration": iteration,
-                "timestamp_ms": int(time.time() * 1000) - start_time_ms,
-                "tool": "get_article",
-                "kind": "tool_call",
-                "label": "Completed Get article" if is_success else "Failed Get article",
-                "item_id": item_id,
-                "arguments": {"item_id": item_id},
-                "success": is_success,
-            })
-            
-            if "error" in result:
+            if not is_success:
                 result_content = f"Error: {result['error']}"
             else:
                 title = result.get("title", "Untitled")
@@ -1402,11 +1394,30 @@ async def run_agentic_loop(
                     result_content += f" ({url})"
                 result_content += f"\n\n{content}"
             
+            display_name = format_tool_name_for_display("get_article")
+            display_trace.append({
+                "step_type": "tool_result",
+                "iteration": iteration,
+                "timestamp_ms": int(time.time() * 1000) - start_time_ms,
+                "tool": "get_article",
+                "kind": "tool_call",
+                "label": f"Completed {display_name}" if is_success else f"Failed {display_name}",
+                "item_id": item_id,
+                "arguments": {"item_id": item_id},
+                "success": is_success,
+            })
+            
             messages.append(format_tool_result_message_native(
                 tool_call_id=tool_call_id,
                 result_content=result_content,
             ))
             await _noop_persist()
+            
+            yield emit_tool_call_complete(
+                tool_id, "get_article", success=is_success,
+                result_summary=f"Retrieved article: {result.get('title', 'Untitled')}" if is_success else result_content,
+                arguments=arguments,
+            )
             
             # Signal thinking step completion
             if thinking_started:
