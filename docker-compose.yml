@@ -12,7 +12,7 @@ services:
       POSTGRES_USER: ${HC_POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${HC_POSTGRES_PASSWORD:-postgres}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
     healthcheck:
       test: pg_isready -U ${HC_POSTGRES_USER:-postgres}
       start_period: 30s
@@ -55,7 +55,7 @@ services:
         condition: service_healthy
     command: >
       sh -c "python manage.py migrate --noinput &&
-             uvicorn config.asgi:application --host 0.0.0.0 --port 8000 --log-level info"
+             gunicorn config.asgi:application -c gunicorn.conf.py"
 
   worker:
     profiles: ["app"]

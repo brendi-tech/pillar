@@ -28,7 +28,6 @@ urlpatterns = [
     path('conversations/', conversation_history.list_conversations, name='mcp_list_conversations'),
     path('conversations/<str:conversation_id>/', conversation_history.get_conversation, name='mcp_get_conversation'),
     
-    # Session resumption endpoints
+    # Session resumption - status check (resume now flows through the ask tool)
     path('conversations/<str:conversation_id>/status/', session_resume.get_conversation_status, name='mcp_conversation_status'),
-    path('conversations/<str:conversation_id>/resume/', session_resume.resume_conversation, name='mcp_resume_conversation'),
 ]

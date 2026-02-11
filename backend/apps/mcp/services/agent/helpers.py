@@ -36,9 +36,8 @@ _query_results: Dict[str, Dict[str, Any]] = {}
 # Cleanup threshold: remove entries older than this (seconds)
 _RESULT_TTL_SECONDS = 300  # 5 minutes
 
-# Redis key prefixes
+# Redis key prefix
 _REDIS_RESULT_PREFIX = "mcp:query_result:"
-_REDIS_CHANNEL_PREFIX = "mcp:query_signal:"
 
 
 def _get_redis_client():
@@ -55,10 +54,6 @@ def _get_result_key(session_id: str, tool_call_id: str) -> str:
     """Get Redis key for storing result."""
     return f"{_REDIS_RESULT_PREFIX}{session_id}:{tool_call_id}"
 
-
-def _get_channel_name(session_id: str, tool_call_id: str) -> str:
-    """Get Redis pub/sub channel name."""
-    return f"{_REDIS_CHANNEL_PREFIX}{session_id}:{tool_call_id}"
 
 
 def get_smart_context(result: Dict) -> str:
@@ -316,29 +311,25 @@ async def _wait_for_result_redis(
     timeout: float,
     cancel_event,
 ) -> Optional[Dict[str, Any]]:
-    """Wait for result using Redis pub/sub."""
-    channel_name = _get_channel_name(session_id, tool_call_id)
+    """Wait for result by polling a Redis key.
+    
+    Uses non-blocking key polling with async sleep instead of pub/sub.
+    
+    The previous implementation used redis pubsub with a synchronous
+    pubsub.get_message(timeout=0.1) call that blocked the ASGI event
+    loop for 100ms per iteration. This prevented the server from
+    processing incoming HTTP requests (like the action/result POST
+    from the SDK), causing 60-second timeouts.
+    
+    The new approach polls the Redis key directly and uses
+    await asyncio.sleep() between polls, which fully yields to the
+    event loop and allows other requests to be processed.
+    """
     result_key = _get_result_key(session_id, tool_call_id)
+    poll_interval = 0.5  # 500ms between polls
+    start_time = time.time()
     
-    # First check if result already exists in Redis (race condition handling)
     try:
-        existing = redis_client.get(result_key)
-        if existing:
-            logger.info(f"[QueryResult] Found existing result in Redis for {action_name} (tool_call_id={tool_call_id})")
-            return json.loads(existing)
-    except Exception as e:
-        logger.warning(f"[QueryResult] Redis get failed: {e}")
-    
-    # Subscribe to the channel for real-time notification
-    pubsub = None
-    try:
-        pubsub = redis_client.pubsub()
-        pubsub.subscribe(channel_name)
-        
-        # Poll for messages with timeout
-        start_time = time.time()
-        poll_interval = 0.1  # 100ms polling
-        
         while True:
             # Check cancellation
             if cancel_event and cancel_event.is_set():
@@ -358,25 +349,23 @@ async def _wait_for_result_redis(
                     "hint": "The client may be slow to respond. Consider retrying or checking the action parameters.",
                 }
             
-            # Check for message (non-blocking)
-            message = pubsub.get_message(timeout=poll_interval)
-            if message and message['type'] == 'message':
-                # Signal received - fetch result from Redis
-                try:
-                    result_data = redis_client.get(result_key)
-                    if result_data:
-                        result = json.loads(result_data)
-                        logger.info(f"[QueryResult] Received result for {action_name} (Redis)")
-                        return result
-                except Exception as e:
-                    logger.error(f"[QueryResult] Failed to fetch result from Redis: {e}")
-                    return None
+            # Poll Redis for result (non-blocking - fast synchronous GET)
+            try:
+                result_data = redis_client.get(result_key)
+                if result_data:
+                    result = json.loads(result_data)
+                    logger.info(f"[QueryResult] Received result for {action_name} (Redis)")
+                    return result
+            except Exception as e:
+                logger.warning(f"[QueryResult] Redis get failed during poll: {e}")
+                # Continue polling - transient Redis errors may recover
             
-            # Yield to event loop
-            await asyncio.sleep(0)
+            # Non-blocking async sleep - fully yields to the event loop
+            # so the ASGI server can process other HTTP requests
+            await asyncio.sleep(poll_interval)
             
     except Exception as e:
-        logger.warning(f"[QueryResult] Redis pub/sub error: {e}")
+        logger.warning(f"[QueryResult] Redis polling error: {e}")
         return {
             "error": f"Communication error while waiting for {action_name}: {str(e)}",
             "tool": "execute",
@@ -384,13 +373,6 @@ async def _wait_for_result_redis(
             "recoverable": True,
             "hint": "Redis communication failed. The query may still be processing.",
         }
-    finally:
-        if pubsub:
-            try:
-                pubsub.unsubscribe(channel_name)
-                pubsub.close()
-            except Exception:
-                pass
 
 
 async def _wait_for_result_memory(
@@ -511,6 +493,9 @@ def signal_query_result(session_id: str, action_name: str, result: Any, tool_cal
     if redis_client:
         signaled = _signal_result_redis(redis_client, session_id, action_name, result, tool_call_id)
         if signaled:
+            # Also store in memory so the fallback check in
+            # wait_for_query_result always has data available
+            _signal_result_memory(session_id, action_name, result, tool_call_id)
             return True
         # Fall through to in-memory as backup
     
@@ -525,8 +510,7 @@ def _signal_result_redis(
     result: Any,
     tool_call_id: str,
 ) -> bool:
-    """Signal result using Redis pub/sub."""
-    channel_name = _get_channel_name(session_id, tool_call_id)
+    """Signal result by storing in Redis with TTL."""
     result_key = _get_result_key(session_id, tool_call_id)
     
     try:
@@ -534,12 +518,9 @@ def _signal_result_redis(
         result_json = json.dumps(result, default=str)
         redis_client.setex(result_key, _RESULT_TTL_SECONDS, result_json)
         
-        # Publish notification to channel
-        subscribers = redis_client.publish(channel_name, "result_ready")
-        
         logger.info(
             f"[QueryResult] Signaled via Redis: session={session_id[:8]}..., "
-            f"action={action_name}, tool_call_id={tool_call_id}, subscribers={subscribers}"
+            f"action={action_name}, tool_call_id={tool_call_id}"
         )
         return True
     except Exception as e:

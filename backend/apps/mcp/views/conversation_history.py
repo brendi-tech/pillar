@@ -10,6 +10,8 @@ Copyright (C) 2025 Pillar Team
 import logging
 from typing import Optional
 
+from django.conf import settings
+from django.core.files.storage import default_storage
 from django.db.models import Count
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -24,6 +26,53 @@ logger = logging.getLogger(__name__)
 
 # Use shared CORS utility
 _add_cors_headers = add_cors_headers
+
+
+def _extract_gcs_path(signed_url: str) -> Optional[str]:
+    """Extract the storage path from a GCS signed URL.
+
+    GCS signed URLs look like:
+        https://storage.googleapis.com/{bucket}/{path}?X-Goog-Algorithm=...
+
+    Returns the path portion, or None if the URL doesn't match.
+    """
+    bucket_name = getattr(settings, 'GS_BUCKET_NAME', 'pillar-storage')
+    prefix = f'https://storage.googleapis.com/{bucket_name}/'
+    if not signed_url.startswith(prefix):
+        return None
+    # Everything after the bucket prefix, up to the query string
+    path_and_query = signed_url[len(prefix):]
+    path = path_and_query.split('?', 1)[0]
+    return path if path else None
+
+
+def _refresh_image_urls(images: list[dict]) -> list[dict]:
+    """Re-sign image URLs so they aren't expired when serving history.
+
+    For each image dict:
+    - If ``path`` is present, generate a fresh signed URL from it.
+    - If only ``url`` exists (legacy), try to extract the GCS path and re-sign.
+    - Non-GCS / local dev URLs are returned unchanged.
+    """
+    storage_backend = getattr(settings, 'STORAGE_BACKEND', 'local')
+    if storage_backend not in ('gcs', 's3'):
+        return images  # local dev -- URLs don't expire
+
+    refreshed = []
+    for img in images:
+        img = dict(img)  # shallow copy so we don't mutate the DB object
+        path = img.get('path')
+        if not path:
+            # Legacy: try to extract path from the signed URL
+            path = _extract_gcs_path(img.get('url', ''))
+        if path:
+            try:
+                img['url'] = default_storage.url(path)
+                img['path'] = path  # ensure path is always present going forward
+            except Exception as e:
+                logger.warning(f"[ConversationHistory] Failed to re-sign image {path}: {e}")
+        refreshed.append(img)
+    return refreshed
 
 
 async def _resolve_visitor(
@@ -282,6 +331,9 @@ async def get_conversation(request, conversation_id: str):
             # Display field - human-readable timeline for UI
             'display_trace': display_trace,
         }
+        # Include images for user messages (re-sign so URLs aren't expired)
+        if msg.role == 'user' and msg.images:
+            message_data['images'] = _refresh_image_urls(msg.images)
         messages.append(message_data)
 
     logger.info(f"[get_conversation] Returning {len(messages)} messages for conversation {conversation_id}")

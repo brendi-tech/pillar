@@ -141,6 +141,7 @@ def upload_image(request):
 
         response = JsonResponse({
             'url': signed_url,
+            'path': saved_path,
             'expires_at': expires_at.isoformat() + 'Z'
         })
         return _add_cors_headers(response, request)

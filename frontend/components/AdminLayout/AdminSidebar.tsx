@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import { useAuth, useProduct } from "@/providers";
+import type { AdminProduct } from "@/types/admin";
 import { usePillar } from "@pillar-ai/react";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -33,6 +34,7 @@ import {
   LogOut,
   MessageSquare,
   Moon,
+  Pencil,
   Plus,
   Search,
   Sliders,
@@ -40,6 +42,7 @@ import {
   Users,
   Zap,
 } from "lucide-react";
+import { EditProductModal } from "./EditProductModal";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -123,9 +126,11 @@ export function AdminSidebar(props: React.ComponentProps<typeof Sidebar>) {
     availableProducts,
     switchProduct,
     isLoading: isLoadingProducts,
+    refetchProducts,
   } = useProduct();
   const { open: openPillarPanel } = usePillar();
   const [footerPopoverOpen, setFooterPopoverOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<AdminProduct | null>(null);
 
   // Handle ⌘K keyboard shortcut to open Pillar panel
   useEffect(() => {
@@ -350,29 +355,42 @@ export function AdminSidebar(props: React.ComponentProps<typeof Sidebar>) {
                   </div>
                   <div className="max-h-40 overflow-y-auto">
                     {availableProducts.map((hc) => (
-                      <button
+                      <div
                         key={hc.id}
-                        onClick={() => {
-                          switchProduct(hc.id);
-                          setFooterPopoverOpen(false);
-                        }}
-                        className={cn(
-                          "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors",
-                          currentProduct?.id === hc.id
-                            ? "bg-sidebar-accent text-foreground"
-                            : "text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
-                        )}
+                        className="group flex items-center rounded-md"
                       >
-                        <div className="flex h-5 w-5 items-center justify-center rounded bg-linear-to-br from-primary to-primary/80 text-primary-foreground text-xs font-bold shrink-0">
-                          {hc.name.charAt(0)}
-                        </div>
-                        <span className="flex-1 truncate text-left">
-                          {hc.name}
-                        </span>
-                        {currentProduct?.id === hc.id && (
-                          <Check className="h-4 w-4 text-primary shrink-0" />
-                        )}
-                      </button>
+                        <button
+                          onClick={() => {
+                            switchProduct(hc.id);
+                            setFooterPopoverOpen(false);
+                          }}
+                          className={cn(
+                            "flex flex-1 min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors",
+                            currentProduct?.id === hc.id
+                              ? "bg-sidebar-accent text-foreground"
+                              : "text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
+                          )}
+                        >
+                          <div className="flex h-5 w-5 items-center justify-center rounded bg-linear-to-br from-primary to-primary/80 text-primary-foreground text-xs font-bold shrink-0">
+                            {hc.name.charAt(0)}
+                          </div>
+                          <span className="flex-1 truncate text-left">
+                            {hc.name}
+                          </span>
+                          {currentProduct?.id === hc.id && (
+                            <Check className="h-4 w-4 text-primary shrink-0 group-hover:hidden" />
+                          )}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setEditingProduct(hc);
+                            setFooterPopoverOpen(false);
+                          }}
+                          className="hidden group-hover:flex h-5 w-5 items-center justify-center rounded hover:bg-sidebar-accent shrink-0 mr-1"
+                        >
+                          <Pencil className="h-3 w-3 text-muted-foreground" />
+                        </button>
+                      </div>
                     ))}
                   </div>
                   {/* New Assistant Link */}
@@ -421,6 +439,16 @@ export function AdminSidebar(props: React.ComponentProps<typeof Sidebar>) {
           </Popover>
         )}
       </SidebarFooter>
+
+      {/* Edit Assistant Modal */}
+      <EditProductModal
+        open={editingProduct !== null}
+        onOpenChange={(open) => {
+          if (!open) setEditingProduct(null);
+        }}
+        product={editingProduct}
+        onSuccess={refetchProducts}
+      />
     </Sidebar>
   );
 }

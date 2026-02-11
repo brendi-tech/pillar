@@ -44,6 +44,7 @@ EXPOSE 8000
 # Collect static files
 RUN python manage.py collectstatic --noinput || echo "Static files collection skipped"
 
-# Start server with uvicorn (ASGI) for async support including MCP streaming
-# Note: Migrations are run separately after deployment via GitHub Actions
-CMD ["uvicorn", "config.asgi:application", "--host", "0.0.0.0", "--port", "8000", "--log-level", "info"]
+# Start server with gunicorn + uvicorn workers (ASGI) for async support,
+# process management, crash recovery, and worker recycling.
+# Config lives in gunicorn.conf.py. Migrations run separately via GitHub Actions.
+CMD ["gunicorn", "config.asgi:application", "-c", "gunicorn.conf.py"]

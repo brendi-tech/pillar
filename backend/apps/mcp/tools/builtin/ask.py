@@ -222,9 +222,6 @@ class AskTool(Tool):
                 for r in search_results
             ]
 
-            # No longer need separate knowledge search - hybrid search covers everything
-            knowledge_results = []
-
             # Get platform/version from request headers for action filtering
             platform, version = self._get_platform_version(request)
             actions = await self._search_actions(
@@ -235,8 +232,8 @@ class AskTool(Tool):
             has_auto_run = any(a.get('auto_run', False) for a in actions)
             has_inline_ui = any(a.get('action_type') == 'inline_ui' for a in actions)
 
-            # Build context for LLM (articles + knowledge + actions)
-            context = self._build_full_context(results, actions, knowledge_results)
+            # Build context for LLM (articles + actions)
+            context = self._build_full_context(results, actions)
 
             # Generate answer with LLM - let it decide what's most relevant
             from common.utils.llm_config import LLMConfigService
@@ -345,6 +342,34 @@ class AskTool(Tool):
         
         query = arguments.get('query', '')
         images = arguments.get('images', [])
+        resume = arguments.get('resume', False)
+        conversation_id = arguments.get('conversation_id')
+
+        # --- Resume mode: load state from interrupted session ---
+        if resume and conversation_id:
+            from apps.mcp.services.session_resumption import (
+                get_resumable_session, clear_disconnected_status
+            )
+            session = await get_resumable_session(conversation_id)
+            if session and session.get('resumable'):
+                conversation_history = session.get('llm_messages', [])
+                client_registered_actions = session.get('registered_actions', [])
+                user_message = session.get('user_message', '')
+                query = (
+                    f"{user_message}\n\n"
+                    "Continue completing the user's request. "
+                    "Don't repeat work already done."
+                )
+                message_id = session.get('message_id')
+                if message_id:
+                    await clear_disconnected_status(message_id)
+            else:
+                yield {'type': 'error', 'message': 'Session is not resumable or has expired'}
+                return
+        elif resume:
+            yield {'type': 'error', 'message': 'conversation_id is required for resume'}
+            return
+
         if not query and not images:
             yield {'type': 'error', 'message': 'A message or image is required'}
             return
@@ -354,11 +379,12 @@ class AskTool(Tool):
             return
 
         top_k = arguments.get('top_k', 5)
-        conversation_id = arguments.get('conversation_id')
         user_context = arguments.get('user_context', [])
         context = arguments.get('context', {})
         # Registered actions from previous turns (for dynamic action tools)
-        client_registered_actions = arguments.get('registered_actions', [])
+        # On resume, these are already loaded from session state above
+        if not resume:
+            client_registered_actions = arguments.get('registered_actions', [])
         
         # Extract user_profile from nested context structure
         # SDK sends: { product: Context, user_profile: UserProfile }
@@ -403,7 +429,8 @@ class AskTool(Tool):
                     return
                 validated_images.append({
                     'url': url,
-                    'detail': img.get('detail', 'low')
+                    'detail': img.get('detail', 'low'),
+                    'path': img.get('path', ''),
                 })
             logger.info(f"[AskTool] Processing {len(validated_images)} image(s)")
         logger.debug("[AskTool] Image validation complete")
@@ -457,35 +484,52 @@ class AskTool(Tool):
                     enriched_images.append(enriched)
             
             # Start DB write as BACKGROUND TASK (non-blocking)
-            # Creates conversation + user message with pre-generated IDs
             from apps.analytics.services import ConversationLoggingService
             
-            db_task = asyncio.create_task(
-                ConversationLoggingService().create_conversation_and_user_message(
-                    conversation_id=conv_id,
-                    user_message_id=user_msg_id,
-                    assistant_message_id=assistant_msg_id,
-                    organization_id=str(organization.id),
-                    product_id=str(help_center_config.id),
-                    question=query,
-                    images=enriched_images,
-                    query_type='ask',
-                    page_url=page_url,
-                    user_agent=metadata.user_agent if metadata else '',
-                    ip_address=metadata.ip_address if metadata else None,
-                    referer=metadata.referer if metadata else '',
-                    external_session_id=metadata.session_id if metadata else '',
-                    skip_analytics=skip_analytics,
-                    visitor_id=metadata.visitor_id if metadata else '',
-                    external_user_id=metadata.external_user_id if metadata else '',
+            if resume:
+                # Resume: conversation + user message already exist, just create new assistant message
+                from apps.analytics.models import ChatMessage as ChatMessageModel
+                db_task = asyncio.create_task(
+                    ChatMessageModel.objects.acreate(
+                        id=assistant_msg_id,
+                        organization_id=str(organization.id),
+                        product_id=str(help_center_config.id),
+                        conversation_id=conv_id,
+                        role=ChatMessageModel.Role.ASSISTANT,
+                        content='',
+                        streaming_status=ChatMessageModel.StreamingStatus.STREAMING,
+                    )
                 )
-            )
-            logger.debug("[AskTool] Started background DB task for conversation/user/assistant messages")
+                logger.debug("[AskTool] Resume: created assistant message only")
+            else:
+                # Normal: create conversation + user message + assistant message
+                db_task = asyncio.create_task(
+                    ConversationLoggingService().create_conversation_and_user_message(
+                        conversation_id=conv_id,
+                        user_message_id=user_msg_id,
+                        assistant_message_id=assistant_msg_id,
+                        organization_id=str(organization.id),
+                        product_id=str(help_center_config.id),
+                        question=query,
+                        images=enriched_images,
+                        query_type='ask',
+                        page_url=page_url,
+                        user_agent=metadata.user_agent if metadata else '',
+                        ip_address=metadata.ip_address if metadata else None,
+                        referer=metadata.referer if metadata else '',
+                        external_session_id=metadata.session_id if metadata else '',
+                        skip_analytics=skip_analytics,
+                        visitor_id=metadata.visitor_id if metadata else '',
+                        external_user_id=metadata.external_user_id if metadata else '',
+                    )
+                )
+                logger.debug("[AskTool] Started background DB task for conversation/user/assistant messages")
             
-            # Load conversation history from DB (full-fidelity ChatMessage rows)
-            logger.debug(f"[AskTool] Loading conversation history from DB for {conv_id}")
-            conversation_history = await self._load_conversation_history(conversation_id)
-            logger.debug(f"[AskTool] Loaded {len(conversation_history) if conversation_history else 0} history messages from DB")
+            # Load conversation history from DB (skip when resuming — already loaded from session)
+            if not resume:
+                logger.debug(f"[AskTool] Loading conversation history from DB for {conv_id}")
+                conversation_history = await self._load_conversation_history(conversation_id)
+                logger.debug(f"[AskTool] Loaded {len(conversation_history) if conversation_history else 0} history messages from DB")
             
             # Get platform/version for action filtering
             platform, version = self._get_platform_version(request)
@@ -593,72 +637,6 @@ class AskTool(Tool):
         except Exception as e:
             logger.error(f"Error executing ask tool stream: {e}", exc_info=True)
             yield {'type': 'error', 'message': f'Error: {str(e)}'}
-
-    async def _log_conversation(
-        self,
-        organization_id: str,
-        question: str,
-        response: str,
-        response_time_ms: int,
-        chunks_retrieved: list,
-        model_used: str,
-        conversation_id: str | None = None,
-        help_center_id: str | None = None,
-        page_url: str = '',
-        user_agent: str = '',
-        ip_address: str | None = None,
-        referer: str = '',
-        external_session_id: str = '',
-        skip_analytics: bool = False,
-        images: List[Dict[str, str]] | None = None,
-        display_trace: List[dict] | None = None,
-    ) -> tuple[str, str, str]:
-        """
-        Log conversation to the database using ConversationLoggingService.
-
-        Enriches images with cached summaries before persisting for follow-up questions.
-
-        Returns tuple of (conversation_id, user_message_id, assistant_message_id).
-        Returns empty strings if logging fails.
-        """
-        try:
-            from apps.analytics.services import ConversationLoggingService
-            from apps.mcp.services.image_summary_service import get_cached_summary
-
-            # Enrich images with cached summaries before persisting
-            enriched_images = None
-            if images:
-                enriched_images = []
-                for img in images:
-                    enriched = {**img}
-                    summary = get_cached_summary(img.get('url', ''))
-                    if summary:
-                        enriched['summary'] = summary
-                    enriched_images.append(enriched)
-
-            service = ConversationLoggingService()
-            return await service.log_message(
-                organization_id=organization_id,
-                question=question,
-                response=response,
-                response_time_ms=response_time_ms,
-                chunks_retrieved=chunks_retrieved,
-                model_used=model_used,
-                conversation_id=conversation_id,
-                query_type='ask',
-                help_center_id=help_center_id,
-                page_url=page_url,
-                user_agent=user_agent,
-                ip_address=ip_address,
-                referer=referer,
-                external_session_id=external_session_id,
-                skip_analytics=skip_analytics,
-                images=enriched_images,  # Pass enriched images with summaries
-                display_trace=display_trace or [],  # Pass display trace
-            )
-        except Exception as e:
-            logger.error(f"[AskTool] Failed to log conversation: {e}", exc_info=True)
-            return '', '', ''
 
     async def _load_conversation_history(
         self,
@@ -795,19 +773,14 @@ class AskTool(Tool):
         self,
         results,
         actions: List[Dict[str, Any]],
-        knowledge_results: List[Dict[str, Any]] = None,
     ) -> str:
-        """Build combined context from articles, knowledge, and actions."""
+        """Build combined context from articles and actions."""
         parts = []
 
         # Add article context
         if results:
             parts.append("## Relevant Articles")
             parts.append(self._build_context(results))
-
-        # Add knowledge context (from new Knowledge app)
-        if knowledge_results:
-            parts.append(self._build_knowledge_context(knowledge_results))
 
         # Add actions context
         if actions:
@@ -816,27 +789,6 @@ class AskTool(Tool):
         if not parts:
             parts.append("No relevant articles or actions were found for this query.")
 
-        return "\n".join(parts)
-
-    def _build_knowledge_context(self, knowledge_results: List[Dict[str, Any]]) -> str:
-        """Build context string from knowledge search results."""
-        if not knowledge_results:
-            return ""
-
-        parts = ["## Additional Knowledge"]
-        for i, r in enumerate(knowledge_results, 1):
-            title = r.get('title', 'Untitled')
-            content = r.get('content', '')
-            source = r.get('source_name', '')
-            url = r.get('url', '')
-
-            source_info = f"[{source}]" if source else ""
-            if url:
-                source_info += f" ({url})"
-
-            parts.append(f"### {title} {source_info}")
-            parts.append(content)
-            parts.append("")
         return "\n".join(parts)
 
     def _build_sources(self, results):
@@ -983,46 +935,6 @@ Guidelines:
             logger.debug(f"[AskTool] Platform/version from headers: {platform}@{version}")
 
         return platform, version
-
-    async def _search_knowledge(
-        self,
-        query: str,
-        organization_id: str,
-        top_k: int = 5,
-    ) -> List[Dict[str, Any]]:
-        """
-        Search the Knowledge app for relevant content.
-
-        Uses the new KnowledgeRAGService to search KnowledgeChunks.
-
-        Args:
-            query: User query string
-            organization_id: Organization UUID
-            top_k: Maximum number of results
-
-        Returns:
-            List of result dictionaries with title, content, url, source_name
-        """
-        try:
-            from apps.knowledge.services import KnowledgeRAGService
-
-            rag_service = KnowledgeRAGService(organization_id=organization_id)
-            results = rag_service.search(query=query, top_k=top_k)
-
-            return [
-                {
-                    'title': r.title,
-                    'content': r.content,
-                    'url': r.url,
-                    'source_name': r.source_name,
-                    'score': r.score,
-                }
-                for r in results
-            ]
-
-        except Exception as e:
-            logger.warning(f"[AskTool] Knowledge search failed: {e}")
-            return []
 
     async def _search_actions(
         self,

@@ -30,14 +30,37 @@ async def clear_disconnected_status(message_id: str):
 
 
 async def get_resumable_session(conversation_id: str) -> Optional[dict]:
-    """Check for a disconnected session that can be resumed."""
+    """Check for a disconnected or still-streaming session that can be resumed.
+
+    If the client is asking about status via a *new* HTTP request while the
+    message is still ``streaming``, the client must have disconnected (no
+    client polls status for a conversation it is still receiving).  In that
+    case we treat it as disconnected and mark it accordingly.
+    """
     from apps.analytics.models import ChatMessage
 
+    # First, look for an explicitly disconnected message
     message = await ChatMessage.objects.filter(
         conversation_id=conversation_id,
         role='assistant',
         streaming_status='disconnected',
     ).order_by('-timestamp').afirst()
+
+    # If no disconnected message, check for a still-streaming message.
+    # A client asking about status via a new request means it disconnected
+    # from the original stream (race condition: backend hasn't detected the
+    # disconnect yet because it's still waiting on an LLM/tool call).
+    if not message:
+        streaming_msg = await ChatMessage.objects.filter(
+            conversation_id=conversation_id,
+            role='assistant',
+            streaming_status='streaming',
+        ).order_by('-timestamp').afirst()
+
+        if streaming_msg:
+            # Mark it as disconnected so subsequent checks are consistent
+            await mark_disconnected(str(streaming_msg.id))
+            message = streaming_msg
 
     if not message:
         return None

@@ -280,6 +280,10 @@ async def _handle_parallel_tool_calls(
                 ))
                 continue
             
+            tool_event = emit_tool_call_start("get_article", arguments)
+            tool_id = tool_event["data"]["id"]
+            yield tool_event
+            
             tool_start = time.time()
             result = await tool_executor.execute_get_article(item_id)
             
@@ -290,7 +294,8 @@ async def _handle_parallel_tool_calls(
                 results_count=1 if "error" not in result else 0,
             )
             
-            if "error" in result:
+            is_success = "error" not in result
+            if not is_success:
                 result_content = f"Error: {result['error']}"
             else:
                 title = result.get("title", "Untitled")
@@ -301,10 +306,30 @@ async def _handle_parallel_tool_calls(
                     result_content += f" ({url})"
                 result_content += f"\n\n{content}"
             
+            display_name = format_tool_name_for_display("get_article")
+            display_trace.append({
+                "step_type": "tool_result",
+                "iteration": iteration,
+                "timestamp_ms": int(time.time() * 1000) - start_time_ms,
+                "tool": "get_article",
+                "kind": "tool_call",
+                "label": f"Completed {display_name}" if is_success else f"Failed {display_name}",
+                "parallel": True,
+                "item_id": item_id,
+                "arguments": arguments,
+                "success": is_success,
+            })
+            
             messages.append(format_tool_result_message_native(
                 tool_call_id=tool_call_id,
                 result_content=result_content,
             ))
+            
+            yield emit_tool_call_complete(
+                tool_id, "get_article", success=is_success,
+                result_summary=f"Retrieved article: {result.get('title', 'Untitled')}" if is_success else result_content,
+                arguments=arguments,
+            )
         
         # Handle execute tool
         elif tool_name == "execute":
