@@ -20,5 +20,6 @@ export { CodeWithIndentGuides } from './CodeWithIndentGuides';
 export { SyntaxHighlightedPre } from './SyntaxHighlightedPre';
 export { Mermaid } from './Mermaid';
 export { CodeSnippet, CodeSnippetTabs } from './CodeSnippet';
+export { TypeDocs } from './TypeDocs';
 
 

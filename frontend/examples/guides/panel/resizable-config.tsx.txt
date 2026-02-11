@@ -1,0 +1,9 @@
+<PillarProvider
+  productKey="your-product-key"
+  config={{
+    panel: {
+      width: 450,       // Default width in pixels
+      resizable: true,  // Allow users to drag-resize (default)
+    },
+  }}
+>

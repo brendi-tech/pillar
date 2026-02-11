@@ -1,0 +1,8 @@
+interface SidebarTabConfig {
+  id: string;
+  label: string;
+  enabled: boolean;
+  order: number;
+  /** Preset icon for this tab */
+  icon?: 'help' | 'support' | 'settings' | 'feedback' | 'chat' | 'calendar' | 'mail';
+}

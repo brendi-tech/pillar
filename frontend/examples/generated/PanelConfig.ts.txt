@@ -1,0 +1,64 @@
+interface PanelConfig {
+  /**
+   * Whether the panel is enabled.
+   * @default true
+   */
+  enabled?: boolean;
+  /**
+   * Which side of the screen the panel appears on.
+   * @default 'right'
+   */
+  position?: PanelPosition;
+  /**
+   * Panel mode: 'overlay' slides over content, 'push' shifts content aside.
+   * @default 'push'
+   */
+  mode?: PanelMode;
+  /**
+   * Panel width in pixels.
+   * @default 380
+   */
+  width?: number;
+  /** 
+   * Custom mount point for the panel.
+   * - CSS selector string (e.g., '#pillar-panel')
+   * - HTMLElement reference
+   * - 'manual' for React component-based mounting
+   * - undefined (default) mounts to document.body
+   */
+  container?: string | HTMLElement | 'manual';
+  /**
+   * Whether to use Shadow DOM for style isolation.
+   * - false (default): Panel renders in regular DOM, inherits host app CSS.
+   *   Custom cards can use the host app's design system (Tailwind, etc.)
+   * - true: Panel renders in Shadow DOM, fully isolated from host CSS.
+   *   Use this if you need style isolation on third-party sites.
+   * @default false
+   */
+  useShadowDOM?: boolean;
+  /**
+   * Viewport width below which the panel switches from 'push' mode to 'hover' mode.
+   * In hover mode, the panel floats over content instead of pushing it aside.
+   * - number: The breakpoint in pixels (default: 1200)
+   * - false: Disable responsive behavior, always use push mode
+   * @default 1200
+   */
+  hoverBreakpoint?: number | false;
+  /**
+   * Whether to show a backdrop overlay when the panel is in hover mode.
+   * Only applies when viewport is below hoverBreakpoint.
+   * @default true
+   */
+  hoverBackdrop?: boolean;
+  /**
+   * Viewport width below which the panel takes full screen width.
+   * @default 500
+   */
+  fullWidthBreakpoint?: number;
+  /**
+   * Whether to open the panel automatically on initialization.
+   * Takes priority over localStorage persisted state.
+   * @default false
+   */
+  initialOpen?: boolean;
+}

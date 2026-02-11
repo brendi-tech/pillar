@@ -1,0 +1,1867 @@
+{
+  "generatedAt": "2026-02-11T19:13:43.429Z",
+  "interfaces": {
+    "PillarConfig": {
+      "name": "PillarConfig",
+      "description": "",
+      "sourceFile": "packages/sdk/src/core/config.ts",
+      "properties": [
+        {
+          "name": "productKey",
+          "type": "string",
+          "required": false,
+          "description": "Your product key from the Pillar app.\nGet it at app.trypillar.com"
+        },
+        {
+          "name": "platform",
+          "type": "Platform",
+          "required": false,
+          "default": "'web'",
+          "description": "Platform identifier for code-first actions.\nUsed to filter actions by deployment platform."
+        },
+        {
+          "name": "version",
+          "type": "string",
+          "required": false,
+          "description": "App version for code-first actions.\nUsed to match actions to the correct deployment version."
+        },
+        {
+          "name": "debug",
+          "type": "boolean",
+          "required": false,
+          "default": "false",
+          "description": "Enable debug mode for verbose logging and debug panel.\nWhen enabled:\n- All SDK events are logged to console\n- A debug panel shows real-time execution flow\n- Network requests/responses are captured"
+        },
+        {
+          "name": "panel",
+          "type": "PanelConfig",
+          "required": false,
+          "description": "Panel layout and behavior settings."
+        },
+        {
+          "name": "edgeTrigger",
+          "type": "EdgeTriggerConfig",
+          "required": false,
+          "description": "Edge trigger (sidebar tab that opens the panel)."
+        },
+        {
+          "name": "mobileTrigger",
+          "type": "MobileTriggerConfig",
+          "required": false,
+          "description": "Mobile trigger (floating button on small screens)."
+        },
+        {
+          "name": "urlParams",
+          "type": "UrlParamsConfig",
+          "required": false,
+          "description": "URL params for auto-opening the panel."
+        },
+        {
+          "name": "textSelection",
+          "type": "TextSelectionConfig",
+          "required": false,
+          "description": "Text selection \"Ask AI\" popover."
+        },
+        {
+          "name": "domScanning",
+          "type": "DOMScanningConfig",
+          "required": false,
+          "description": "DOM scanning for page context."
+        },
+        {
+          "name": "suggestions",
+          "type": "SuggestionsConfig",
+          "required": false,
+          "description": "Page-aware suggestions."
+        },
+        {
+          "name": "sidebarTabs",
+          "type": "SidebarTabConfig[]",
+          "required": false,
+          "description": "Sidebar tabs configuration."
+        },
+        {
+          "name": "apiBaseUrl",
+          "type": "string",
+          "required": false,
+          "description": "API base URL. Defaults to Pillar's production API."
+        },
+        {
+          "name": "theme",
+          "type": "ThemeConfig",
+          "required": false,
+          "description": "Theme customization."
+        },
+        {
+          "name": "customCSS",
+          "type": "string",
+          "required": false,
+          "description": "Custom CSS to inject into the panel's Shadow DOM.\nUse public class names (pillar-*) to override default styles."
+        },
+        {
+          "name": "onReady",
+          "type": "() => void",
+          "required": false,
+          "description": "Called when the SDK is initialized and ready."
+        },
+        {
+          "name": "onError",
+          "type": "(error: Error) => void",
+          "required": false,
+          "description": "Called when the SDK encounters an error."
+        }
+      ]
+    },
+    "PanelConfig": {
+      "name": "PanelConfig",
+      "description": "",
+      "sourceFile": "packages/sdk/src/core/config.ts",
+      "properties": [
+        {
+          "name": "enabled",
+          "type": "boolean",
+          "required": false,
+          "default": "true",
+          "description": "Whether the panel is enabled."
+        },
+        {
+          "name": "position",
+          "type": "PanelPosition",
+          "required": false,
+          "default": "'right'",
+          "description": "Which side of the screen the panel appears on."
+        },
+        {
+          "name": "mode",
+          "type": "PanelMode",
+          "required": false,
+          "default": "'push'",
+          "description": "Panel mode: 'overlay' slides over content, 'push' shifts content aside."
+        },
+        {
+          "name": "width",
+          "type": "number",
+          "required": false,
+          "default": "380",
+          "description": "Panel width in pixels."
+        },
+        {
+          "name": "container",
+          "type": "string | HTMLElement | 'manual'",
+          "required": false,
+          "description": "Custom mount point for the panel.\n- CSS selector string (e.g., '#pillar-panel')\n- HTMLElement reference\n- 'manual' for React component-based mounting\n- undefined (default) mounts to document.body"
+        },
+        {
+          "name": "useShadowDOM",
+          "type": "boolean",
+          "required": false,
+          "default": "false",
+          "description": "Whether to use Shadow DOM for style isolation.\n- false (default): Panel renders in regular DOM, inherits host app CSS.\n  Custom cards can use the host app's design system (Tailwind, etc.)\n- true: Panel renders in Shadow DOM, fully isolated from host CSS.\n  Use this if you need style isolation on third-party sites."
+        },
+        {
+          "name": "hoverBreakpoint",
+          "type": "number | false",
+          "required": false,
+          "default": "1200",
+          "description": "Viewport width below which the panel switches from 'push' mode to 'hover' mode.\nIn hover mode, the panel floats over content instead of pushing it aside.\n- number: The breakpoint in pixels (default: 1200)\n- false: Disable responsive behavior, always use push mode"
+        },
+        {
+          "name": "hoverBackdrop",
+          "type": "boolean",
+          "required": false,
+          "default": "true",
+          "description": "Whether to show a backdrop overlay when the panel is in hover mode.\nOnly applies when viewport is below hoverBreakpoint."
+        },
+        {
+          "name": "fullWidthBreakpoint",
+          "type": "number",
+          "required": false,
+          "default": "500",
+          "description": "Viewport width below which the panel takes full screen width."
+        },
+        {
+          "name": "initialOpen",
+          "type": "boolean",
+          "required": false,
+          "default": "false",
+          "description": "Whether to open the panel automatically on initialization.\nTakes priority over localStorage persisted state."
+        }
+      ]
+    },
+    "ThemeConfig": {
+      "name": "ThemeConfig",
+      "description": "Theme configuration for customizing panel appearance",
+      "sourceFile": "packages/sdk/src/core/config.ts",
+      "properties": [
+        {
+          "name": "mode",
+          "type": "ThemeMode",
+          "required": false,
+          "default": "'auto'",
+          "description": "Color mode: 'light', 'dark', or 'auto' (follows system preference)"
+        },
+        {
+          "name": "colors",
+          "type": "ThemeColors",
+          "required": false,
+          "description": "Custom color overrides for light mode"
+        },
+        {
+          "name": "darkColors",
+          "type": "ThemeColors",
+          "required": false,
+          "description": "Custom color overrides for dark mode (when mode is 'auto' or 'dark')"
+        },
+        {
+          "name": "fontFamily",
+          "type": "string",
+          "required": false,
+          "default": "\"-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif\"",
+          "description": "Font family for all panel text."
+        }
+      ]
+    },
+    "ThemeColors": {
+      "name": "ThemeColors",
+      "description": "Theme color configuration\nAll colors should be valid CSS color values (hex, rgb, hsl, etc.)",
+      "sourceFile": "packages/sdk/src/core/config.ts",
+      "properties": [
+        {
+          "name": "primary",
+          "type": "string",
+          "required": false,
+          "description": "Primary brand color (buttons, links, accents)"
+        },
+        {
+          "name": "primaryHover",
+          "type": "string",
+          "required": false,
+          "description": "Primary color on hover state"
+        },
+        {
+          "name": "background",
+          "type": "string",
+          "required": false,
+          "description": "Main background color"
+        },
+        {
+          "name": "backgroundSecondary",
+          "type": "string",
+          "required": false,
+          "description": "Secondary/subtle background (inputs, cards)"
+        },
+        {
+          "name": "text",
+          "type": "string",
+          "required": false,
+          "description": "Primary text color"
+        },
+        {
+          "name": "textMuted",
+          "type": "string",
+          "required": false,
+          "description": "Muted/secondary text color"
+        },
+        {
+          "name": "border",
+          "type": "string",
+          "required": false,
+          "description": "Border color"
+        },
+        {
+          "name": "borderLight",
+          "type": "string",
+          "required": false,
+          "description": "Border color for subtle/light borders"
+        },
+        {
+          "name": "outlineColor",
+          "type": "string",
+          "required": false,
+          "description": "Outline/focus ring color for interactive elements"
+        }
+      ]
+    },
+    "EdgeTriggerConfig": {
+      "name": "EdgeTriggerConfig",
+      "description": "",
+      "sourceFile": "packages/sdk/src/core/config.ts",
+      "properties": [
+        {
+          "name": "enabled",
+          "type": "boolean",
+          "required": false,
+          "default": "true",
+          "description": "Whether to show the edge trigger sidebar tab.\nWhen enabled, a slim vertical tab appears on the screen edge that opens the panel."
+        },
+        {
+          "name": "resizable",
+          "type": "boolean",
+          "required": false,
+          "default": "true",
+          "description": "Whether the panel can be resized by dragging the edge of the sidebar trigger.\nWhen enabled, a drag handle appears on the inner edge of the sidebar when the panel is open.\nThe resized width is persisted to localStorage."
+        }
+      ]
+    },
+    "MobileTriggerConfig": {
+      "name": "MobileTriggerConfig",
+      "description": "",
+      "sourceFile": "packages/sdk/src/core/config.ts",
+      "properties": [
+        {
+          "name": "enabled",
+          "type": "boolean",
+          "required": false,
+          "default": "true",
+          "description": "Whether to show the mobile floating button on small screens.\nWhen enabled, a floating action button appears when viewport is below mobileBreakpoint."
+        },
+        {
+          "name": "breakpoint",
+          "type": "number",
+          "required": false,
+          "default": "700",
+          "description": "Viewport width below which the edge trigger hides and mobile trigger shows."
+        },
+        {
+          "name": "position",
+          "type": "MobileTriggerPosition",
+          "required": false,
+          "default": "'bottom-right'",
+          "description": "Position of the floating button."
+        },
+        {
+          "name": "icon",
+          "type": "MobileTriggerIcon",
+          "required": false,
+          "default": "'sparkle'",
+          "description": "Preset icon to display in the button."
+        },
+        {
+          "name": "customIcon",
+          "type": "string",
+          "required": false,
+          "description": "Custom SVG icon string. Overrides the icon preset if provided."
+        },
+        {
+          "name": "backgroundColor",
+          "type": "string",
+          "required": false,
+          "description": "Background color of the button (CSS value).\nDefaults to the theme's primary color."
+        },
+        {
+          "name": "iconColor",
+          "type": "string",
+          "required": false,
+          "default": "'white'",
+          "description": "Icon color (CSS value)."
+        },
+        {
+          "name": "size",
+          "type": "MobileTriggerSize | number",
+          "required": false,
+          "default": "'medium'",
+          "description": "Button size - preset name or pixel value.\n- 'small': 44px\n- 'medium': 56px (default)\n- 'large': 68px"
+        },
+        {
+          "name": "label",
+          "type": "string",
+          "required": false,
+          "default": "'Get help'",
+          "description": "Tooltip text and aria-label for accessibility."
+        },
+        {
+          "name": "offset",
+          "type": "number",
+          "required": false,
+          "default": "24",
+          "description": "Offset from screen edges in pixels."
+        }
+      ]
+    },
+    "UrlParamsConfig": {
+      "name": "UrlParamsConfig",
+      "description": "",
+      "sourceFile": "packages/sdk/src/core/config.ts",
+      "properties": [
+        {
+          "name": "enabled",
+          "type": "boolean",
+          "required": false,
+          "description": "Whether to check URL params for auto-opening the panel (default: true)"
+        },
+        {
+          "name": "prefix",
+          "type": "string",
+          "required": false,
+          "description": "Prefix for URL params (default: 'pillar-')"
+        },
+        {
+          "name": "clearAfterOpen",
+          "type": "boolean",
+          "required": false,
+          "description": "Whether to clear URL params after opening (default: true)"
+        }
+      ]
+    },
+    "TextSelectionConfig": {
+      "name": "TextSelectionConfig",
+      "description": "",
+      "sourceFile": "packages/sdk/src/core/config.ts",
+      "properties": [
+        {
+          "name": "enabled",
+          "type": "boolean",
+          "required": false,
+          "description": "Whether to show \"Ask AI\" popover on text selection (default: true)"
+        },
+        {
+          "name": "label",
+          "type": "string",
+          "required": false,
+          "description": "Label for the popover button (default: 'Ask AI')"
+        }
+      ]
+    },
+    "DOMScanningConfig": {
+      "name": "DOMScanningConfig",
+      "description": "",
+      "sourceFile": "packages/sdk/src/core/config.ts",
+      "properties": [
+        {
+          "name": "enabled",
+          "type": "boolean",
+          "required": false,
+          "default": "false",
+          "description": "Whether DOM scanning is enabled.\nWhen enabled, page structure is captured and sent with messages."
+        },
+        {
+          "name": "includeText",
+          "type": "boolean",
+          "required": false,
+          "default": "true",
+          "description": "Whether to include text content in the scan."
+        },
+        {
+          "name": "maxDepth",
+          "type": "number",
+          "required": false,
+          "default": "20",
+          "description": "Maximum depth to traverse the DOM tree."
+        },
+        {
+          "name": "visibleOnly",
+          "type": "boolean",
+          "required": false,
+          "default": "true",
+          "description": "Whether to only include visible elements."
+        },
+        {
+          "name": "excludeSelector",
+          "type": "string",
+          "required": false,
+          "description": "CSS selector for elements to exclude from scanning."
+        },
+        {
+          "name": "maxTextLength",
+          "type": "number",
+          "required": false,
+          "default": "500",
+          "description": "Maximum text length before truncation."
+        },
+        {
+          "name": "interactionHighlight",
+          "type": "InteractionHighlightConfig",
+          "required": false,
+          "description": "Configuration for highlighting elements during AI interactions."
+        }
+      ]
+    },
+    "InteractionHighlightConfig": {
+      "name": "InteractionHighlightConfig",
+      "description": "",
+      "sourceFile": "packages/sdk/src/core/config.ts",
+      "properties": [
+        {
+          "name": "enabled",
+          "type": "boolean",
+          "required": false,
+          "default": "true",
+          "description": "Whether to highlight elements when the AI interacts with them."
+        },
+        {
+          "name": "outlineColor",
+          "type": "string",
+          "required": false,
+          "default": "'#3b82f6' (blue-500)",
+          "description": "Outline color for highlighted elements (CSS color value)."
+        },
+        {
+          "name": "outlineWidth",
+          "type": "number",
+          "required": false,
+          "default": "2",
+          "description": "Outline width in pixels."
+        },
+        {
+          "name": "outlineOffset",
+          "type": "number",
+          "required": false,
+          "default": "2",
+          "description": "Outline offset in pixels (space between element and outline)."
+        },
+        {
+          "name": "duration",
+          "type": "number",
+          "required": false,
+          "default": "2000",
+          "description": "Duration in milliseconds to show the highlight.\nSet to 0 for no auto-removal (highlight stays until next interaction)."
+        },
+        {
+          "name": "scrollIntoView",
+          "type": "boolean",
+          "required": false,
+          "default": "true",
+          "description": "Whether to scroll the element into view if not visible."
+        },
+        {
+          "name": "scrollBehavior",
+          "type": "ScrollBehavior",
+          "required": false,
+          "default": "'smooth'",
+          "description": "Scroll behavior when scrolling element into view."
+        }
+      ]
+    },
+    "SuggestionsConfig": {
+      "name": "SuggestionsConfig",
+      "description": "",
+      "sourceFile": "packages/sdk/src/core/config.ts",
+      "properties": [
+        {
+          "name": "enabled",
+          "type": "boolean",
+          "required": false,
+          "default": "true",
+          "description": "Enable page-aware suggestion sorting.\nWhen enabled, suggestions are re-sorted based on the current page context\nwhenever the user navigates to a new route."
+        },
+        {
+          "name": "debounceMs",
+          "type": "number",
+          "required": false,
+          "default": "100",
+          "description": "Debounce time for route change detection (ms).\nPrevents excessive sorting on rapid navigation."
+        },
+        {
+          "name": "displayLimit",
+          "type": "number",
+          "required": false,
+          "default": "3",
+          "description": "Maximum number of suggestions to display."
+        }
+      ]
+    },
+    "SidebarTabConfig": {
+      "name": "SidebarTabConfig",
+      "description": "Sidebar tab configuration",
+      "sourceFile": "packages/sdk/src/core/config.ts",
+      "properties": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "label",
+          "type": "string",
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "enabled",
+          "type": "boolean",
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "order",
+          "type": "number",
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "icon",
+          "type": "'help' | 'support' | 'settings' | 'feedback' | 'chat' | 'calendar' | 'mail'",
+          "required": false,
+          "description": "Preset icon for this tab"
+        }
+      ]
+    },
+    "Context": {
+      "name": "Context",
+      "description": "Context for the assistant.\nPass this to help the assistant understand what the user is doing.",
+      "sourceFile": "packages/sdk/src/core/context.ts",
+      "properties": [
+        {
+          "name": "currentPage",
+          "type": "string",
+          "required": false,
+          "description": "Current page path (e.g., \"/settings/billing\")"
+        },
+        {
+          "name": "currentFeature",
+          "type": "string",
+          "required": false,
+          "description": "Current feature or section (e.g., \"Billing Settings\")"
+        },
+        {
+          "name": "userRole",
+          "type": "string",
+          "required": false,
+          "description": "User's role in the product (e.g., \"admin\", \"member\")"
+        },
+        {
+          "name": "userState",
+          "type": "string",
+          "required": false,
+          "description": "Current user state or mode (e.g., \"onboarding\", \"trial\")"
+        },
+        {
+          "name": "errorState",
+          "type": "{\n    code: string;\n    message: string;\n  }",
+          "required": false,
+          "description": "Any error state the user is experiencing"
+        },
+        {
+          "name": "custom",
+          "type": "Record<string, unknown>",
+          "required": false,
+          "description": "Custom context data"
+        }
+      ]
+    },
+    "UserProfile": {
+      "name": "UserProfile",
+      "description": "User profile for personalization.",
+      "sourceFile": "packages/sdk/src/core/context.ts",
+      "properties": [
+        {
+          "name": "userId",
+          "type": "string",
+          "required": false,
+          "description": "User identifier (for conversation continuity)"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": false,
+          "description": "User's name for personalized responses"
+        },
+        {
+          "name": "role",
+          "type": "string",
+          "required": false,
+          "description": "User's role/permissions"
+        },
+        {
+          "name": "accountType",
+          "type": "string",
+          "required": false,
+          "description": "Account/organization info"
+        },
+        {
+          "name": "experienceLevel",
+          "type": "'beginner' | 'intermediate' | 'advanced'",
+          "required": false,
+          "description": "User's experience level"
+        }
+      ]
+    },
+    "Suggestion": {
+      "name": "Suggestion",
+      "description": "Suggestion returned from the suggestions API.",
+      "sourceFile": "packages/sdk/src/core/context.ts",
+      "properties": [
+        {
+          "name": "type",
+          "type": "'article' | 'video' | 'tutorial' | 'action'",
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "id",
+          "type": "string",
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "title",
+          "type": "string",
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "relevanceScore",
+          "type": "number",
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "url",
+          "type": "string",
+          "required": false,
+          "description": ""
+        }
+      ]
+    },
+    "TaskExecutePayload": {
+      "name": "TaskExecutePayload",
+      "description": "Task execution payload - sent when a task button is clicked.",
+      "sourceFile": "packages/sdk/src/core/events.ts",
+      "properties": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": false,
+          "description": "Database UUID for the task (used for confirmation)"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "description": "Task unique identifier (e.g., 'invite_team_member')"
+        },
+        {
+          "name": "data",
+          "type": "Record<string, unknown>",
+          "required": true,
+          "description": "Task data payload"
+        },
+        {
+          "name": "taskType",
+          "type": "| \"navigate\"\n    | \"open_modal\"\n    | \"fill_form\"\n    | \"trigger_action\"\n    | \"copy_text\"\n    | \"external_link\"\n    | \"start_tutorial\"\n    | \"inline_ui\"",
+          "required": false,
+          "description": "Task type hint"
+        },
+        {
+          "name": "path",
+          "type": "string",
+          "required": false,
+          "description": "Path template for navigate type (already resolved with params)"
+        },
+        {
+          "name": "externalUrl",
+          "type": "string",
+          "required": false,
+          "description": "External URL for external_link type"
+        }
+      ]
+    },
+    "CardCallbacks": {
+      "name": "CardCallbacks",
+      "description": "Callbacks provided to custom card renderers.",
+      "sourceFile": "packages/sdk/src/core/events.ts",
+      "properties": [
+        {
+          "name": "onConfirm",
+          "type": "(modifiedData?: Record<string, unknown>) => void",
+          "required": true,
+          "description": "Called when user confirms the action. Pass modified data if needed."
+        },
+        {
+          "name": "onCancel",
+          "type": "() => void",
+          "required": true,
+          "description": "Called when user cancels the action"
+        },
+        {
+          "name": "onStateChange",
+          "type": "(\n    state: \"loading\" | \"success\" | \"error\",\n    message?: string\n  ) => void",
+          "required": false,
+          "description": "Called to report card state changes (for analytics/confirmation)"
+        }
+      ]
+    },
+    "CardFieldSchema": {
+      "name": "CardFieldSchema",
+      "description": "Card field schema definition for declarative card configuration.",
+      "sourceFile": "packages/sdk/src/core/events.ts",
+      "properties": [
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "description": "Field name/key"
+        },
+        {
+          "name": "label",
+          "type": "string",
+          "required": true,
+          "description": "Display label"
+        },
+        {
+          "name": "type",
+          "type": "| \"text\"\n    | \"number\"\n    | \"email\"\n    | \"select\"\n    | \"multiselect\"\n    | \"checkbox\"\n    | \"textarea\"\n    | \"date\"\n    | \"hidden\"",
+          "required": true,
+          "description": "Field type"
+        },
+        {
+          "name": "required",
+          "type": "boolean",
+          "required": false,
+          "description": "Whether field is required"
+        },
+        {
+          "name": "defaultValue",
+          "type": "unknown",
+          "required": false,
+          "description": "Default value"
+        },
+        {
+          "name": "placeholder",
+          "type": "string",
+          "required": false,
+          "description": "Placeholder text"
+        },
+        {
+          "name": "helpText",
+          "type": "string",
+          "required": false,
+          "description": "Help text shown below field"
+        },
+        {
+          "name": "options",
+          "type": "Array<{ value: string; label: string }>",
+          "required": false,
+          "description": "Options for select/multiselect types"
+        },
+        {
+          "name": "validation",
+          "type": "{\n    min?: number;\n    max?: number;\n    minLength?: number;\n    maxLength?: number;\n    pattern?: string;\n    patternMessage?: string;\n  }",
+          "required": false,
+          "description": "Validation rules"
+        }
+      ]
+    },
+    "CardRegistrationOptions": {
+      "name": "CardRegistrationOptions",
+      "description": "Enhanced card registration options.",
+      "sourceFile": "packages/sdk/src/core/events.ts",
+      "properties": [
+        {
+          "name": "cardType",
+          "type": "string",
+          "required": true,
+          "description": "Card type identifier (e.g., 'add_to_deal', 'invite_member')"
+        },
+        {
+          "name": "title",
+          "type": "string",
+          "required": false,
+          "description": "Human-readable card title"
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "required": false,
+          "description": "Card description"
+        },
+        {
+          "name": "schema",
+          "type": "CardFieldSchema[]",
+          "required": false,
+          "description": "Schema defining form fields (for auto-generated forms)"
+        },
+        {
+          "name": "renderer",
+          "type": "CardRenderer",
+          "required": false,
+          "description": "Custom renderer function (overrides schema-based rendering)"
+        },
+        {
+          "name": "theme",
+          "type": "{\n    variant?: \"default\" | \"compact\" | \"wide\";\n    confirmLabel?: string;\n    cancelLabel?: string;\n  }",
+          "required": false,
+          "description": "Theme/styling options"
+        }
+      ]
+    }
+  },
+  "typeAliases": {
+    "PanelPosition": {
+      "name": "PanelPosition",
+      "description": "Which side of the screen the panel appears on.",
+      "sourceFile": "packages/sdk/src/core/config.ts",
+      "type": "'left' | 'right'"
+    },
+    "PanelMode": {
+      "name": "PanelMode",
+      "description": "How the panel interacts with page content: 'overlay' floats over it, 'push' shifts it aside.",
+      "sourceFile": "packages/sdk/src/core/config.ts",
+      "type": "'overlay' | 'push'"
+    },
+    "ThemeMode": {
+      "name": "ThemeMode",
+      "description": "Color mode for the panel theme. 'auto' follows the system preference.",
+      "sourceFile": "packages/sdk/src/core/config.ts",
+      "type": "'light' | 'dark' | 'auto'"
+    },
+    "MobileTriggerPosition": {
+      "name": "MobileTriggerPosition",
+      "description": "Position of the mobile floating trigger button.",
+      "sourceFile": "packages/sdk/src/core/config.ts",
+      "type": "'bottom-right' | 'bottom-left'"
+    },
+    "MobileTriggerIcon": {
+      "name": "MobileTriggerIcon",
+      "description": "Preset icon for the mobile floating trigger button.",
+      "sourceFile": "packages/sdk/src/core/config.ts",
+      "type": "'sparkle' | 'question' | 'help' | 'chat' | 'support'"
+    },
+    "MobileTriggerSize": {
+      "name": "MobileTriggerSize",
+      "description": "Size preset for the mobile floating trigger button.",
+      "sourceFile": "packages/sdk/src/core/config.ts",
+      "type": "'small' | 'medium' | 'large'"
+    },
+    "CardRenderer": {
+      "name": "CardRenderer",
+      "description": "Card renderer function signature.\nCustomers register these to render custom confirmation cards.",
+      "sourceFile": "packages/sdk/src/core/events.ts",
+      "type": "(\n  container: HTMLElement,\n  data: Record<string, unknown>,\n  callbacks: CardCallbacks\n) => (() => void) | void"
+    }
+  },
+  "methods": [
+    {
+      "name": "init",
+      "signature": "init(config: PillarConfig): Promise<Pillar>",
+      "description": "Initialize the Pillar SDK",
+      "parameters": [
+        {
+          "name": "config",
+          "type": "PillarConfig",
+          "required": true,
+          "description": ""
+        }
+      ],
+      "returnType": "Promise<Pillar>",
+      "isStatic": true
+    },
+    {
+      "name": "getInstance",
+      "signature": "getInstance(): Pillar | null",
+      "description": "Get the current Pillar instance",
+      "parameters": [],
+      "returnType": "Pillar | null",
+      "isStatic": true
+    },
+    {
+      "name": "destroy",
+      "signature": "destroy(): void",
+      "description": "Destroy the Pillar instance",
+      "parameters": [],
+      "returnType": "void",
+      "isStatic": true
+    },
+    {
+      "name": "getDebugLog",
+      "signature": "getDebugLog(): import('../utils/debug').DebugEntry[]",
+      "description": "Get debug log entries (for debug panel).\nReturns empty array if debug mode is not enabled.",
+      "parameters": [],
+      "returnType": "import('../utils/debug').DebugEntry[]",
+      "isStatic": false
+    },
+    {
+      "name": "onDebugLog",
+      "signature": "onDebugLog(callback: (entries: import('../utils/debug').DebugEntry[]) => void): () => void",
+      "description": "Subscribe to debug log updates (for debug panel).\nReturns unsubscribe function.",
+      "parameters": [
+        {
+          "name": "callback",
+          "type": "(entries: import('../utils/debug').DebugEntry[]) => void",
+          "required": true,
+          "description": ""
+        }
+      ],
+      "returnType": "() => void",
+      "isStatic": false
+    },
+    {
+      "name": "clearDebugLog",
+      "signature": "clearDebugLog(): void",
+      "description": "Clear debug log entries.",
+      "parameters": [],
+      "returnType": "void",
+      "isStatic": false
+    },
+    {
+      "name": "on",
+      "signature": "on(event: K, callback: (data: PillarEvents[K]) => void): () => void",
+      "description": "Subscribe to SDK events",
+      "parameters": [
+        {
+          "name": "event",
+          "type": "K",
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "callback",
+          "type": "(data: PillarEvents[K]) => void",
+          "required": true,
+          "description": ""
+        }
+      ],
+      "returnType": "() => void",
+      "isStatic": false
+    },
+    {
+      "name": "open",
+      "signature": "open(options?: {\n    view?: string;\n    article?: string;\n    search?: string;\n    focusInput?: boolean;\n  }): void",
+      "description": "Open the help panel",
+      "parameters": [
+        {
+          "name": "options",
+          "type": "{\n    view?: string;\n    article?: string;\n    search?: string;\n    focusInput?: boolean;\n  }",
+          "required": false,
+          "description": ""
+        }
+      ],
+      "returnType": "void",
+      "isStatic": false
+    },
+    {
+      "name": "close",
+      "signature": "close(): void",
+      "description": "Close the help panel",
+      "parameters": [],
+      "returnType": "void",
+      "isStatic": false
+    },
+    {
+      "name": "toggle",
+      "signature": "toggle(): void",
+      "description": "Toggle the help panel",
+      "parameters": [],
+      "returnType": "void",
+      "isStatic": false
+    },
+    {
+      "name": "navigate",
+      "signature": "navigate(view: string, params?: Record<string, string>): void",
+      "description": "Navigate to a specific view in the panel",
+      "parameters": [
+        {
+          "name": "view",
+          "type": "string",
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "params",
+          "type": "Record<string, string>",
+          "required": false,
+          "description": ""
+        }
+      ],
+      "returnType": "void",
+      "isStatic": false
+    },
+    {
+      "name": "setContext",
+      "signature": "setContext(ctx: Partial<Context>): void",
+      "description": "Set context for the assistant.\nUse this to tell Pillar what the user is doing for smarter, more relevant assistance.",
+      "parameters": [
+        {
+          "name": "ctx",
+          "type": "Partial<Context>",
+          "required": true,
+          "description": "- Context fields to set (merges with existing context)"
+        }
+      ],
+      "returnType": "void",
+      "isStatic": false
+    },
+    {
+      "name": "getChatContext",
+      "signature": "getChatContext(): ChatContext | null",
+      "description": "Get the current chat context (conversation ID and messages).\nUseful for escalation to human support with conversation history.",
+      "parameters": [],
+      "returnType": "ChatContext | null",
+      "isStatic": false
+    },
+    {
+      "name": "setTheme",
+      "signature": "setTheme(theme: Partial<ThemeConfig>): void",
+      "description": "Update the theme at runtime.\nUse this to sync with your app's theme (e.g., dark mode toggle).",
+      "parameters": [
+        {
+          "name": "theme",
+          "type": "Partial<ThemeConfig>",
+          "required": true,
+          "description": "- Partial theme config to merge with current theme"
+        }
+      ],
+      "returnType": "void",
+      "isStatic": false
+    },
+    {
+      "name": "setTextSelectionEnabled",
+      "signature": "setTextSelectionEnabled(enabled: boolean): void",
+      "description": "Enable or disable the text selection \"Ask AI\" popover at runtime.",
+      "parameters": [
+        {
+          "name": "enabled",
+          "type": "boolean",
+          "required": true,
+          "description": "- Whether to show the popover when text is selected"
+        }
+      ],
+      "returnType": "void",
+      "isStatic": false
+    },
+    {
+      "name": "setDOMScanningEnabled",
+      "signature": "setDOMScanningEnabled(enabled: boolean): void",
+      "description": "Enable or disable DOM scanning at runtime.",
+      "parameters": [
+        {
+          "name": "enabled",
+          "type": "boolean",
+          "required": true,
+          "description": "- Whether to enable DOM scanning"
+        }
+      ],
+      "returnType": "void",
+      "isStatic": false
+    },
+    {
+      "name": "getElement",
+      "signature": "getElement(selector: string): Element | null",
+      "description": "Get a DOM element by its pillar selector.",
+      "parameters": [
+        {
+          "name": "selector",
+          "type": "string",
+          "required": true,
+          "description": "- CSS selector (typically from DOMNode.selector)"
+        }
+      ],
+      "returnType": "Element | null",
+      "isStatic": false
+    },
+    {
+      "name": "clickElement",
+      "signature": "clickElement(selector: string): boolean",
+      "description": "Click an element by its selector.\nUses realistic mouse event simulation (mousedown → mouseup → click)\nfor better compatibility with UI frameworks.",
+      "parameters": [
+        {
+          "name": "selector",
+          "type": "string",
+          "required": true,
+          "description": "- CSS selector for the element to click"
+        }
+      ],
+      "returnType": "boolean",
+      "isStatic": false
+    },
+    {
+      "name": "typeInElement",
+      "signature": "typeInElement(selector: string, text: string): boolean",
+      "description": "Type text into an input element.\nUses realistic input simulation that works with React controlled inputs.",
+      "parameters": [
+        {
+          "name": "selector",
+          "type": "string",
+          "required": true,
+          "description": "- CSS selector for the input element"
+        },
+        {
+          "name": "text",
+          "type": "string",
+          "required": true,
+          "description": "- Text to type into the element"
+        }
+      ],
+      "returnType": "boolean",
+      "isStatic": false
+    },
+    {
+      "name": "selectOption",
+      "signature": "selectOption(selector: string, value: string): boolean",
+      "description": "Select an option in a select element.\nUses realistic event simulation for React compatibility.",
+      "parameters": [
+        {
+          "name": "selector",
+          "type": "string",
+          "required": true,
+          "description": "- CSS selector for the select element"
+        },
+        {
+          "name": "value",
+          "type": "string",
+          "required": true,
+          "description": "- Value of the option to select"
+        }
+      ],
+      "returnType": "boolean",
+      "isStatic": false
+    },
+    {
+      "name": "focusElement",
+      "signature": "focusElement(selector: string): boolean",
+      "description": "Focus an element by its selector.\nFires both focus and focusin events for compatibility.",
+      "parameters": [
+        {
+          "name": "selector",
+          "type": "string",
+          "required": true,
+          "description": "- CSS selector for the element to focus"
+        }
+      ],
+      "returnType": "boolean",
+      "isStatic": false
+    },
+    {
+      "name": "toggleElement",
+      "signature": "toggleElement(selector: string): boolean",
+      "description": "Toggle a checkbox or radio element.\nUses click simulation for realistic behavior and React compatibility.",
+      "parameters": [
+        {
+          "name": "selector",
+          "type": "string",
+          "required": true,
+          "description": "- CSS selector for the checkbox/radio element"
+        }
+      ],
+      "returnType": "boolean",
+      "isStatic": false
+    },
+    {
+      "name": "handlePageInteraction",
+      "signature": "handlePageInteraction(params: {\n    operation: 'click' | 'type' | 'select' | 'focus' | 'toggle';\n    ref: string;\n    value?: string;\n  }): Promise<{ success: boolean; error?: string }>",
+      "description": "Handle the interact_with_page action from the LLM.\nRoutes to appropriate DOM interaction method based on operation.\nValidates the ref format, verifies the element attribute, and\nprompts user confirmation for destructive actions.",
+      "parameters": [
+        {
+          "name": "params",
+          "type": "{\n    operation: 'click' | 'type' | 'select' | 'focus' | 'toggle';\n    ref: string;\n    value?: string;\n  }",
+          "required": true,
+          "description": "- Interaction parameters from LLM"
+        }
+      ],
+      "returnType": "Promise<{ success: boolean; error?: string }>",
+      "isStatic": false
+    },
+    {
+      "name": "mountPanelTo",
+      "signature": "mountPanelTo(container: HTMLElement): void",
+      "description": "Mount the panel to a specific container element.\nUsed for manual mounting mode (e.g., from React component).",
+      "parameters": [
+        {
+          "name": "container",
+          "type": "HTMLElement",
+          "required": true,
+          "description": ""
+        }
+      ],
+      "returnType": "void",
+      "isStatic": false
+    },
+    {
+      "name": "getPanelHostElement",
+      "signature": "getPanelHostElement(): HTMLElement | null",
+      "description": "Get the panel host element for external mounting",
+      "parameters": [],
+      "returnType": "HTMLElement | null",
+      "isStatic": false
+    },
+    {
+      "name": "setUserProfile",
+      "signature": "setUserProfile(profile: UserProfile): void",
+      "description": "Set the user profile for personalization.",
+      "parameters": [
+        {
+          "name": "profile",
+          "type": "UserProfile",
+          "required": true,
+          "description": ""
+        }
+      ],
+      "returnType": "void",
+      "isStatic": false
+    },
+    {
+      "name": "identify",
+      "signature": "identify(userId: string, profile?: {\n      name?: string;\n      email?: string;\n      metadata?: Record<string, unknown>;\n    }, options?: { preserveConversation?: boolean }): Promise<void>",
+      "description": "Identify the current user after login.\n\nCall this when a user logs into your application to:\n- Link their anonymous conversation history to their account\n- Enable cross-device conversation history retrieval\n- Associate future conversations with their user ID",
+      "parameters": [
+        {
+          "name": "userId",
+          "type": "string",
+          "required": true,
+          "description": "- Your application's user ID for this user"
+        },
+        {
+          "name": "profile",
+          "type": "{\n      name?: string;\n      email?: string;\n      metadata?: Record<string, unknown>;\n    }",
+          "required": false,
+          "description": "- Optional user profile data (name, email, metadata)"
+        },
+        {
+          "name": "options",
+          "type": "{ preserveConversation?: boolean }",
+          "required": false,
+          "description": "- Optional settings for the identify call"
+        }
+      ],
+      "returnType": "Promise<void>",
+      "isStatic": false
+    },
+    {
+      "name": "logout",
+      "signature": "logout(options?: { preserveConversation?: boolean }): void",
+      "description": "Clear the user's identity (logout).\n\nCall this when a user logs out of your application.\nFuture conversations will be tracked anonymously until identify() is called again.\n\nNote: This does not delete existing conversations - they remain associated\nwith the user's account for future retrieval.",
+      "parameters": [
+        {
+          "name": "options",
+          "type": "{ preserveConversation?: boolean }",
+          "required": false,
+          "description": "- Optional settings for the logout call"
+        }
+      ],
+      "returnType": "void",
+      "isStatic": false
+    },
+    {
+      "name": "reportAction",
+      "signature": "reportAction(action: string, metadata?: Record<string, unknown>): void",
+      "description": "Report a user action for context building.\nRecent actions are tracked and sent with chat requests for better context.",
+      "parameters": [
+        {
+          "name": "action",
+          "type": "string",
+          "required": true,
+          "description": "- Description of the action (e.g., \"clicked_upgrade\", \"viewed_invoice\")"
+        },
+        {
+          "name": "metadata",
+          "type": "Record<string, unknown>",
+          "required": false,
+          "description": "- Optional metadata about the action"
+        }
+      ],
+      "returnType": "void",
+      "isStatic": false
+    },
+    {
+      "name": "clearErrorState",
+      "signature": "clearErrorState(): void",
+      "description": "Clear any error state from the context.",
+      "parameters": [],
+      "returnType": "void",
+      "isStatic": false
+    },
+    {
+      "name": "setErrorState",
+      "signature": "setErrorState(code: string, message: string): void",
+      "description": "Set an error state in the context.\nThe assistant will use this to provide relevant troubleshooting help.",
+      "parameters": [
+        {
+          "name": "code",
+          "type": "string",
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "message",
+          "type": "string",
+          "required": true,
+          "description": ""
+        }
+      ],
+      "returnType": "void",
+      "isStatic": false
+    },
+    {
+      "name": "getSuggestions",
+      "signature": "getSuggestions(): Promise<Suggestion[]>",
+      "description": "Get contextual help suggestions based on current context.\nReturns relevant articles, videos, and actions.",
+      "parameters": [],
+      "returnType": "Promise<Suggestion[]>",
+      "isStatic": false
+    },
+    {
+      "name": "getAssistantContext",
+      "signature": "getAssistantContext(): { product: Context; user: UserProfile }",
+      "description": "Get the full context object to send to the backend.\nUsed internally by the API client.",
+      "parameters": [],
+      "returnType": "{ product: Context; user: UserProfile }",
+      "isStatic": false
+    },
+    {
+      "name": "onTask",
+      "signature": "onTask(taskName: string, handler: (data: Record<string, unknown>) => void): () => void",
+      "description": "Register a handler for a specific task.\nCalled when the AI suggests a task and the user clicks it.",
+      "parameters": [
+        {
+          "name": "taskName",
+          "type": "string",
+          "required": true,
+          "description": "- The task identifier (e.g., 'invite_team_member')"
+        },
+        {
+          "name": "handler",
+          "type": "(data: Record<string, unknown>) => void",
+          "required": true,
+          "description": "- Function to handle the task execution"
+        }
+      ],
+      "returnType": "() => void",
+      "isStatic": false
+    },
+    {
+      "name": "registerAction",
+      "signature": "registerAction(action: { name: string } & Record<string, unknown>): void",
+      "description": "Register an action definition at runtime.\n\nThis is primarily for demos and development. In production, actions\nshould be synced via the `pillar-sync` CLI during CI/CD.\n\nThe action definition is stored locally and can be used by `onTask`\nhandlers. For actions with `returnsData: true`, the handler's return\nvalue is sent back to the agent.",
+      "parameters": [
+        {
+          "name": "action",
+          "type": "{ name: string } & Record<string, unknown>",
+          "required": true,
+          "description": "- Action definition with name and properties"
+        }
+      ],
+      "returnType": "void",
+      "isStatic": false
+    },
+    {
+      "name": "getRegisteredAction",
+      "signature": "getRegisteredAction(name: string): Record<string, unknown> | undefined",
+      "description": "Get a registered action definition by name.",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "description": "- Action name"
+        }
+      ],
+      "returnType": "Record<string, unknown> | undefined",
+      "isStatic": false
+    },
+    {
+      "name": "getHandler",
+      "signature": "getHandler(actionName: string): ((data: Record<string, unknown>) => unknown) | undefined",
+      "description": "Get handler for an action, checking all registration systems.\n\nLookup order:\n1. Code-first action registry (synced via pillar-sync CLI) - handler in definition\n2. Task handlers (registered via onTask at runtime)\n\nThis is the recommended pattern:\n- Action definitions synced to server via CLI (so AI knows what's possible)\n- Handlers registered at runtime via onTask (client-side execution)",
+      "parameters": [
+        {
+          "name": "actionName",
+          "type": "string",
+          "required": true,
+          "description": "- Action name to look up"
+        }
+      ],
+      "returnType": "((data: Record<string, unknown>) => unknown) | undefined",
+      "isStatic": false
+    },
+    {
+      "name": "onAnyTask",
+      "signature": "onAnyTask(handler: (name: string, data: Record<string, unknown>) => void): () => void",
+      "description": "Register a catch-all handler for any task.\nUseful for logging, analytics, or handling unknown tasks.",
+      "parameters": [
+        {
+          "name": "handler",
+          "type": "(name: string, data: Record<string, unknown>) => void",
+          "required": true,
+          "description": "- Function called with task name and data"
+        }
+      ],
+      "returnType": "() => void",
+      "isStatic": false
+    },
+    {
+      "name": "offTask",
+      "signature": "offTask(taskName: string): void",
+      "description": "Remove a task handler.",
+      "parameters": [
+        {
+          "name": "taskName",
+          "type": "string",
+          "required": true,
+          "description": "- The task identifier to stop handling"
+        }
+      ],
+      "returnType": "void",
+      "isStatic": false
+    },
+    {
+      "name": "executeTask",
+      "signature": "executeTask(payload: TaskExecutePayload): void",
+      "description": "Execute a task programmatically.\nThis is called internally by the widget when a user clicks a task button.\nCan also be called directly if you want to trigger a task.",
+      "parameters": [
+        {
+          "name": "payload",
+          "type": "TaskExecutePayload",
+          "required": true,
+          "description": "- Task execution payload"
+        }
+      ],
+      "returnType": "void",
+      "isStatic": false
+    },
+    {
+      "name": "completeTask",
+      "signature": "completeTask(taskName: string, success?: boolean, data?: Record<string, unknown>): void",
+      "description": "Mark a task as complete.\nCall this after your task handler finishes successfully.",
+      "parameters": [
+        {
+          "name": "taskName",
+          "type": "string",
+          "required": true,
+          "description": "- The task identifier"
+        },
+        {
+          "name": "success",
+          "type": "boolean",
+          "required": false,
+          "description": "- Whether the task completed successfully"
+        },
+        {
+          "name": "data",
+          "type": "Record<string, unknown>",
+          "required": false,
+          "description": "- Optional result data"
+        }
+      ],
+      "returnType": "void",
+      "isStatic": false
+    },
+    {
+      "name": "completeAction",
+      "signature": "completeAction(actionName: string, success?: boolean, data?: Record<string, unknown>): Promise<void>",
+      "description": "Signal that an action has completed.\n\nFor simple actions, this emits the completion event.\nFor wizard actions (modals, multi-step flows), call this when the user\nfinishes the flow.",
+      "parameters": [
+        {
+          "name": "actionName",
+          "type": "string",
+          "required": true,
+          "description": "- The action identifier"
+        },
+        {
+          "name": "success",
+          "type": "boolean",
+          "required": false,
+          "description": "- Whether the action completed successfully (default: true)"
+        },
+        {
+          "name": "data",
+          "type": "Record<string, unknown>",
+          "required": false,
+          "description": "- Optional result data"
+        }
+      ],
+      "returnType": "Promise<void>",
+      "isStatic": false
+    },
+    {
+      "name": "confirmTaskExecution",
+      "signature": "confirmTaskExecution(taskId: string, status: \"success\" | \"failure\", details?: {\n      error?: string;\n      duration_ms?: number;\n      [key: string]: unknown;\n    }): void",
+      "description": "Confirm task execution result.\nCall this after your task handler completes to report success/failure\nback to Pillar for implementation status tracking.",
+      "parameters": [
+        {
+          "name": "taskId",
+          "type": "string",
+          "required": true,
+          "description": "- The database UUID of the task (from task:execute event)"
+        },
+        {
+          "name": "status",
+          "type": "\"success\" | \"failure\"",
+          "required": true,
+          "description": "- 'success' or 'failure'"
+        },
+        {
+          "name": "details",
+          "type": "{\n      error?: string;\n      duration_ms?: number;\n      [key: string]: unknown;\n    }",
+          "required": false,
+          "description": "- Optional execution details"
+        }
+      ],
+      "returnType": "void",
+      "isStatic": false
+    },
+    {
+      "name": "registerCard",
+      "signature": "registerCard(cardType: string, renderer: CardRenderer): () => void",
+      "description": "Register a custom card renderer for inline_ui type actions.\n\nWhen the AI returns an action with action_type: 'inline_ui' and\na card_type in its data, the SDK will look for a registered renderer\nand call it to render the inline UI card.",
+      "parameters": [
+        {
+          "name": "cardType",
+          "type": "string",
+          "required": true,
+          "description": "- The card type identifier (e.g., 'invite_members')"
+        },
+        {
+          "name": "renderer",
+          "type": "CardRenderer",
+          "required": true,
+          "description": "- Function that renders the card into a container"
+        }
+      ],
+      "returnType": "() => void",
+      "isStatic": false
+    },
+    {
+      "name": "getCardRenderer",
+      "signature": "getCardRenderer(cardType: string): CardRenderer | undefined",
+      "description": "Get a registered card renderer by type.\nReturns undefined if no renderer is registered for the given type.",
+      "parameters": [
+        {
+          "name": "cardType",
+          "type": "string",
+          "required": true,
+          "description": "- The card type identifier"
+        }
+      ],
+      "returnType": "CardRenderer | undefined",
+      "isStatic": false
+    },
+    {
+      "name": "hasCardRenderer",
+      "signature": "hasCardRenderer(cardType: string): boolean",
+      "description": "Check if a card renderer is registered for a given type.",
+      "parameters": [
+        {
+          "name": "cardType",
+          "type": "string",
+          "required": true,
+          "description": "- The card type identifier"
+        }
+      ],
+      "returnType": "boolean",
+      "isStatic": false
+    },
+    {
+      "name": "startWorkflow",
+      "signature": "startWorkflow(workflow: Workflow): void",
+      "description": "Start a workflow.\nCalled when the AI returns a workflow in its response.",
+      "parameters": [
+        {
+          "name": "workflow",
+          "type": "Workflow",
+          "required": true,
+          "description": "- The workflow to start"
+        }
+      ],
+      "returnType": "void",
+      "isStatic": false
+    },
+    {
+      "name": "initiateWorkflowStep",
+      "signature": "initiateWorkflowStep(stepIndex?: number): void",
+      "description": "Initiate a workflow step that requires user confirmation.\nCalled when user clicks \"Start\" on a step with auto_run=false.",
+      "parameters": [
+        {
+          "name": "stepIndex",
+          "type": "number",
+          "required": false,
+          "description": "- Optional step index (defaults to current)"
+        }
+      ],
+      "returnType": "void",
+      "isStatic": false
+    },
+    {
+      "name": "confirmWorkflowStep",
+      "signature": "confirmWorkflowStep(success: boolean, stepIndex?: number): void",
+      "description": "Confirm a workflow step as complete.\nCalled by the host app after the action is done.\nAutomatically advances to the next step.",
+      "parameters": [
+        {
+          "name": "success",
+          "type": "boolean",
+          "required": true,
+          "description": "- Whether the step completed successfully"
+        },
+        {
+          "name": "stepIndex",
+          "type": "number",
+          "required": false,
+          "description": "- Optional step index (defaults to current)"
+        }
+      ],
+      "returnType": "void",
+      "isStatic": false
+    },
+    {
+      "name": "skipWorkflowStep",
+      "signature": "skipWorkflowStep(stepIndex?: number): void",
+      "description": "Skip a workflow step.",
+      "parameters": [
+        {
+          "name": "stepIndex",
+          "type": "number",
+          "required": false,
+          "description": "- Optional step index (defaults to current)"
+        }
+      ],
+      "returnType": "void",
+      "isStatic": false
+    },
+    {
+      "name": "cancelWorkflow",
+      "signature": "cancelWorkflow(): void",
+      "description": "Cancel the active workflow.",
+      "parameters": [],
+      "returnType": "void",
+      "isStatic": false
+    },
+    {
+      "name": "sendActionResult",
+      "signature": "sendActionResult(actionName: string, result: unknown, toolCallId?: string): Promise<void>",
+      "description": "Send action result back to the agent.\n\nCalled automatically for actions with `returns: true` after their\nhandler completes. The result is sent to the agent for further reasoning.",
+      "parameters": [
+        {
+          "name": "actionName",
+          "type": "string",
+          "required": true,
+          "description": "- The name of the action that was executed"
+        },
+        {
+          "name": "result",
+          "type": "unknown",
+          "required": true,
+          "description": "- The result data to send back to the agent"
+        },
+        {
+          "name": "toolCallId",
+          "type": "string",
+          "required": false,
+          "description": "- Unique ID for this specific tool invocation (for result correlation)"
+        }
+      ],
+      "returnType": "Promise<void>",
+      "isStatic": false
+    },
+    {
+      "name": "executeQueryAction",
+      "signature": "executeQueryAction(actionName: string, args?: Record<string, unknown>, schema?: { properties?: Record<string, unknown>; required?: string[] }): Promise<void>",
+      "description": "Execute a query action and send the result back to the agent.\n\nThis is called when the agent sends a `query_request` event.\nQuery actions are expected to return data that the agent can use\nfor further reasoning.",
+      "parameters": [
+        {
+          "name": "actionName",
+          "type": "string",
+          "required": true,
+          "description": "- The name of the action to execute"
+        },
+        {
+          "name": "args",
+          "type": "Record<string, unknown>",
+          "required": false,
+          "description": "- Arguments for the action"
+        },
+        {
+          "name": "schema",
+          "type": "{ properties?: Record<string, unknown>; required?: string[] }",
+          "required": false,
+          "description": "- Optional schema for parameter validation"
+        }
+      ],
+      "returnType": "Promise<void>",
+      "isStatic": false
+    },
+    {
+      "name": "state",
+      "signature": "get state: PillarState",
+      "description": "Current SDK state",
+      "parameters": [],
+      "returnType": "PillarState",
+      "isStatic": false
+    },
+    {
+      "name": "isReady",
+      "signature": "get isReady: boolean",
+      "description": "Whether SDK is ready",
+      "parameters": [],
+      "returnType": "boolean",
+      "isStatic": false
+    },
+    {
+      "name": "isPanelOpen",
+      "signature": "get isPanelOpen: boolean",
+      "description": "Whether the panel is currently open",
+      "parameters": [],
+      "returnType": "boolean",
+      "isStatic": false
+    },
+    {
+      "name": "config",
+      "signature": "get config: ResolvedConfig | null",
+      "description": "Get the resolved configuration",
+      "parameters": [],
+      "returnType": "ResolvedConfig | null",
+      "isStatic": false
+    },
+    {
+      "name": "isDebugEnabled",
+      "signature": "get isDebugEnabled: boolean",
+      "description": "Whether debug mode is enabled",
+      "parameters": [],
+      "returnType": "boolean",
+      "isStatic": false
+    },
+    {
+      "name": "isDOMScanningEnabled",
+      "signature": "get isDOMScanningEnabled: boolean",
+      "description": "Whether DOM scanning is currently enabled.",
+      "parameters": [],
+      "returnType": "boolean",
+      "isStatic": false
+    },
+    {
+      "name": "context",
+      "signature": "get context: Context",
+      "description": "Get the current context",
+      "parameters": [],
+      "returnType": "Context",
+      "isStatic": false
+    },
+    {
+      "name": "userProfile",
+      "signature": "get userProfile: UserProfile",
+      "description": "Get the current user profile",
+      "parameters": [],
+      "returnType": "UserProfile",
+      "isStatic": false
+    },
+    {
+      "name": "externalUserId",
+      "signature": "get externalUserId: string | null",
+      "description": "Get the current external user ID (if identified).",
+      "parameters": [],
+      "returnType": "string | null",
+      "isStatic": false
+    },
+    {
+      "name": "isIdentified",
+      "signature": "get isIdentified: boolean",
+      "description": "Whether the current user is identified (logged in).",
+      "parameters": [],
+      "returnType": "boolean",
+      "isStatic": false
+    },
+    {
+      "name": "workflow",
+      "signature": "get workflow: Workflow | null",
+      "description": "Get the active workflow, if any.",
+      "parameters": [],
+      "returnType": "Workflow | null",
+      "isStatic": false
+    }
+  ]
+}

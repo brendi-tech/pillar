@@ -1,0 +1,37 @@
+interface DOMScanningConfig {
+  /**
+   * Whether DOM scanning is enabled.
+   * When enabled, page structure is captured and sent with messages.
+   * @default false
+   */
+  enabled?: boolean;
+  /**
+   * Whether to include text content in the scan.
+   * @default true
+   */
+  includeText?: boolean;
+  /**
+   * Maximum depth to traverse the DOM tree.
+   * @default 20
+   */
+  maxDepth?: number;
+  /**
+   * Whether to only include visible elements.
+   * @default true
+   */
+  visibleOnly?: boolean;
+  /**
+   * CSS selector for elements to exclude from scanning.
+   * @example '.sidebar, .footer, [data-no-scan]'
+   */
+  excludeSelector?: string;
+  /**
+   * Maximum text length before truncation.
+   * @default 500
+   */
+  maxTextLength?: number;
+  /**
+   * Configuration for highlighting elements during AI interactions.
+   */
+  interactionHighlight?: InteractionHighlightConfig;
+}

@@ -1,0 +1,22 @@
+interface TaskExecutePayload {
+  /** Database UUID for the task (used for confirmation) */
+  id?: string;
+  /** Task unique identifier (e.g., 'invite_team_member') */
+  name: string;
+  /** Task data payload */
+  data: Record<string, unknown>;
+  /** Task type hint */
+  taskType?:
+    | "navigate"
+    | "open_modal"
+    | "fill_form"
+    | "trigger_action"
+    | "copy_text"
+    | "external_link"
+    | "start_tutorial"
+    | "inline_ui";
+  /** Path template for navigate type (already resolved with params) */
+  path?: string;
+  /** External URL for external_link type */
+  externalUrl?: string;
+}

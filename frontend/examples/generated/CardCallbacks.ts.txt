@@ -1,0 +1,11 @@
+interface CardCallbacks {
+  /** Called when user confirms the action. Pass modified data if needed. */
+  onConfirm: (modifiedData?: Record<string, unknown>) => void;
+  /** Called when user cancels the action */
+  onCancel: () => void;
+  /** Called to report card state changes (for analytics/confirmation) */
+  onStateChange?: (
+    state: "loading" | "success" | "error",
+    message?: string
+  ) => void;
+}

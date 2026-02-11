@@ -1,4 +1,0 @@
-interface TaskResult {
-  success: boolean;
-  message?: string;
-}

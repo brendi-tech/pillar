@@ -1,0 +1,5 @@
+type CardRenderer = (
+  container: HTMLElement,
+  data: Record<string, unknown>,
+  callbacks: CardCallbacks
+) => (() => void) | void;

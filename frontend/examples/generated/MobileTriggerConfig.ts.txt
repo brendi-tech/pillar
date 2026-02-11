@@ -1,0 +1,55 @@
+interface MobileTriggerConfig {
+  /**
+   * Whether to show the mobile floating button on small screens.
+   * When enabled, a floating action button appears when viewport is below mobileBreakpoint.
+   * @default true
+   */
+  enabled?: boolean;
+  /**
+   * Viewport width below which the edge trigger hides and mobile trigger shows.
+   * @default 700
+   */
+  breakpoint?: number;
+  /**
+   * Position of the floating button.
+   * @default 'bottom-right'
+   */
+  position?: MobileTriggerPosition;
+  /**
+   * Preset icon to display in the button.
+   * @default 'sparkle'
+   */
+  icon?: MobileTriggerIcon;
+  /**
+   * Custom SVG icon string. Overrides the icon preset if provided.
+   */
+  customIcon?: string;
+  /**
+   * Background color of the button (CSS value).
+   * Defaults to the theme's primary color.
+   */
+  backgroundColor?: string;
+  /**
+   * Icon color (CSS value).
+   * @default 'white'
+   */
+  iconColor?: string;
+  /**
+   * Button size - preset name or pixel value.
+   * - 'small': 44px
+   * - 'medium': 56px (default)
+   * - 'large': 68px
+   * @default 'medium'
+   */
+  size?: MobileTriggerSize | number;
+  /**
+   * Tooltip text and aria-label for accessibility.
+   * @default 'Get help'
+   */
+  label?: string;
+  /**
+   * Offset from screen edges in pixels.
+   * @default 24
+   */
+  offset?: number;
+}

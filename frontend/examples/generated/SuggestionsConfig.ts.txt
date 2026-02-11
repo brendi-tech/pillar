@@ -1,0 +1,20 @@
+interface SuggestionsConfig {
+  /**
+   * Enable page-aware suggestion sorting.
+   * When enabled, suggestions are re-sorted based on the current page context
+   * whenever the user navigates to a new route.
+   * @default true
+   */
+  enabled?: boolean;
+  /**
+   * Debounce time for route change detection (ms).
+   * Prevents excessive sorting on rapid navigation.
+   * @default 100
+   */
+  debounceMs?: number;
+  /**
+   * Maximum number of suggestions to display.
+   * @default 3
+   */
+  displayLimit?: number;
+}

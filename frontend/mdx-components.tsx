@@ -40,6 +40,7 @@ import {
   SyntaxHighlightedPre,
   CodeSnippet,
   CodeSnippetTabs,
+  TypeDocs,
 } from "@/components/mdx";
 
 /**
@@ -76,6 +77,7 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
     ConfigReference,
     CodeSnippet,
     CodeSnippetTabs,
+    TypeDocs,
 
     // HTML element overrides (matching MarkdownRenderer styling)
     h1: ({ children, ...props }) => {

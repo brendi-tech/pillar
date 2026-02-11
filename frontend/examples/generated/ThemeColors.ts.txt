@@ -1,0 +1,20 @@
+interface ThemeColors {
+  /** Primary brand color (buttons, links, accents) */
+  primary?: string;
+  /** Primary color on hover state */
+  primaryHover?: string;
+  /** Main background color */
+  background?: string;
+  /** Secondary/subtle background (inputs, cards) */
+  backgroundSecondary?: string;
+  /** Primary text color */
+  text?: string;
+  /** Muted/secondary text color */
+  textMuted?: string;
+  /** Border color */
+  border?: string;
+  /** Border color for subtle/light borders */
+  borderLight?: string;
+  /** Outline/focus ring color for interactive elements */
+  outlineColor?: string;
+}

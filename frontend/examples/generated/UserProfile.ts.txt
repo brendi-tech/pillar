@@ -1,0 +1,16 @@
+interface UserProfile {
+  /** User identifier (for conversation continuity) */
+  userId?: string;
+
+  /** User's name for personalized responses */
+  name?: string;
+
+  /** User's role/permissions */
+  role?: string;
+
+  /** Account/organization info */
+  accountType?: string;
+
+  /** User's experience level */
+  experienceLevel?: 'beginner' | 'intermediate' | 'advanced';
+}

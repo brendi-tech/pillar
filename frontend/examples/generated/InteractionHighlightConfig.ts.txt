@@ -1,0 +1,38 @@
+interface InteractionHighlightConfig {
+  /**
+   * Whether to highlight elements when the AI interacts with them.
+   * @default true
+   */
+  enabled?: boolean;
+  /**
+   * Outline color for highlighted elements (CSS color value).
+   * @default '#3b82f6' (blue-500)
+   */
+  outlineColor?: string;
+  /**
+   * Outline width in pixels.
+   * @default 2
+   */
+  outlineWidth?: number;
+  /**
+   * Outline offset in pixels (space between element and outline).
+   * @default 2
+   */
+  outlineOffset?: number;
+  /**
+   * Duration in milliseconds to show the highlight.
+   * Set to 0 for no auto-removal (highlight stays until next interaction).
+   * @default 2000
+   */
+  duration?: number;
+  /**
+   * Whether to scroll the element into view if not visible.
+   * @default true
+   */
+  scrollIntoView?: boolean;
+  /**
+   * Scroll behavior when scrolling element into view.
+   * @default 'smooth'
+   */
+  scrollBehavior?: ScrollBehavior;
+}

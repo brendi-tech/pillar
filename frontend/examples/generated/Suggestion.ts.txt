@@ -1,0 +1,8 @@
+interface Suggestion {
+  type: 'article' | 'video' | 'tutorial' | 'action';
+  id: string;
+  title: string;
+  description: string;
+  relevanceScore: number;
+  url?: string;
+}

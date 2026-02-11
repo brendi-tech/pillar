@@ -1,0 +1,8 @@
+interface UrlParamsConfig {
+  /** Whether to check URL params for auto-opening the panel (default: true) */
+  enabled?: boolean;
+  /** Prefix for URL params (default: 'pillar-') */
+  prefix?: string;
+  /** Whether to clear URL params after opening (default: true) */
+  clearAfterOpen?: boolean;
+}

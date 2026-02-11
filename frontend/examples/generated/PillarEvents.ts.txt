@@ -1,0 +1,72 @@
+interface PillarEvents {
+  ready: void;
+  error: Error;
+  "panel:open": void;
+  "panel:close": void;
+  "panel:navigate": { view: string; params?: Record<string, string> };
+  "article:view": { articleSlug: string };
+  "search:query": { query: string };
+  "chat:message": { message: string };
+  "textSelection:shown": { text: string };
+  "textSelection:click": { text: string };
+  // Context events
+  "context:change": { context: Context };
+  "profile:change": { profile: UserProfile };
+  "action:report": { action: string; metadata?: Record<string, unknown> };
+
+  // User identity events
+  "user:identified": {
+    userId: string;
+    profile?: {
+      name?: string;
+      email?: string;
+      metadata?: Record<string, unknown>;
+    };
+  };
+  "user:logout": Record<string, never>;
+  // Query action events - for actions that return data to the agent
+  "action:result": { actionName: string; result: unknown; toolCallId?: string };
+  // Task events - for AI-suggested actions
+  "task:execute": TaskExecutePayload;
+  "task:complete": {
+    id?: string;
+    name: string;
+    success: boolean;
+    data?: Record<string, unknown>;
+  };
+
+  // Workflow events - for multi-step sequences
+  "workflow:start": Workflow;
+  "workflow:step:active": { workflow: Workflow; step: WorkflowStep };
+  "workflow:step:complete": {
+    workflow: Workflow;
+    step: WorkflowStep;
+    success: boolean;
+  };
+  "workflow:step:skip": { workflow: Workflow; step: WorkflowStep };
+  "workflow:complete": Workflow;
+  "workflow:cancel": Workflow;
+
+  // Theme events
+  "theme:change": { theme: ResolvedThemeConfig };
+
+  // Text selection feature toggle
+  "textSelection:change": { enabled: boolean };
+
+  // DOM scanning events
+  "dom:scanned": CompactScanResult;
+  "domScanning:change": { enabled: boolean };
+
+  // Suggestions events - for page-aware suggestion sorting
+  "suggestions:updated": {
+    suggestions: Array<{ id: string; text: string }>;
+    route: string;
+  };
+
+  // Sidebar tab click events - for triggering custom actions on non-assistant tabs
+  // Customers use this to integrate their own support systems (Intercom, Zendesk, etc.)
+  "sidebar:click": { tabId: string; label: string };
+
+  /** @deprecated Use 'sidebar:click' instead. Will be removed in next major version. */
+  "support:request": { tabId: string };
+}

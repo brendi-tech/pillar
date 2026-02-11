@@ -1,0 +1,6 @@
+interface TextSelectionConfig {
+  /** Whether to show "Ask AI" popover on text selection (default: true) */
+  enabled?: boolean;
+  /** Label for the popover button (default: 'Ask AI') */
+  label?: string;
+}

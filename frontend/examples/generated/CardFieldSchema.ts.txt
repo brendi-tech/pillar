@@ -1,0 +1,36 @@
+interface CardFieldSchema {
+  /** Field name/key */
+  name: string;
+  /** Display label */
+  label: string;
+  /** Field type */
+  type:
+    | "text"
+    | "number"
+    | "email"
+    | "select"
+    | "multiselect"
+    | "checkbox"
+    | "textarea"
+    | "date"
+    | "hidden";
+  /** Whether field is required */
+  required?: boolean;
+  /** Default value */
+  defaultValue?: unknown;
+  /** Placeholder text */
+  placeholder?: string;
+  /** Help text shown below field */
+  helpText?: string;
+  /** Options for select/multiselect types */
+  options?: Array<{ value: string; label: string }>;
+  /** Validation rules */
+  validation?: {
+    min?: number;
+    max?: number;
+    minLength?: number;
+    maxLength?: number;
+    pattern?: string;
+    patternMessage?: string;
+  };
+}

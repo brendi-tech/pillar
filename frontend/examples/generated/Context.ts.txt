@@ -1,0 +1,22 @@
+interface Context {
+  /** Current page path (e.g., "/settings/billing") */
+  currentPage?: string;
+
+  /** Current feature or section (e.g., "Billing Settings") */
+  currentFeature?: string;
+
+  /** User's role in the product (e.g., "admin", "member") */
+  userRole?: string;
+
+  /** Current user state or mode (e.g., "onboarding", "trial") */
+  userState?: string;
+
+  /** Any error state the user is experiencing */
+  errorState?: {
+    code: string;
+    message: string;
+  };
+
+  /** Custom context data */
+  custom?: Record<string, unknown>;
+}

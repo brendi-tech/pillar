@@ -10,13 +10,25 @@
 declare module "@pillar-ai/react" {
   import type { ReactNode } from "react";
 
-  export type ThemeMode = "light" | "dark" | "auto" | "system";
+  export type ThemeMode = "light" | "dark" | "auto";
+
+  export interface ThemeColors {
+    primary?: string;
+    primaryHover?: string;
+    background?: string;
+    backgroundSecondary?: string;
+    text?: string;
+    textMuted?: string;
+    border?: string;
+    borderLight?: string;
+    outlineColor?: string;
+  }
 
   export interface ThemeConfig {
     mode?: ThemeMode;
+    colors?: ThemeColors;
+    darkColors?: ThemeColors;
     fontFamily?: string;
-    colors?: Record<string, string>;
-    darkColors?: Record<string, string>;
   }
 
   export interface PanelConfig {

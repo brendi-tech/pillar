@@ -1,5 +1,0 @@
-type CardRenderer = (
-  container: HTMLElement,
-  data: Record<string, unknown>,
-  callbacks: { onConfirm: Function, onCancel: Function }
-) => () => void; // Returns cleanup function

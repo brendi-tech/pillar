@@ -1,0 +1,16 @@
+interface ThemeConfig {
+  /** 
+   * Color mode: 'light', 'dark', or 'auto' (follows system preference)
+   * @default 'auto'
+   */
+  mode?: ThemeMode;
+  /** Custom color overrides for light mode */
+  colors?: ThemeColors;
+  /** Custom color overrides for dark mode (when mode is 'auto' or 'dark') */
+  darkColors?: ThemeColors;
+  /**
+   * Font family for all panel text.
+   * @default "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
+   */
+  fontFamily?: string;
+}
