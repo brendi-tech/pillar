@@ -170,11 +170,20 @@ class SuggestQuestionsTool(Tool):
         # Fetch top articles via RAG search
         articles_context = await self._get_articles_context(help_center_config)
 
+        has_actions = not actions_context.startswith("No specific actions")
+        has_articles = not articles_context.startswith("No documentation")
+
+        # Nothing to work with -- skip the LLM call entirely
+        if not has_actions and not has_articles:
+            logger.info("[SuggestQuestions] No actions or articles available, skipping generation")
+            return []
+
         # Build prompt
         prompt = self._build_prompt(
             product_name=help_center_config.name,
             actions_context=actions_context,
             articles_context=articles_context,
+            has_actions=has_actions,
         )
 
         # Generate with LLM (use budget model for question generation)
@@ -187,12 +196,24 @@ class SuggestQuestionsTool(Tool):
 
         logger.info(f"[SuggestQuestions] Generating {MAX_POOL_SIZE} questions with model: {model_name}")
 
+        if has_actions:
+            system_prompt = (
+                "You are an assistant that generates action-oriented starter prompts for a product's AI copilot. "
+                "The copilot can perform actions, not just answer questions. Generate exactly 3 focused prompts "
+                "that invite the user to ask the copilot to DO something. Use imperative phrasing like "
+                "'Create...', 'Set up...', 'Show me...' instead of 'How do I...'. Return only valid JSON array."
+            )
+        else:
+            system_prompt = (
+                "You are an assistant that generates helpful starter prompts for a product's AI copilot. "
+                "Generate exactly 3 focused prompts that invite the user to engage with the copilot. "
+                "Use guiding phrasing like 'Walk me through...', 'Help me understand...', 'Show me how to...' "
+                "instead of passive 'How do I...' or 'What is...'. Return only valid JSON array."
+            )
+
         response = await llm_client.complete_async(
             prompt=prompt,
-            system_prompt=(
-                "You are an assistant that generates helpful starter questions for a product's help center. "
-                "Generate exactly 3 focused questions covering the most important capabilities. Return only valid JSON array."
-            ),
+            system_prompt=system_prompt,
             max_tokens=1000,
             temperature=0.7,
         )
@@ -224,26 +245,34 @@ class SuggestQuestionsTool(Tool):
         return validated
 
     async def _get_actions_context(self, help_center_config) -> str:
-        """Fetch available actions and format as concise context for LLM.
-        
-        Optimized for speed: includes all action names but truncates descriptions
-        to keep the prompt size manageable while ensuring comprehensive coverage.
+        """Fetch available actions with metadata annotations for LLM ranking.
+
+        Each action is annotated with its type and key properties so the LLM
+        can reason about which are the most impressive capabilities to suggest.
         """
         from apps.products.models import Action
 
         try:
             actions = []
-            # Fetch all published actions - names are most important for diversity
             async for action in Action.objects.filter(
                 product=help_center_config,
                 status=Action.Status.PUBLISHED,
-            ).values('name', 'description'):
+            ).values('name', 'description', 'action_type', 'required_context', 'returns_data'):
                 name = action['name'].replace('_', ' ').title()
-                desc = (action['description'] or '')
+                desc = action['description'] or ''
+
+                # Build metadata tags for LLM ranking
+                tags = [action['action_type'] or 'trigger_action']
+                if action.get('returns_data'):
+                    tags.append('returns data')
+                if action.get('required_context'):
+                    tags.append('requires context')
+
+                tag_str = ', '.join(tags)
                 if desc:
-                    actions.append(f"- {name}: {desc}")
+                    actions.append(f"- {name} [{tag_str}]: {desc}")
                 else:
-                    actions.append(f"- {name}")
+                    actions.append(f"- {name} [{tag_str}]")
 
             if actions:
                 logger.debug(f"[SuggestQuestions] Found {len(actions)} published actions")
@@ -289,25 +318,45 @@ class SuggestQuestionsTool(Tool):
         product_name: str,
         actions_context: str,
         articles_context: str,
+        has_actions: bool = False,
     ) -> str:
-        """Build the LLM prompt for generating starter questions."""
-        return f"""Generate {MAX_POOL_SIZE} diverse starter questions for {product_name}'s assistant.
+        """Build the LLM prompt for generating starter prompts.
+
+        The tone adapts to what's available:
+        - With actions: imperative ("Create...", "Set up...", "Show me...")
+        - Without actions: guiding ("Walk me through...", "Help me understand...")
+        """
+        if has_actions:
+            tone_requirements = """- Be ACTION-ORIENTED: the assistant can DO things, not just answer questions. Prefer imperative/request phrasing that invites the assistant to act.
+  - Good: "Create a monitoring dashboard", "Set up a silence for alerts", "Show me my datasources"
+  - Bad: "How do I create a dashboard?", "What is the process to silence alerts?"
+- Mix styles: "Create...", "Set up...", "Show me...", "Help me..." -- but avoid "How do I..." or "What is the process..."
+- PRIORITIZE actions marked "trigger_action" or "query" without "requires context" -- these are the most powerful capabilities users can invoke from any page.
+- DEPRIORITIZE simple "navigate" actions and actions that "require context" (they only work on specific pages). Only suggest these if nothing better is available.
+"""
+        else:
+            tone_requirements = """- Be GUIDING: the assistant can walk users through topics and explain things. Use active phrasing that invites the assistant to help.
+  - Good: "Walk me through setting up SSO", "Help me understand billing", "Show me how to configure alerts"
+  - Bad: "How do I set up SSO?", "What is billing?", "Explain alerts"
+- Mix styles: "Walk me through...", "Help me understand...", "Show me how to..." -- but avoid "How do I..." or "What is..."
+"""
+
+        return f"""Generate {MAX_POOL_SIZE} diverse starter prompts for {product_name}'s assistant.
 
 {actions_context}
 
 {articles_context}
 
 Requirements:
-- Pick the 3 most useful and representative actions/topics from the lists above
-- Questions MUST be answerable using ONLY the actions and articles listed above
-- Keep each question under 10 words
-- Mix question styles: "How do I...", "Show me...", "What is..."
-- Make questions specific and actionable, not generic
+- Pick the 3 most useful and representative topics from the lists above
+- Prompts MUST be answerable using ONLY the actions and articles listed above
+- Keep each prompt under 10 words
+{tone_requirements}- Make prompts specific and actionable, not generic
 - DO NOT invent capabilities not listed above
 
-Return ONLY a JSON array with {MAX_POOL_SIZE} questions:
+Return ONLY a JSON array with {MAX_POOL_SIZE} prompts:
 [
-  {{"id": "q1", "text": "your question here"}},
-  {{"id": "q2", "text": "your question here"}},
+  {{"id": "q1", "text": "your prompt here"}},
+  {{"id": "q2", "text": "your prompt here"}},
   ...
 ]"""
