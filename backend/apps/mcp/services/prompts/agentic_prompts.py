@@ -195,7 +195,7 @@ After completing a task, navigate the user to where they can see the result. If 
     if product_guidance:
         system_prompt_text += f"\n\n<product_guidance>\n{product_guidance}\n</product_guidance>"
     
-    # System message is always plain text
+    # System message is always plain text (images go in user message)
     messages.append({"role": "system", "content": system_prompt_text})
     
     # Add prior conversation history if provided.
@@ -204,9 +204,9 @@ After completing a task, navigate the user to where they can see the result. If 
     if conversation_history:
         messages.extend(conversation_history)
     
-    # Add user message with question - include images as multimodal content if present
+    # Add user message with question (include images via image_url if provided)
     if images:
-        user_content = [{"type": "text", "text": question}]
+        user_content: list[dict[str, Any]] = [{"type": "text", "text": question}]
         for img in images:
             img_url = img.get("url")
             if img_url:
@@ -214,7 +214,7 @@ After completing a task, navigate the user to where they can see the result. If 
                     "type": "image_url",
                     "image_url": {
                         "url": img_url,
-                        "detail": img.get("detail", "low")
+                        "detail": img.get("detail", "low"),
                     }
                 })
         messages.append({"role": "user", "content": user_content})

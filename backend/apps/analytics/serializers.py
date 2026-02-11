@@ -45,7 +45,7 @@ class ChatMessageSerializer(serializers.ModelSerializer):
             'feedback_timestamp', 'timestamp', 'created_at', 'updated_at',
             # Enhanced fields
             'query_type', 'query_hash', 'intent_category', 'intent_confidence',
-            'was_stopped', 'tokens_generated', 'display_trace',
+            'was_stopped', 'tokens_generated', 'display_trace', 'images',
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
 
@@ -141,6 +141,7 @@ class ChatMessageDetailSerializer(serializers.ModelSerializer):
             # Enhanced fields for analytics
             'query_type', 'intent_category', 'was_stopped',
             'display_trace',  # ReAct agent display trace (thinking + tool steps)
+            'images',  # Images attached to user messages
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
     
