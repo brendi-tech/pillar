@@ -5,8 +5,15 @@
  */
 
 import React from "react";
-import { interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
+import { interpolate } from "remotion";
 import { COLORS, FONTS } from "../../constants";
+import {
+  useStepSpring,
+  WireframeContainer,
+  WireframeField,
+  SkeletonBar,
+  WireframeButton,
+} from "./primitives";
 
 interface BankingWireframeProps {
   activeStepIndex: number;
@@ -19,15 +26,7 @@ export const BankingWireframe: React.FC<BankingWireframeProps> = ({
   activeStepIndex,
   stepActivationFrames,
 }) => {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-
-  const stepSpring = (stepIdx: number, delay = 0) =>
-    spring({
-      frame: frame - (stepActivationFrames[stepIdx] || 0) - delay,
-      fps,
-      config: { damping: 18, stiffness: 100, mass: 0.8 },
-    });
+  const stepSpring = useStepSpring(stepActivationFrames);
 
   // Step 0 (PILLAR): show skeleton
   const skeletonVisible = activeStepIndex >= 0 ? stepSpring(0, 15) : 0;
@@ -39,207 +38,121 @@ export const BankingWireframe: React.FC<BankingWireframeProps> = ({
   const done = activeStepIndex >= 3 ? stepSpring(3, 15) : 0;
 
   return (
-    <div
-      style={{
-        width: "100%",
-        height: "100%",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 20,
-      }}
-    >
-      {/* Component wrapper with dashed border */}
-      <div
-        style={{
-          width: "100%",
-          maxWidth: 560,
-          border: `2px dashed ${WF.border}`,
-          borderRadius: 20,
-          padding: 40,
-          backgroundColor: WF.background,
-          opacity: interpolate(skeletonVisible, [0, 1], [0.3, 1]),
-          position: "relative",
-        }}
+    <WireframeContainer label={"<PaymentForm>"} opacity={skeletonVisible}>
+      {/* Recipient field */}
+      <WireframeField
+        label="Recipient"
+        borderColor={payeeFound > 0.5 ? WF.accent : WF.border}
       >
-        {/* Component label */}
-        <div
-          style={{
-            position: "absolute",
-            top: -14,
-            left: 32,
-            backgroundColor: COLORS.background,
-            padding: "2px 12px",
-          }}
-        >
+        {payeeFound > 0.5 ? (
+          <>
+            <div
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 18,
+                backgroundColor: "#10B981",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                opacity: payeeFound,
+              }}
+            >
+              <span style={{ color: "#fff", fontSize: 16, fontWeight: 600 }}>
+                M
+              </span>
+            </div>
+            <span
+              style={{
+                fontFamily: FONTS.sans,
+                fontSize: 18,
+                color: WF.text,
+                fontWeight: 500,
+                opacity: payeeFound,
+              }}
+            >
+              Maria (Cleaner)
+            </span>
+          </>
+        ) : (
+          <SkeletonBar width="70%" />
+        )}
+      </WireframeField>
+
+      {/* Amount field */}
+      <WireframeField
+        label="Amount"
+        borderColor={formFilled > 0.5 ? WF.accent : WF.border}
+      >
+        {formFilled > 0.5 ? (
           <span
             style={{
               fontFamily: FONTS.mono,
-              fontSize: 16,
-              color: WF.textLight,
-              fontWeight: 500,
-            }}
-          >
-            {"<PaymentForm>"}
-          </span>
-        </div>
-
-        {/* Recipient field */}
-        <div style={{ marginBottom: 28 }}>
-          <div
-            style={{
-              fontFamily: FONTS.sans,
-              fontSize: 15,
-              fontWeight: 600,
-              color: WF.textLight,
-              marginBottom: 10,
-              textTransform: "uppercase",
-              letterSpacing: "0.06em",
-            }}
-          >
-            Recipient
-          </div>
-          <div
-            style={{
-              height: 56,
-              borderRadius: 10,
-              border: `2px solid ${payeeFound > 0.5 ? COLORS.wireframe.accent : WF.border}`,
-              display: "flex",
-              alignItems: "center",
-              padding: "0 20px",
-              gap: 14,
-            }}
-          >
-            {payeeFound > 0.5 ? (
-              <>
-                <div
-                  style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: 18,
-                    backgroundColor: "#10B981",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    opacity: payeeFound,
-                  }}
-                >
-                  <span style={{ color: "#fff", fontSize: 16, fontWeight: 600 }}>M</span>
-                </div>
-                <span
-                  style={{
-                    fontFamily: FONTS.sans,
-                    fontSize: 18,
-                    color: WF.text,
-                    fontWeight: 500,
-                    opacity: payeeFound,
-                  }}
-                >
-                  Maria (Cleaner)
-                </span>
-              </>
-            ) : (
-              <div style={{ width: "70%", height: 16, backgroundColor: WF.placeholder, borderRadius: 4 }} />
-            )}
-          </div>
-        </div>
-
-        {/* Amount field */}
-        <div style={{ marginBottom: 28 }}>
-          <div
-            style={{
-              fontFamily: FONTS.sans,
-              fontSize: 15,
-              fontWeight: 600,
-              color: WF.textLight,
-              marginBottom: 10,
-              textTransform: "uppercase",
-              letterSpacing: "0.06em",
-            }}
-          >
-            Amount
-          </div>
-          <div
-            style={{
-              height: 56,
-              borderRadius: 10,
-              border: `2px solid ${formFilled > 0.5 ? COLORS.wireframe.accent : WF.border}`,
-              display: "flex",
-              alignItems: "center",
-              padding: "0 20px",
-            }}
-          >
-            {formFilled > 0.5 ? (
-              <span
-                style={{
-                  fontFamily: FONTS.mono,
-                  fontSize: 28,
-                  fontWeight: 700,
-                  color: WF.text,
-                  opacity: formFilled,
-                }}
-              >
-                $200.00
-              </span>
-            ) : (
-              <div style={{ width: "40%", height: 16, backgroundColor: WF.placeholder, borderRadius: 4 }} />
-            )}
-          </div>
-        </div>
-
-        {/* Preview summary */}
-        {formFilled > 0.5 && (
-          <div
-            style={{
-              backgroundColor: "#F0FDF4",
-              borderRadius: 12,
-              border: "1.5px solid #BBF7D0",
-              padding: 20,
-              marginBottom: 24,
+              fontSize: 28,
+              fontWeight: 700,
+              color: WF.text,
               opacity: formFilled,
-              transform: `translateY(${interpolate(formFilled, [0.5, 1], [8, 0])}px)`,
             }}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-              <span style={{ fontFamily: FONTS.sans, fontSize: 16, color: "#166534" }}>
-                Send to Maria
-              </span>
-              <span style={{ fontFamily: FONTS.mono, fontSize: 18, fontWeight: 700, color: "#166534" }}>
-                $200.00
-              </span>
-            </div>
-            <span style={{ fontFamily: FONTS.sans, fontSize: 14, color: "#6B7280" }}>
-              Date: Today · Fee: $0.00
-            </span>
-          </div>
+            $200.00
+          </span>
+        ) : (
+          <SkeletonBar width="40%" />
         )}
+      </WireframeField>
 
-        {/* Submit button */}
+      {/* Preview summary */}
+      {formFilled > 0.5 && (
         <div
           style={{
-            height: 52,
-            borderRadius: 10,
-            backgroundColor: done > 0.5 ? "#10B981" : COLORS.wireframe.accent,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            opacity: formFilled > 0.3 ? 1 : 0.3,
-            transform: `scale(${done > 0.5 ? 1.02 : 1})`,
+            backgroundColor: "#F0FDF4",
+            borderRadius: 12,
+            border: "1.5px solid #BBF7D0",
+            padding: 20,
+            marginBottom: 24,
+            opacity: formFilled,
+            transform: `translateY(${interpolate(formFilled, [0.5, 1], [8, 0])}px)`,
           }}
         >
-          <span
+          <div
             style={{
-              fontFamily: FONTS.sans,
-              fontSize: 18,
-              fontWeight: 600,
-              color: "#FFFFFF",
+              display: "flex",
+              justifyContent: "space-between",
+              marginBottom: 8,
             }}
           >
-            {done > 0.5 ? "✓ Sent" : "Send $200.00"}
+            <span
+              style={{ fontFamily: FONTS.sans, fontSize: 16, color: "#166534" }}
+            >
+              Send to Maria
+            </span>
+            <span
+              style={{
+                fontFamily: FONTS.mono,
+                fontSize: 18,
+                fontWeight: 700,
+                color: "#166534",
+              }}
+            >
+              $200.00
+            </span>
+          </div>
+          <span
+            style={{ fontFamily: FONTS.sans, fontSize: 14, color: "#6B7280" }}
+          >
+            Date: Today · Fee: $0.00
           </span>
         </div>
-      </div>
-    </div>
+      )}
+
+      {/* Submit button */}
+      <WireframeButton
+        label={done > 0.5 ? "✓ Sent" : "Send $200.00"}
+        backgroundColor={done > 0.5 ? "#10B981" : WF.accent}
+        opacity={formFilled > 0.3 ? 1 : 0.3}
+        scale={done > 0.5 ? 1.02 : 1}
+      />
+    </WireframeContainer>
   );
 };
 

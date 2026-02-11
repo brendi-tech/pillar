@@ -1,5 +1,5 @@
 /**
- * StepTimeline — Left column vertical stepper.
+ * StepTimeline — Left column vertical stepper (Remotion version).
  * Driven by frame count to progress through grouped steps.
  * Each step has an actor label, description, and optional technical detail.
  */
@@ -11,8 +11,13 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
-import type { DemoStep, StepState } from "../types";
+import type { DemoStep } from "../types";
 import { COLORS, STEPS_START_FRAME } from "../constants";
+import {
+  getStepActivationFrames,
+  getActiveStepIndex,
+  getStepState,
+} from "../timing";
 import { StepItem } from "./StepItem";
 
 interface StepTimelineProps {
@@ -21,45 +26,8 @@ interface StepTimelineProps {
   activeStepIndex: number;
 }
 
-/**
- * Calculate the frame at which each step activates.
- * Returns an array of activation frames for each step.
- */
-export function getStepActivationFrames(steps: DemoStep[]): number[] {
-  const frames: number[] = [];
-  let currentFrame = STEPS_START_FRAME;
-  for (const step of steps) {
-    frames.push(currentFrame);
-    currentFrame += step.durationFrames;
-  }
-  return frames;
-}
-
-/**
- * Get the current active step index given the current frame and steps.
- */
-export function getActiveStepIndex(
-  frame: number,
-  steps: DemoStep[]
-): number {
-  const activationFrames = getStepActivationFrames(steps);
-  let activeIndex = -1;
-  for (let i = 0; i < activationFrames.length; i++) {
-    if (frame >= activationFrames[i]) {
-      activeIndex = i;
-    }
-  }
-  return activeIndex;
-}
-
-/**
- * Get the state of a step given its index and the current active index.
- */
-function getStepState(stepIndex: number, activeIndex: number): StepState {
-  if (stepIndex < activeIndex) return "completed";
-  if (stepIndex === activeIndex) return "active";
-  return "pending";
-}
+// Re-export timing utilities so existing imports from this file still work
+export { getStepActivationFrames, getActiveStepIndex };
 
 export const StepTimeline: React.FC<StepTimelineProps> = ({
   steps,

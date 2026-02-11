@@ -30,7 +30,13 @@
     "videos:analytics": "npm run stills:css && remotion render remotion/index.ts demo-analytics public/marketing/AnalyticsDemo-technical.mp4",
     "videos:pm": "npm run stills:css && remotion render remotion/index.ts demo-pm public/marketing/PMDemo-technical.mp4",
     "videos:hr": "npm run stills:css && remotion render remotion/index.ts demo-hr public/marketing/HRDemo-technical.mp4",
-    "videos:all": "npm run stills:css && npm run videos:banking && npm run videos:crm && npm run videos:analytics && npm run videos:pm && npm run videos:hr"
+    "videos:all": "npm run stills:css && npm run videos:banking && npm run videos:crm && npm run videos:analytics && npm run videos:pm && npm run videos:hr",
+    "wireframes:banking": "npm run stills:css && remotion render remotion/index.ts wireframe-banking public/marketing/BankingWireframe.mp4",
+    "wireframes:crm": "npm run stills:css && remotion render remotion/index.ts wireframe-crm public/marketing/CRMWireframe.mp4",
+    "wireframes:analytics": "npm run stills:css && remotion render remotion/index.ts wireframe-analytics public/marketing/AnalyticsWireframe.mp4",
+    "wireframes:pm": "npm run stills:css && remotion render remotion/index.ts wireframe-pm public/marketing/PMWireframe.mp4",
+    "wireframes:hr": "npm run stills:css && remotion render remotion/index.ts wireframe-hr public/marketing/HRWireframe.mp4",
+    "wireframes:all": "npm run stills:css && npm run wireframes:banking && npm run wireframes:crm && npm run wireframes:analytics && npm run wireframes:pm && npm run wireframes:hr"
   },
   "dependencies": {
     "@intercom/messenger-js-sdk": "^0.0.18",

@@ -182,6 +182,7 @@
     --font-weight-bold: 700;
     --tracking-normal: var(--tracking-normal);
     --leading-tight: 1.25;
+    --leading-snug: 1.375;
     --leading-relaxed: 1.625;
     --radius-xs: 0.125rem;
     --radius-2xl: 1rem;
@@ -883,6 +884,9 @@
   .-ml-px {
     margin-left: -1px;
   }
+  .ml-0\.5 {
+    margin-left: calc(var(--spacing) * 0.5);
+  }
   .ml-1 {
     margin-left: calc(var(--spacing) * 1);
   }
@@ -1240,11 +1244,17 @@
   .min-h-\[240px\] {
     min-height: 240px;
   }
+  .min-h-\[400px\] {
+    min-height: 400px;
+  }
   .min-h-screen {
     min-height: 100vh;
   }
   .min-h-svh {
     min-height: 100svh;
+  }
+  .w-0\.5 {
+    width: calc(var(--spacing) * 0.5);
   }
   .w-1 {
     width: calc(var(--spacing) * 1);
@@ -1754,6 +1764,9 @@
   .gap-3 {
     gap: calc(var(--spacing) * 3);
   }
+  .gap-3\.5 {
+    gap: calc(var(--spacing) * 3.5);
+  }
   .gap-4 {
     gap: calc(var(--spacing) * 4);
   }
@@ -2065,6 +2078,9 @@
   }
   .border-\[\#E5E0D8\] {
     border-color: #E5E0D8;
+  }
+  .border-\[\#E5E7EB\] {
+    border-color: #E5E7EB;
   }
   .border-\[\#FF6E00\] {
     border-color: #FF6E00;
@@ -2396,6 +2412,9 @@
   .bg-\[\#4A154B\] {
     background-color: #4A154B;
   }
+  .bg-\[\#10B981\] {
+    background-color: #10B981;
+  }
   .bg-\[\#22C55E\] {
     background-color: #22C55E;
   }
@@ -2429,6 +2448,9 @@
   .bg-\[\#E5E0D8\] {
     background-color: #E5E0D8;
   }
+  .bg-\[\#E5E7EB\] {
+    background-color: #E5E7EB;
+  }
   .bg-\[\#E8E0D5\] {
     background-color: #E8E0D5;
   }
@@ -2440,6 +2462,9 @@
   }
   .bg-\[\#F3EFE8\] {
     background-color: #F3EFE8;
+  }
+  .bg-\[\#F3F4F6\] {
+    background-color: #F3F4F6;
   }
   .bg-\[\#F8F5F1\] {
     background-color: #F8F5F1;
@@ -2544,6 +2569,12 @@
     background-color: color-mix(in srgb, #000 5%, transparent);
     @supports (color: color-mix(in lab, red, red)) {
       background-color: color-mix(in oklab, var(--color-black) 5%, transparent);
+    }
+  }
+  .bg-black\/10 {
+    background-color: color-mix(in srgb, #000 10%, transparent);
+    @supports (color: color-mix(in lab, red, red)) {
+      background-color: color-mix(in oklab, var(--color-black) 10%, transparent);
     }
   }
   .bg-black\/30 {
@@ -3591,6 +3622,10 @@
     --tw-leading: var(--leading-relaxed);
     line-height: var(--leading-relaxed);
   }
+  .leading-snug {
+    --tw-leading: var(--leading-snug);
+    line-height: var(--leading-snug);
+  }
   .leading-tight {
     --tw-leading: var(--leading-tight);
     line-height: var(--leading-tight);
@@ -3642,6 +3677,9 @@
   }
   .whitespace-pre {
     white-space: pre;
+  }
+  .whitespace-pre-line {
+    white-space: pre-line;
   }
   .whitespace-pre-wrap {
     white-space: pre-wrap;
@@ -4152,6 +4190,10 @@
     --tw-shadow: 0 0 0 1px var(--tw-shadow-color, hsl(var(--sidebar-border)));
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
   }
+  .shadow-\[0_2px_12px_rgba\(0\,0\,0\,0\.06\)\] {
+    --tw-shadow: 0 2px 12px var(--tw-shadow-color, rgba(0,0,0,0.06));
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+  }
   .shadow-\[0_3px_5px_rgba\(0\,0\,0\,0\.08\)\] {
     --tw-shadow: 0 3px 5px var(--tw-shadow-color, rgba(0,0,0,0.08));
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
@@ -4308,6 +4350,11 @@
   }
   .transition-\[color\,box-shadow\] {
     transition-property: color,box-shadow;
+    transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
+    transition-duration: var(--tw-duration, var(--default-transition-duration));
+  }
+  .transition-\[height\] {
+    transition-property: height;
     transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
     transition-duration: var(--tw-duration, var(--default-transition-duration));
   }
@@ -6783,6 +6830,11 @@
       height: auto;
     }
   }
+  .md\:w-\[300px\] {
+    @media (width >= 48rem) {
+      width: 300px;
+    }
+  }
   .md\:max-w-md {
     @media (width >= 48rem) {
       max-width: var(--container-md);
@@ -6801,6 +6853,11 @@
   .md\:justify-end {
     @media (width >= 48rem) {
       justify-content: flex-end;
+    }
+  }
+  .md\:gap-6 {
+    @media (width >= 48rem) {
+      gap: calc(var(--spacing) * 6);
     }
   }
   .md\:space-y-0 {

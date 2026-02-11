@@ -8,11 +8,14 @@ import { PanelPlanStill } from "./stills/PanelPlanStill";
 import { ChatInputStill } from "./stills/ChatInputStill";
 import { TextSelectionStill } from "./stills/TextSelectionStill";
 import { DemoComposition } from "./videos/DemoComposition";
+import { WireframeComposition } from "./videos/WireframeComposition";
 import {
   VIDEO_WIDTH,
   VIDEO_HEIGHT,
   VIDEO_FPS,
   TOTAL_DURATION_FRAMES,
+  WIREFRAME_WIDTH,
+  WIREFRAME_HEIGHT,
 } from "./videos/constants";
 
 // Import pre-compiled Tailwind v4 CSS (for docs components)
@@ -125,6 +128,24 @@ export const RemotionRoot: React.FC = () => {
           fps={VIDEO_FPS}
           width={VIDEO_WIDTH}
           height={VIDEO_HEIGHT}
+          defaultProps={{ demoId }}
+        />
+      ))}
+
+      {/* ============================================
+          Wireframe-only Video Compositions (square)
+          Used with hybrid React+video layout
+          ============================================ */}
+
+      {DEMO_IDS.map((demoId) => (
+        <Composition
+          key={`wireframe-${demoId}`}
+          id={`wireframe-${demoId}`}
+          component={WireframeComposition}
+          durationInFrames={TOTAL_DURATION_FRAMES}
+          fps={VIDEO_FPS}
+          width={WIREFRAME_WIDTH}
+          height={WIREFRAME_HEIGHT}
           defaultProps={{ demoId }}
         />
       ))}

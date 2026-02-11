@@ -1,13 +1,15 @@
 /**
- * DemoComposition — Main Remotion Composition for technical demo videos.
- * Two-column layout: StepTimeline (left) + Wireframe (right).
+ * WireframeComposition — Wireframe-only Remotion Composition.
+ * Renders only the right-hand wireframe animation (no PromptHeader, no StepTimeline).
+ * Used with the hybrid layout where React components handle the prompt and steps.
+ *
+ * Square format (1080x1080) designed to sit in the right column of
+ * the TechnicalShowcase React component.
  */
 
 import React from "react";
 import { useCurrentFrame } from "remotion";
-import { COLORS, LEFT_COLUMN_WIDTH, PADDING } from "./constants";
-import { PromptHeader } from "./components/PromptHeader";
-import { StepTimeline } from "./components/StepTimeline";
+import { COLORS } from "./constants";
 import { getActiveStepIndex, getStepActivationFrames } from "./timing";
 import type { DemoConfig } from "./types";
 
@@ -33,7 +35,7 @@ const DEMO_CONFIGS: Record<string, DemoConfig> = {
   hr: hrDemo,
 };
 
-interface DemoCompositionProps {
+interface WireframeCompositionProps {
   demoId?: string;
 }
 
@@ -60,7 +62,9 @@ function getWireframeComponent(
   }
 }
 
-export const DemoComposition: React.FC<DemoCompositionProps> = ({ demoId = "banking" }) => {
+export const WireframeComposition: React.FC<WireframeCompositionProps> = ({
+  demoId = "banking",
+}) => {
   const frame = useCurrentFrame();
   const config = DEMO_CONFIGS[demoId] || bankingDemo;
   const activeStepIndex = getActiveStepIndex(frame, config.steps);
@@ -73,51 +77,15 @@ export const DemoComposition: React.FC<DemoCompositionProps> = ({ demoId = "bank
         height: "100%",
         backgroundColor: COLORS.background,
         display: "flex",
-        flexDirection: "column",
-        padding: PADDING,
+        alignItems: "center",
+        justifyContent: "center",
         fontFamily:
           "Inter, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif",
       }}
     >
-      {/* Prompt Header */}
-      <PromptHeader prompt={config.prompt} />
-
-      {/* Two-column layout */}
-      <div
-        style={{
-          flex: 1,
-          display: "flex",
-          gap: 40,
-          marginTop: 32,
-          minHeight: 0,
-        }}
-      >
-        {/* Left column: Step Timeline */}
-        <div
-          style={{
-            width: LEFT_COLUMN_WIDTH,
-            flexShrink: 0,
-            overflowY: "hidden",
-          }}
-        >
-          <StepTimeline
-            steps={config.steps}
-            activeStepIndex={activeStepIndex}
-          />
-        </div>
-
-        {/* Right column: Wireframe */}
-        <div
-          style={{
-            flex: 1,
-            minWidth: 0,
-          }}
-        >
-          {getWireframeComponent(demoId, activeStepIndex, stepActivationFrames)}
-        </div>
-      </div>
+      {getWireframeComponent(demoId, activeStepIndex, stepActivationFrames)}
     </div>
   );
 };
 
-export default DemoComposition;
+export default WireframeComposition;

@@ -3,9 +3,27 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useInView } from "../marketing/hooks/useInView";
+import { TechnicalShowcase } from "./TechnicalShowcase";
+
+// Demo data imports (shared with Remotion, no Remotion dependency)
+import { bankingDemo } from "../../remotion/videos/data/banking";
+import { crmDemo } from "../../remotion/videos/data/crm";
+import { analyticsDemo } from "../../remotion/videos/data/analytics";
+import { pmDemo } from "../../remotion/videos/data/pm";
+import { hrDemo } from "../../remotion/videos/data/hr";
+import type { DemoConfig } from "../../remotion/videos/types";
 
 // Timing constants
 const TRANSITION_DELAY = 150; // Delay before starting next example
+
+// Map demo IDs to their config data
+const DEMO_CONFIGS: Record<string, DemoConfig> = {
+  banking: bankingDemo,
+  crm: crmDemo,
+  analytics: analyticsDemo,
+  pm: pmDemo,
+  hr: hrDemo,
+};
 
 // Chat examples data with video files for each action
 const chatExamples = [
@@ -16,6 +34,7 @@ const chatExamples = [
     tabLabel: "Send money",
     videoFile: "/marketing/BankingDemo.mp4",
     technicalVideoFile: "/marketing/BankingDemo-technical.mp4",
+    wireframeVideoFile: "/marketing/BankingWireframe.mp4",
     videoDuration: 18000, // 540 frames @ 30fps
     urlBar: "banking.example.com/payments",
     badgeColor: "#10B981",
@@ -29,6 +48,7 @@ const chatExamples = [
     tabLabel: "Close deal",
     videoFile: "/marketing/CRMDemo.mp4",
     technicalVideoFile: "/marketing/CRMDemo-technical.mp4",
+    wireframeVideoFile: "/marketing/CRMWireframe.mp4",
     videoDuration: 18000, // 544 frames @ 30fps
     urlBar: "acme.lightning.force.com/opportunities",
     badgeColor: "#00A1E0",
@@ -42,6 +62,7 @@ const chatExamples = [
     tabLabel: "Add chart",
     videoFile: "/marketing/AnalyticsDemo.mp4",
     technicalVideoFile: "/marketing/AnalyticsDemo-technical.mp4",
+    wireframeVideoFile: "/marketing/AnalyticsWireframe.mp4",
     videoDuration: 18000, // 540 frames @ 30fps
     urlBar: "analytics.amplitude.com/dashboard",
     badgeColor: "#1E40AF",
@@ -55,6 +76,7 @@ const chatExamples = [
     tabLabel: "Create bug",
     videoFile: "/marketing/PMDemo.mp4",
     technicalVideoFile: "/marketing/PMDemo-technical.mp4",
+    wireframeVideoFile: "/marketing/PMWireframe.mp4",
     videoDuration: 18000, // 540 frames @ 30fps
     urlBar: "linear.app/team/issues",
     badgeColor: "#5E6AD2",
@@ -68,6 +90,7 @@ const chatExamples = [
     tabLabel: "Update bank",
     videoFile: "/marketing/HRDemo.mp4",
     technicalVideoFile: "/marketing/HRDemo-technical.mp4",
+    wireframeVideoFile: "/marketing/HRWireframe.mp4",
     videoDuration: 16500, // 495 frames @ 30fps
     urlBar: "app.rippling.com/payroll",
     badgeColor: "#8B5CF6",
@@ -81,11 +104,11 @@ const chatExamples = [
  * Cycles through examples showing video demos for each product category
  * Designed to be used inside DemoSection
  *
- * Feature flag: Add ?v=technical to the URL to show the Remotion-rendered
- * technical step-breakdown videos instead of the default screen recordings.
+ * Feature flag: Add ?v=technical to the URL to show the hybrid
+ * React+video technical breakdown instead of the default screen recordings.
  */
 export function ChatShowcase() {
-  const { ref, isInView } = useInView({ threshold: 0.8, rootMargin: "0px" }); // Start when 80% visible
+  const { ref, isInView } = useInView({ threshold: 0.8, rootMargin: "0px" });
   const searchParams = useSearchParams();
   const isTechnical = searchParams.get("v") === "technical";
 
@@ -127,7 +150,7 @@ export function ChatShowcase() {
 
   // Handle tab click
   const handleTabClick = useCallback((index: number) => {
-    setIsPaused(false); // Resume when switching tabs
+    setIsPaused(false);
     startExample(index);
   }, [startExample]);
 
@@ -145,27 +168,26 @@ export function ChatShowcase() {
     }
   }, [currentExampleIndex, isPaused]);
 
-  // Play/pause videos based on active index and pause state
+  // Handle toggle for technical mode (TechnicalShowcase manages its own video ref)
+  const handleTechnicalToggle = useCallback(() => {
+    setIsPaused((prev) => !prev);
+  }, []);
+
+  // Play/pause videos based on active index and pause state (default mode only)
   useEffect(() => {
-    // Don't play until we've scrolled into view
-    if (!hasStarted) return;
+    if (!hasStarted || isTechnical) return;
 
     videoRefs.current.forEach((video, index) => {
       if (!video) return;
       
       if (index === currentExampleIndex && !isPaused) {
-        // Reset to start and play the active video
         video.currentTime = 0;
-        // Try to play immediately - browser will buffer as needed
-        video.play().catch(() => {
-          // Autoplay may be blocked, that's ok
-        });
+        video.play().catch(() => {});
       } else {
-        // Pause inactive videos to save CPU
         video.pause();
       }
     });
-  }, [currentExampleIndex, isPaused, hasStarted]);
+  }, [currentExampleIndex, isPaused, hasStarted, isTechnical]);
 
   return (
     <div ref={ref}>
@@ -190,12 +212,23 @@ export function ChatShowcase() {
         </div>
       </div>
 
-      {/* Video Demo Card */}
+      {/* Demo Content */}
       <div className="px-4 md:px-6 lg:px-8 pb-8 md:pb-16">
         <div className="max-w-7xl mx-auto">
-          <div className={`rounded-lg shadow-lg overflow-hidden ${isTechnical ? "bg-[#FAFAFA]" : "bg-[#1A1A1A]"}`}>
-            {/* Browser Chrome Header — hidden in technical mode since videos have their own header */}
-            {!isTechnical && (
+          {isTechnical ? (
+            /* ── Technical mode: hybrid React + video layout ── */
+            <TechnicalShowcase
+              key={currentExample.id}
+              prompt={DEMO_CONFIGS[currentExample.id]?.prompt ?? ""}
+              steps={DEMO_CONFIGS[currentExample.id]?.steps ?? []}
+              wireframeVideoSrc={currentExample.wireframeVideoFile}
+              isPlaying={hasStarted && !isPaused}
+              onTogglePlay={handleTechnicalToggle}
+            />
+          ) : (
+            /* ── Default mode: full-screen video with browser chrome ── */
+            <div className="rounded-lg shadow-lg overflow-hidden bg-[#1A1A1A]">
+              {/* Browser Chrome Header */}
               <div className="bg-[#E8E8E8] px-4 py-2.5 flex items-center gap-3">
                 {/* Traffic lights */}
                 <div className="flex gap-1.5">
@@ -223,43 +256,40 @@ export function ChatShowcase() {
                   <span className="text-xs font-medium text-[#374151] hidden sm:inline">{currentExample.productName}</span>
                 </div>
               </div>
-            )}
-            {/* Video Content - all videos stacked with opacity crossfade */}
-            <div 
-              className="aspect-video relative cursor-pointer group"
-              style={{ backgroundColor: isTechnical ? "#FAFAFA" : "#1A1A1A" }}
-              onClick={handleVideoClick}
-            >
-              {chatExamples.map((example, index) => (
-                <video
-                  key={`${example.id}-${isTechnical ? "tech" : "default"}`}
-                  ref={(el) => { videoRefs.current[index] = el; }}
-                  loop
-                  muted
-                  playsInline
-                  preload={index === 0 ? "auto" : "metadata"}
-                  className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
-                    index === currentExampleIndex ? "opacity-100" : "opacity-0 pointer-events-none"
-                  }`}
-                >
-                  <source
-                    src={isTechnical ? example.technicalVideoFile : example.videoFile}
-                    type="video/mp4"
-                  />
-                </video>
-              ))}
-              {/* Play button overlay when paused */}
-              {isPaused && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/30 transition-opacity">
-                  <div className="w-16 h-16 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
-                    <svg className="w-8 h-8 text-[#1A1A1A] ml-1" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M8 5v14l11-7z" />
-                    </svg>
+              {/* Video Content */}
+              <div 
+                className="aspect-video relative cursor-pointer group"
+                style={{ backgroundColor: "#1A1A1A" }}
+                onClick={handleVideoClick}
+              >
+                {chatExamples.map((example, index) => (
+                  <video
+                    key={example.id}
+                    ref={(el) => { videoRefs.current[index] = el; }}
+                    loop
+                    muted
+                    playsInline
+                    preload={index === 0 ? "auto" : "metadata"}
+                    className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
+                      index === currentExampleIndex ? "opacity-100" : "opacity-0 pointer-events-none"
+                    }`}
+                  >
+                    <source src={example.videoFile} type="video/mp4" />
+                  </video>
+                ))}
+                {/* Play button overlay when paused */}
+                {isPaused && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/30 transition-opacity">
+                    <div className="w-16 h-16 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
+                      <svg className="w-8 h-8 text-[#1A1A1A] ml-1" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Caption */}
           <p className="text-center text-sm text-[#6B6B6B] mt-4 px-4">

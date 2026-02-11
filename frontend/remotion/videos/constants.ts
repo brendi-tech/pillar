@@ -8,6 +8,10 @@ export const VIDEO_HEIGHT = 1080;
 export const VIDEO_FPS = 30;
 export const TOTAL_DURATION_FRAMES = 540; // 18 seconds
 
+// Wireframe-only video dimensions (square, for hybrid layout)
+export const WIREFRAME_WIDTH = 1080;
+export const WIREFRAME_HEIGHT = 1080;
+
 // Layout
 export const LEFT_COLUMN_WIDTH = 520;
 export const PADDING = 60;
