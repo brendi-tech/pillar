@@ -357,7 +357,7 @@ export function AdminSidebar(props: React.ComponentProps<typeof Sidebar>) {
                     {availableProducts.map((hc) => (
                       <div
                         key={hc.id}
-                        className="group flex items-center rounded-md"
+                        className="flex items-center rounded-md"
                       >
                         <button
                           onClick={() => {
@@ -378,15 +378,16 @@ export function AdminSidebar(props: React.ComponentProps<typeof Sidebar>) {
                             {hc.name}
                           </span>
                           {currentProduct?.id === hc.id && (
-                            <Check className="h-4 w-4 text-primary shrink-0 group-hover:hidden" />
+                            <Check className="h-4 w-4 text-primary shrink-0" />
                           )}
                         </button>
                         <button
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation();
                             setEditingProduct(hc);
                             setFooterPopoverOpen(false);
                           }}
-                          className="hidden group-hover:flex h-5 w-5 items-center justify-center rounded hover:bg-sidebar-accent shrink-0 mr-1"
+                          className="flex h-5 w-5 items-center justify-center rounded hover:bg-sidebar-accent shrink-0 mr-1"
                         >
                           <Pencil className="h-3 w-3 text-muted-foreground" />
                         </button>
