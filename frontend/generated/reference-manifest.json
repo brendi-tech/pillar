@@ -1,0 +1,1931 @@
+{
+  "generatedAt": "2026-02-11T20:09:00.619Z",
+  "pages": [
+    {
+      "slug": "react/PillarProvider",
+      "title": "PillarProvider",
+      "category": "component",
+      "package": "@pillar-ai/react",
+      "description": "",
+      "sourceFile": "packages/sdk-react/src/PillarProvider.tsx",
+      "signature": "function PillarProvider(props: PillarProviderProps): JSX.Element",
+      "importStatement": "import { PillarProvider } from '@pillar-ai/react'",
+      "properties": [
+        {
+          "name": "productKey",
+          "type": "string",
+          "required": false,
+          "description": "Your product key from the Pillar app.\nGet it at app.trypillar.com"
+        },
+        {
+          "name": "helpCenter",
+          "type": "string",
+          "required": false,
+          "description": "",
+          "deprecated": true
+        },
+        {
+          "name": "config",
+          "type": "Omit<PillarConfig, \"productKey\" | \"helpCenter\">",
+          "required": false,
+          "description": "Additional SDK configuration\n\nNotable options:\n- `panel.useShadowDOM`: Whether to isolate styles in Shadow DOM (default: false).\n  Set to false to let custom cards inherit your app's CSS (Tailwind, etc.)"
+        },
+        {
+          "name": "onTask",
+          "type": "(task: TaskExecutePayload) => void",
+          "required": false,
+          "description": "Handler called when a task action is triggered from the chat.\nUse this to handle AI-suggested actions like opening modals, navigating, etc."
+        },
+        {
+          "name": "cards",
+          "type": "Record<string, CardComponent>",
+          "required": false,
+          "description": "Custom card components to render for inline_ui type actions.\nMap card type names to React components that will render the inline UI."
+        },
+        {
+          "name": "domScanning",
+          "type": "boolean",
+          "required": false,
+          "default": "false",
+          "description": "Enable DOM scanning to send page context with messages.\nWhen enabled, interactable elements and text content are captured and sent to the LLM."
+        },
+        {
+          "name": "children",
+          "type": "ReactNode",
+          "required": true,
+          "description": "Enable DOM scanning dev mode to preview the scanned page before sending.\nShows a modal with the AST tree visualization before each message is sent.\nUseful for debugging what context will be sent to the LLM.\n  /** Children components"
+        }
+      ],
+      "examples": [],
+      "relatedTypes": [
+        "PillarConfig",
+        "TaskExecutePayload"
+      ]
+    },
+    {
+      "slug": "react/PillarPanel",
+      "title": "PillarPanel",
+      "category": "component",
+      "package": "@pillar-ai/react",
+      "description": "Renders the Pillar help panel at a custom location in the DOM.\nUse this when you want to control where the panel is rendered instead of\nhaving it automatically appended to document.body.\n\n**Important**: When using this component, set `panel.container: 'manual'` in your\nPillarProvider config to prevent automatic mounting.",
+      "sourceFile": "packages/sdk-react/src/PillarPanel.tsx",
+      "signature": "function PillarPanel(props: PillarPanelProps): JSX.Element",
+      "importStatement": "import { PillarPanel } from '@pillar-ai/react'",
+      "properties": [
+        {
+          "name": "className",
+          "type": "string",
+          "required": false,
+          "description": "Custom class name for the container"
+        },
+        {
+          "name": "style",
+          "type": "CSSProperties",
+          "required": false,
+          "description": "Custom inline styles for the container"
+        }
+      ],
+      "examples": [
+        "<PillarProvider \n  productKey=\"my-product-key\"\n  config={{ panel: { container: 'manual' } }}\n>\n  <div className=\"my-layout\">\n    <Sidebar />\n    <PillarPanel className=\"help-panel-container\" />\n    <MainContent />\n  </div>\n</PillarProvider>"
+      ],
+      "relatedTypes": []
+    },
+    {
+      "slug": "react/usePillar",
+      "title": "usePillar()",
+      "category": "hook",
+      "package": "@pillar-ai/react",
+      "description": "Hook to access the Pillar SDK instance and state",
+      "sourceFile": "packages/sdk-react/src/hooks/usePillar.ts",
+      "signature": "function usePillar<TActions extends SyncActionDefinitions | ActionDefinitions = SyncActionDefinitions>(): TypedUsePillarResult<TActions>",
+      "importStatement": "import { usePillar } from '@pillar-ai/react'",
+      "properties": [
+        {
+          "name": "pillar",
+          "type": "PillarContextValue['pillar']",
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "onTask",
+          "type": "<TName extends ActionNames<TActions>>(\n    taskName: TName,\n    handler: (data: ActionDataType<TActions, TName>) => void\n  ) => () => void",
+          "required": true,
+          "description": "Type-safe task handler registration."
+        }
+      ],
+      "returnType": "TypedUsePillarResult",
+      "examples": [
+        "function MyComponent() {\nconst { isReady, open, close, isPanelOpen } = usePillar();\n\nif (!isReady) return <div>Loading...</div>;\n\nreturn (\n<button onClick={() => open()}>\n{isPanelOpen ? 'Close Help' : 'Get Help'}\n</button>\n);\n}",
+        "import { actions } from '@/lib/pillar/actions';\n\nfunction MyComponent() {\nconst { pillar, onTask } = usePillar<typeof actions>();\n\nuseEffect(() => {\n// TypeScript knows data has { type, url, name }\nconst unsub = onTask('add_new_source', (data) => {\nconsole.log(data.url); // ✓ Typed!\n});\nreturn unsub;\n}, [onTask]);\n}"
+      ],
+      "relatedTypes": []
+    },
+    {
+      "slug": "react/useHelpPanel",
+      "title": "useHelpPanel()",
+      "category": "hook",
+      "package": "@pillar-ai/react",
+      "description": "Hook for panel-specific controls",
+      "sourceFile": "packages/sdk-react/src/hooks/useHelpPanel.ts",
+      "signature": "function useHelpPanel(): UseHelpPanelResult",
+      "importStatement": "import { useHelpPanel } from '@pillar-ai/react'",
+      "properties": [
+        {
+          "name": "isOpen",
+          "type": "boolean",
+          "required": true,
+          "description": "Whether the panel is currently open"
+        },
+        {
+          "name": "open",
+          "type": "(options?: { view?: string; article?: string; search?: string }) => void",
+          "required": true,
+          "description": "Open the panel"
+        },
+        {
+          "name": "close",
+          "type": "() => void",
+          "required": true,
+          "description": "Close the panel"
+        },
+        {
+          "name": "toggle",
+          "type": "() => void",
+          "required": true,
+          "description": "Toggle the panel"
+        },
+        {
+          "name": "openArticle",
+          "type": "(slug: string) => void",
+          "required": true,
+          "description": "Open a specific article in the panel"
+        },
+        {
+          "name": "openCategory",
+          "type": "(slug: string) => Promise<void>",
+          "required": true,
+          "description": "Open a specific category in the panel"
+        },
+        {
+          "name": "openSearch",
+          "type": "(query?: string) => void",
+          "required": true,
+          "description": "Open search with a query"
+        },
+        {
+          "name": "openChat",
+          "type": "() => void",
+          "required": true,
+          "description": "Open the AI chat"
+        }
+      ],
+      "returnType": "UseHelpPanelResult",
+      "examples": [
+        "function HelpButton() {\n  const { isOpen, toggle, openChat } = useHelpPanel();\n  \n  return (\n    <div>\n      <button onClick={toggle}>\n        {isOpen ? 'Close' : 'Help'}\n      </button>\n      <button onClick={openChat}>\n        Ask AI\n      </button>\n    </div>\n  );\n}"
+      ],
+      "relatedTypes": []
+    },
+    {
+      "slug": "types/CardComponentProps",
+      "title": "CardComponentProps",
+      "category": "type",
+      "package": "@pillar-ai/react",
+      "description": "Props passed to custom card components.",
+      "sourceFile": "packages/sdk-react/src/PillarProvider.tsx",
+      "importStatement": "import type { CardComponentProps } from '@pillar-ai/react'",
+      "properties": [
+        {
+          "name": "data",
+          "type": "T",
+          "required": true,
+          "description": "Data extracted by the AI for this action"
+        },
+        {
+          "name": "onConfirm",
+          "type": "(modifiedData?: Record<string, unknown>) => void",
+          "required": true,
+          "description": "Called when user confirms the action"
+        },
+        {
+          "name": "onCancel",
+          "type": "() => void",
+          "required": true,
+          "description": "Called when user cancels the action"
+        },
+        {
+          "name": "onStateChange",
+          "type": "(\n    state: \"loading\" | \"success\" | \"error\",\n    message?: string\n  ) => void",
+          "required": false,
+          "description": "Called to report state changes (loading, success, error)"
+        }
+      ],
+      "typeDefinition": "interface CardComponentProps<T = Record<string, unknown>> {\n  /** Data extracted by the AI for this action */\n  data: T;\n  /** Called when user confirms the action */\n  onConfirm: (modifiedData?: Record<string, unknown>) => void;\n  /** Called when user cancels the action */\n  onCancel: () => void;\n  /** Called to report state changes (loading, success, error) */\n  onStateChange?: (\n    state: \"loading\" | \"success\" | \"error\",\n    message?: string\n  ) => void;\n}",
+      "relatedTypes": []
+    },
+    {
+      "slug": "core/lifecycle",
+      "title": "Lifecycle",
+      "category": "domain",
+      "package": "@pillar-ai/sdk",
+      "description": "Initialize, destroy, and check SDK state.",
+      "importStatement": "import Pillar from '@pillar-ai/sdk'",
+      "methods": [
+        {
+          "name": "init",
+          "signature": "static init(config: PillarConfig): Promise<Pillar>",
+          "description": "Initialize the Pillar SDK",
+          "parameters": [
+            {
+              "name": "config",
+              "type": "PillarConfig",
+              "required": true,
+              "description": ""
+            }
+          ],
+          "returnType": "Promise<Pillar>",
+          "isStatic": true,
+          "examples": []
+        },
+        {
+          "name": "destroy",
+          "signature": "static destroy(): void",
+          "description": "Destroy the Pillar instance",
+          "parameters": [],
+          "returnType": "void",
+          "isStatic": true,
+          "examples": []
+        },
+        {
+          "name": "getInstance",
+          "signature": "static getInstance(): Pillar | null",
+          "description": "Get the current Pillar instance",
+          "parameters": [],
+          "returnType": "Pillar | null",
+          "isStatic": true,
+          "examples": []
+        }
+      ],
+      "properties": [
+        {
+          "name": "isReady",
+          "signature": "get isReady: boolean",
+          "description": "Whether SDK is ready",
+          "returnType": "boolean"
+        },
+        {
+          "name": "state",
+          "signature": "get state: PillarState",
+          "description": "Current SDK state",
+          "returnType": "PillarState"
+        },
+        {
+          "name": "config",
+          "signature": "get config: ResolvedConfig | null",
+          "description": "Get the resolved configuration",
+          "returnType": "ResolvedConfig | null"
+        }
+      ],
+      "types": []
+    },
+    {
+      "slug": "core/panel",
+      "title": "Panel",
+      "category": "domain",
+      "package": "@pillar-ai/sdk",
+      "description": "Open, close, and control the help panel.",
+      "importStatement": "import Pillar from '@pillar-ai/sdk'",
+      "methods": [
+        {
+          "name": "open",
+          "signature": "open(options?: {\n    view?: string;\n    article?: string;\n    search?: string;\n    focusInput?: boolean;\n  }): void",
+          "description": "Open the help panel",
+          "parameters": [
+            {
+              "name": "options",
+              "type": "{\n    view?: string;\n    article?: string;\n    search?: string;\n    focusInput?: boolean;\n  }",
+              "required": false,
+              "description": ""
+            }
+          ],
+          "returnType": "void",
+          "isStatic": false,
+          "examples": []
+        },
+        {
+          "name": "close",
+          "signature": "close(): void",
+          "description": "Close the help panel",
+          "parameters": [],
+          "returnType": "void",
+          "isStatic": false,
+          "examples": []
+        },
+        {
+          "name": "toggle",
+          "signature": "toggle(): void",
+          "description": "Toggle the help panel",
+          "parameters": [],
+          "returnType": "void",
+          "isStatic": false,
+          "examples": []
+        },
+        {
+          "name": "navigate",
+          "signature": "navigate(view: string, params?: Record<string, string>): void",
+          "description": "Navigate to a specific view in the panel",
+          "parameters": [
+            {
+              "name": "view",
+              "type": "string",
+              "required": true,
+              "description": ""
+            },
+            {
+              "name": "params",
+              "type": "Record<string, string>",
+              "required": false,
+              "description": ""
+            }
+          ],
+          "returnType": "void",
+          "isStatic": false,
+          "examples": []
+        }
+      ],
+      "properties": [
+        {
+          "name": "isPanelOpen",
+          "signature": "get isPanelOpen: boolean",
+          "description": "Whether the panel is currently open",
+          "returnType": "boolean"
+        }
+      ],
+      "types": [
+        {
+          "name": "PanelConfig",
+          "category": "type",
+          "description": "",
+          "properties": [
+            {
+              "name": "enabled",
+              "type": "boolean",
+              "required": false,
+              "description": ""
+            },
+            {
+              "name": "position",
+              "type": "PanelPosition",
+              "required": false,
+              "description": ""
+            },
+            {
+              "name": "mode",
+              "type": "PanelMode",
+              "required": false,
+              "description": "Panel mode: 'overlay' slides over content, 'push' shifts content aside"
+            },
+            {
+              "name": "width",
+              "type": "number",
+              "required": false,
+              "description": ""
+            },
+            {
+              "name": "container",
+              "type": "string | HTMLElement | 'manual'",
+              "required": false,
+              "description": "Custom mount point for the panel.\n- CSS selector string (e.g., '#pillar-panel')\n- HTMLElement reference\n- 'manual' for React component-based mounting\n- undefined (default) mounts to document.body"
+            },
+            {
+              "name": "useShadowDOM",
+              "type": "boolean",
+              "required": false,
+              "default": "false",
+              "description": "Whether to use Shadow DOM for style isolation.\n- false (default): Panel renders in regular DOM, inherits host app CSS.\n  Custom cards can use the host app's design system (Tailwind, etc.)\n- true: Panel renders in Shadow DOM, fully isolated from host CSS.\n  Use this if you need style isolation on third-party sites."
+            },
+            {
+              "name": "hoverBreakpoint",
+              "type": "number | false",
+              "required": false,
+              "default": "1200",
+              "description": "Viewport width below which the panel switches from 'push' mode to 'hover' mode.\nIn hover mode, the panel floats over content instead of pushing it aside.\n- number: The breakpoint in pixels (default: 1200)\n- false: Disable responsive behavior, always use push mode"
+            },
+            {
+              "name": "hoverBackdrop",
+              "type": "boolean",
+              "required": false,
+              "default": "true",
+              "description": "Whether to show a backdrop overlay when the panel is in hover mode.\nOnly applies when viewport is below hoverBreakpoint."
+            },
+            {
+              "name": "fullWidthBreakpoint",
+              "type": "number",
+              "required": false,
+              "default": "500",
+              "description": "Viewport width below which the panel takes full screen width."
+            }
+          ],
+          "typeDefinition": "interface PanelConfig {\n  enabled?: boolean;\n  position?: PanelPosition;\n  /** Panel mode: 'overlay' slides over content, 'push' shifts content aside */\n  mode?: PanelMode;\n  width?: number;\n  /** \n   * Custom mount point for the panel.\n   * - CSS selector string (e.g., '#pillar-panel')\n   * - HTMLElement reference\n   * - 'manual' for React component-based mounting\n   * - undefined (default) mounts to document.body\n   */\n  container?: string | HTMLElement | 'manual';\n  /**\n   * Whether to use Shadow DOM for style isolation.\n   * - false (default): Panel renders in regular DOM, inherits host app CSS.\n   *   Custom cards can use the host app's design system (Tailwind, etc.)\n   * - true: Panel renders in Shadow DOM, fully isolated from host CSS.\n   *   Use this if you need style isolation on third-party sites.\n   * @default false\n   */\n  useShadowDOM?: boolean;\n  /**\n   * Viewport width below which the panel switches from 'push' mode to 'hover' mode.\n   * In hover mode, the panel floats over content instead of pushing it aside.\n   * - number: The breakpoint in pixels (default: 1200)\n   * - false: Disable responsive behavior, always use push mode\n   * @default 1200\n   */\n  hoverBreakpoint?: number | false;\n  /**\n   * Whether to show a backdrop overlay when the panel is in hover mode.\n   * Only applies when viewport is below hoverBreakpoint.\n   * @default true\n   */\n  hoverBackdrop?: boolean;\n  /**\n   * Viewport width below which the panel takes full screen width.\n   * @default 500\n   */\n  fullWidthBreakpoint?: number;\n}"
+        },
+        {
+          "name": "PanelPosition",
+          "category": "type-alias",
+          "description": "",
+          "typeDefinition": "type PanelPosition = 'left' | 'right'"
+        },
+        {
+          "name": "PanelMode",
+          "category": "type-alias",
+          "description": "",
+          "typeDefinition": "type PanelMode = 'overlay' | 'push'"
+        }
+      ]
+    },
+    {
+      "slug": "core/theme",
+      "title": "Theme",
+      "category": "domain",
+      "package": "@pillar-ai/sdk",
+      "description": "Customize colors, dark mode, and fonts.",
+      "importStatement": "import Pillar from '@pillar-ai/sdk'",
+      "methods": [
+        {
+          "name": "setTheme",
+          "signature": "setTheme(theme: Partial<ThemeConfig>): void",
+          "description": "Update the theme at runtime.\nUse this to sync with your app's theme (e.g., dark mode toggle).",
+          "parameters": [
+            {
+              "name": "theme",
+              "type": "Partial<ThemeConfig>",
+              "required": true,
+              "description": "- Partial theme config to merge with current theme"
+            }
+          ],
+          "returnType": "void",
+          "isStatic": false,
+          "examples": [
+            "// Switch to dark mode\npillar.setTheme({ mode: 'dark' });\n\n// Switch to light mode with custom primary color\npillar.setTheme({ mode: 'light', colors: { primary: '#ff0000' } });\n\n// Let system preference decide\npillar.setTheme({ mode: 'auto' });"
+          ]
+        }
+      ],
+      "properties": [],
+      "types": [
+        {
+          "name": "ThemeConfig",
+          "category": "type",
+          "description": "Theme configuration for customizing panel appearance",
+          "properties": [
+            {
+              "name": "mode",
+              "type": "ThemeMode",
+              "required": false,
+              "default": "'auto'",
+              "description": "Color mode: 'light', 'dark', or 'auto' (follows system preference)"
+            },
+            {
+              "name": "colors",
+              "type": "ThemeColors",
+              "required": false,
+              "description": "Custom color overrides for light mode"
+            },
+            {
+              "name": "darkColors",
+              "type": "ThemeColors",
+              "required": false,
+              "description": "Custom color overrides for dark mode (when mode is 'auto' or 'dark')"
+            },
+            {
+              "name": "fontFamily",
+              "type": "string",
+              "required": false,
+              "default": "\"-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif\"",
+              "description": "Font family for all panel text."
+            }
+          ],
+          "typeDefinition": "interface ThemeConfig {\n  /** \n   * Color mode: 'light', 'dark', or 'auto' (follows system preference)\n   * @default 'auto'\n   */\n  mode?: ThemeMode;\n  /** Custom color overrides for light mode */\n  colors?: ThemeColors;\n  /** Custom color overrides for dark mode (when mode is 'auto' or 'dark') */\n  darkColors?: ThemeColors;\n  /**\n   * Font family for all panel text.\n   * @default \"-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif\"\n   */\n  fontFamily?: string;\n}"
+        },
+        {
+          "name": "ThemeColors",
+          "category": "type",
+          "description": "Theme color configuration\nAll colors should be valid CSS color values (hex, rgb, hsl, etc.)",
+          "properties": [
+            {
+              "name": "primary",
+              "type": "string",
+              "required": false,
+              "description": "Primary brand color (buttons, links, accents)"
+            },
+            {
+              "name": "primaryHover",
+              "type": "string",
+              "required": false,
+              "description": "Primary color on hover state"
+            },
+            {
+              "name": "background",
+              "type": "string",
+              "required": false,
+              "description": "Main background color"
+            },
+            {
+              "name": "backgroundSecondary",
+              "type": "string",
+              "required": false,
+              "description": "Secondary/subtle background (inputs, cards)"
+            },
+            {
+              "name": "text",
+              "type": "string",
+              "required": false,
+              "description": "Primary text color"
+            },
+            {
+              "name": "textMuted",
+              "type": "string",
+              "required": false,
+              "description": "Muted/secondary text color"
+            },
+            {
+              "name": "border",
+              "type": "string",
+              "required": false,
+              "description": "Border color"
+            },
+            {
+              "name": "borderLight",
+              "type": "string",
+              "required": false,
+              "description": "Border color for subtle/light borders"
+            }
+          ],
+          "typeDefinition": "interface ThemeColors {\n  /** Primary brand color (buttons, links, accents) */\n  primary?: string;\n  /** Primary color on hover state */\n  primaryHover?: string;\n  /** Main background color */\n  background?: string;\n  /** Secondary/subtle background (inputs, cards) */\n  backgroundSecondary?: string;\n  /** Primary text color */\n  text?: string;\n  /** Muted/secondary text color */\n  textMuted?: string;\n  /** Border color */\n  border?: string;\n  /** Border color for subtle/light borders */\n  borderLight?: string;\n}"
+        },
+        {
+          "name": "ThemeMode",
+          "category": "type-alias",
+          "description": "",
+          "typeDefinition": "type ThemeMode = 'light' | 'dark' | 'auto'"
+        }
+      ]
+    },
+    {
+      "slug": "core/context",
+      "title": "Context",
+      "category": "domain",
+      "package": "@pillar-ai/sdk",
+      "description": "Set user context and manage identity.",
+      "importStatement": "import Pillar from '@pillar-ai/sdk'",
+      "methods": [
+        {
+          "name": "setContext",
+          "signature": "setContext(ctx: Partial<Context>): void",
+          "description": "Set context for the assistant.\nUse this to tell Pillar what the user is doing for smarter, more relevant assistance.",
+          "parameters": [
+            {
+              "name": "ctx",
+              "type": "Partial<Context>",
+              "required": true,
+              "description": "- Context fields to set (merges with existing context)"
+            }
+          ],
+          "returnType": "void",
+          "isStatic": false,
+          "examples": [
+            "pillar.setContext({\n  currentPage: '/settings/billing',\n  currentFeature: 'Billing Settings',\n  userRole: 'admin',\n});"
+          ]
+        },
+        {
+          "name": "getChatContext",
+          "signature": "getChatContext(): ChatContext | null",
+          "description": "Get the current chat context (conversation ID and messages).\nUseful for escalation to human support with conversation history.",
+          "parameters": [],
+          "returnType": "ChatContext | null",
+          "isStatic": false,
+          "examples": [
+            "// Get chat context for escalation\nconst context = pillar.getChatContext();\nif (context) {\n  const summary = context.messages\n    .map(m => `${m.role}: ${m.content.slice(0, 100)}`)\n    .join('\\n');\n  showIntercom(`Escalating from AI assistant:\\n${summary}`);\n}"
+          ]
+        },
+        {
+          "name": "identify",
+          "signature": "identify(userId: string, profile?: {\n      name?: string;\n      email?: string;\n      metadata?: Record<string, unknown>;\n    }, options?: { preserveConversation?: boolean }): Promise<void>",
+          "description": "Identify the current user after login.\n\nCall this when a user logs into your application to:\n- Link their anonymous conversation history to their account\n- Enable cross-device conversation history retrieval\n- Associate future conversations with their user ID",
+          "parameters": [
+            {
+              "name": "userId",
+              "type": "string",
+              "required": true,
+              "description": "- Your application's user ID for this user"
+            },
+            {
+              "name": "profile",
+              "type": "{\n      name?: string;\n      email?: string;\n      metadata?: Record<string, unknown>;\n    }",
+              "required": false,
+              "description": "- Optional user profile data (name, email, metadata)"
+            },
+            {
+              "name": "options",
+              "type": "{ preserveConversation?: boolean }",
+              "required": false,
+              "description": "- Optional settings for the identify call"
+            }
+          ],
+          "returnType": "Promise<void>",
+          "isStatic": false,
+          "examples": [
+            "// When user logs in\nawait pillar.identify('user-123', {\n  name: 'John Doe',\n  email: 'john@example.com',\n});\n\n// Keep current conversation when identifying\nawait pillar.identify('user-123', undefined, { preserveConversation: true });"
+          ]
+        },
+        {
+          "name": "logout",
+          "signature": "logout(options?: { preserveConversation?: boolean }): void",
+          "description": "Clear the user's identity (logout).\n\nCall this when a user logs out of your application.\nFuture conversations will be tracked anonymously until identify() is called again.\n\nNote: This does not delete existing conversations - they remain associated\nwith the user's account for future retrieval.",
+          "parameters": [
+            {
+              "name": "options",
+              "type": "{ preserveConversation?: boolean }",
+              "required": false,
+              "description": "- Optional settings for the logout call"
+            }
+          ],
+          "returnType": "void",
+          "isStatic": false,
+          "examples": [
+            "// When user logs out\npillar.logout();\n\n// Keep current conversation when logging out\npillar.logout({ preserveConversation: true });"
+          ]
+        }
+      ],
+      "properties": [],
+      "types": [
+        {
+          "name": "Context",
+          "category": "type",
+          "description": "Context for the assistant.\nPass this to help the assistant understand what the user is doing.",
+          "properties": [
+            {
+              "name": "currentPage",
+              "type": "string",
+              "required": false,
+              "description": "Current page path (e.g., \"/settings/billing\")"
+            },
+            {
+              "name": "currentFeature",
+              "type": "string",
+              "required": false,
+              "description": "Current feature or section (e.g., \"Billing Settings\")"
+            },
+            {
+              "name": "userRole",
+              "type": "string",
+              "required": false,
+              "description": "User's role in the product (e.g., \"admin\", \"member\")"
+            },
+            {
+              "name": "userState",
+              "type": "string",
+              "required": false,
+              "description": "Current user state or mode (e.g., \"onboarding\", \"trial\")"
+            },
+            {
+              "name": "errorState",
+              "type": "{\n    code: string;\n    message: string;\n  }",
+              "required": false,
+              "description": "Any error state the user is experiencing"
+            },
+            {
+              "name": "custom",
+              "type": "Record<string, unknown>",
+              "required": false,
+              "description": "Custom context data"
+            }
+          ],
+          "typeDefinition": "interface Context {\n  /** Current page path (e.g., \"/settings/billing\") */\n  currentPage?: string;\n\n  /** Current feature or section (e.g., \"Billing Settings\") */\n  currentFeature?: string;\n\n  /** User's role in the product (e.g., \"admin\", \"member\") */\n  userRole?: string;\n\n  /** Current user state or mode (e.g., \"onboarding\", \"trial\") */\n  userState?: string;\n\n  /** Any error state the user is experiencing */\n  errorState?: {\n    code: string;\n    message: string;\n  };\n\n  /** Custom context data */\n  custom?: Record<string, unknown>;\n}"
+        },
+        {
+          "name": "UserProfile",
+          "category": "type",
+          "description": "User profile for personalization.",
+          "properties": [
+            {
+              "name": "userId",
+              "type": "string",
+              "required": false,
+              "description": "User identifier (for conversation continuity)"
+            },
+            {
+              "name": "name",
+              "type": "string",
+              "required": false,
+              "description": "User's name for personalized responses"
+            },
+            {
+              "name": "role",
+              "type": "string",
+              "required": false,
+              "description": "User's role/permissions"
+            },
+            {
+              "name": "accountType",
+              "type": "string",
+              "required": false,
+              "description": "Account/organization info"
+            },
+            {
+              "name": "experienceLevel",
+              "type": "'beginner' | 'intermediate' | 'advanced'",
+              "required": false,
+              "description": "User's experience level"
+            }
+          ],
+          "typeDefinition": "interface UserProfile {\n  /** User identifier (for conversation continuity) */\n  userId?: string;\n\n  /** User's name for personalized responses */\n  name?: string;\n\n  /** User's role/permissions */\n  role?: string;\n\n  /** Account/organization info */\n  accountType?: string;\n\n  /** User's experience level */\n  experienceLevel?: 'beginner' | 'intermediate' | 'advanced';\n}"
+        },
+        {
+          "name": "Suggestion",
+          "category": "type",
+          "description": "Suggestion returned from the suggestions API.",
+          "properties": [
+            {
+              "name": "type",
+              "type": "'article' | 'video' | 'tutorial' | 'action'",
+              "required": true,
+              "description": ""
+            },
+            {
+              "name": "id",
+              "type": "string",
+              "required": true,
+              "description": ""
+            },
+            {
+              "name": "title",
+              "type": "string",
+              "required": true,
+              "description": ""
+            },
+            {
+              "name": "description",
+              "type": "string",
+              "required": true,
+              "description": ""
+            },
+            {
+              "name": "relevanceScore",
+              "type": "number",
+              "required": true,
+              "description": ""
+            },
+            {
+              "name": "url",
+              "type": "string",
+              "required": false,
+              "description": ""
+            }
+          ],
+          "typeDefinition": "interface Suggestion {\n  type: 'article' | 'video' | 'tutorial' | 'action';\n  id: string;\n  title: string;\n  description: string;\n  relevanceScore: number;\n  url?: string;\n}"
+        }
+      ]
+    },
+    {
+      "slug": "core/tasks",
+      "title": "Tasks",
+      "category": "domain",
+      "package": "@pillar-ai/sdk",
+      "description": "Handle AI-suggested actions.",
+      "importStatement": "import Pillar from '@pillar-ai/sdk'",
+      "methods": [
+        {
+          "name": "onTask",
+          "signature": "onTask(taskName: string, handler: (data: Record<string, unknown>) => void): () => void",
+          "description": "Register a handler for a specific task.\nCalled when the AI suggests a task and the user clicks it.",
+          "parameters": [
+            {
+              "name": "taskName",
+              "type": "string",
+              "required": true,
+              "description": "- The task identifier (e.g., 'invite_team_member')"
+            },
+            {
+              "name": "handler",
+              "type": "(data: Record<string, unknown>) => void",
+              "required": true,
+              "description": "- Function to handle the task execution"
+            }
+          ],
+          "returnType": "() => void",
+          "isStatic": false,
+          "examples": [
+            "pillar.onTask('invite_team_member', (data) => {\n  openInviteModal(data);\n});"
+          ]
+        },
+        {
+          "name": "onAnyTask",
+          "signature": "onAnyTask(handler: (name: string, data: Record<string, unknown>) => void): () => void",
+          "description": "Register a catch-all handler for any task.\nUseful for logging, analytics, or handling unknown tasks.",
+          "parameters": [
+            {
+              "name": "handler",
+              "type": "(name: string, data: Record<string, unknown>) => void",
+              "required": true,
+              "description": "- Function called with task name and data"
+            }
+          ],
+          "returnType": "() => void",
+          "isStatic": false,
+          "examples": [
+            "pillar.onAnyTask((name, data) => {\n  analytics.track('task_executed', { name, data });\n});"
+          ]
+        },
+        {
+          "name": "offTask",
+          "signature": "offTask(taskName: string): void",
+          "description": "Remove a task handler.",
+          "parameters": [
+            {
+              "name": "taskName",
+              "type": "string",
+              "required": true,
+              "description": "- The task identifier to stop handling"
+            }
+          ],
+          "returnType": "void",
+          "isStatic": false,
+          "examples": []
+        },
+        {
+          "name": "completeAction",
+          "signature": "completeAction(actionName: string, success?: boolean, data?: Record<string, unknown>): Promise<void>",
+          "description": "Signal that an action has completed.\n\nFor simple actions, this emits the completion event.\nFor wizard actions (modals, multi-step flows), call this when the user\nfinishes the flow.",
+          "parameters": [
+            {
+              "name": "actionName",
+              "type": "string",
+              "required": true,
+              "description": "- The action identifier"
+            },
+            {
+              "name": "success",
+              "type": "boolean",
+              "required": false,
+              "description": "- Whether the action completed successfully (default: true)"
+            },
+            {
+              "name": "data",
+              "type": "Record<string, unknown>",
+              "required": false,
+              "description": "- Optional result data"
+            }
+          ],
+          "returnType": "Promise<void>",
+          "isStatic": false,
+          "examples": [
+            "// In your wizard completion handler:\npillar.completeAction('add_source', true, { sourceId: source.id });"
+          ]
+        }
+      ],
+      "properties": [],
+      "types": [
+        {
+          "name": "TaskExecutePayload",
+          "category": "type",
+          "description": "Task execution payload - sent when a task button is clicked.",
+          "properties": [
+            {
+              "name": "id",
+              "type": "string",
+              "required": false,
+              "description": "Database UUID for the task (used for confirmation)"
+            },
+            {
+              "name": "name",
+              "type": "string",
+              "required": true,
+              "description": "Task unique identifier (e.g., 'invite_team_member')"
+            },
+            {
+              "name": "data",
+              "type": "Record<string, unknown>",
+              "required": true,
+              "description": "Task data payload"
+            },
+            {
+              "name": "taskType",
+              "type": "| \"navigate\"\n    | \"open_modal\"\n    | \"fill_form\"\n    | \"trigger_action\"\n    | \"copy_text\"\n    | \"external_link\"\n    | \"start_tutorial\"\n    | \"inline_ui\"",
+              "required": false,
+              "description": "Task type hint"
+            },
+            {
+              "name": "path",
+              "type": "string",
+              "required": false,
+              "description": "Path template for navigate type (already resolved with params)"
+            },
+            {
+              "name": "externalUrl",
+              "type": "string",
+              "required": false,
+              "description": "External URL for external_link type"
+            }
+          ],
+          "typeDefinition": "interface TaskExecutePayload {\n  /** Database UUID for the task (used for confirmation) */\n  id?: string;\n  /** Task unique identifier (e.g., 'invite_team_member') */\n  name: string;\n  /** Task data payload */\n  data: Record<string, unknown>;\n  /** Task type hint */\n  taskType?:\n    | \"navigate\"\n    | \"open_modal\"\n    | \"fill_form\"\n    | \"trigger_action\"\n    | \"copy_text\"\n    | \"external_link\"\n    | \"start_tutorial\"\n    | \"inline_ui\";\n  /** Path template for navigate type (already resolved with params) */\n  path?: string;\n  /** External URL for external_link type */\n  externalUrl?: string;\n}"
+        }
+      ]
+    },
+    {
+      "slug": "core/events",
+      "title": "Events",
+      "category": "domain",
+      "package": "@pillar-ai/sdk",
+      "description": "Subscribe to SDK lifecycle and interaction events.",
+      "importStatement": "import Pillar from '@pillar-ai/sdk'",
+      "methods": [
+        {
+          "name": "on",
+          "signature": "on(event: K, callback: (data: PillarEvents[K]) => void): () => void",
+          "description": "Subscribe to SDK events",
+          "parameters": [
+            {
+              "name": "event",
+              "type": "K",
+              "required": true,
+              "description": ""
+            },
+            {
+              "name": "callback",
+              "type": "(data: PillarEvents[K]) => void",
+              "required": true,
+              "description": ""
+            }
+          ],
+          "returnType": "() => void",
+          "isStatic": false,
+          "examples": []
+        }
+      ],
+      "properties": [],
+      "types": [
+        {
+          "name": "PillarEvents",
+          "category": "type",
+          "description": "",
+          "properties": [
+            {
+              "name": "ready",
+              "type": "void",
+              "required": true,
+              "description": ""
+            },
+            {
+              "name": "error",
+              "type": "Error",
+              "required": true,
+              "description": ""
+            },
+            {
+              "name": "\"panel:open\"",
+              "type": "void",
+              "required": true,
+              "description": ""
+            },
+            {
+              "name": "\"panel:close\"",
+              "type": "void",
+              "required": true,
+              "description": ""
+            },
+            {
+              "name": "\"panel:navigate\"",
+              "type": "{ view: string; params?: Record<string, string> }",
+              "required": true,
+              "description": ""
+            },
+            {
+              "name": "\"article:view\"",
+              "type": "{ articleSlug: string }",
+              "required": true,
+              "description": ""
+            },
+            {
+              "name": "\"search:query\"",
+              "type": "{ query: string }",
+              "required": true,
+              "description": ""
+            },
+            {
+              "name": "\"chat:message\"",
+              "type": "{ message: string }",
+              "required": true,
+              "description": ""
+            },
+            {
+              "name": "\"textSelection:shown\"",
+              "type": "{ text: string }",
+              "required": true,
+              "description": ""
+            },
+            {
+              "name": "\"textSelection:click\"",
+              "type": "{ text: string }",
+              "required": true,
+              "description": ""
+            },
+            {
+              "name": "\"context:change\"",
+              "type": "{ context: Context }",
+              "required": true,
+              "description": ""
+            },
+            {
+              "name": "\"profile:change\"",
+              "type": "{ profile: UserProfile }",
+              "required": true,
+              "description": ""
+            },
+            {
+              "name": "\"action:report\"",
+              "type": "{ action: string; metadata?: Record<string, unknown> }",
+              "required": true,
+              "description": ""
+            },
+            {
+              "name": "\"user:identified\"",
+              "type": "{\n    userId: string;\n    profile?: {\n      name?: string;\n      email?: string;\n      metadata?: Record<string, unknown>;\n    };\n  }",
+              "required": true,
+              "description": ""
+            },
+            {
+              "name": "\"user:logout\"",
+              "type": "Record<string, never>",
+              "required": true,
+              "description": ""
+            },
+            {
+              "name": "\"action:result\"",
+              "type": "{ actionName: string; result: unknown; toolCallId?: string }",
+              "required": true,
+              "description": ""
+            },
+            {
+              "name": "\"task:execute\"",
+              "type": "TaskExecutePayload",
+              "required": true,
+              "description": ""
+            },
+            {
+              "name": "\"task:complete\"",
+              "type": "{\n    id?: string;\n    name: string;\n    success: boolean;\n    data?: Record<string, unknown>;\n  }",
+              "required": true,
+              "description": ""
+            },
+            {
+              "name": "\"workflow:start\"",
+              "type": "Workflow",
+              "required": true,
+              "description": ""
+            },
+            {
+              "name": "\"workflow:step:active\"",
+              "type": "{ workflow: Workflow; step: WorkflowStep }",
+              "required": true,
+              "description": ""
+            },
+            {
+              "name": "\"workflow:step:complete\"",
+              "type": "{\n    workflow: Workflow;\n    step: WorkflowStep;\n    success: boolean;\n  }",
+              "required": true,
+              "description": ""
+            },
+            {
+              "name": "\"workflow:step:skip\"",
+              "type": "{ workflow: Workflow; step: WorkflowStep }",
+              "required": true,
+              "description": ""
+            },
+            {
+              "name": "\"workflow:complete\"",
+              "type": "Workflow",
+              "required": true,
+              "description": ""
+            },
+            {
+              "name": "\"workflow:cancel\"",
+              "type": "Workflow",
+              "required": true,
+              "description": ""
+            },
+            {
+              "name": "\"theme:change\"",
+              "type": "{ theme: ResolvedThemeConfig }",
+              "required": true,
+              "description": ""
+            },
+            {
+              "name": "\"textSelection:change\"",
+              "type": "{ enabled: boolean }",
+              "required": true,
+              "description": ""
+            },
+            {
+              "name": "\"dom:scanned\"",
+              "type": "CompactScanResult",
+              "required": true,
+              "description": ""
+            },
+            {
+              "name": "\"domScanning:change\"",
+              "type": "{ enabled: boolean }",
+              "required": true,
+              "description": ""
+            },
+            {
+              "name": "\"suggestions:updated\"",
+              "type": "{\n    suggestions: Array<{ id: string; text: string }>;\n    route: string;\n  }",
+              "required": true,
+              "description": ""
+            },
+            {
+              "name": "\"sidebar:click\"",
+              "type": "{ tabId: string; label: string }",
+              "required": true,
+              "description": ""
+            },
+            {
+              "name": "\"support:request\"",
+              "type": "{ tabId: string }",
+              "required": true,
+              "description": "",
+              "deprecated": true
+            }
+          ],
+          "typeDefinition": "interface PillarEvents {\n  ready: void;\n  error: Error;\n  \"panel:open\": void;\n  \"panel:close\": void;\n  \"panel:navigate\": { view: string; params?: Record<string, string> };\n  \"article:view\": { articleSlug: string };\n  \"search:query\": { query: string };\n  \"chat:message\": { message: string };\n  \"textSelection:shown\": { text: string };\n  \"textSelection:click\": { text: string };\n  // Context events\n  \"context:change\": { context: Context };\n  \"profile:change\": { profile: UserProfile };\n  \"action:report\": { action: string; metadata?: Record<string, unknown> };\n\n  // User identity events\n  \"user:identified\": {\n    userId: string;\n    profile?: {\n      name?: string;\n      email?: string;\n      metadata?: Record<string, unknown>;\n    };\n  };\n  \"user:logout\": Record<string, never>;\n  // Query action events - for actions that return data to the agent\n  \"action:result\": { actionName: string; result: unknown; toolCallId?: string };\n  // Task events - for AI-suggested actions\n  \"task:execute\": TaskExecutePayload;\n  \"task:complete\": {\n    id?: string;\n    name: string;\n    success: boolean;\n    data?: Record<string, unknown>;\n  };\n\n  // Workflow events - for multi-step sequences\n  \"workflow:start\": Workflow;\n  \"workflow:step:active\": { workflow: Workflow; step: WorkflowStep };\n  \"workflow:step:complete\": {\n    workflow: Workflow;\n    step: WorkflowStep;\n    success: boolean;\n  };\n  \"workflow:step:skip\": { workflow: Workflow; step: WorkflowStep };\n  \"workflow:complete\": Workflow;\n  \"workflow:cancel\": Workflow;\n\n  // Theme events\n  \"theme:change\": { theme: ResolvedThemeConfig };\n\n  // Text selection feature toggle\n  \"textSelection:change\": { enabled: boolean };\n\n  // DOM scanning events\n  \"dom:scanned\": CompactScanResult;\n  \"domScanning:change\": { enabled: boolean };\n\n  // Suggestions events - for page-aware suggestion sorting\n  \"suggestions:updated\": {\n    suggestions: Array<{ id: string; text: string }>;\n    route: string;\n  };\n\n  // Sidebar tab click events - for triggering custom actions on non-assistant tabs\n  // Customers use this to integrate their own support systems (Intercom, Zendesk, etc.)\n  \"sidebar:click\": { tabId: string; label: string };\n\n  /** @deprecated Use 'sidebar:click' instead. Will be removed in next major version. */\n  \"support:request\": { tabId: string };\n}"
+        }
+      ]
+    },
+    {
+      "slug": "core/cards",
+      "title": "Cards",
+      "category": "domain",
+      "package": "@pillar-ai/sdk",
+      "description": "Register custom card renderers for inline UI.",
+      "importStatement": "import Pillar from '@pillar-ai/sdk'",
+      "methods": [
+        {
+          "name": "registerCard",
+          "signature": "registerCard(cardType: string, renderer: CardRenderer): () => void",
+          "description": "Register a custom card renderer for inline_ui type actions.\n\nWhen the AI returns an action with action_type: 'inline_ui' and\na card_type in its data, the SDK will look for a registered renderer\nand call it to render the inline UI card.",
+          "parameters": [
+            {
+              "name": "cardType",
+              "type": "string",
+              "required": true,
+              "description": "- The card type identifier (e.g., 'invite_members')"
+            },
+            {
+              "name": "renderer",
+              "type": "CardRenderer",
+              "required": true,
+              "description": "- Function that renders the card into a container"
+            }
+          ],
+          "returnType": "() => void",
+          "isStatic": false,
+          "examples": [
+            "// Vanilla JS\npillar.registerCard('invite_members', (container, data, callbacks) => {\n  container.innerHTML = `\n    <div class=\"invite-card\">\n      <h3>Invite Team Members</h3>\n      ${data.emails.map(e => `<div>${e}</div>`).join('')}\n      <button id=\"confirm\">Send Invites</button>\n    </div>\n  `;\n  container.querySelector('#confirm').onclick = callbacks.onConfirm;\n  return () => container.innerHTML = ''; // cleanup\n});"
+          ]
+        }
+      ],
+      "properties": [],
+      "types": [
+        {
+          "name": "CardCallbacks",
+          "category": "type",
+          "description": "Callbacks provided to custom card renderers.",
+          "properties": [
+            {
+              "name": "onConfirm",
+              "type": "(modifiedData?: Record<string, unknown>) => void",
+              "required": true,
+              "description": "Called when user confirms the action. Pass modified data if needed."
+            },
+            {
+              "name": "onCancel",
+              "type": "() => void",
+              "required": true,
+              "description": "Called when user cancels the action"
+            },
+            {
+              "name": "onStateChange",
+              "type": "(\n    state: \"loading\" | \"success\" | \"error\",\n    message?: string\n  ) => void",
+              "required": false,
+              "description": "Called to report card state changes (for analytics/confirmation)"
+            }
+          ],
+          "typeDefinition": "interface CardCallbacks {\n  /** Called when user confirms the action. Pass modified data if needed. */\n  onConfirm: (modifiedData?: Record<string, unknown>) => void;\n  /** Called when user cancels the action */\n  onCancel: () => void;\n  /** Called to report card state changes (for analytics/confirmation) */\n  onStateChange?: (\n    state: \"loading\" | \"success\" | \"error\",\n    message?: string\n  ) => void;\n}"
+        },
+        {
+          "name": "CardFieldSchema",
+          "category": "type",
+          "description": "Card field schema definition for declarative card configuration.",
+          "properties": [
+            {
+              "name": "name",
+              "type": "string",
+              "required": true,
+              "description": "Field name/key"
+            },
+            {
+              "name": "label",
+              "type": "string",
+              "required": true,
+              "description": "Display label"
+            },
+            {
+              "name": "type",
+              "type": "| \"text\"\n    | \"number\"\n    | \"email\"\n    | \"select\"\n    | \"multiselect\"\n    | \"checkbox\"\n    | \"textarea\"\n    | \"date\"\n    | \"hidden\"",
+              "required": true,
+              "description": "Field type"
+            },
+            {
+              "name": "required",
+              "type": "boolean",
+              "required": false,
+              "description": "Whether field is required"
+            },
+            {
+              "name": "defaultValue",
+              "type": "unknown",
+              "required": false,
+              "description": "Default value"
+            },
+            {
+              "name": "placeholder",
+              "type": "string",
+              "required": false,
+              "description": "Placeholder text"
+            },
+            {
+              "name": "helpText",
+              "type": "string",
+              "required": false,
+              "description": "Help text shown below field"
+            },
+            {
+              "name": "options",
+              "type": "Array<{ value: string; label: string }>",
+              "required": false,
+              "description": "Options for select/multiselect types"
+            },
+            {
+              "name": "validation",
+              "type": "{\n    min?: number;\n    max?: number;\n    minLength?: number;\n    maxLength?: number;\n    pattern?: string;\n    patternMessage?: string;\n  }",
+              "required": false,
+              "description": "Validation rules"
+            }
+          ],
+          "typeDefinition": "interface CardFieldSchema {\n  /** Field name/key */\n  name: string;\n  /** Display label */\n  label: string;\n  /** Field type */\n  type:\n    | \"text\"\n    | \"number\"\n    | \"email\"\n    | \"select\"\n    | \"multiselect\"\n    | \"checkbox\"\n    | \"textarea\"\n    | \"date\"\n    | \"hidden\";\n  /** Whether field is required */\n  required?: boolean;\n  /** Default value */\n  defaultValue?: unknown;\n  /** Placeholder text */\n  placeholder?: string;\n  /** Help text shown below field */\n  helpText?: string;\n  /** Options for select/multiselect types */\n  options?: Array<{ value: string; label: string }>;\n  /** Validation rules */\n  validation?: {\n    min?: number;\n    max?: number;\n    minLength?: number;\n    maxLength?: number;\n    pattern?: string;\n    patternMessage?: string;\n  };\n}"
+        },
+        {
+          "name": "CardRegistrationOptions",
+          "category": "type",
+          "description": "Enhanced card registration options.",
+          "properties": [
+            {
+              "name": "cardType",
+              "type": "string",
+              "required": true,
+              "description": "Card type identifier (e.g., 'add_to_deal', 'invite_member')"
+            },
+            {
+              "name": "title",
+              "type": "string",
+              "required": false,
+              "description": "Human-readable card title"
+            },
+            {
+              "name": "description",
+              "type": "string",
+              "required": false,
+              "description": "Card description"
+            },
+            {
+              "name": "schema",
+              "type": "CardFieldSchema[]",
+              "required": false,
+              "description": "Schema defining form fields (for auto-generated forms)"
+            },
+            {
+              "name": "renderer",
+              "type": "CardRenderer",
+              "required": false,
+              "description": "Custom renderer function (overrides schema-based rendering)"
+            },
+            {
+              "name": "theme",
+              "type": "{\n    variant?: \"default\" | \"compact\" | \"wide\";\n    confirmLabel?: string;\n    cancelLabel?: string;\n  }",
+              "required": false,
+              "description": "Theme/styling options"
+            }
+          ],
+          "typeDefinition": "interface CardRegistrationOptions {\n  /** Card type identifier (e.g., 'add_to_deal', 'invite_member') */\n  cardType: string;\n  /** Human-readable card title */\n  title?: string;\n  /** Card description */\n  description?: string;\n  /** Schema defining form fields (for auto-generated forms) */\n  schema?: CardFieldSchema[];\n  /** Custom renderer function (overrides schema-based rendering) */\n  renderer?: CardRenderer;\n  /** Theme/styling options */\n  theme?: {\n    variant?: \"default\" | \"compact\" | \"wide\";\n    confirmLabel?: string;\n    cancelLabel?: string;\n  };\n}"
+        },
+        {
+          "name": "CardRenderer",
+          "category": "type-alias",
+          "description": "Card renderer function signature.\nCustomers register these to render custom confirmation cards.",
+          "typeDefinition": "type CardRenderer = (\n  container: HTMLElement,\n  data: Record<string, unknown>,\n  callbacks: CardCallbacks\n) => (() => void) | void"
+        }
+      ]
+    },
+    {
+      "slug": "core/features",
+      "title": "Features",
+      "category": "domain",
+      "package": "@pillar-ai/sdk",
+      "description": "Toggle text selection helper and DOM scanning.",
+      "importStatement": "import Pillar from '@pillar-ai/sdk'",
+      "methods": [
+        {
+          "name": "setTextSelectionEnabled",
+          "signature": "setTextSelectionEnabled(enabled: boolean): void",
+          "description": "Enable or disable the text selection \"Ask AI\" popover at runtime.",
+          "parameters": [
+            {
+              "name": "enabled",
+              "type": "boolean",
+              "required": true,
+              "description": "- Whether to show the popover when text is selected"
+            }
+          ],
+          "returnType": "void",
+          "isStatic": false,
+          "examples": [
+            "// Disable text selection popover\npillar.setTextSelectionEnabled(false);\n\n// Re-enable it\npillar.setTextSelectionEnabled(true);"
+          ]
+        },
+        {
+          "name": "setDOMScanningEnabled",
+          "signature": "setDOMScanningEnabled(enabled: boolean): void",
+          "description": "Enable or disable DOM scanning at runtime.",
+          "parameters": [
+            {
+              "name": "enabled",
+              "type": "boolean",
+              "required": true,
+              "description": "- Whether to enable DOM scanning"
+            }
+          ],
+          "returnType": "void",
+          "isStatic": false,
+          "examples": [
+            "// Enable DOM scanning\npillar.setDOMScanningEnabled(true);\n\n// Disable DOM scanning\npillar.setDOMScanningEnabled(false);"
+          ]
+        }
+      ],
+      "properties": [],
+      "types": [
+        {
+          "name": "TextSelectionConfig",
+          "category": "type",
+          "description": "",
+          "properties": [
+            {
+              "name": "enabled",
+              "type": "boolean",
+              "required": false,
+              "description": "Whether to show \"Ask AI\" popover on text selection (default: true)"
+            },
+            {
+              "name": "label",
+              "type": "string",
+              "required": false,
+              "description": "Label for the popover button (default: 'Ask AI')"
+            }
+          ],
+          "typeDefinition": "interface TextSelectionConfig {\n  /** Whether to show \"Ask AI\" popover on text selection (default: true) */\n  enabled?: boolean;\n  /** Label for the popover button (default: 'Ask AI') */\n  label?: string;\n}"
+        },
+        {
+          "name": "DOMScanningConfig",
+          "category": "type",
+          "description": "",
+          "properties": [
+            {
+              "name": "enabled",
+              "type": "boolean",
+              "required": false,
+              "default": "false",
+              "description": "Whether DOM scanning is enabled.\nWhen enabled, page structure is captured and sent with messages."
+            },
+            {
+              "name": "includeText",
+              "type": "boolean",
+              "required": false,
+              "default": "true",
+              "description": "Whether to include text content in the scan."
+            },
+            {
+              "name": "maxDepth",
+              "type": "number",
+              "required": false,
+              "default": "20",
+              "description": "Maximum depth to traverse the DOM tree."
+            },
+            {
+              "name": "visibleOnly",
+              "type": "boolean",
+              "required": false,
+              "default": "true",
+              "description": "Whether to only include visible elements."
+            },
+            {
+              "name": "excludeSelector",
+              "type": "string",
+              "required": false,
+              "description": "CSS selector for elements to exclude from scanning."
+            },
+            {
+              "name": "maxTextLength",
+              "type": "number",
+              "required": false,
+              "default": "500",
+              "description": "Maximum text length before truncation."
+            },
+            {
+              "name": "interactionHighlight",
+              "type": "InteractionHighlightConfig",
+              "required": false,
+              "description": "Configuration for highlighting elements during AI interactions."
+            }
+          ],
+          "typeDefinition": "interface DOMScanningConfig {\n  /**\n   * Whether DOM scanning is enabled.\n   * When enabled, page structure is captured and sent with messages.\n   * @default false\n   */\n  enabled?: boolean;\n  /**\n   * Whether to include text content in the scan.\n   * @default true\n   */\n  includeText?: boolean;\n  /**\n   * Maximum depth to traverse the DOM tree.\n   * @default 20\n   */\n  maxDepth?: number;\n  /**\n   * Whether to only include visible elements.\n   * @default true\n   */\n  visibleOnly?: boolean;\n  /**\n   * CSS selector for elements to exclude from scanning.\n   * @example '.sidebar, .footer, [data-no-scan]'\n   */\n  excludeSelector?: string;\n  /**\n   * Maximum text length before truncation.\n   * @default 500\n   */\n  maxTextLength?: number;\n  /**\n   * Configuration for highlighting elements during AI interactions.\n   */\n  interactionHighlight?: InteractionHighlightConfig;\n}"
+        }
+      ]
+    },
+    {
+      "slug": "types/PillarConfig",
+      "title": "PillarConfig",
+      "category": "type",
+      "package": "@pillar-ai/sdk",
+      "description": "",
+      "sourceFile": "packages/sdk/src/core/config.ts",
+      "importStatement": "import type { PillarConfig } from '@pillar-ai/sdk'",
+      "properties": [
+        {
+          "name": "productKey",
+          "type": "string",
+          "required": false,
+          "description": "Your product key from the Pillar app.\nGet it at app.trypillar.com"
+        },
+        {
+          "name": "platform",
+          "type": "Platform",
+          "required": false,
+          "default": "'web'",
+          "description": "Platform identifier for code-first actions.\nUsed to filter actions by deployment platform."
+        },
+        {
+          "name": "version",
+          "type": "string",
+          "required": false,
+          "description": "App version for code-first actions.\nUsed to match actions to the correct deployment version."
+        },
+        {
+          "name": "debug",
+          "type": "boolean",
+          "required": false,
+          "default": "false",
+          "description": "Enable debug mode for verbose logging and debug panel.\nWhen enabled:\n- All SDK events are logged to console\n- A debug panel shows real-time execution flow\n- Network requests/responses are captured"
+        },
+        {
+          "name": "panel",
+          "type": "PanelConfig",
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "edgeTrigger",
+          "type": "EdgeTriggerConfig",
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "mobileTrigger",
+          "type": "MobileTriggerConfig",
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "urlParams",
+          "type": "UrlParamsConfig",
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "textSelection",
+          "type": "TextSelectionConfig",
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "domScanning",
+          "type": "DOMScanningConfig",
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "suggestions",
+          "type": "SuggestionsConfig",
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "sidebarTabs",
+          "type": "SidebarTabConfig[]",
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "apiBaseUrl",
+          "type": "string",
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "theme",
+          "type": "ThemeConfig",
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "customCSS",
+          "type": "string",
+          "required": false,
+          "description": "Custom CSS to inject into the panel's Shadow DOM.\nUse public class names (pillar-*) to override default styles."
+        },
+        {
+          "name": "onReady",
+          "type": "() => void",
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "onError",
+          "type": "(error: Error) => void",
+          "required": false,
+          "description": ""
+        }
+      ],
+      "typeDefinition": "interface PillarConfig {\n  /**\n   * Your product key from the Pillar app.\n   * Get it at app.trypillar.com\n   */\n  productKey?: string;\n  \n  /**\n   * Platform identifier for code-first actions.\n   * Used to filter actions by deployment platform.\n   * @default 'web'\n   */\n  platform?: Platform;\n  \n  /**\n   * App version for code-first actions.\n   * Used to match actions to the correct deployment version.\n   * @example '1.2.3' or git commit SHA\n   */\n  version?: string;\n  \n  /**\n   * Enable debug mode for verbose logging and debug panel.\n   * When enabled:\n   * - All SDK events are logged to console\n   * - A debug panel shows real-time execution flow\n   * - Network requests/responses are captured\n   * @default false\n   */\n  debug?: boolean;\n  \n  // Panel settings\n  panel?: PanelConfig;\n  \n  // Edge trigger (sidebar tab that opens the panel)\n  edgeTrigger?: EdgeTriggerConfig;\n  \n  // Mobile trigger (floating button on small screens)\n  mobileTrigger?: MobileTriggerConfig;\n  \n  // URL params for auto-opening the panel\n  urlParams?: UrlParamsConfig;\n  \n  // Text selection \"Ask AI\" popover\n  textSelection?: TextSelectionConfig;\n  \n  // DOM scanning for page context\n  domScanning?: DOMScanningConfig;\n  \n  // Page-aware suggestions\n  suggestions?: SuggestionsConfig;\n  \n  // Sidebar tabs configuration\n  sidebarTabs?: SidebarTabConfig[];\n  \n  // API base URL (defaults to production)\n  apiBaseUrl?: string;\n  \n  // Theme customization\n  theme?: ThemeConfig;\n  \n  /** \n   * Custom CSS to inject into the panel's Shadow DOM.\n   * Use public class names (pillar-*) to override default styles.\n   * @example\n   * ```css\n   * .pillar-header { padding: 24px; }\n   * .pillar-message-user { border-radius: 8px; }\n   * ```\n   */\n  customCSS?: string;\n  \n  // Callbacks\n  onReady?: () => void;\n  onError?: (error: Error) => void;\n}",
+      "examples": [],
+      "relatedTypes": [
+        "PanelConfig",
+        "EdgeTriggerConfig",
+        "MobileTriggerConfig",
+        "UrlParamsConfig",
+        "TextSelectionConfig",
+        "DOMScanningConfig",
+        "SuggestionsConfig",
+        "SidebarTabConfig",
+        "ThemeConfig"
+      ],
+      "subtypes": [
+        {
+          "name": "EdgeTriggerConfig",
+          "category": "type",
+          "description": "",
+          "properties": [
+            {
+              "name": "enabled",
+              "type": "boolean",
+              "required": false,
+              "default": "true",
+              "description": "Whether to show the edge trigger sidebar tab.\nWhen enabled, a slim vertical tab appears on the screen edge that opens the panel."
+            },
+            {
+              "name": "resizable",
+              "type": "boolean",
+              "required": false,
+              "default": "true",
+              "description": "Whether the panel can be resized by dragging the edge of the sidebar trigger.\nWhen enabled, a drag handle appears on the inner edge of the sidebar when the panel is open.\nThe resized width is persisted to localStorage."
+            }
+          ],
+          "typeDefinition": "interface EdgeTriggerConfig {\n  /**\n   * Whether to show the edge trigger sidebar tab.\n   * When enabled, a slim vertical tab appears on the screen edge that opens the panel.\n   * @default true\n   */\n  enabled?: boolean;\n  /**\n   * Whether the panel can be resized by dragging the edge of the sidebar trigger.\n   * When enabled, a drag handle appears on the inner edge of the sidebar when the panel is open.\n   * The resized width is persisted to localStorage.\n   * @default true\n   */\n  resizable?: boolean;\n}"
+        },
+        {
+          "name": "MobileTriggerConfig",
+          "category": "type",
+          "description": "",
+          "properties": [
+            {
+              "name": "enabled",
+              "type": "boolean",
+              "required": false,
+              "default": "true",
+              "description": "Whether to show the mobile floating button on small screens.\nWhen enabled, a floating action button appears when viewport is below mobileBreakpoint."
+            },
+            {
+              "name": "breakpoint",
+              "type": "number",
+              "required": false,
+              "default": "700",
+              "description": "Viewport width below which the edge trigger hides and mobile trigger shows."
+            },
+            {
+              "name": "position",
+              "type": "MobileTriggerPosition",
+              "required": false,
+              "default": "'bottom-right'",
+              "description": "Position of the floating button."
+            },
+            {
+              "name": "icon",
+              "type": "MobileTriggerIcon",
+              "required": false,
+              "default": "'sparkle'",
+              "description": "Preset icon to display in the button."
+            },
+            {
+              "name": "customIcon",
+              "type": "string",
+              "required": false,
+              "description": "Custom SVG icon string. Overrides the icon preset if provided."
+            },
+            {
+              "name": "backgroundColor",
+              "type": "string",
+              "required": false,
+              "description": "Background color of the button (CSS value).\nDefaults to the theme's primary color."
+            },
+            {
+              "name": "iconColor",
+              "type": "string",
+              "required": false,
+              "default": "'white'",
+              "description": "Icon color (CSS value)."
+            },
+            {
+              "name": "size",
+              "type": "MobileTriggerSize | number",
+              "required": false,
+              "default": "'medium'",
+              "description": "Button size - preset name or pixel value.\n- 'small': 44px\n- 'medium': 56px (default)\n- 'large': 68px"
+            },
+            {
+              "name": "label",
+              "type": "string",
+              "required": false,
+              "default": "'Get help'",
+              "description": "Tooltip text and aria-label for accessibility."
+            },
+            {
+              "name": "offset",
+              "type": "number",
+              "required": false,
+              "default": "24",
+              "description": "Offset from screen edges in pixels."
+            }
+          ],
+          "typeDefinition": "interface MobileTriggerConfig {\n  /**\n   * Whether to show the mobile floating button on small screens.\n   * When enabled, a floating action button appears when viewport is below mobileBreakpoint.\n   * @default true\n   */\n  enabled?: boolean;\n  /**\n   * Viewport width below which the edge trigger hides and mobile trigger shows.\n   * @default 700\n   */\n  breakpoint?: number;\n  /**\n   * Position of the floating button.\n   * @default 'bottom-right'\n   */\n  position?: MobileTriggerPosition;\n  /**\n   * Preset icon to display in the button.\n   * @default 'sparkle'\n   */\n  icon?: MobileTriggerIcon;\n  /**\n   * Custom SVG icon string. Overrides the icon preset if provided.\n   */\n  customIcon?: string;\n  /**\n   * Background color of the button (CSS value).\n   * Defaults to the theme's primary color.\n   */\n  backgroundColor?: string;\n  /**\n   * Icon color (CSS value).\n   * @default 'white'\n   */\n  iconColor?: string;\n  /**\n   * Button size - preset name or pixel value.\n   * - 'small': 44px\n   * - 'medium': 56px (default)\n   * - 'large': 68px\n   * @default 'medium'\n   */\n  size?: MobileTriggerSize | number;\n  /**\n   * Tooltip text and aria-label for accessibility.\n   * @default 'Get help'\n   */\n  label?: string;\n  /**\n   * Offset from screen edges in pixels.\n   * @default 24\n   */\n  offset?: number;\n}"
+        },
+        {
+          "name": "MobileTriggerPosition",
+          "category": "type-alias",
+          "description": "",
+          "typeDefinition": "type MobileTriggerPosition = 'bottom-right' | 'bottom-left'"
+        },
+        {
+          "name": "MobileTriggerIcon",
+          "category": "type-alias",
+          "description": "",
+          "typeDefinition": "type MobileTriggerIcon = 'sparkle' | 'question' | 'help' | 'chat' | 'support'"
+        },
+        {
+          "name": "MobileTriggerSize",
+          "category": "type-alias",
+          "description": "",
+          "typeDefinition": "type MobileTriggerSize = 'small' | 'medium' | 'large'"
+        },
+        {
+          "name": "UrlParamsConfig",
+          "category": "type",
+          "description": "",
+          "properties": [
+            {
+              "name": "enabled",
+              "type": "boolean",
+              "required": false,
+              "description": "Whether to check URL params for auto-opening the panel (default: true)"
+            },
+            {
+              "name": "prefix",
+              "type": "string",
+              "required": false,
+              "description": "Prefix for URL params (default: 'pillar-')"
+            },
+            {
+              "name": "clearAfterOpen",
+              "type": "boolean",
+              "required": false,
+              "description": "Whether to clear URL params after opening (default: true)"
+            }
+          ],
+          "typeDefinition": "interface UrlParamsConfig {\n  /** Whether to check URL params for auto-opening the panel (default: true) */\n  enabled?: boolean;\n  /** Prefix for URL params (default: 'pillar-') */\n  prefix?: string;\n  /** Whether to clear URL params after opening (default: true) */\n  clearAfterOpen?: boolean;\n}"
+        },
+        {
+          "name": "InteractionHighlightConfig",
+          "category": "type",
+          "description": "",
+          "properties": [
+            {
+              "name": "enabled",
+              "type": "boolean",
+              "required": false,
+              "default": "true",
+              "description": "Whether to highlight elements when the AI interacts with them."
+            },
+            {
+              "name": "outlineColor",
+              "type": "string",
+              "required": false,
+              "default": "'#3b82f6' (blue-500)",
+              "description": "Outline color for highlighted elements (CSS color value)."
+            },
+            {
+              "name": "outlineWidth",
+              "type": "number",
+              "required": false,
+              "default": "2",
+              "description": "Outline width in pixels."
+            },
+            {
+              "name": "outlineOffset",
+              "type": "number",
+              "required": false,
+              "default": "2",
+              "description": "Outline offset in pixels (space between element and outline)."
+            },
+            {
+              "name": "duration",
+              "type": "number",
+              "required": false,
+              "default": "2000",
+              "description": "Duration in milliseconds to show the highlight.\nSet to 0 for no auto-removal (highlight stays until next interaction)."
+            },
+            {
+              "name": "scrollIntoView",
+              "type": "boolean",
+              "required": false,
+              "default": "true",
+              "description": "Whether to scroll the element into view if not visible."
+            },
+            {
+              "name": "scrollBehavior",
+              "type": "ScrollBehavior",
+              "required": false,
+              "default": "'smooth'",
+              "description": "Scroll behavior when scrolling element into view."
+            }
+          ],
+          "typeDefinition": "interface InteractionHighlightConfig {\n  /**\n   * Whether to highlight elements when the AI interacts with them.\n   * @default true\n   */\n  enabled?: boolean;\n  /**\n   * Outline color for highlighted elements (CSS color value).\n   * @default '#3b82f6' (blue-500)\n   */\n  outlineColor?: string;\n  /**\n   * Outline width in pixels.\n   * @default 2\n   */\n  outlineWidth?: number;\n  /**\n   * Outline offset in pixels (space between element and outline).\n   * @default 2\n   */\n  outlineOffset?: number;\n  /**\n   * Duration in milliseconds to show the highlight.\n   * Set to 0 for no auto-removal (highlight stays until next interaction).\n   * @default 2000\n   */\n  duration?: number;\n  /**\n   * Whether to scroll the element into view if not visible.\n   * @default true\n   */\n  scrollIntoView?: boolean;\n  /**\n   * Scroll behavior when scrolling element into view.\n   * @default 'smooth'\n   */\n  scrollBehavior?: ScrollBehavior;\n}"
+        },
+        {
+          "name": "SuggestionsConfig",
+          "category": "type",
+          "description": "",
+          "properties": [
+            {
+              "name": "enabled",
+              "type": "boolean",
+              "required": false,
+              "default": "true",
+              "description": "Enable page-aware suggestion sorting.\nWhen enabled, suggestions are re-sorted based on the current page context\nwhenever the user navigates to a new route."
+            },
+            {
+              "name": "debounceMs",
+              "type": "number",
+              "required": false,
+              "default": "100",
+              "description": "Debounce time for route change detection (ms).\nPrevents excessive sorting on rapid navigation."
+            },
+            {
+              "name": "displayLimit",
+              "type": "number",
+              "required": false,
+              "default": "3",
+              "description": "Maximum number of suggestions to display."
+            }
+          ],
+          "typeDefinition": "interface SuggestionsConfig {\n  /**\n   * Enable page-aware suggestion sorting.\n   * When enabled, suggestions are re-sorted based on the current page context\n   * whenever the user navigates to a new route.\n   * @default true\n   */\n  enabled?: boolean;\n  /**\n   * Debounce time for route change detection (ms).\n   * Prevents excessive sorting on rapid navigation.\n   * @default 100\n   */\n  debounceMs?: number;\n  /**\n   * Maximum number of suggestions to display.\n   * @default 3\n   */\n  displayLimit?: number;\n}"
+        },
+        {
+          "name": "SidebarTabConfig",
+          "category": "type",
+          "description": "Sidebar tab configuration",
+          "properties": [
+            {
+              "name": "id",
+              "type": "string",
+              "required": true,
+              "description": ""
+            },
+            {
+              "name": "label",
+              "type": "string",
+              "required": true,
+              "description": ""
+            },
+            {
+              "name": "enabled",
+              "type": "boolean",
+              "required": true,
+              "description": ""
+            },
+            {
+              "name": "order",
+              "type": "number",
+              "required": true,
+              "description": ""
+            },
+            {
+              "name": "icon",
+              "type": "'help' | 'support' | 'settings' | 'feedback' | 'chat' | 'calendar' | 'mail'",
+              "required": false,
+              "description": "Preset icon for this tab"
+            }
+          ],
+          "typeDefinition": "interface SidebarTabConfig {\n  id: string;\n  label: string;\n  enabled: boolean;\n  order: number;\n  /** Preset icon for this tab */\n  icon?: 'help' | 'support' | 'settings' | 'feedback' | 'chat' | 'calendar' | 'mail';\n}"
+        }
+      ]
+    }
+  ],
+  "navigation": [
+    {
+      "title": "React",
+      "items": [
+        {
+          "title": "PillarProvider",
+          "href": "/docs/reference/react/PillarProvider"
+        },
+        {
+          "title": "PillarPanel",
+          "href": "/docs/reference/react/PillarPanel"
+        },
+        {
+          "title": "usePillar()",
+          "href": "/docs/reference/react/usePillar"
+        },
+        {
+          "title": "useHelpPanel()",
+          "href": "/docs/reference/react/useHelpPanel"
+        }
+      ]
+    },
+    {
+      "title": "Core SDK",
+      "items": [
+        {
+          "title": "Lifecycle",
+          "href": "/docs/reference/core/lifecycle"
+        },
+        {
+          "title": "Panel",
+          "href": "/docs/reference/core/panel"
+        },
+        {
+          "title": "Theme",
+          "href": "/docs/reference/core/theme"
+        },
+        {
+          "title": "Context",
+          "href": "/docs/reference/core/context"
+        },
+        {
+          "title": "Tasks",
+          "href": "/docs/reference/core/tasks"
+        },
+        {
+          "title": "Events",
+          "href": "/docs/reference/core/events"
+        },
+        {
+          "title": "Cards",
+          "href": "/docs/reference/core/cards"
+        },
+        {
+          "title": "Features",
+          "href": "/docs/reference/core/features"
+        }
+      ]
+    },
+    {
+      "title": "Types",
+      "items": [
+        {
+          "title": "CardComponentProps",
+          "href": "/docs/reference/types/CardComponentProps"
+        },
+        {
+          "title": "PillarConfig",
+          "href": "/docs/reference/types/PillarConfig"
+        }
+      ]
+    }
+  ]
+}

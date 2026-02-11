@@ -8,3 +8,4 @@ export { DocsLayoutClient } from './DocsLayoutClient';
 export { DocsPageLayout } from './DocsPageLayout';
 export { DocsTableOfContents } from './DocsTableOfContents';
 export { SectionIndexPage } from './SectionIndexPage';
+export { ReferencePage } from './ReferencePage';

@@ -3,17 +3,29 @@
  *
  * Static navigation structure for the SDK documentation.
  * Used by sidebar and prev/next navigation.
+ *
+ * The Reference section is auto-generated from the reference manifest
+ * produced by scripts/generate-api-docs.ts.
  */
+
+import referenceManifest from '@/generated/reference-manifest.json';
 
 export interface NavItem {
   title: string;
   href: string;
 }
 
+export interface NavGroup {
+  title: string;
+  items: NavItem[];
+}
+
 export interface NavSection {
   title: string;
   slug: string;
   items: NavItem[];
+  /** Optional sub-groups within the section (used by Reference) */
+  groups?: NavGroup[];
 }
 
 /**
@@ -85,13 +97,8 @@ export const docsNavigation: NavSection[] = [
   {
     title: "Reference",
     slug: "reference",
-    items: [
-      { title: "React API", href: "/docs/reference/react" },
-      { title: "Core SDK API", href: "/docs/reference/core" },
-      { title: "Action Types", href: "/docs/reference/action-types" },
-      { title: "Theme Options", href: "/docs/reference/theme-options" },
-      { title: "Events", href: "/docs/reference/events" },
-    ],
+    items: [], // Individual items are inside groups
+    groups: referenceManifest.navigation as NavGroup[],
   },
 ];
 
@@ -99,7 +106,11 @@ export const docsNavigation: NavSection[] = [
  * Get all nav items in a flat list (for prev/next navigation)
  */
 export function getAllNavItems(): NavItem[] {
-  return docsNavigation.flatMap((section) => section.items);
+  return docsNavigation.flatMap((section) => {
+    const fromItems = section.items || [];
+    const fromGroups = (section.groups || []).flatMap((g) => g.items);
+    return [...fromItems, ...fromGroups];
+  });
 }
 
 /**
@@ -126,9 +137,19 @@ export function findNavContext(pathname: string): {
   item: NavItem | null;
 } {
   for (const section of docsNavigation) {
-    const item = section.items.find((item) => item.href === pathname);
-    if (item) {
-      return { section, item };
+    // Check direct items
+    const directItem = section.items.find((item) => item.href === pathname);
+    if (directItem) {
+      return { section, item: directItem };
+    }
+    // Check groups
+    if (section.groups) {
+      for (const group of section.groups) {
+        const groupItem = group.items.find((item) => item.href === pathname);
+        if (groupItem) {
+          return { section, item: groupItem };
+        }
+      }
     }
   }
   return { section: null, item: null };

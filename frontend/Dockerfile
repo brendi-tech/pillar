@@ -29,6 +29,10 @@ ARG NEXT_PUBLIC_PILLAR_API_URL
 ENV NEXT_PUBLIC_ENV=${NEXT_PUBLIC_ENV}
 ENV NEXT_PUBLIC_PILLAR_API_URL=${NEXT_PUBLIC_PILLAR_API_URL}
 
+# Strip prebuild script — it requires SDK source files outside the Docker context.
+# The generated output files are committed to the repo and already present via COPY.
+RUN sed -i '/"prebuild":/d' package.json
+
 RUN npm run build
 
 # Production image
