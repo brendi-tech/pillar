@@ -1,5 +1,5 @@
 // app/layout.tsx
-<PillarProvider productKey="..." publicKey="...">
+<PillarProvider productKey="your-product-key">
   <PillarActionHandlers />
   {children} {/* Your app content */}
 </PillarProvider>

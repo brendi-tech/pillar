@@ -2,7 +2,6 @@ import { InviteMembersCard } from './cards/InviteMembersCard';
 
 <PillarProvider
   productKey="your-product-key"
-  publicKey="pk_live_xxx"
   cards={{
     invite_members: InviteMembersCard,
   }}

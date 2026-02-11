@@ -3,8 +3,7 @@ import { PillarProvider, PillarPanel } from '@pillar-ai/react';
 function App() {
   return (
     <PillarProvider
-      productKey="..."
-      publicKey="..."
+      productKey="your-product-key"
       config={{ panel: { container: 'manual' } }}
     >
       <div className="layout">

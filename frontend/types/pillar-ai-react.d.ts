@@ -61,13 +61,18 @@ declare module "@pillar-ai/react" {
 
   export interface PillarProviderProps {
     children: ReactNode;
+    /** Your product key from the Pillar app */
+    productKey?: string;
+    /** @deprecated Use `productKey` instead */
     helpCenter?: string;
-    publicKey?: string;
-    apiKey?: string;
-    baseUrl?: string;
+    /** Additional SDK configuration */
     config?: PillarConfig;
-    theme?: ThemeMode;
-    [key: string]: unknown;
+    /** Handler called when a task action is triggered from the chat */
+    onTask?: (task: { id?: string; name: string; taskType?: string; data: Record<string, unknown>; path?: string; externalUrl?: string }) => void;
+    /** Custom card components for inline_ui type actions */
+    cards?: Record<string, any>;
+    /** Enable DOM scanning to send page context with messages */
+    domScanning?: boolean;
   }
 
   export function PillarProvider(props: PillarProviderProps): JSX.Element;

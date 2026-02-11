@@ -82,8 +82,7 @@ import { InviteMembersCard } from '@/components/cards/InviteMembersCard';
 import { ConfirmDeleteCard } from '@/components/cards/ConfirmDeleteCard';
 
 <PillarProvider
-  productKey="..."
-  publicKey="..."
+  productKey="your-product-key"
   cards={{
     invite_members: InviteMembersCard,
     delete_item: ConfirmDeleteCard,

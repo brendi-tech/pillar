@@ -4,9 +4,8 @@ function App() {
   return (
     <PillarProvider
       productKey="your-product-key"
-      publicKey="pk_live_xxx"
       config={{
-        panel: { enabled: false }, // Disable auto-rendering
+        panel: { container: 'manual' },
       }}
     >
       <div className="app-layout">

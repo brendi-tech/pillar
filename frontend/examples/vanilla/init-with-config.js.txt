@@ -1,6 +1,5 @@
 const pillar = await Pillar.init({
   productKey: 'your-product-key',
-  publicKey: 'pk_...',
   sidebarTabs: [
     { id: 'assistant', label: 'Co-pilot', icon: 'sparkle' },
     { id: 'support', label: 'Talk to Human', icon: 'headset' },

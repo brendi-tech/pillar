@@ -1,8 +1,7 @@
 import { PillarProvider } from '@pillar-ai/react';
 
 <PillarProvider
-  productKey="your-product-key"
-  publicKey={process.env.NEXT_PUBLIC_PILLAR_PUBLIC_KEY!}
+  productKey={process.env.NEXT_PUBLIC_PILLAR_PRODUCT_KEY!}
 >
   {children}
 </PillarProvider>

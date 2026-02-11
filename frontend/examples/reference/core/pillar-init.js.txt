@@ -2,7 +2,6 @@ import { Pillar } from '@pillar-ai/sdk';
 
 const pillar = await Pillar.init({
   productKey: 'your-product-key',
-  publicKey: 'pk_live_xxx',
   panel: { position: 'right', mode: 'push' },
   theme: { mode: 'auto', colors: { primary: '#2563eb' } },
 });

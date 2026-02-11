@@ -4,7 +4,6 @@ export function App() {
   return (
     <PillarProvider
       productKey="your-product-key"
-      publicKey="pk_..."
       config={{
         sidebarTabs: [
           { id: 'assistant', label: 'Co-pilot', icon: 'sparkle' },

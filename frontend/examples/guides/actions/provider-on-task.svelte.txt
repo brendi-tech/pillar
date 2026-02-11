@@ -17,8 +17,7 @@
 </script>
 
 <PillarProvider
-  helpCenter="..."
-  config={{ publicKey: '...' }}
+  productKey="your-product-key"
   onTask={handleTask}
 >
   <PillarPanel />

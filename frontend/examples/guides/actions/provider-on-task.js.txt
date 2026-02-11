@@ -2,8 +2,7 @@ import { Pillar } from '@pillar-ai/sdk';
 
 // Initialize the SDK
 const pillar = await Pillar.init({
-  helpCenter: '...',
-  publicKey: '...',
+  productKey: 'your-product-key',
   edgeTrigger: { enabled: true },
   panel: { position: 'right' },
 });

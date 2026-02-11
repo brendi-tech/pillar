@@ -7,7 +7,6 @@ export default function RootLayout({ children }) {
       <body>
         <PillarProvider
           productKey="your-product-key"
-          publicKey="pk_live_your_public_key"
         >
           {children} {/* Your app content */}
         </PillarProvider>

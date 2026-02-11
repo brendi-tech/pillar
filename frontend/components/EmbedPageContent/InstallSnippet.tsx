@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CheckCircle2, Copy, Terminal } from 'lucide-react';
 
 export function InstallSnippet() {
-  const { helpCenterSlug, publicKey, embedConfig } = useEmbed();
+  const { helpCenterSlug, embedConfig } = useEmbed();
   const [copiedHtml, setCopiedHtml] = useState(false);
   const [copiedNpm, setCopiedNpm] = useState(false);
   const [copiedReact, setCopiedReact] = useState(false);
@@ -17,7 +17,6 @@ export function InstallSnippet() {
   const scriptTag = `<script
   src="https://sdk.trypillar.com/v1/pillar.js"
   data-product-key="${helpCenterSlug}"
-  data-public-key="${publicKey}"
   async
 ></script>`;
 
@@ -25,26 +24,21 @@ export function InstallSnippet() {
   const npmInstall = `npm install @pillar-ai/react`;
 
   // Generate React code
-  const reactCode = `import { PillarProvider, HelpButton } from '@pillar-ai/react';
+  const reactCode = `import { PillarProvider } from '@pillar-ai/react';
 
 function App() {
   return (
     <PillarProvider
       productKey="${helpCenterSlug}"
-      publicKey="${publicKey}"
-      panel={{
-        position: '${embedConfig.panel.position}',
-        width: ${embedConfig.panel.width},
-      }}
-      floatingButton={{
-        enabled: ${embedConfig.floatingButton.enabled},
-        position: '${embedConfig.floatingButton.position}',
-        label: '${embedConfig.floatingButton.label}',
+      config={{
+        panel: {
+          position: '${embedConfig.panel.position}',
+          width: ${embedConfig.panel.width},
+        },
       }}
     >
       <div id="app">
         {/* Your app content */}
-        <HelpButton />
       </div>
     </PillarProvider>
   );

@@ -1,6 +1,5 @@
 <PillarProvider
   productKey="your-product-key"
-  publicKey="pk_live_xxx"
   config={{
     // Panel settings
     panel: {

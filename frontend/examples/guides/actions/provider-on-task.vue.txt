@@ -19,8 +19,7 @@ function handleTask(task: { name: string; data: any }) {
 
 <template>
   <PillarProvider
-    help-center="..."
-    :config="{ publicKey: '...' }"
+    product-key="your-product-key"
     :on-task="handleTask"
   >
     <PillarPanel />

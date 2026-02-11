@@ -1,6 +1,5 @@
 <PillarProvider
-  productKey="..."
-  publicKey="..."
+  productKey="your-product-key"
   config={{
     theme: {
       mode: 'auto',

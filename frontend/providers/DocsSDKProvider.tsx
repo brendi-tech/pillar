@@ -26,8 +26,6 @@ interface DocsSDKProviderProps {
  * to non-docs pages (marketing, login, etc.)
  */
 export function DocsSDKProvider({ children }: DocsSDKProviderProps) {
-  const publicKey =
-    process.env.NEXT_PUBLIC_PILLAR_PUBLIC_KEY || "pk_dev_pillar";
   const apiBaseUrl =
     process.env.NEXT_PUBLIC_PILLAR_API_URL || "http://localhost:8003";
   // Docs pages use pillar-docs help center for SDK documentation
@@ -45,7 +43,6 @@ export function DocsSDKProvider({ children }: DocsSDKProviderProps) {
   return (
     <PillarProvider
       productKey={productKey}
-      publicKey={publicKey}
       config={{
         apiBaseUrl,
         panel: {

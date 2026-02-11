@@ -4,10 +4,11 @@ function App() {
   return (
     <PillarProvider
       productKey="your-product-key"
-      publicKey="pk_live_xxx"
-      textSelection={{
-        enabled: true,
-        label: 'Ask co-pilot',
+      config={{
+        textSelection: {
+          enabled: true,
+          label: 'Ask co-pilot',
+        },
       }}
     >
       <YourApp />

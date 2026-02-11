@@ -4,7 +4,6 @@ function App() {
   return (
     <PillarProvider
       productKey="your-product-key"
-      publicKey="pk_live_xxx"
     >
       <YourApp />
     </PillarProvider>

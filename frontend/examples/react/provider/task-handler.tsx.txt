@@ -1,6 +1,5 @@
 <PillarProvider
   productKey="your-product-key"
-  publicKey="pk_live_xxx"
   onTask={(task) => {
     switch (task.name) {
       case 'navigate':
