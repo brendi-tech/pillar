@@ -271,8 +271,8 @@ export function ActionDetailPage({ actionId }: ActionDetailPageProps) {
           {action.data_schema &&
             Object.keys(action.data_schema).length > 0 && (
               <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm">Data Schema</CardTitle>
+                <CardHeader>
+                  <CardTitle>Data Schema</CardTitle>
                   <CardDescription>
                     Parameters the AI extracts from user messages
                   </CardDescription>
@@ -289,8 +289,8 @@ export function ActionDetailPage({ actionId }: ActionDetailPageProps) {
           {action.default_data &&
             Object.keys(action.default_data).length > 0 && (
               <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm">Default Data</CardTitle>
+                <CardHeader>
+                  <CardTitle>Default Data</CardTitle>
                   <CardDescription>
                     Fallback values when the AI doesn&apos;t extract specifics
                   </CardDescription>
@@ -307,8 +307,8 @@ export function ActionDetailPage({ actionId }: ActionDetailPageProps) {
           {action.parameter_examples &&
             action.parameter_examples.length > 0 && (
               <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm">Parameter Examples</CardTitle>
+                <CardHeader>
+                  <CardTitle>Parameter Examples</CardTitle>
                   <CardDescription>
                     Example parameter sets for this action
                   </CardDescription>
@@ -334,8 +334,8 @@ export function ActionDetailPage({ actionId }: ActionDetailPageProps) {
           {action.required_context &&
             Object.keys(action.required_context).length > 0 && (
               <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm">Required Context</CardTitle>
+                <CardHeader>
+                  <CardTitle>Required Context</CardTitle>
                   <CardDescription>
                     Only surfaces when user context matches these requirements
                   </CardDescription>
@@ -350,10 +350,8 @@ export function ActionDetailPage({ actionId }: ActionDetailPageProps) {
 
           {/* ── Implementation & Statistics (merged) ── */}
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm">
-                Implementation & Statistics
-              </CardTitle>
+            <CardHeader>
+              <CardTitle>Implementation & Statistics</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Implementation status row */}
@@ -439,8 +437,8 @@ export function ActionDetailPage({ actionId }: ActionDetailPageProps) {
 
           {/* ── SDK Handler ── */}
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm">SDK Handler</CardTitle>
+            <CardHeader>
+              <CardTitle>SDK Handler</CardTitle>
             </CardHeader>
             <CardContent>
               <pre className="overflow-x-auto rounded bg-muted p-3 text-xs">

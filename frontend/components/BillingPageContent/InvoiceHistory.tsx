@@ -11,7 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Download, FileText } from "lucide-react";
+import { Download } from "lucide-react";
 import { format, parseISO } from "date-fns";
 
 // Mock invoice data
@@ -51,9 +51,8 @@ const mockInvoices = [
 export function InvoiceHistory() {
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0">
-        <CardTitle className="text-sm font-medium">Invoice History</CardTitle>
-        <FileText className="h-4 w-4 text-muted-foreground" />
+      <CardHeader>
+        <CardTitle>Invoice History</CardTitle>
       </CardHeader>
       <CardContent>
         <Table>

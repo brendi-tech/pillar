@@ -19,14 +19,13 @@ export function UsageOverview({ usage }: UsageOverviewProps) {
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">Usage This Month</CardTitle>
-        <Activity className="h-4 w-4 text-muted-foreground" />
+      <CardHeader>
+        <CardTitle>Usage This Month</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="@container space-y-4">
         {/* API Calls */}
         <div>
-          <div className="mb-1 flex items-center justify-between text-sm">
+          <div className="mb-1 flex items-center justify-between text-sm @[0px]:flex-col @[0px]:items-start @[260px]:flex-row @[260px]:items-center">
             <div className="flex items-center gap-2">
               <Activity className="h-3.5 w-3.5 text-muted-foreground" />
               <span>API Calls</span>
@@ -41,7 +40,7 @@ export function UsageOverview({ usage }: UsageOverviewProps) {
 
         {/* Storage */}
         <div>
-          <div className="mb-1 flex items-center justify-between text-sm">
+          <div className="mb-1 flex items-center justify-between text-sm @[0px]:flex-col @[0px]:items-start @[260px]:flex-row @[260px]:items-center">
             <div className="flex items-center gap-2">
               <Database className="h-3.5 w-3.5 text-muted-foreground" />
               <span>Storage</span>
@@ -55,7 +54,7 @@ export function UsageOverview({ usage }: UsageOverviewProps) {
 
         {/* Seats */}
         <div>
-          <div className="mb-1 flex items-center justify-between text-sm">
+          <div className="mb-1 flex items-center justify-between text-sm @[0px]:flex-col @[0px]:items-start @[260px]:flex-row @[260px]:items-center">
             <div className="flex items-center gap-2">
               <Users className="h-3.5 w-3.5 text-muted-foreground" />
               <span>Team Seats</span>

@@ -3,7 +3,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CreditCard, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { format, parseISO } from "date-fns";
 
 interface CurrentPlanCardProps {
@@ -20,9 +20,8 @@ export function CurrentPlanCard({ plan }: CurrentPlanCardProps) {
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">Current Plan</CardTitle>
-        <CreditCard className="h-4 w-4 text-muted-foreground" />
+      <CardHeader>
+        <CardTitle>Current Plan</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="mb-2 flex items-center gap-2">

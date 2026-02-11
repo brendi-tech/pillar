@@ -19,7 +19,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Bell,
   ChevronDown,
   ChevronUp,
   Check,
@@ -97,30 +96,29 @@ export function UsageAlertsSection({
     >
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <CollapsibleTrigger asChild>
-          <CardHeader className="flex cursor-pointer flex-row items-center justify-between space-y-0 rounded-t-lg transition-colors hover:bg-muted/50">
-            <div className="flex items-center gap-2">
-              <Bell className="h-4 w-4 text-muted-foreground" />
-              <CardTitle className="text-sm font-medium">
-                Usage Alerts
-              </CardTitle>
-              {alerts.enabled && (
-                <span className="flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
-                  <Check className="h-3 w-3" />
-                  Active
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              {alerts.enabled && !isOpen && (
-                <span className="text-xs text-muted-foreground">
-                  Alert at ${alerts.threshold} via {alerts.channel}
-                </span>
-              )}
-              {isOpen ? (
-                <ChevronUp className="h-4 w-4 text-muted-foreground" />
-              ) : (
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
-              )}
+          <CardHeader className="cursor-pointer rounded-t-lg transition-colors hover:bg-muted/50">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CardTitle>Usage Alerts</CardTitle>
+                {alerts.enabled && (
+                  <span className="flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
+                    <Check className="h-3 w-3" />
+                    Active
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {alerts.enabled && !isOpen && (
+                  <span className="text-xs text-muted-foreground">
+                    Alert at ${alerts.threshold} via {alerts.channel}
+                  </span>
+                )}
+                {isOpen ? (
+                  <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                )}
+              </div>
             </div>
           </CardHeader>
         </CollapsibleTrigger>
