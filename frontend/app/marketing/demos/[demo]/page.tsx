@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MarketingFooter } from "@/components/MarketingPage/MarketingFooter";
 import { MarketingNavbar } from "@/components/MarketingPage/MarketingNavbar";
@@ -117,31 +116,23 @@ export default async function Page({
 
       <section className="pt-10 pb-6 lg:pt-14">
         <div className="max-w-4xl mx-auto px-6 lg:px-8">
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            <Link
-              href="/demos"
+          <div className="flex items-center justify-end gap-3">
+            <a
+              href={data.mp4}
+              target="_blank"
+              rel="noreferrer"
               className="text-sm text-[#6B6B6B] hover:text-[#1A1A1A] transition-colors"
             >
-              ← All demos
-            </Link>
-            <div className="flex items-center gap-3">
-              <a
-                href={data.mp4}
-                target="_blank"
-                rel="noreferrer"
-                className="text-sm text-[#6B6B6B] hover:text-[#1A1A1A] transition-colors"
-              >
-                MP4
-              </a>
-              <a
-                href={data.webm}
-                target="_blank"
-                rel="noreferrer"
-                className="text-sm text-[#6B6B6B] hover:text-[#1A1A1A] transition-colors"
-              >
-                WebM
-              </a>
-            </div>
+              MP4
+            </a>
+            <a
+              href={data.webm}
+              target="_blank"
+              rel="noreferrer"
+              className="text-sm text-[#6B6B6B] hover:text-[#1A1A1A] transition-colors"
+            >
+              WebM
+            </a>
           </div>
 
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-[#1A1A1A] leading-tight mt-4">

@@ -219,8 +219,10 @@ const ClientSideFeatures = () => {
           </div>
           <h3 className="font-semibold mb-2">Same Session = Real Power</h3>
           <p className="font-normal">
-            Pillar runs in the user's browser with their session. It can do
-            anything they can do—no proxy servers, no token forwarding.
+            Pillar runs in the user&apos;s browser with their session—and
+            registers actions as WebMCP tools. No proxy servers, no token
+            forwarding. When <code className="text-xs bg-black/5 px-1 py-0.5 rounded">navigator.modelContext</code> ships,
+            your app is already wired.
           </p>
         </div>
         <div

@@ -1,4 +1,4 @@
-import { Still } from "remotion";
+import { Composition, Still } from "remotion";
 import { SidebarStill } from "./stills/SidebarStill";
 import { AskAIStill } from "./stills/AskAIStill";
 import { EdgeTriggerStill } from "./stills/EdgeTriggerStill";
@@ -7,6 +7,13 @@ import { PanelChatStill } from "./stills/PanelChatStill";
 import { PanelPlanStill } from "./stills/PanelPlanStill";
 import { ChatInputStill } from "./stills/ChatInputStill";
 import { TextSelectionStill } from "./stills/TextSelectionStill";
+import { DemoComposition } from "./videos/DemoComposition";
+import {
+  VIDEO_WIDTH,
+  VIDEO_HEIGHT,
+  VIDEO_FPS,
+  TOTAL_DURATION_FRAMES,
+} from "./videos/constants";
 
 // Import pre-compiled Tailwind v4 CSS (for docs components)
 // Generated with: npx @tailwindcss/cli -i app/globals.css -o remotion/compiled-styles.css
@@ -15,13 +22,20 @@ import "./compiled-styles.css";
 // Import SDK styles (for SDK preview components)
 import "./sdk-styles/sdk-styles.css";
 
+/** Demo IDs for video compositions */
+const DEMO_IDS = ["banking", "crm", "analytics", "pm", "hr"] as const;
+
 /**
- * Remotion Root component - registers all still compositions.
+ * Remotion Root component - registers all still and video compositions.
  *
- * Each Still defines:
+ * Stills:
  * - id: Used in CLI commands (e.g., `npx remotion still sidebar`)
  * - component: The React component to render
  * - width/height: Image dimensions in pixels
+ *
+ * Videos (technical demo compositions):
+ * - id: demo-{demoId} (e.g., `npx remotion render demo-banking`)
+ * - 1920x1080 at 30fps, 18 seconds
  */
 export const RemotionRoot: React.FC = () => {
   return (
@@ -97,6 +111,23 @@ export const RemotionRoot: React.FC = () => {
         width={420}
         height={100}
       />
+
+      {/* ============================================
+          Technical Demo Video Compositions
+          ============================================ */}
+
+      {DEMO_IDS.map((demoId) => (
+        <Composition
+          key={demoId}
+          id={`demo-${demoId}`}
+          component={DemoComposition}
+          durationInFrames={TOTAL_DURATION_FRAMES}
+          fps={VIDEO_FPS}
+          width={VIDEO_WIDTH}
+          height={VIDEO_HEIGHT}
+          defaultProps={{ demoId }}
+        />
+      ))}
     </>
   );
 };

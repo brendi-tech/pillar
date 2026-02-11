@@ -20,18 +20,9 @@ export function GrafanaDemoPage() {
 
       {/* Slim header */}
       <div className="flex items-center justify-between max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div className="flex items-center gap-3">
-          <Link
-            href="/demos"
-            className="text-sm text-[#6B6B6B] hover:text-[#1A1A1A] transition-colors"
-          >
-            &larr; All demos
-          </Link>
-          <span className="text-[#D4D4D4]">/</span>
-          <h1 className="text-sm font-medium text-[#1A1A1A]">
-            Grafana Copilot
-          </h1>
-        </div>
+        <h1 className="text-sm font-medium text-[#1A1A1A]">
+          Grafana Copilot
+        </h1>
         <Link
           href={GRAFANA_DEMO_URL}
           target="_blank"

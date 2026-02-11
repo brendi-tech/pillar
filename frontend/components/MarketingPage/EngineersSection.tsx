@@ -8,9 +8,9 @@ import { NumberedHeading } from "./NumberedHeading";
 const features = [
   {
     icon: Zap,
-    title: "One Install, Fully Yours",
+    title: "One Install, MCP Included",
     description:
-      "npm install and go. Customize everything in your own code—actions, UI, behavior. No black boxes.",
+      "npm install and go. Ships with a standards-compliant MCP server—Claude, ChatGPT, Cursor, and any MCP client connect out of the box.",
   },
   {
     icon: Layers,

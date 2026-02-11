@@ -12,7 +12,7 @@ const features = [
     title: "Same Session",
     subtitle: "Real Power",
     description:
-      "Pillar runs in the user's browser with their session. It can do anything they can do—no proxy servers, no token forwarding.",
+      "Pillar runs in the user's browser with their session—and registers actions as WebMCP tools. No proxy servers, no token forwarding. When navigator.modelContext ships, your app is already wired.",
   },
   {
     number: "02",

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useInView } from "../marketing/hooks/useInView";
 
 // Timing constants
@@ -14,6 +15,7 @@ const chatExamples = [
     productName: "Online Banking",
     tabLabel: "Send money",
     videoFile: "/marketing/BankingDemo.mp4",
+    technicalVideoFile: "/marketing/BankingDemo-technical.mp4",
     videoDuration: 18000, // 540 frames @ 30fps
     urlBar: "banking.example.com/payments",
     badgeColor: "#10B981",
@@ -26,6 +28,7 @@ const chatExamples = [
     productName: "Salesforce",
     tabLabel: "Close deal",
     videoFile: "/marketing/CRMDemo.mp4",
+    technicalVideoFile: "/marketing/CRMDemo-technical.mp4",
     videoDuration: 18000, // 544 frames @ 30fps
     urlBar: "acme.lightning.force.com/opportunities",
     badgeColor: "#00A1E0",
@@ -38,6 +41,7 @@ const chatExamples = [
     productName: "Amplitude",
     tabLabel: "Add chart",
     videoFile: "/marketing/AnalyticsDemo.mp4",
+    technicalVideoFile: "/marketing/AnalyticsDemo-technical.mp4",
     videoDuration: 18000, // 540 frames @ 30fps
     urlBar: "analytics.amplitude.com/dashboard",
     badgeColor: "#1E40AF",
@@ -50,6 +54,7 @@ const chatExamples = [
     productName: "Linear",
     tabLabel: "Create bug",
     videoFile: "/marketing/PMDemo.mp4",
+    technicalVideoFile: "/marketing/PMDemo-technical.mp4",
     videoDuration: 18000, // 540 frames @ 30fps
     urlBar: "linear.app/team/issues",
     badgeColor: "#5E6AD2",
@@ -62,6 +67,7 @@ const chatExamples = [
     productName: "Rippling",
     tabLabel: "Update bank",
     videoFile: "/marketing/HRDemo.mp4",
+    technicalVideoFile: "/marketing/HRDemo-technical.mp4",
     videoDuration: 16500, // 495 frames @ 30fps
     urlBar: "app.rippling.com/payroll",
     badgeColor: "#8B5CF6",
@@ -74,9 +80,15 @@ const chatExamples = [
  * ChatShowcase - Video demonstrations of Pillar actions
  * Cycles through examples showing video demos for each product category
  * Designed to be used inside DemoSection
+ *
+ * Feature flag: Add ?v=technical to the URL to show the Remotion-rendered
+ * technical step-breakdown videos instead of the default screen recordings.
  */
 export function ChatShowcase() {
   const { ref, isInView } = useInView({ threshold: 0.8, rootMargin: "0px" }); // Start when 80% visible
+  const searchParams = useSearchParams();
+  const isTechnical = searchParams.get("v") === "technical";
+
   const [currentExampleIndex, setCurrentExampleIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
@@ -178,46 +190,49 @@ export function ChatShowcase() {
         </div>
       </div>
 
-      {/* Video Demo Card with Browser Chrome */}
+      {/* Video Demo Card */}
       <div className="px-4 md:px-6 lg:px-8 pb-8 md:pb-16">
         <div className="max-w-7xl mx-auto">
-          <div className="bg-[#1A1A1A] rounded-lg shadow-lg overflow-hidden">
-            {/* Browser Chrome Header */}
-            <div className="bg-[#E8E8E8] px-4 py-2.5 flex items-center gap-3">
-              {/* Traffic lights */}
-              <div className="flex gap-1.5">
-                <div className="w-3 h-3 rounded-full bg-[#FF5F57]" />
-                <div className="w-3 h-3 rounded-full bg-[#FFBD2E]" />
-                <div className="w-3 h-3 rounded-full bg-[#28CA41]" />
-              </div>
-              {/* URL Bar */}
-              <div className="flex-1 bg-white rounded-md px-3 py-1 flex items-center gap-2 max-w-md mx-auto">
-                <svg className="w-3.5 h-3.5 text-[#9CA3AF]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-                <span className="text-xs text-[#6B7280] truncate">
-                  {currentExample.urlBar}
-                </span>
-              </div>
-              {/* Product badge */}
-              <div className="flex items-center gap-1.5">
-                <div 
-                  className="w-5 h-5 rounded flex items-center justify-center"
-                  style={{ backgroundColor: currentExample.badgeColor }}
-                >
-                  <span className="text-white text-[10px] font-bold">{currentExample.badgeText}</span>
+          <div className={`rounded-lg shadow-lg overflow-hidden ${isTechnical ? "bg-[#FAFAFA]" : "bg-[#1A1A1A]"}`}>
+            {/* Browser Chrome Header — hidden in technical mode since videos have their own header */}
+            {!isTechnical && (
+              <div className="bg-[#E8E8E8] px-4 py-2.5 flex items-center gap-3">
+                {/* Traffic lights */}
+                <div className="flex gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-[#FF5F57]" />
+                  <div className="w-3 h-3 rounded-full bg-[#FFBD2E]" />
+                  <div className="w-3 h-3 rounded-full bg-[#28CA41]" />
                 </div>
-                <span className="text-xs font-medium text-[#374151] hidden sm:inline">{currentExample.productName}</span>
+                {/* URL Bar */}
+                <div className="flex-1 bg-white rounded-md px-3 py-1 flex items-center gap-2 max-w-md mx-auto">
+                  <svg className="w-3.5 h-3.5 text-[#9CA3AF]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                  <span className="text-xs text-[#6B7280] truncate">
+                    {currentExample.urlBar}
+                  </span>
+                </div>
+                {/* Product badge */}
+                <div className="flex items-center gap-1.5">
+                  <div 
+                    className="w-5 h-5 rounded flex items-center justify-center"
+                    style={{ backgroundColor: currentExample.badgeColor }}
+                  >
+                    <span className="text-white text-[10px] font-bold">{currentExample.badgeText}</span>
+                  </div>
+                  <span className="text-xs font-medium text-[#374151] hidden sm:inline">{currentExample.productName}</span>
+                </div>
               </div>
-            </div>
+            )}
             {/* Video Content - all videos stacked with opacity crossfade */}
             <div 
-              className="aspect-video bg-[#1A1A1A] relative cursor-pointer group"
+              className="aspect-video relative cursor-pointer group"
+              style={{ backgroundColor: isTechnical ? "#FAFAFA" : "#1A1A1A" }}
               onClick={handleVideoClick}
             >
               {chatExamples.map((example, index) => (
                 <video
-                  key={example.id}
+                  key={`${example.id}-${isTechnical ? "tech" : "default"}`}
                   ref={(el) => { videoRefs.current[index] = el; }}
                   loop
                   muted
@@ -227,7 +242,10 @@ export function ChatShowcase() {
                     index === currentExampleIndex ? "opacity-100" : "opacity-0 pointer-events-none"
                   }`}
                 >
-                  <source src={example.videoFile} type="video/mp4" />
+                  <source
+                    src={isTechnical ? example.technicalVideoFile : example.videoFile}
+                    type="video/mp4"
+                  />
                 </video>
               ))}
               {/* Play button overlay when paused */}
@@ -253,4 +271,3 @@ export function ChatShowcase() {
     </div>
   );
 }
-

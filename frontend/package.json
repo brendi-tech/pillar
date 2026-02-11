@@ -23,7 +23,14 @@
     "stills:panel-plan": "remotion still remotion/index.ts panel-plan --output=public/docs/sdk/panel-plan.png",
     "stills:chat-input": "remotion still remotion/index.ts chat-input --output=public/docs/sdk/chat-input.png",
     "stills:text-selection": "remotion still remotion/index.ts text-selection --output=public/docs/sdk/text-selection.png",
-    "stills:all": "npm run stills:css && npm run stills:sidebar && npm run stills:ask-ai && npm run stills:edge-trigger && npm run stills:panel-home && npm run stills:panel-chat && npm run stills:panel-plan && npm run stills:chat-input && npm run stills:text-selection"
+    "stills:all": "npm run stills:css && npm run stills:sidebar && npm run stills:ask-ai && npm run stills:edge-trigger && npm run stills:panel-home && npm run stills:panel-chat && npm run stills:panel-plan && npm run stills:chat-input && npm run stills:text-selection",
+    "videos:studio": "npm run stills:css && remotion studio remotion/index.ts",
+    "videos:banking": "npm run stills:css && remotion render remotion/index.ts demo-banking public/marketing/BankingDemo-technical.mp4",
+    "videos:crm": "npm run stills:css && remotion render remotion/index.ts demo-crm public/marketing/CRMDemo-technical.mp4",
+    "videos:analytics": "npm run stills:css && remotion render remotion/index.ts demo-analytics public/marketing/AnalyticsDemo-technical.mp4",
+    "videos:pm": "npm run stills:css && remotion render remotion/index.ts demo-pm public/marketing/PMDemo-technical.mp4",
+    "videos:hr": "npm run stills:css && remotion render remotion/index.ts demo-hr public/marketing/HRDemo-technical.mp4",
+    "videos:all": "npm run stills:css && npm run videos:banking && npm run videos:crm && npm run videos:analytics && npm run videos:pm && npm run videos:hr"
   },
   "dependencies": {
     "@intercom/messenger-js-sdk": "^0.0.18",
