@@ -156,7 +156,7 @@ export function OnboardingSteps({
       </Button>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col items-center w-full max-w-3xl mx-auto pt-12">
+      <div className="flex-1 flex flex-col items-center w-full max-w-5xl mx-auto pt-12">
         {/* Header */}
         <div className="text-center space-y-3 mb-6">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-2">
@@ -189,16 +189,14 @@ export function OnboardingSteps({
           )}
         </div>
 
-        {/* Skip button - shown after Add Knowledge step */}
-        {currentStep > 1 && (
-          <Button
-            variant="link"
-            className="mt-4 text-muted-foreground"
-            onClick={() => router.push(redirectTo)}
-          >
-            Skip for now
-          </Button>
-        )}
+        {/* Skip button */}
+        <Button
+          variant="link"
+          className="mt-4 text-muted-foreground"
+          onClick={currentStep === 1 ? handleStepComplete : () => router.push(redirectTo)}
+        >
+          Skip {currentStep === 1 ? "this step" : "for now"}
+        </Button>
       </div>
     </div>
   );

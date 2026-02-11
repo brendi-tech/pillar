@@ -17,6 +17,8 @@ interface SyntaxHighlightedPreProps {
   code?: string;
   /** Language for syntax highlighting (used with code prop) */
   language?: string;
+  /** Override the docs URL used in the "Copy as prompt" button (defaults to current pathname) */
+  docsUrl?: string;
 }
 
 // Languages that should NOT get copy buttons (diagrams, plain text, etc.)
@@ -109,6 +111,7 @@ export function SyntaxHighlightedPre({
   filePath,
   code: codeProp,
   language: languageProp,
+  docsUrl,
 }: SyntaxHighlightedPreProps) {
   const [copied, setCopied] = useState<'code' | 'prompt' | null>(null);
   const pathname = usePathname();
@@ -137,7 +140,7 @@ export function SyntaxHighlightedPre({
 
   const handleCopyAsPrompt = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
-    const pageUrl = `https://pillar.so${pathname}`;
+    const pageUrl = docsUrl || `https://trypillar.com${pathname}`;
     const prompt = `Help me integrate this Pillar SDK code into my project:
 
 \`\`\`${language}
@@ -155,7 +158,7 @@ Adapt this to fit my existing codebase—match my file structure, naming convent
     } catch (err) {
       console.error('Failed to copy prompt:', err);
     }
-  }, [code, language, pathname]);
+  }, [code, language, pathname, docsUrl]);
 
   // Handle mermaid diagrams specially (after hooks)
   if (isMermaid) {

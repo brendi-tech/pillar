@@ -1,0 +1,17 @@
+// lib/pillar/actions.ts
+import type { SyncActionDefinitions } from '@pillar-ai/sdk';
+
+export const actions = {
+  open_settings: {
+    description: 'Navigate to the settings page',
+    examples: ['open settings', 'go to settings', 'settings'],
+    type: 'navigate',
+    path: '/settings',
+    autoRun: true,
+  },
+  contact_support: {
+    description: 'Open contact support form',
+    examples: ['contact support', 'talk to someone', 'get help'],
+    type: 'trigger_action',
+  },
+} satisfies SyncActionDefinitions;

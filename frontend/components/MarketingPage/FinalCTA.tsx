@@ -1,19 +1,15 @@
 "use client";
 
-import { ArrowRight } from "lucide-react";
+import Link from "next/link";
 import { GridBackground } from "./GridBackground";
-
-interface FinalCTAProps {
-  onOpenWaitlist?: () => void;
-}
 
 /**
  * FinalCTA - Final call-to-action section
  *
  * Features a centered message box with editorial typography
- * and a prominent waitlist button.
+ * and a prominent signup button.
  */
-export function FinalCTA({ onOpenWaitlist }: FinalCTAProps) {
+export function FinalCTA() {
   return (
     <div className="relative">
       <section className="max-w-marketingSection mx-auto border-x border-marketing bg-white py-16 md:py-24 relative">
@@ -51,12 +47,12 @@ export function FinalCTA({ onOpenWaitlist }: FinalCTAProps) {
 
           {/* CTA Button */}
           <div className="flex justify-center mt-8">
-            <button
-              onClick={onOpenWaitlist}
+            <Link
+              href="/signup"
               className="bg-[#FF6E00] hover:bg-[#E56200] text-white font-medium py-3 px-8 rounded-md transition-colors"
             >
-              Join Waitlist
-            </button>
+              Get Started
+            </Link>
           </div>
         </div>
       </section>

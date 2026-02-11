@@ -1,5 +1,5 @@
 <PillarProvider
-  helpCenter={process.env.NEXT_PUBLIC_PILLAR_PRODUCT_KEY!}
+  productKey={process.env.NEXT_PUBLIC_PILLAR_PRODUCT_KEY!}
   config={{
     edgeTrigger: { enabled: false },
     mobileTrigger: { enabled: false },

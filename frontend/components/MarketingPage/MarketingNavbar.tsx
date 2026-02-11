@@ -31,15 +31,11 @@ const navLinks = [
   { name: "Docs", href: "/docs" },
 ];
 
-interface MarketingNavbarProps {
-  onOpenWaitlist?: () => void;
-}
-
 /**
  * MarketingNavbar - Navigation for the marketing site
- * 3-column layout: logo left, centered nav links, right-side actions (GitHub, Login, Join Waitlist)
+ * 3-column layout: logo left, centered nav links, right-side actions (GitHub, Login, Get Started)
  */
-export function MarketingNavbar({ onOpenWaitlist }: MarketingNavbarProps) {
+export function MarketingNavbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -101,12 +97,12 @@ export function MarketingNavbar({ onOpenWaitlist }: MarketingNavbarProps) {
             >
               Log In
             </a>
-            <button
-              onClick={onOpenWaitlist}
-              className="inline-flex items-center justify-center h-9 sm:h-10 lg:h-11 px-4 sm:px-5 lg:px-6 text-sm sm:text-[0.9375rem] font-medium rounded-lg bg-[#FF6E00] text-white hover:bg-[#E06200] transition-colors cursor-pointer"
+            <Link
+              href="/signup"
+              className="inline-flex items-center justify-center h-9 sm:h-10 lg:h-11 px-4 sm:px-5 lg:px-6 text-sm sm:text-[0.9375rem] font-medium rounded-lg bg-[#FF6E00] text-white hover:bg-[#E06200] transition-colors"
             >
-              Join Waitlist
-            </button>
+              Get Started
+            </Link>
           </div>
 
           {/* Mobile menu button */}
@@ -156,15 +152,13 @@ export function MarketingNavbar({ onOpenWaitlist }: MarketingNavbarProps) {
                 Log In
               </a>
               <div className="pt-2">
-                <button
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    onOpenWaitlist?.();
-                  }}
-                  className="inline-flex items-center justify-center h-10 px-6 text-sm font-medium rounded-lg bg-[#FF6E00] text-white hover:bg-[#E06200] transition-colors w-full cursor-pointer"
+                <Link
+                  href="/signup"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="inline-flex items-center justify-center h-10 px-6 text-sm font-medium rounded-lg bg-[#FF6E00] text-white hover:bg-[#E06200] transition-colors w-full"
                 >
-                  Join Waitlist
-                </button>
+                  Get Started
+                </Link>
               </div>
             </div>
           </div>

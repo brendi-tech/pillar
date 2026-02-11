@@ -19,9 +19,7 @@ import {
   Tag,
   Trash2,
 } from "lucide-react";
-import { useTheme } from "next-themes";
-import { Highlight, themes } from "prism-react-renderer";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
@@ -49,11 +47,18 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AIPromptBlock } from "@/components/mdx/AIPromptBlock";
+import { SyntaxHighlightedPre } from "@/components/mdx/SyntaxHighlightedPre";
 import { adminFetch } from "@/lib/admin/api-client";
 import { cn } from "@/lib/utils";
 import { useProduct } from "@/providers/ProductProvider";
 
 import { TestPillarStep } from "./TestPillarStep";
+
+// Example file imports (raw strings via webpack .txt loader)
+import actionHandlerExample from "@/examples/onboarding/action-handler.tsx.txt";
+import defineActionsExample from "@/examples/onboarding/define-actions.ts.txt";
+import installProviderExample from "@/examples/onboarding/install-provider.tsx.txt";
 
 // =============================================================================
 // Types
@@ -87,69 +92,6 @@ interface CreateSecretResponse {
   name: string;
   secret: string;
   message: string;
-}
-
-// =============================================================================
-// Code Block Component
-// =============================================================================
-
-function CodeBlock({ code, language }: { code: string; language: string }) {
-  const [copied, setCopied] = useState(false);
-  const { resolvedTheme } = useTheme();
-
-  const handleCopy = async () => {
-    await navigator.clipboard.writeText(code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  // Map common language names to prism language names
-  const prismLanguage = language === "tsx" ? "tsx" : 
-                        language === "typescript" ? "typescript" : 
-                        language === "bash" ? "bash" : 
-                        language === "yaml" ? "yaml" : 
-                        language;
-
-  // Select theme based on current app theme
-  // Use oneDark for dark mode (more neutral bg), github for light mode
-  const prismTheme = resolvedTheme === "dark" ? themes.oneDark : themes.github;
-
-  return (
-    <div className="relative group">
-      <Highlight theme={prismTheme} code={code.trim()} language={prismLanguage}>
-        {({ className, style, tokens, getLineProps, getTokenProps }) => (
-          <pre 
-            className={cn(className, "rounded-lg p-4 overflow-x-auto text-sm border")} 
-            style={{
-              ...style,
-              // Override background to match app theme better
-              backgroundColor: resolvedTheme === "dark" ? "hsl(var(--muted))" : style.backgroundColor,
-            }}
-          >
-            {tokens.map((line, i) => (
-              <div key={i} {...getLineProps({ line })}>
-                {line.map((token, key) => (
-                  <span key={key} {...getTokenProps({ token })} />
-                ))}
-              </div>
-            ))}
-          </pre>
-        )}
-      </Highlight>
-      <Button
-        variant="ghost"
-        size="sm"
-        className="absolute top-2 right-2 h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-        onClick={handleCopy}
-      >
-        {copied ? (
-          <Check className="h-4 w-4 text-green-500" />
-        ) : (
-          <Copy className="h-4 w-4" />
-        )}
-      </Button>
-    </div>
-  );
 }
 
 function CopyButton({ value, className, disabled }: { value: string; className?: string; disabled?: boolean }) {
@@ -193,6 +135,7 @@ function SecretsManager({ productId, onSecretCreated }: SecretsManagerProps) {
   const queryClient = useQueryClient();
   const [newSecretName, setNewSecretName] = useState("");
   const [nameError, setNameError] = useState<string | null>(null);
+  const autoCreatedRef = useRef(false);
 
   const { data: secrets, isPending, isError } = useQuery({
     queryKey: ["sync-secrets", productId],
@@ -218,6 +161,21 @@ function SecretsManager({ productId, onSecretCreated }: SecretsManagerProps) {
       setNameError(error.message || "Failed to create secret");
     },
   });
+
+  // Auto-create a "default" secret when the page loads with no existing secrets
+  useEffect(() => {
+    if (
+      !isPending &&
+      !isError &&
+      secrets &&
+      secrets.length === 0 &&
+      !autoCreatedRef.current &&
+      !createSecretMutation.isPending
+    ) {
+      autoCreatedRef.current = true;
+      createSecretMutation.mutate("default");
+    }
+  }, [isPending, isError, secrets, createSecretMutation]);
 
   const deleteSecretMutation = useMutation({
     mutationFn: async (secretId: string) => {
@@ -255,10 +213,15 @@ function SecretsManager({ productId, onSecretCreated }: SecretsManagerProps) {
     }
   };
 
-  if (isPending) {
+  const isAutoCreating = createSecretMutation.isPending && (!secrets || secrets.length === 0);
+
+  if (isPending || isAutoCreating) {
     return (
       <div className="space-y-3">
-        <Skeleton className="h-10 w-full" />
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span>{isAutoCreating ? "Generating your secret key..." : "Loading..."}</span>
+        </div>
         <Skeleton className="h-10 w-full" />
       </div>
     );
@@ -408,15 +371,7 @@ const FRAMEWORKS = [
 function InstallStep({ subdomain }: { subdomain: string }) {
   const installCode = `npm install @pillar-ai/sdk @pillar-ai/react`;
 
-  const providerCode = `import { PillarProvider } from '@pillar-ai/react';
-
-function App() {
-  return (
-    <PillarProvider helpCenter="${subdomain}">
-      <YourApp />
-    </PillarProvider>
-  );
-}`;
+  const providerCode = installProviderExample.replace("your-product-key", subdomain);
 
   return (
     <div className="space-y-4">
@@ -446,12 +401,12 @@ function App() {
         <TabsContent value="react" className="space-y-4 mt-4">
           <div className="space-y-2">
             <h4 className="text-sm font-medium">Install packages</h4>
-            <CodeBlock code={installCode} language="bash" />
+            <SyntaxHighlightedPre code={installCode} language="bash" docsUrl="https://trypillar.com/docs/quickstarts/react" />
           </div>
 
           <div className="space-y-2">
             <h4 className="text-sm font-medium">Wrap your app with PillarProvider</h4>
-            <CodeBlock code={providerCode} language="tsx" />
+            <SyntaxHighlightedPre code={providerCode} language="tsx" filePath="app/layout.tsx" docsUrl="https://trypillar.com/docs/quickstarts/react" />
           </div>
         </TabsContent>
 
@@ -469,49 +424,9 @@ function App() {
 }
 
 function ActionsStep() {
-  const actionsCode = `// lib/pillar/actions.ts
-import type { SyncActionDefinitions } from '@pillar-ai/sdk';
+  const actionsCode = defineActionsExample;
 
-export const actions = {
-  open_settings: {
-    description: 'Navigate to the settings page',
-    examples: ['open settings', 'go to settings', 'settings'],
-    type: 'navigate',
-    path: '/settings',
-    autoRun: true,
-  },
-  contact_support: {
-    description: 'Open contact support form',
-    examples: ['contact support', 'talk to someone', 'get help'],
-    type: 'trigger_action',
-  },
-} satisfies SyncActionDefinitions;`;
-
-  const handlerCode = `// In your app where you set up PillarProvider
-import { PillarProvider } from '@pillar-ai/react';
-import { actions } from './lib/pillar/actions';
-import { useRouter } from 'next/navigation';
-
-function App() {
-  const router = useRouter();
-
-  return (
-    <PillarProvider
-      helpCenter="your-subdomain"
-      actions={actions}
-      onTask={(taskName, data) => {
-        if (taskName === 'open_settings') {
-          router.push('/settings');
-        }
-        if (taskName === 'contact_support') {
-          // Open your support modal
-        }
-      }}
-    >
-      <YourApp />
-    </PillarProvider>
-  );
-}`;
+  const handlerCode = actionHandlerExample;
 
   return (
     <div className="space-y-4">
@@ -520,9 +435,47 @@ function App() {
         to pages or triggering features.
       </p>
 
+      <AIPromptBlock title="Build actions for my app" src="build-actions.md" />
+
+      <div className="space-y-2">
+        <h4 className="text-sm font-medium">Action types</h4>
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[140px]">Type</TableHead>
+                <TableHead>Description</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow>
+                <TableCell className="font-mono text-xs">navigate</TableCell>
+                <TableCell className="text-sm text-muted-foreground">Go to a page in your app</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="font-mono text-xs">trigger_action</TableCell>
+                <TableCell className="text-sm text-muted-foreground">Run custom logic (modals, wizards)</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="font-mono text-xs">inline_ui</TableCell>
+                <TableCell className="text-sm text-muted-foreground">Show interactive UI in chat</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="font-mono text-xs">external_link</TableCell>
+                <TableCell className="text-sm text-muted-foreground">Open URL in new tab</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="font-mono text-xs">copy_text</TableCell>
+                <TableCell className="text-sm text-muted-foreground">Copy text to clipboard</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+
       <div className="space-y-2">
         <h4 className="text-sm font-medium">Define your actions</h4>
-        <CodeBlock code={actionsCode} language="typescript" />
+        <SyntaxHighlightedPre code={actionsCode} language="typescript" filePath="lib/pillar/actions.ts" docsUrl="https://trypillar.com/docs/guides/actions" />
       </div>
       <div className="bg-amber-100 dark:bg-amber-500/10 rounded-lg p-3 border border-amber-300 dark:border-amber-500/30 flex gap-2">
         <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-500 shrink-0 mt-0.5" />
@@ -535,13 +488,16 @@ function App() {
 
       <div className="space-y-2">
         <h4 className="text-sm font-medium">Register action handlers</h4>
-        <CodeBlock code={handlerCode} language="tsx" />
+        <SyntaxHighlightedPre code={handlerCode} language="tsx" filePath="app/layout.tsx" docsUrl="https://trypillar.com/docs/guides/actions" />
       </div>
 
 
       <p className="text-xs text-muted-foreground">
-        The AI uses the description and examples to match user requests to the
-        right action.
+        The AI uses the description and examples to match user requests to the right action.{' '}
+        <a href="https://trypillar.com/docs/guides/actions" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+          Read the full Actions guide
+        </a>{' '}
+        for data extraction, context filtering, and best practices.
       </p>
     </div>
   );
@@ -600,7 +556,8 @@ npx pillar-sync --actions ./lib/pillar/actions.ts`;
           <code className="font-mono text-sm font-medium">PILLAR_SECRET</code>
         </div>
         <p className="text-xs text-muted-foreground">
-          Generate a secret key to authenticate the sync command
+          Generate a secret key to authenticate the sync command.
+          Secret values are only displayed once — copy it when it appears.
         </p>
         {productId && (
           <SecretsManager productId={productId} onSecretCreated={handleSecretCreated} />
@@ -628,17 +585,17 @@ npx pillar-sync --actions ./lib/pillar/actions.ts`;
 
       <div className="space-y-2">
         <h4 className="text-sm font-medium">Run manually</h4>
-        <CodeBlock code={manualSyncCode} language="bash" />
+        <SyntaxHighlightedPre code={manualSyncCode} language="bash" docsUrl="https://trypillar.com/docs/guides/actions" />
       </div>
 
       <div className="space-y-2">
         <h4 className="text-sm font-medium">Run in CI/CD pipeline</h4>
-        <CodeBlock code={syncCode} language="bash" />
+        <SyntaxHighlightedPre code={syncCode} language="bash" docsUrl="https://trypillar.com/docs/guides/actions" />
       </div>
 
       <div className="space-y-2">
         <h4 className="text-sm font-medium">GitHub Actions example</h4>
-        <CodeBlock code={ciCode} language="yaml" />
+        <SyntaxHighlightedPre code={ciCode} language="yaml" filePath=".github/workflows/deploy.yml" docsUrl="https://trypillar.com/docs/guides/actions" />
       </div>
     </div>
   );

@@ -151,6 +151,45 @@ export const NOTIFICATION_REGISTRY: NotificationRule[] = [
   },
 
   // -------------------------------------------------------------------------
+  // Setup Incomplete (Info - dismissible, 7-day snooze)
+  // -------------------------------------------------------------------------
+  {
+    config: {
+      type: 'setup_incomplete',
+      severity: 'info',
+      title: 'Finish Setting Up Pillar',
+      message: 'Complete the setup guide to start using your AI assistant.',
+      action: {
+        label: 'Continue Setup',
+        href: '/onboarding',
+      },
+      dismissDuration: 7 * 24 * 60 * 60 * 1000, // 7 days
+    },
+    condition: ({ sources, integrationStatus, productCreatedAt, isLoading }) => {
+      if (isLoading) return false;
+      if (!integrationStatus) return false;
+
+      // Only show if user has started onboarding (has at least one source)
+      if (sources.length === 0) return false;
+
+      // Setup is complete once actions are registered
+      if (integrationStatus.actions_registered) return false;
+
+      // If SDK isn't initialized, only show this info banner during the
+      // 24h grace period. After that (or if we have no creation date),
+      // the critical "sdk_not_initialized" banner handles it instead.
+      if (!integrationStatus.sdk_initialized) {
+        if (!productCreatedAt) return false;
+        const ageMs = Date.now() - new Date(productCreatedAt).getTime();
+        const twentyFourHours = 24 * 60 * 60 * 1000;
+        if (ageMs >= twentyFourHours) return false;
+      }
+
+      return true;
+    },
+  },
+
+  // -------------------------------------------------------------------------
   // Add new notifications above this line
   // -------------------------------------------------------------------------
 ];

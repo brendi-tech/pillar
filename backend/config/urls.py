@@ -29,7 +29,7 @@ from apps.users.views import (
     oauth_callback,
     select_organization,
 )
-from common.views import early_access_form, waitlist_signup, waitlist_update
+from common.views import early_access_form
 
 # Import webhook views
 from apps.knowledge.views import firecrawl_webhook_view
@@ -111,8 +111,6 @@ urlpatterns = [
 
     # Public endpoints (no auth required)
     path('api/public/early-access/', early_access_form, name='public-early-access'),
-    path('api/public/waitlist/', waitlist_signup, name='public-waitlist-signup'),
-    path('api/public/waitlist/<uuid:entry_id>/', waitlist_update, name='public-waitlist-update'),
     
     # SDK embed config (public - for SDK initialization)
     path('api/public/products/<slug:subdomain>/embed-config/', EmbedConfigView.as_view(), name='public-embed-config'),

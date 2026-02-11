@@ -1,3 +1,3 @@
 export { MarketingPage } from "../MarketingPage";
-export { PillarLogoWithName, WaitlistModal } from "./LandingPage";
+export { PillarLogoWithName } from "./LandingPage";
 export { useInView } from "./hooks";

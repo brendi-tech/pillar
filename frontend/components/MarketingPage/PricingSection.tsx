@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { ArrowRight, Check } from "lucide-react";
+import Link from "next/link";
 import { NumberedHeading } from "./NumberedHeading";
 
 interface PricingTier {
@@ -24,8 +25,8 @@ const pricingTiers: PricingTier[] = [
     description: "Try Pillar risk-free",
     price: "$0",
     responseLimit: "50 responses",
-    ctaText: "Join Waitlist",
-    ctaSubtext: "One-time, no card required",
+    ctaText: "Get Started Free",
+    ctaSubtext: "No card required",
     features: [
       "Actions (execute, pre-fill)",
       "Analytics dashboard",
@@ -39,7 +40,7 @@ const pricingTiers: PricingTier[] = [
     price: "$19",
     priceSubtext: "per month",
     responseLimit: "100 responses/mo",
-    ctaText: "Join Waitlist",
+    ctaText: "Get Started",
     ctaSubtext: "Then $0.25/response",
     features: [
       "Actions (execute, pre-fill)",
@@ -54,7 +55,7 @@ const pricingTiers: PricingTier[] = [
     price: "$99",
     priceSubtext: "per month",
     responseLimit: "400 responses/mo",
-    ctaText: "Join Waitlist",
+    ctaText: "Get Started",
     ctaSubtext: "Then $0.20/response",
     highlighted: true,
     features: [
@@ -69,7 +70,7 @@ const pricingTiers: PricingTier[] = [
     price: "$249",
     priceSubtext: "per month",
     responseLimit: "1,500 responses/mo",
-    ctaText: "Join Waitlist",
+    ctaText: "Get Started",
     ctaSubtext: "Then $0.15/response",
     features: [
       "Everything in Pro",
@@ -85,12 +86,11 @@ const pricingTiers: PricingTier[] = [
  * and decorative dashed dividers between cards.
  */
 interface PricingSectionProps {
-  onOpenWaitlist?: () => void;
   /** Hide the "[05] PRICING" numbered heading (used on standalone pricing page) */
   hideNumberedHeading?: boolean;
 }
 
-export function PricingSection({ onOpenWaitlist, hideNumberedHeading }: PricingSectionProps) {
+export function PricingSection({ hideNumberedHeading }: PricingSectionProps) {
   return (
     <div className="relative">
       {/* Gradient line outside, solid blue inside container */}
@@ -216,8 +216,8 @@ export function PricingSection({ onOpenWaitlist, hideNumberedHeading }: PricingS
                   </p>
 
                   {/* CTA Button */}
-                  <button
-                    onClick={onOpenWaitlist}
+                  <Link
+                    href="/signup"
                     className={cn(
                       "group relative w-full py-3 px-4 text-sm font-medium transition-colors mb-2 rounded-[6px] text-center",
                       tier.highlighted
@@ -227,7 +227,7 @@ export function PricingSection({ onOpenWaitlist, hideNumberedHeading }: PricingS
                   >
                     {tier.ctaText}
                     <ArrowRight className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" />
-                  </button>
+                  </Link>
 
                   {/* CTA Subtext */}
                   <p
@@ -276,12 +276,12 @@ export function PricingSection({ onOpenWaitlist, hideNumberedHeading }: PricingS
           <div className="mt-12 text-center">
             <p className="text-white/70 text-lg">
               Need enterprise features like SSO, SLA, or custom integrations?{" "}
-              <button
-                onClick={onOpenWaitlist}
+              <a
+                href="mailto:team@trypillar.com"
                 className="text-[#C084FC] hover:text-[#D8B4FE] underline underline-offset-4 transition-colors"
               >
                 Contact us for enterprise pricing
-              </button>
+              </a>
             </p>
           </div>
         </div>

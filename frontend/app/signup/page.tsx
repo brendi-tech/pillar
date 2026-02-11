@@ -1,17 +1,10 @@
-import { redirect } from "next/navigation";
+"use client";
 
-// TEMPORARILY DISABLED - Signup page redirects to login
-// Original imports:
-// "use client";
-// import { SignupForm } from "@/components/SignupForm";
-// import { Loader2 } from "lucide-react";
-// import { Suspense } from "react";
+import { SignupForm } from "@/components/SignupForm";
+import { Loader2 } from "lucide-react";
+import { Suspense } from "react";
 
 export default function SignupPage() {
-  // TEMPORARILY DISABLED - redirect to login instead
-  redirect("/login");
-
-  /* Original signup form - uncomment to restore:
   return (
     <Suspense
       fallback={
@@ -23,5 +16,4 @@ export default function SignupPage() {
       <SignupForm />
     </Suspense>
   );
-  */
 }

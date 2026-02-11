@@ -6,13 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useRedirectToReturnPath } from "@/hooks";
-// TEMPORARILY DISABLED - useReturnToValue not needed without signup link
-// import { useReturnToValue } from "@/hooks";
+import { useRedirectToReturnPath, useReturnToValue } from "@/hooks";
 import { PillarLogoWithName } from "@/components/marketing/LandingPage/PillarLogoWithName";
-import { EarlyAccessModal } from "@/components/marketing/LandingPage/EarlyAccessModal";
 import { useAuth } from "@/providers/AuthProvider";
 import { Loader2 } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 export function LoginForm() {
@@ -20,14 +18,12 @@ export function LoginForm() {
   // TEMPORARILY DISABLED - loginWithTokens not needed without OAuth
   // const { login, loginWithTokens, isAuthenticated } = useAuth();
   const redirectToReturnPath = useRedirectToReturnPath();
-  // TEMPORARILY DISABLED - returnTo not needed without signup link
-  // const returnTo = useReturnToValue();
+  const returnTo = useReturnToValue();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [showWaitlist, setShowWaitlist] = useState(false);
 
   // If already authenticated, redirect to return path
   useEffect(() => {
@@ -175,7 +171,6 @@ export function LoginForm() {
               </Button>
             </form>
 
-            {/* TEMPORARILY DISABLED - Signup link
             <p className="text-center text-sm text-muted-foreground">
               Don&apos;t have an account?{" "}
               <Link
@@ -189,23 +184,6 @@ export function LoginForm() {
                 Sign up
               </Link>
             </p>
-            */}
-
-            <p className="text-center text-sm text-muted-foreground">
-              Don&apos;t have an account?{" "}
-              <button
-                type="button"
-                onClick={() => setShowWaitlist(true)}
-                className="font-semibold text-primary hover:text-primary/80 transition-colors"
-              >
-                Join our waitlist
-              </button>
-            </p>
-
-            <EarlyAccessModal
-              open={showWaitlist}
-              onOpenChange={setShowWaitlist}
-            />
           </CardContent>
         </Card>
 

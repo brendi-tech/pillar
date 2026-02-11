@@ -8,6 +8,8 @@ import { cn } from "@/lib/utils";
 interface CopyableCodeBlockProps {
   children: ReactNode;
   className?: string;
+  /** Override the docs URL used in the "Copy as prompt" button (defaults to current pathname) */
+  docsUrl?: string;
 }
 
 /**
@@ -19,6 +21,7 @@ interface CopyableCodeBlockProps {
 export function CopyableCodeBlock({
   children,
   className,
+  docsUrl,
 }: CopyableCodeBlockProps) {
   const [copied, setCopied] = useState<"code" | "prompt" | null>(null);
   const pathname = usePathname();
@@ -66,7 +69,7 @@ export function CopyableCodeBlock({
       e.stopPropagation();
 
       const code = getCodeText();
-      const pageUrl = `https://pillar.so${pathname}`;
+      const pageUrl = docsUrl || `https://trypillar.com${pathname}`;
 
       const prompt = `Help me integrate this Pillar SDK code into my project:
 
@@ -86,7 +89,7 @@ Adapt this to fit my existing codebase—match my file structure, naming convent
         console.error("Failed to copy prompt:", err);
       }
     },
-    [getCodeText, pathname]
+    [getCodeText, pathname, docsUrl]
   );
 
   return (

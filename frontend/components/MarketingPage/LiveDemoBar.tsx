@@ -26,7 +26,6 @@ const liveDemos: LiveDemo[] = [
     name: "Grafana",
     description: "AI copilot for Grafana monitoring, queries, and alert management.",
     previewImage: "/marketing/grafana-preview.png",
-    comingSoon: true,
   },
 ];
 

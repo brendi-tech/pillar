@@ -1,7 +1,5 @@
 "use client";
 
-import { useState } from "react";
-import { WaitlistModal } from "../marketing/LandingPage/EarlyAccessModal";
 import { ClientSideSection } from "./ClientSideSection";
 import { DemoSection } from "./DemoSection";
 import { DeploySection } from "./DeploySection";
@@ -19,31 +17,6 @@ import { TopHeroSection } from "./TopHeroSection";
  * Route: /marketing (internal, rewritten from / on root domain)
  */
 export function MarketingPage() {
-  const [waitlistModalOpen, setWaitlistModalOpen] = useState(false);
-  const [waitlistEntryId, setWaitlistEntryId] = useState<string | null>(null);
-  const [waitlistInitialStep, setWaitlistInitialStep] = useState<
-    "email" | "details" | "complete"
-  >("email");
-
-  const openWaitlist = (entryId?: string) => {
-    if (entryId) {
-      setWaitlistEntryId(entryId);
-      setWaitlistInitialStep("details");
-    } else {
-      setWaitlistEntryId(null);
-      setWaitlistInitialStep("email");
-    }
-    setWaitlistModalOpen(true);
-  };
-
-  const handleModalOpenChange = (open: boolean) => {
-    setWaitlistModalOpen(open);
-    if (!open) {
-      setWaitlistEntryId(null);
-      setWaitlistInitialStep("email");
-    }
-  };
-
   return (
     <div
       className="min-h-screen flex flex-col bg-[#F3EFE8]"
@@ -53,27 +26,20 @@ export function MarketingPage() {
       }}
     >
       <div className="flex flex-col min-h-screen relative">
-        <MarketingNavbar onOpenWaitlist={() => openWaitlist()} />
+        <MarketingNavbar />
 
         {/* Main content */}
         <main className="flex-1 w-full mx-auto ">
-          <TopHeroSection onOpenWaitlist={openWaitlist} />
+          <TopHeroSection />
           <DemoSection />
           <EngineersSection />
           <ClientSideSection />
           <DeploySection />
-          <PricingSection onOpenWaitlist={() => openWaitlist()} />
-          <FinalCTA onOpenWaitlist={() => openWaitlist()} />
+          <PricingSection />
+          <FinalCTA />
         </main>
 
         <MarketingFooter />
-
-        <WaitlistModal
-          open={waitlistModalOpen}
-          onOpenChange={handleModalOpenChange}
-          initialEntryId={waitlistEntryId}
-          initialStep={waitlistInitialStep}
-        />
       </div>
     </div>
   );

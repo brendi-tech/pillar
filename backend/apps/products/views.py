@@ -161,8 +161,8 @@ class ProductViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Generate new 64-character hex secret
-        raw_secret = secrets.token_hex(32)
+        # Generate prefixed secret key (plr_ + 64-char hex)
+        raw_secret = "plr_" + secrets.token_hex(32)
         
         # Create the sync secret
         sync_secret = SyncSecret.objects.create(
