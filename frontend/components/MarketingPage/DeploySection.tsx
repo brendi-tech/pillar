@@ -62,7 +62,7 @@ export const DeploySection = () => {
       <div
         className="h-[128px] grid place-items-center max-w-marketingSection mx-auto border-x border-marketing relative"
       >
-        <p className="text-center text-white text-sm bg-black/30 p-[10px] max-w-[520px] mx-auto">
+        <p className="text-center text-white text-sm bg-black/30 p-[10px] max-w-[620px] mx-auto">
           Define actions in your frontend. Same codebase, same deploy pipeline, same auth context.<br />
           Nothing new to operate.
         </p>

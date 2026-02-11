@@ -131,7 +131,7 @@ def build_agentic_prompt(
             "  - value: Text to type or option to select (for type/select operations)",
         ])
     tools_lines.append("")
-    tools_lines.append("Before calling a tool, briefly explain to the user what you're about to do.")
+    tools_lines.append("Occasionally, if it helps the user understand what's happening, briefly explain why you're calling a tool.")
     tools_lines.append("When you have enough information, respond directly to the user without calling any tools.")
     tools_section = "\n".join(tools_lines)
     

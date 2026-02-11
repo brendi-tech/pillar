@@ -7,7 +7,7 @@ import Link from "next/link";
 
 const GRAFANA_DEMO_URL =
   process.env.NEXT_PUBLIC_GRAFANA_DEMO_URL ||
-  "https://grafana-copilot-demo-45583431749.us-central1.run.app";
+  "https://grafana.trypillar.com";
 
 /**
  * GrafanaDemoPage - Minimal demo page that lets the live Grafana iframe
