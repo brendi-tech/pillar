@@ -91,6 +91,8 @@ export function PillarSDKProvider({ children }: PillarSDKProviderProps) {
         },
         theme: {
           mode: "auto",
+          fontFamily:
+            '"Suisse Intl", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
           colors: {
             primary: "#C2410C",
             primaryHover: "#9A3412",
@@ -114,14 +116,6 @@ export function PillarSDKProvider({ children }: PillarSDKProviderProps) {
             outlineColor: "#EA580C",
           },
         },
-        customCSS: `
-          :host {
-            --pillar-font-family: "Suisse Intl", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-          }
-          ._pillar-content::-webkit-scrollbar-thumb {
-            border-radius: 4px;
-          }
-        `,
       }}
       // Custom card renderers for inline_ui type actions
       cards={{
