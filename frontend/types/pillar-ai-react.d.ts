@@ -14,6 +14,7 @@ declare module "@pillar-ai/react" {
 
   export interface ThemeConfig {
     mode?: ThemeMode;
+    fontFamily?: string;
     colors?: Record<string, string>;
     darkColors?: Record<string, string>;
   }
