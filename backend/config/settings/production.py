@@ -42,6 +42,7 @@ _marketing_origins = [
     # Demo sites
     'https://superset.trypillar.com',
     'https://superset-demo-45583431749.us-central1.run.app',
+    'https://grafana-copilot-demo-45583431749.us-central1.run.app',
 ]
 
 _cors_origins_env = os.environ.get('CORS_ALLOWED_ORIGINS', '')
