@@ -42,6 +42,8 @@ interface SourcesContextValue {
   isLoading: boolean;
   /** Error message if any */
   error: string | null;
+  /** Find a specific source by ID (reads from the same cache as the sidebar) */
+  getSourceById: (id: string) => KnowledgeSourceConfig | undefined;
   /** Refresh sources data */
   refresh: () => Promise<void>;
 }
@@ -110,6 +112,11 @@ export function SourcesProvider({ children }: SourcesProviderProps) {
     await queryClient.invalidateQueries({ queryKey: knowledgeSourceKeys.lists() });
   }, [queryClient]);
 
+  const getSourceById = useCallback(
+    (id: string) => sources.find((s) => s.id === id),
+    [sources]
+  );
+
   // Group sources by type
   const sourcesByType = useMemo((): SourcesByType => {
     const grouped: SourcesByType = {
@@ -153,9 +160,10 @@ export function SourcesProvider({ children }: SourcesProviderProps) {
       counts,
       isLoading,
       error,
+      getSourceById,
       refresh,
     }),
-    [sources, sourcesByType, counts, isLoading, error, refresh]
+    [sources, sourcesByType, counts, isLoading, error, getSourceById, refresh]
   );
 
   return (

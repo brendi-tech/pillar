@@ -1,6 +1,13 @@
 "use client";
 
-import { PageHeader } from "@/components/shared";
+import {
+  DetailHeader,
+  DetailPageShell,
+  MetadataStrip,
+  SectionLabel,
+  TimestampFooter,
+} from "@/components/shared";
+import type { MetadataItem } from "@/components/shared";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,9 +22,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Tabs,
   TabsContent,
@@ -38,10 +44,7 @@ import {
   KNOWLEDGE_ITEM_TYPE_LABELS,
 } from "@/types/knowledge";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { format, formatDistanceToNow } from "date-fns";
 import {
-  AlertCircle,
-  ArrowLeft,
   Check,
   Copy,
   Download,
@@ -55,12 +58,14 @@ import {
   RefreshCw,
   Trash2,
 } from "lucide-react";
-import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { getDocumentDownloadUrlMutation } from "@/queries/knowledge.queries";
 
+// =============================================================================
 // File type detection helpers
+// =============================================================================
+
 const VIEWABLE_IMAGE_TYPES = ["png", "jpg", "jpeg", "gif", "webp", "svg"];
 const VIEWABLE_PDF_TYPES = ["pdf"];
 
@@ -91,12 +96,6 @@ function formatFileSize(bytes: number | undefined): string {
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
 
-interface KnowledgeItemDetailProps {
-  itemId: string;
-  sourceId: string;
-  onDeleted?: () => void;
-}
-
 function getStatusBadgeVariant(
   status: string
 ): "default" | "secondary" | "destructive" | "outline" {
@@ -116,13 +115,25 @@ function getStatusBadgeVariant(
   return colorMap[color] || "secondary";
 }
 
+// =============================================================================
+// Main Component
+// =============================================================================
+
+interface KnowledgeItemDetailProps {
+  itemId: string;
+  sourceId: string;
+  onDeleted?: () => void;
+}
+
 export function KnowledgeItemDetail({
   itemId,
   sourceId,
   onDeleted,
 }: KnowledgeItemDetailProps) {
   const queryClient = useQueryClient();
-  const [activeContentTab, setActiveContentTab] = useState<"optimized" | "original">("optimized");
+  const [activeContentTab, setActiveContentTab] = useState<
+    "optimized" | "original"
+  >("optimized");
   const [copied, setCopied] = useState(false);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [isLoadingDownloadUrl, setIsLoadingDownloadUrl] = useState(false);
@@ -132,6 +143,7 @@ export function KnowledgeItemDetail({
     isPending,
     isError,
     error,
+    refetch,
   } = useQuery(knowledgeItemDetailQuery(itemId));
 
   const { data: source } = useQuery(knowledgeSourceDetailQuery(sourceId));
@@ -140,7 +152,9 @@ export function KnowledgeItemDetail({
   const isDocumentUpload = Boolean(item?.metadata?.file_path);
   const fileType = item?.metadata?.file_type as string | undefined;
   const fileViewType = getFileViewType(fileType);
-  const originalFilename = item?.metadata?.original_filename as string | undefined;
+  const originalFilename = item?.metadata?.original_filename as
+    | string
+    | undefined;
   const fileSizeBytes = item?.metadata?.file_size_bytes as number | undefined;
 
   const downloadUrlMutation = useMutation({
@@ -153,7 +167,6 @@ export function KnowledgeItemDetail({
     },
   });
 
-  // Fetch download URL when viewing a document upload
   const fetchDownloadUrl = useCallback(() => {
     if (isDocumentUpload && !downloadUrl && !isLoadingDownloadUrl) {
       setIsLoadingDownloadUrl(true);
@@ -161,46 +174,42 @@ export function KnowledgeItemDetail({
         onSettled: () => setIsLoadingDownloadUrl(false),
       });
     }
-  }, [isDocumentUpload, downloadUrl, isLoadingDownloadUrl, downloadUrlMutation, itemId]);
+  }, [
+    isDocumentUpload,
+    downloadUrl,
+    isLoadingDownloadUrl,
+    downloadUrlMutation,
+    itemId,
+  ]);
 
-  // Fetch download URL when switching to original tab for document uploads
   useEffect(() => {
     if (activeContentTab === "original" && isDocumentUpload && !downloadUrl) {
       fetchDownloadUrl();
     }
   }, [activeContentTab, isDocumentUpload, downloadUrl, fetchDownloadUrl]);
 
-  // Handle download button click - use axios to fetch, then trigger download
   const [isDownloading, setIsDownloading] = useState(false);
 
   const handleDownload = useCallback(async () => {
     setIsDownloading(true);
     try {
-      // Use the API client which already handles auth and CORS
       const { apiClient } = await import("@/lib/admin/api-client");
-
       const response = await apiClient.get(
         `/api/admin/knowledge/items/${itemId}/download/`,
         { responseType: "blob" }
       );
-
-      // Create blob URL from response
       const blob = new Blob([response.data]);
       const blobUrl = URL.createObjectURL(blob);
-
-      // Create anchor and trigger download
       const link = document.createElement("a");
       link.href = blobUrl;
       link.download = originalFilename || "document";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-
-      // Clean up blob URL
       URL.revokeObjectURL(blobUrl);
       toast.success("Download complete");
-    } catch (error) {
-      console.error("Download error:", error);
+    } catch (err) {
+      console.error("Download error:", err);
       toast.error("Failed to download file");
     } finally {
       setIsDownloading(false);
@@ -272,447 +281,430 @@ export function KnowledgeItemDetail({
     deleteMutation.mutate(itemId);
   };
 
-  if (isPending) {
-    return (
-      <div className="space-y-6 p-page">
-        <div className="flex items-center gap-4">
-          <Skeleton className="h-10 w-10 rounded-lg" />
-          <div>
-            <Skeleton className="h-6 w-48" />
-            <Skeleton className="mt-1 h-4 w-32" />
-          </div>
-        </div>
-        <Skeleton className="h-64 w-full rounded-lg" />
-      </div>
-    );
-  }
+  // Build metadata items — unified from top strip + bottom metadata
+  const metadataItems: MetadataItem[] = [];
+  // Track which metadata keys we've promoted so we don't double-show them
+  const promotedMetadataKeys = new Set([
+    "file_path",
+    "original_filename",
+    "file_size_bytes",
+    "file_type",
+    "uploaded_at",
+    "word_count",
+    "scraped_at",
+  ]);
 
-  if (isError || !item) {
-    return (
-      <div className="flex flex-col items-center justify-center p-page py-12">
-        <div className="rounded-full bg-red-100 p-3 dark:bg-red-900/30">
-          <AlertCircle className="h-6 w-6 text-red-600 dark:text-red-400" />
-        </div>
-        <h3 className="mt-4 text-lg font-medium">Failed to load item</h3>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {error?.message || "Item not found"}
-        </p>
-        <Button asChild variant="outline" className="mt-4">
-          <Link href={`/knowledge/${sourceId}`}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Source
-          </Link>
-        </Button>
-      </div>
-    );
+  if (item) {
+    // Short status label — badge color provides the context
+    const statusLabel = !item.is_active
+      ? "Excluded"
+      : item.status === "indexed"
+        ? "Searchable"
+        : item.status === "processing"
+          ? "Processing"
+          : item.status === "failed"
+            ? "Failed"
+            : "Processing";
+
+    metadataItems.push({
+      label: "Status",
+      value: (
+        <Badge variant={!item.is_active ? "secondary" : getStatusBadgeVariant(item.status)}>
+          {item.status === "processing" && item.is_active && (
+            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+          )}
+          {statusLabel}
+        </Badge>
+      ),
+    });
+
+    metadataItems.push({
+      label: "Type",
+      value: KNOWLEDGE_ITEM_TYPE_LABELS[item.item_type],
+    });
+
+    if (item.status === "indexed") {
+      metadataItems.push({
+        label: "Chunks",
+        value: (
+          <span className="font-semibold tabular-nums">
+            {item.chunk_count}
+          </span>
+        ),
+      });
+    }
+
+    // Promote common metadata fields with nice formatting
+    const wordCount = item.metadata?.word_count;
+    if (wordCount != null) {
+      metadataItems.push({
+        label: "Word Count",
+        value: (
+          <span className="tabular-nums">
+            {Number(wordCount).toLocaleString()}
+          </span>
+        ),
+      });
+    }
+
+    const scrapedAt = item.metadata?.scraped_at;
+    if (scrapedAt) {
+      metadataItems.push({
+        label: "Scraped",
+        value: new Date(String(scrapedAt)).toLocaleDateString(undefined, {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+        }),
+      });
+    }
+
+    if (item.url) {
+      metadataItems.push({
+        label: "Source URL",
+        value: (
+          <a
+            href={item.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
+          >
+            <ExternalLink className="h-3 w-3 shrink-0" />
+            <span className="truncate">{item.url}</span>
+          </a>
+        ),
+        colSpan: 2,
+      });
+    }
+
+    // Add any remaining dynamic metadata fields we haven't promoted
+    if (item.metadata) {
+      const remainingEntries = Object.entries(item.metadata).filter(
+        ([key]) => !promotedMetadataKeys.has(key)
+      );
+      for (const [key, value] of remainingEntries) {
+        if (value == null || value === "") continue;
+        metadataItems.push({
+          label: key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+          value: typeof value === "object" ? JSON.stringify(value) : String(value),
+        });
+      }
+    }
   }
 
   return (
-    <div className="space-y-6 p-page h-full overflow-auto">
-      <PageHeader
-        title={
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
-              <FileText className="h-5 w-5 text-muted-foreground" />
-            </div>
-            <span className="truncate">{item.title || "Untitled"}</span>
-          </div>
-        }
-        description={KNOWLEDGE_ITEM_TYPE_LABELS[item.item_type]}
-        actions={
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              onClick={handleReprocess}
-              disabled={
-                reprocessMutation.isPending || item.status === "processing"
-              }
-            >
-              {reprocessMutation.isPending || item.status === "processing" ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <RefreshCw className="mr-2 h-4 w-4" />
-              )}
-              Reprocess
-            </Button>
+    <DetailPageShell
+      isLoading={isPending}
+      error={isError ? (error ?? new Error("Item not found")) : null}
+      isEmpty={!item && !isPending && !isError}
+      emptyTitle="Item not found"
+      emptyDescription="This knowledge item may have been deleted."
+      onRetry={refetch}
+    >
+      {item && (
+        <>
+          {/* ── Header ── */}
+          <DetailHeader
+            icon={<FileText className="h-5 w-5 text-muted-foreground" />}
+            title={item.title || "Untitled"}
+            subtitle={KNOWLEDGE_ITEM_TYPE_LABELS[item.item_type]}
+            actions={
+              <>
+                <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
+                  <Switch
+                    checked={item.is_active}
+                    onCheckedChange={handleToggleActive}
+                    disabled={updateMutation.isPending}
+                    aria-label="Include in AI search"
+                  />
+                  {item.is_active ? "In search" : "Excluded"}
+                </label>
 
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive" size="icon">
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Delete Knowledge Item</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Are you sure you want to delete &quot;{item.title}&quot;?
-                    This will remove this content from the knowledge base and
-                    cannot be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleDelete}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  >
-                    {deleteMutation.isPending ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : null}
-                    Delete
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
-        }
-      />
-
-      {/* Item Info Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Item Information</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div>
-              <dt className="text-sm font-medium text-muted-foreground">
-                Status
-              </dt>
-              <dd className="mt-1">
-                <Badge variant={getStatusBadgeVariant(item.status)}>
-                  {item.status === "processing" && (
-                    <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                  )}
-                  {KNOWLEDGE_ITEM_STATUS_LABELS[item.status] || item.status}
-                </Badge>
-              </dd>
-            </div>
-
-            <div>
-              <dt className="text-sm font-medium text-muted-foreground">
-                Active
-              </dt>
-              <dd className="mt-1 flex items-center gap-2">
-                <Checkbox
-                  checked={item.is_active}
-                  onCheckedChange={handleToggleActive}
-                  disabled={updateMutation.isPending}
-                />
-                <span className="text-sm">
-                  {item.is_active ? "Available to AI" : "Hidden from AI"}
-                </span>
-              </dd>
-            </div>
-
-            <div>
-              <dt className="text-sm font-medium text-muted-foreground">
-                Type
-              </dt>
-              <dd className="mt-1 text-sm">
-                {KNOWLEDGE_ITEM_TYPE_LABELS[item.item_type]}
-              </dd>
-            </div>
-
-            <div>
-              <dt className="text-sm font-medium text-muted-foreground">
-                Chunks
-              </dt>
-              <dd className="mt-1 text-lg font-semibold">{item.chunk_count}</dd>
-            </div>
-
-            {item.url && (
-              <div className="sm:col-span-2">
-                <dt className="text-sm font-medium text-muted-foreground">
-                  Source URL
-                </dt>
-                <dd className="mt-1">
-                  <a
-                    href={item.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-sm text-primary hover:underline"
-                  >
-                    <ExternalLink className="h-3 w-3 shrink-0" />
-                    <span className="truncate">{item.url}</span>
-                  </a>
-                </dd>
-              </div>
-            )}
-
-            <div>
-              <dt className="text-sm font-medium text-muted-foreground">
-                Created
-              </dt>
-              <dd className="mt-1 text-sm">
-                {format(new Date(item.created_at), "MMM d, yyyy")}
-              </dd>
-            </div>
-
-            <div>
-              <dt className="text-sm font-medium text-muted-foreground">
-                Updated
-              </dt>
-              <dd className="mt-1 text-sm">
-                {formatDistanceToNow(new Date(item.updated_at), {
-                  addSuffix: true,
-                })}
-              </dd>
-            </div>
-          </dl>
-
-          {item.status === "failed" && item.processing_error && (
-            <div className="mt-4 rounded-md border border-red-200 bg-red-50 p-3 dark:border-red-900 dark:bg-red-900/20">
-              <p className="text-sm text-red-600 dark:text-red-400">
-                <strong>Error:</strong> {item.processing_error}
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* File Information - for document uploads only */}
-      {isDocumentUpload && (
-        <Card>
-          <CardHeader>
-            <CardTitle>File Information</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <dl className="grid gap-4 sm:grid-cols-3 flex-1">
-                <div>
-                  <dt className="text-sm font-medium text-muted-foreground">
-                    Filename
-                  </dt>
-                  <dd className="mt-1 text-sm font-medium">
-                    {originalFilename || "Unknown"}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-sm font-medium text-muted-foreground">
-                    File Type
-                  </dt>
-                  <dd className="mt-1 text-sm">
-                    {fileType?.toUpperCase() || "Unknown"}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-sm font-medium text-muted-foreground">
-                    File Size
-                  </dt>
-                  <dd className="mt-1 text-sm">
-                    {formatFileSize(fileSizeBytes)}
-                  </dd>
-                </div>
-              </dl>
-              <Button
-                variant="outline"
-                onClick={handleDownload}
-                disabled={isLoadingDownloadUrl || isDownloading}
-              >
-                {isLoadingDownloadUrl || isDownloading ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Download className="mr-2 h-4 w-4" />
-                )}
-                {isDownloading ? "Downloading..." : "Download"}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Excerpt */}
-      {item.excerpt && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Excerpt</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm">{item.excerpt}</p>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Content Preview */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Content Preview</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Tabs
-            value={activeContentTab}
-            onValueChange={(value) =>
-              setActiveContentTab(value as "optimized" | "original")
-            }
-          >
-            <div className="flex items-center justify-between mb-4">
-              <TabsList>
-                <TabsTrigger
-                  value="optimized"
-                  disabled={!item.optimized_content}
-                >
-                  Optimized
-                  {item.optimized_content && (
-                    <Badge variant="secondary" className="ml-2 text-xs">
-                      AI
-                    </Badge>
-                  )}
-                </TabsTrigger>
-                <TabsTrigger value="original" disabled={!item.raw_content && !isDocumentUpload}>
-                  Original
-                </TabsTrigger>
-              </TabsList>
-              {/* Only show copy button when displaying text content */}
-              {!(activeContentTab === "original" && isDocumentUpload) && (
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => {
-                    const content =
-                      activeContentTab === "optimized"
-                        ? item.optimized_content
-                        : item.raw_content;
-                    if (content) {
-                      navigator.clipboard.writeText(content);
-                      setCopied(true);
-                      toast.success("Copied to clipboard");
-                      setTimeout(() => setCopied(false), 2000);
-                    }
-                  }}
+                  onClick={handleReprocess}
                   disabled={
-                    activeContentTab === "optimized"
-                      ? !item.optimized_content
-                      : !item.raw_content
+                    reprocessMutation.isPending || item.status === "processing"
                   }
                 >
-                  {copied ? (
-                    <Check className="mr-2 h-4 w-4" />
+                  {reprocessMutation.isPending ||
+                  item.status === "processing" ? (
+                    <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
                   ) : (
-                    <Copy className="mr-2 h-4 w-4" />
+                    <RefreshCw className="mr-1.5 h-4 w-4" />
                   )}
-                  {copied ? "Copied" : "Copy"}
+                  Reprocess
                 </Button>
-              )}
-            </div>
 
-            <TabsContent value="optimized">
-              <ScrollArea className="h-[400px] w-full rounded-md border bg-muted/30 p-4">
-                <pre className="whitespace-pre-wrap text-sm font-mono">
-                  {item.optimized_content || "No optimized content available"}
-                </pre>
-              </ScrollArea>
-            </TabsContent>
-
-            <TabsContent value="original">
-              {isDocumentUpload ? (
-                // Document upload - show appropriate viewer
-                <div className="h-[400px] w-full rounded-md border bg-muted/30">
-                  {isLoadingDownloadUrl ? (
-                    <div className="flex h-full items-center justify-center">
-                      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                    </div>
-                  ) : fileViewType === "pdf" && downloadUrl ? (
-                    // PDF Viewer
-                    <iframe
-                      src={downloadUrl}
-                      className="h-full w-full rounded-md"
-                      title={originalFilename || "PDF Document"}
-                    />
-                  ) : fileViewType === "image" && downloadUrl ? (
-                    // Image Viewer - using img for dynamic signed URL
-                    <div className="flex h-full items-center justify-center p-4 overflow-auto">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={downloadUrl}
-                        alt={originalFilename || "Image"}
-                        className="max-h-full max-w-full object-contain"
-                      />
-                    </div>
-                  ) : (
-                    // Download prompt for other file types
-                    <div className="flex h-full flex-col items-center justify-center gap-4 p-8">
-                      {(() => {
-                        const FileIcon = getFileIcon(fileType);
-                        return <FileIcon className="h-16 w-16 text-muted-foreground" />;
-                      })()}
-                      <div className="text-center">
-                        <p className="font-medium">{originalFilename || "Document"}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {fileType?.toUpperCase()} · {formatFileSize(fileSizeBytes)}
-                        </p>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Download to view the original file
-                      </p>
-                      <Button
-                        onClick={handleDownload}
-                        disabled={isLoadingDownloadUrl || isDownloading}
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        Delete Knowledge Item
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to delete &quot;{item.title}
+                        &quot;? This will remove this content from the knowledge
+                        base and cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleDelete}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                       >
-                        {isLoadingDownloadUrl || isDownloading ? (
+                        {deleteMutation.isPending ? (
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                          <Download className="mr-2 h-4 w-4" />
-                        )}
-                        {isDownloading ? "Downloading..." : "Download Original"}
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                // Regular content - show text
-                <ScrollArea className="h-[400px] w-full rounded-md border bg-muted/30 p-4">
-                  <pre className="whitespace-pre-wrap text-sm font-mono">
-                    {item.raw_content || "No original content available"}
-                  </pre>
-                </ScrollArea>
-              )}
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+                        ) : null}
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </>
+            }
+          />
 
-      {/* Metadata - filter out internal/file-related fields shown elsewhere */}
-      {item.metadata && (() => {
-        // Fields to hide from the general metadata display
-        const hiddenFields = [
-          "file_path",
-          "original_filename",
-          "file_size_bytes",
-          "file_type",
-          "uploaded_at",
-        ];
-        const filteredEntries = Object.entries(item.metadata).filter(
-          ([key]) => !hiddenFields.includes(key)
-        );
-        
-        if (filteredEntries.length === 0) return null;
-        
-        return (
+          {/* ── Item Information (metadata strip) ── */}
+          <MetadataStrip items={metadataItems} columns={4} />
+
+          {/* ── Processing Error ── */}
+          {item.status === "failed" && item.processing_error && (
+            <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950/30">
+              <div>
+                <p className="text-sm font-medium text-red-800 dark:text-red-200">
+                  Processing Error
+                </p>
+                <p className="max-w-prose text-sm text-red-700 dark:text-red-300 mt-0.5">
+                  {item.processing_error}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* ── File Information (document uploads) ── */}
+          {isDocumentUpload && (
+            <div>
+              <SectionLabel className="mb-2">File Information</SectionLabel>
+              <div className="flex items-center justify-between rounded-lg border bg-card p-4">
+                <div className="grid gap-4 sm:grid-cols-3 flex-1 text-sm">
+                  <div>
+                    <span className="text-xs text-muted-foreground">
+                      Filename
+                    </span>
+                    <p className="font-medium mt-0.5">
+                      {originalFilename || "Unknown"}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-xs text-muted-foreground">
+                      File Type
+                    </span>
+                    <p className="font-medium mt-0.5">
+                      {fileType?.toUpperCase() || "Unknown"}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-xs text-muted-foreground">
+                      File Size
+                    </span>
+                    <p className="font-medium mt-0.5">
+                      {formatFileSize(fileSizeBytes)}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDownload}
+                  disabled={isLoadingDownloadUrl || isDownloading}
+                >
+                  {isLoadingDownloadUrl || isDownloading ? (
+                    <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Download className="mr-1.5 h-4 w-4" />
+                  )}
+                  {isDownloading ? "Downloading..." : "Download"}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* ── Excerpt ── */}
+          {item.excerpt && (
+            <div>
+              <SectionLabel>Excerpt</SectionLabel>
+              <p className="text-sm leading-relaxed">
+                {item.excerpt}
+              </p>
+            </div>
+          )}
+
+          {/* ── Content Preview ── */}
           <Card>
-            <CardHeader>
-              <CardTitle>Metadata</CardTitle>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm">Content Preview</CardTitle>
             </CardHeader>
             <CardContent>
-              <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                {filteredEntries.map(([key, value]) => (
-                  <div key={key}>
-                    <dt className="text-sm font-medium text-muted-foreground capitalize">
-                      {key.replace(/_/g, " ")}
-                    </dt>
-                    <dd className="mt-1 text-sm">
-                      {typeof value === "object"
-                        ? JSON.stringify(value)
-                        : String(value)}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
+              <Tabs
+                value={activeContentTab}
+                onValueChange={(value) =>
+                  setActiveContentTab(value as "optimized" | "original")
+                }
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <TabsList>
+                    <TabsTrigger
+                      value="optimized"
+                      disabled={!item.optimized_content}
+                    >
+                      Optimized
+                      {item.optimized_content && (
+                        <Badge variant="secondary" className="ml-2 text-xs">
+                          AI
+                        </Badge>
+                      )}
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="original"
+                      disabled={!item.raw_content && !isDocumentUpload}
+                    >
+                      Original
+                    </TabsTrigger>
+                  </TabsList>
+                  {!(
+                    activeContentTab === "original" && isDocumentUpload
+                  ) && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const content =
+                          activeContentTab === "optimized"
+                            ? item.optimized_content
+                            : item.raw_content;
+                        if (content) {
+                          navigator.clipboard.writeText(content);
+                          setCopied(true);
+                          toast.success("Copied to clipboard");
+                          setTimeout(() => setCopied(false), 2000);
+                        }
+                      }}
+                      disabled={
+                        activeContentTab === "optimized"
+                          ? !item.optimized_content
+                          : !item.raw_content
+                      }
+                    >
+                      {copied ? (
+                        <Check className="mr-1.5 h-4 w-4" />
+                      ) : (
+                        <Copy className="mr-1.5 h-4 w-4" />
+                      )}
+                      {copied ? "Copied" : "Copy"}
+                    </Button>
+                  )}
+                </div>
+
+                <TabsContent value="optimized">
+                  <ScrollArea className="h-[400px] w-full rounded-md border bg-muted/30 p-4">
+                    <pre className="whitespace-pre-wrap text-sm font-mono">
+                      {item.optimized_content ||
+                        "No optimized content available"}
+                    </pre>
+                  </ScrollArea>
+                </TabsContent>
+
+                <TabsContent value="original">
+                  {isDocumentUpload ? (
+                    <div className="h-[400px] w-full rounded-md border bg-muted/30">
+                      {isLoadingDownloadUrl ? (
+                        <div className="flex h-full items-center justify-center">
+                          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                        </div>
+                      ) : fileViewType === "pdf" && downloadUrl ? (
+                        <iframe
+                          src={downloadUrl}
+                          className="h-full w-full rounded-md"
+                          title={originalFilename || "PDF Document"}
+                        />
+                      ) : fileViewType === "image" && downloadUrl ? (
+                        <div className="flex h-full items-center justify-center p-4 overflow-auto">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={downloadUrl}
+                            alt={originalFilename || "Image"}
+                            className="max-h-full max-w-full object-contain"
+                          />
+                        </div>
+                      ) : (
+                        <div className="flex h-full flex-col items-center justify-center gap-4 p-8">
+                          {(() => {
+                            const FileIcon = getFileIcon(fileType);
+                            return (
+                              <FileIcon className="h-16 w-16 text-muted-foreground" />
+                            );
+                          })()}
+                          <div className="text-center">
+                            <p className="font-medium">
+                              {originalFilename || "Document"}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {fileType?.toUpperCase()} ·{" "}
+                              {formatFileSize(fileSizeBytes)}
+                            </p>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            Download to view the original file
+                          </p>
+                          <Button
+                            onClick={handleDownload}
+                            disabled={isLoadingDownloadUrl || isDownloading}
+                          >
+                            {isLoadingDownloadUrl || isDownloading ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              <Download className="mr-2 h-4 w-4" />
+                            )}
+                            {isDownloading
+                              ? "Downloading..."
+                              : "Download Original"}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <ScrollArea className="h-[400px] w-full rounded-md border bg-muted/30 p-4">
+                      <pre className="whitespace-pre-wrap text-sm font-mono">
+                        {item.raw_content || "No original content available"}
+                      </pre>
+                    </ScrollArea>
+                  )}
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
-        );
-      })()}
-    </div>
+
+          {/* ── Timestamps footer ── */}
+          <TimestampFooter
+            createdAt={item.created_at}
+            updatedAt={item.updated_at}
+          />
+        </>
+      )}
+    </DetailPageShell>
   );
 }

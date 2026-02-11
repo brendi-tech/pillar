@@ -9,13 +9,19 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Skeleton } from "@/components/ui/skeleton";
+import {
+  DetailHeader,
+  DetailPageShell,
+  MetadataStrip,
+  SectionLabel,
+  TimestampFooter,
+} from "@/components/shared";
+import type { MetadataItem } from "@/components/shared";
 import { WarningModal } from "@/components/WarningModal";
 import { cn } from "@/lib/utils";
+import { useSources } from "@/providers";
 import {
   deleteKnowledgeSourceMutation,
-  knowledgeSourceDetailQuery,
   knowledgeSourceKeys,
   knowledgeSourceSyncHistoryQuery,
   triggerKnowledgeSourceSyncMutation,
@@ -40,7 +46,10 @@ import {
 } from "lucide-react";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
-import type { KnowledgeSourceConfig, KnowledgeSourceType } from "@/types/sources";
+import type {
+  KnowledgeSourceConfig,
+  KnowledgeSourceType,
+} from "@/types/sources";
 import { KNOWLEDGE_SOURCE_TYPE_LABELS } from "@/types/sources";
 import { SourceEditPanel } from "./SourceEditPanel";
 import { DocumentUploadZone } from "@/components/KnowledgePageContent/DocumentUploadZone";
@@ -59,21 +68,74 @@ interface SourceSettingsPanelProps {
 // Helpers
 // =============================================================================
 
-function SourceTypeIcon({ type, className }: { type: KnowledgeSourceType; className?: string }) {
+function SourceTypeIcon({
+  type,
+  className,
+}: {
+  type: KnowledgeSourceType;
+  className?: string;
+}) {
   switch (type) {
-    case 'help_center':
+    case "help_center":
       return <BookOpen className={className} />;
-    case 'marketing_site':
-    case 'website_crawl':
+    case "marketing_site":
+    case "website_crawl":
       return <Globe className={className} />;
-    case 'cloud_storage':
+    case "cloud_storage":
       return <Cloud className={className} />;
-    case 'document_upload':
+    case "document_upload":
       return <Upload className={className} />;
-    case 'snippets':
+    case "snippets":
       return <FileText className={className} />;
     default:
       return <FileText className={className} />;
+  }
+}
+
+function getSyncStatusBadge(status: string) {
+  switch (status) {
+    case "completed":
+      return (
+        <Badge
+          variant="outline"
+          className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800"
+        >
+          <Check className="h-3 w-3 mr-1" />
+          Success
+        </Badge>
+      );
+    case "failed":
+      return (
+        <Badge
+          variant="outline"
+          className="bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800"
+        >
+          <X className="h-3 w-3 mr-1" />
+          Failed
+        </Badge>
+      );
+    case "running":
+      return (
+        <Badge
+          variant="outline"
+          className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800"
+        >
+          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+          Running
+        </Badge>
+      );
+    case "pending":
+      return (
+        <Badge
+          variant="outline"
+          className="bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800"
+        >
+          <Clock className="h-3 w-3 mr-1" />
+          Pending
+        </Badge>
+      );
+    default:
+      return <Badge variant="outline">{status}</Badge>;
   }
 }
 
@@ -90,39 +152,29 @@ export function SourceSettingsPanel({
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
-  // Fetch source details with conditional polling while syncing
-  const {
-    data: source,
-    isPending: isSourceLoading,
-    error: sourceError,
-  } = useQuery({
-    ...knowledgeSourceDetailQuery(sourceId),
-    // Poll every 3s while syncing to show live item counts
-    refetchInterval: (query) => {
-      const source = query.state.data;
-      return source?.status === "syncing" ? 3000 : false;
-    },
-  });
+  // ── Shared data from SourcesProvider (same cache as sidebar) ──
+  const { getSourceById, isLoading: isSourcesLoading, refresh } = useSources();
+  const source = getSourceById(sourceId);
 
-  // Fetch sync history with conditional polling while syncing
+  // ── Sync history (separate query, not in list response) ──
   const { data: syncHistory = [] } = useQuery({
     ...knowledgeSourceSyncHistoryQuery(sourceId),
     enabled: !!sourceId,
-    // Poll every 3s while syncing to show progress
-    refetchInterval: (query) => {
-      // Poll if the source is syncing (check from parent query)
+    refetchInterval: () => {
       return source?.status === "syncing" ? 3000 : false;
     },
   });
 
-  // Mutations
+  // ── Mutations ──
   const syncMutation = useMutation({
     ...triggerKnowledgeSourceSyncMutation(),
     onSuccess: () => {
       toast.success("Sync started", {
         description: "Content sync has been triggered.",
       });
-      queryClient.invalidateQueries({ queryKey: knowledgeSourceKeys.detail(sourceId) });
+      queryClient.invalidateQueries({
+        queryKey: knowledgeSourceKeys.lists(),
+      });
       queryClient.invalidateQueries({
         queryKey: knowledgeSourceKeys.syncHistory(sourceId),
       });
@@ -138,7 +190,9 @@ export function SourceSettingsPanel({
     ...deleteKnowledgeSourceMutation(),
     onSuccess: () => {
       toast.success("Source deleted");
-      queryClient.invalidateQueries({ queryKey: knowledgeSourceKeys.lists() });
+      queryClient.invalidateQueries({
+        queryKey: knowledgeSourceKeys.lists(),
+      });
       onDeleted?.();
     },
     onError: (err) => {
@@ -171,81 +225,11 @@ export function SourceSettingsPanel({
 
   const handleEditComplete = useCallback(() => {
     setIsEditing(false);
-  }, []);
+    refresh();
+  }, [refresh]);
 
-  if (isSourceLoading) {
-    return <SettingsPanelSkeleton />;
-  }
-
-  if (sourceError || !source) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full p-6 text-center">
-        <AlertCircle className="h-12 w-12 text-destructive/60 mb-4" />
-        <p className="text-sm text-muted-foreground">Failed to load source</p>
-        <p className="text-xs text-muted-foreground/60 mt-1">
-          {sourceError instanceof Error ? sourceError.message : "Unknown error"}
-        </p>
-      </div>
-    );
-  }
-
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return "—";
-    return format(new Date(dateString), "MMM d, yyyy h:mm a");
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "completed":
-        return (
-          <Badge
-            variant="outline"
-            className="bg-green-50 text-green-700 border-green-200"
-          >
-            <Check className="h-3 w-3 mr-1" />
-            Success
-          </Badge>
-        );
-      case "failed":
-        return (
-          <Badge
-            variant="outline"
-            className="bg-red-50 text-red-700 border-red-200"
-          >
-            <X className="h-3 w-3 mr-1" />
-            Failed
-          </Badge>
-        );
-      case "running":
-        return (
-          <Badge
-            variant="outline"
-            className="bg-blue-50 text-blue-700 border-blue-200"
-          >
-            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-            Running
-          </Badge>
-        );
-      case "pending":
-        return (
-          <Badge
-            variant="outline"
-            className="bg-yellow-50 text-yellow-700 border-yellow-200"
-          >
-            <Clock className="h-3 w-3 mr-1" />
-            Pending
-          </Badge>
-        );
-      default:
-        return <Badge variant="outline">{status}</Badge>;
-    }
-  };
-
-  // Check if this source can be synced (snippets and document_upload can't be synced)
-  const canSync = source.source_type !== 'snippets' && source.source_type !== 'document_upload';
-
-  // Show edit panel when editing
-  if (isEditing) {
+  // ── Edit mode ──
+  if (isEditing && source) {
     return (
       <SourceEditPanel
         source={source}
@@ -255,300 +239,312 @@ export function SourceSettingsPanel({
     );
   }
 
+  const canSync =
+    source?.source_type !== "snippets" &&
+    source?.source_type !== "document_upload";
+
+  // Build metadata items for the strip
+  const metadataItems: MetadataItem[] = [];
+  if (source) {
+    metadataItems.push({
+      label:
+        source.source_type === "snippets"
+          ? "Snippets"
+          : source.source_type === "document_upload"
+            ? "Documents"
+            : "Items (Indexed / Crawled)",
+      value: (
+        <span className="font-semibold tabular-nums">
+          {canSync
+            ? `${source.pages_indexed.toLocaleString()} / ${source.item_count.toLocaleString()}`
+            : source.item_count.toLocaleString()}
+        </span>
+      ),
+    });
+
+    metadataItems.push({
+      label: canSync ? "Last Synced" : "Created",
+      value: canSync
+        ? source.last_synced_at
+          ? formatDistanceToNow(new Date(source.last_synced_at), {
+              addSuffix: true,
+            })
+          : "Never"
+        : format(new Date(source.created_at), "MMM d, yyyy"),
+    });
+
+    if (source.url) {
+      metadataItems.push({
+        label: "URL",
+        value: (
+          <a
+            href={source.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-primary hover:underline inline-flex items-center gap-1.5 text-sm"
+          >
+            {source.url}
+            <ExternalLink className="h-3 w-3 shrink-0" />
+          </a>
+        ),
+        colSpan: 2,
+      });
+    }
+  }
+
   return (
-    <ScrollArea className="h-full">
-      <div className="p-6 space-y-6">
-        {/* Header */}
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted">
-                <SourceTypeIcon type={source.source_type} className="h-5 w-5" />
-              </div>
-              <div>
-                <h2 className="text-2xl font-semibold">{source.name}</h2>
-                <p className="text-sm text-muted-foreground mt-0.5">
-                  {KNOWLEDGE_SOURCE_TYPE_LABELS[source.source_type]}
-                </p>
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <Button variant="outline" size="sm" onClick={handleStartEdit}>
-              <Pencil className="h-4 w-4 mr-1.5" />
-              Edit
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-destructive hover:text-destructive"
-              onClick={() => setShowDeleteModal(true)}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-
-        {/* Error Banner */}
-        {source.error_message && (
-          <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950/30">
-            <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 shrink-0" />
-            <div>
-              <p className="text-sm font-medium text-red-800 dark:text-red-200">
-                Sync Error
-              </p>
-              <p className="text-sm text-red-700 dark:text-red-300">
-                {source.error_message}
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Actions */}
-        {canSync && (
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              onClick={handleSync}
-              disabled={syncMutation.isPending}
-            >
-              {syncMutation.isPending ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <RefreshCw className="h-4 w-4 mr-2" />
-              )}
-              {source.status === "syncing"
-                ? "Stop & sync again"
-                : "Sync Now"}
-            </Button>
-          </div>
-        )}
-
-        {/* Source Details */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Source Details</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <p className="text-muted-foreground">Type</p>
-                <p className="font-medium">
-                  {KNOWLEDGE_SOURCE_TYPE_LABELS[source.source_type]}
-                </p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">Status</p>
-                <div className="mt-1">
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      source.status === "active" &&
-                        "bg-green-50 text-green-700 border-green-200",
-                      source.status === "syncing" &&
-                        "bg-blue-50 text-blue-700 border-blue-200",
-                      source.status === "error" &&
-                        "bg-red-50 text-red-700 border-red-200",
-                      source.status === "paused" &&
-                        "bg-yellow-50 text-yellow-700 border-yellow-200"
-                    )}
-                  >
-                    {source.status}
-                  </Badge>
-                </div>
-              </div>
-              <div>
-                <p className="text-muted-foreground">
-                  {source.source_type === 'snippets'
-                    ? 'Snippets'
-                    : source.source_type === 'document_upload'
-                    ? 'Documents'
-                    : 'Items (Indexed / Crawled)'}
-                </p>
-                <p className="font-medium">
-                  {canSync
-                    ? `${source.pages_indexed} / ${source.item_count}`
-                    : source.item_count}
-                </p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">
-                  {canSync ? 'Last Synced' : 'Created'}
-                </p>
-                <p className="font-medium">
-                  {canSync
-                    ? source.last_synced_at
-                      ? formatDistanceToNow(new Date(source.last_synced_at), {
-                          addSuffix: true,
-                        })
-                      : "Never"
-                    : format(new Date(source.created_at), "MMM d, yyyy")}
-                </p>
-              </div>
-              {source.url && (
-                <div className="col-span-2">
-                  <p className="text-muted-foreground">URL</p>
-                  <a
-                    href={source.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-medium text-primary hover:underline inline-flex items-center gap-1"
-                  >
-                    {source.url}
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Upload Documents (for document_upload sources) */}
-        {source.source_type === 'document_upload' && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Upload Documents</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <DocumentUploadZone
-                sourceId={sourceId}
-                onUploadComplete={() => {
-                  queryClient.invalidateQueries({
-                    queryKey: knowledgeSourceKeys.detail(sourceId),
-                  });
-                  queryClient.invalidateQueries({
-                    queryKey: knowledgeKeys.items(),
-                  });
-                }}
+    <DetailPageShell
+      isLoading={isSourcesLoading}
+      isEmpty={!source && !isSourcesLoading}
+      emptyTitle="Source not found"
+      emptyDescription="This knowledge source may have been deleted."
+    >
+      {source && (
+        <>
+          {/* ── Header ── */}
+          <DetailHeader
+            icon={
+              <SourceTypeIcon
+                type={source.source_type}
+                className="h-5 w-5 text-muted-foreground"
               />
-            </CardContent>
-          </Card>
-        )}
+            }
+            title={source.name}
+            subtitle={KNOWLEDGE_SOURCE_TYPE_LABELS[source.source_type]}
+            badges={
+              <>
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    source.status === "active" &&
+                      "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800",
+                    source.status === "syncing" &&
+                      "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800",
+                    source.status === "error" &&
+                      "bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800",
+                    source.status === "paused" &&
+                      "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800"
+                  )}
+                >
+                  {source.status === "syncing" && (
+                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                  )}
+                  {source.status}
+                </Badge>
 
-        {/* Crawl Config (if present) */}
-        {source.crawl_config && Object.keys(source.crawl_config).length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Crawl Configuration</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm">
-              {source.crawl_config.max_pages && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Max Pages</span>
-                  <span className="font-medium">{source.crawl_config.max_pages}</span>
-                </div>
-              )}
-              {source.crawl_config.include_paths && source.crawl_config.include_paths.length > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Include Paths</span>
-                  <span className="font-medium">{source.crawl_config.include_paths.join(", ")}</span>
-                </div>
-              )}
-              {source.crawl_config.exclude_paths && source.crawl_config.exclude_paths.length > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Exclude Paths</span>
-                  <span className="font-medium">{source.crawl_config.exclude_paths.join(", ")}</span>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
+                <Badge variant="outline" className="gap-1.5">
+                  <SourceTypeIcon
+                    type={source.source_type}
+                    className="h-3 w-3"
+                  />
+                  {KNOWLEDGE_SOURCE_TYPE_LABELS[source.source_type]}
+                </Badge>
 
-        {/* Sync History */}
-        {canSync && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Sync History</CardTitle>
-              <CardDescription>
-                Last {Math.min(syncHistory.length, 5)} sync operations
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {syncHistory.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  No sync history yet
+                {canSync && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="ml-auto h-7 text-xs"
+                    onClick={handleSync}
+                    disabled={syncMutation.isPending}
+                  >
+                    {syncMutation.isPending ? (
+                      <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+                    )}
+                    {source.status === "syncing" ? "Restart Sync" : "Sync Now"}
+                  </Button>
+                )}
+              </>
+            }
+            actions={
+              <>
+                <Button variant="outline" size="sm" onClick={handleStartEdit}>
+                  <Pencil className="h-4 w-4 mr-1.5" />
+                  Edit
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-destructive hover:text-destructive"
+                  onClick={() => setShowDeleteModal(true)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </>
+            }
+          />
+
+          {/* ── Error Banner ── */}
+          {source.error_message && (
+            <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950/30">
+              <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-red-800 dark:text-red-200">
+                  Sync Error
                 </p>
-              ) : (
-                <div className="space-y-3">
-                  {syncHistory.slice(0, 5).map((sync) => (
-                    <div
-                      key={sync.id}
-                      className="flex items-center justify-between rounded-lg border p-3"
-                    >
-                      <div className="flex items-center gap-3">
-                        {getStatusBadge(sync.status)}
-                        <div>
-                          <p className="text-sm font-medium">
-                            {sync.sync_type === "full"
-                              ? "Full Sync"
-                              : "Incremental Sync"}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {formatDate(sync.started_at || sync.created_at)}
-                          </p>
+                <p className="max-w-prose text-sm text-red-700 dark:text-red-300 mt-0.5">
+                  {source.error_message}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* ── Source Details (metadata strip) ── */}
+          <MetadataStrip items={metadataItems} />
+
+          {/* ── Crawl Configuration ── */}
+          {source.crawl_config &&
+            Object.keys(source.crawl_config).length > 0 && (
+              <div>
+                <SectionLabel className="mb-2">
+                  Crawl Configuration
+                </SectionLabel>
+                <div className="space-y-1.5 text-sm">
+                  {source.crawl_config.max_pages && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Max Pages</span>
+                      <span className="font-medium tabular-nums">
+                        {source.crawl_config.max_pages.toLocaleString()}
+                      </span>
+                    </div>
+                  )}
+                  {source.crawl_config.include_paths &&
+                    source.crawl_config.include_paths.length > 0 && (
+                      <div className="flex justify-between gap-4">
+                        <span className="text-muted-foreground shrink-0">
+                          Include Paths
+                        </span>
+                        <span className="font-medium text-right truncate">
+                          {source.crawl_config.include_paths.join(", ")}
+                        </span>
+                      </div>
+                    )}
+                  {source.crawl_config.exclude_paths &&
+                    source.crawl_config.exclude_paths.length > 0 && (
+                      <div className="flex justify-between gap-4">
+                        <span className="text-muted-foreground shrink-0">
+                          Exclude Paths
+                        </span>
+                        <span className="font-medium text-right truncate">
+                          {source.crawl_config.exclude_paths.join(", ")}
+                        </span>
+                      </div>
+                    )}
+                </div>
+              </div>
+            )}
+
+          {/* ── Upload Documents (for document_upload sources) ── */}
+          {source.source_type === "document_upload" && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm">Upload Documents</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <DocumentUploadZone
+                  sourceId={sourceId}
+                  onUploadComplete={() => {
+                    refresh();
+                    queryClient.invalidateQueries({
+                      queryKey: knowledgeKeys.items(),
+                    });
+                  }}
+                />
+              </CardContent>
+            </Card>
+          )}
+
+          {/* ── Sync History ── */}
+          {canSync && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm">Recent Sync History</CardTitle>
+                <CardDescription>
+                  Last {Math.min(syncHistory.length, 5)} sync operations
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {syncHistory.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    No sync history yet
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {syncHistory.slice(0, 5).map((sync) => (
+                      <div
+                        key={sync.id}
+                        className="flex items-center justify-between rounded-lg border p-3"
+                      >
+                        <div className="flex items-center gap-3">
+                          {getSyncStatusBadge(sync.status)}
+                          <div>
+                            <p className="text-sm font-medium">
+                              {sync.sync_type === "full"
+                                ? "Full Sync"
+                                : "Incremental Sync"}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {sync.started_at || sync.created_at
+                                ? format(
+                                    new Date(
+                                      sync.started_at || sync.created_at
+                                    ),
+                                    "MMM d, yyyy h:mm a"
+                                  )
+                                : "\u2014"}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right text-sm">
+                          {sync.status === "completed" && (
+                            <p className="text-muted-foreground tabular-nums">
+                              {sync.items_created} created,{" "}
+                              {sync.items_updated} updated
+                            </p>
+                          )}
+                          {sync.status === "failed" && sync.error_message && (
+                            <p
+                              className="text-red-600 dark:text-red-400 text-xs max-w-xs truncate"
+                              title={sync.error_message}
+                            >
+                              {sync.error_message}
+                            </p>
+                          )}
                         </div>
                       </div>
-                      <div className="text-right text-sm">
-                        {sync.status === "completed" && (
-                          <p className="text-muted-foreground">
-                            {sync.items_created} created, {sync.items_updated} updated
-                          </p>
-                        )}
-                        {sync.status === "failed" && sync.error_message && (
-                          <p
-                            className="text-red-600 text-xs max-w-xs truncate"
-                            title={sync.error_message}
-                          >
-                            {sync.error_message}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
-      {/* Delete Confirmation Modal */}
-      <WarningModal
-        open={showDeleteModal}
-        onOpenChange={setShowDeleteModal}
-        onConfirm={handleDeleteConfirm}
-        title="Delete Knowledge Source"
-        description={
-          <>
-            Are you sure you want to delete <strong>{source.name}</strong>? This
-            action cannot be undone. All indexed content will be removed.
-          </>
-        }
-        variant="delete"
-        isLoading={isDeleting}
-      />
-    </ScrollArea>
-  );
-}
+          {/* ── Timestamps footer ── */}
+          <TimestampFooter
+            createdAt={source.created_at}
+            updatedAt={source.updated_at}
+          />
 
-function SettingsPanelSkeleton() {
-  return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-start justify-between">
-        <div className="space-y-2">
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-4 w-32" />
-        </div>
-        <div className="flex gap-2">
-          <Skeleton className="h-9 w-20" />
-          <Skeleton className="h-9 w-9" />
-        </div>
-      </div>
-      <div className="flex gap-2">
-        <Skeleton className="h-10 w-28" />
-      </div>
-      <Skeleton className="h-40 w-full" />
-      <Skeleton className="h-32 w-full" />
-    </div>
+          {/* Delete Confirmation Modal */}
+          <WarningModal
+            open={showDeleteModal}
+            onOpenChange={setShowDeleteModal}
+            onConfirm={handleDeleteConfirm}
+            title="Delete Knowledge Source"
+            description={
+              <>
+                Are you sure you want to delete{" "}
+                <strong>{source.name}</strong>? This action cannot be undone.
+                All indexed content will be removed.
+              </>
+            }
+            variant="delete"
+            isLoading={isDeleting}
+          />
+        </>
+      )}
+    </DetailPageShell>
   );
 }

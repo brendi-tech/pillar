@@ -4,10 +4,15 @@ export type {
   CategoryNavSidebarProps,
   FooterAction,
 } from "./CategoryNavSidebar";
+export { DetailHeader } from "./DetailHeader";
+export { DetailPageShell } from "./DetailPageShell";
 export { EmptyState, NoArticles, NoSearchResults } from "./EmptyState";
-export { PersonaBanner, PersonaBadge } from "./PersonaBanner";
+export { MetadataStrip } from "./MetadataStrip";
+export type { MetadataItem } from "./MetadataStrip";
 export { PageHeader } from "./PageHeader";
+export { PersonaBanner, PersonaBadge } from "./PersonaBanner";
 export { SaveButton } from "./SaveButton";
+export { SectionLabel } from "./SectionLabel";
 export {
   ArticleSkeleton,
   CategoryGridSkeleton,
@@ -18,3 +23,4 @@ export {
 } from "./Skeleton";
 export { SlackButton } from "./SlackButton";
 export { StatusBadge } from "./StatusBadge";
+export { TimestampFooter } from "./TimestampFooter";
