@@ -64,6 +64,9 @@ INSTALLED_APPS = [
     # Domain-focused apps
     'apps.products',                    # Products (core), actions, tooltips, platforms
     'apps.analytics',                   # Searches, views, sessions, chat
+
+    # Public tools
+    'apps.agent_score',                 # Agent Readiness Score (public free tool)
 ]
 
 MIDDLEWARE = [
@@ -208,6 +211,8 @@ REST_FRAMEWORK = {
         'public_form_minute': '5/minute',
         'public_form_hour': '15/hour',
         'public_form_day': '30/day',
+        'agent_score_scan': '5/minute',
+        'agent_score_signup': '2/hour',
     },
 }
 
@@ -395,6 +400,12 @@ ACTION_SEARCH_TOP_N = int(os.environ.get('ACTION_SEARCH_TOP_N', '5'))
 ACTION_SEARCH_MIN = int(os.environ.get('ACTION_SEARCH_MIN', '3'))
 ACTION_QUALITY_RATIO = float(os.environ.get('ACTION_QUALITY_RATIO', '0.75'))
 ACTION_RERANK_ENABLED = os.environ.get('ACTION_RERANK_ENABLED', 'true').lower() == 'true'
+
+# ==============================================================================
+# BROWSERBASE / STAGEHAND CONFIGURATION (Agent Signup Test)
+# ==============================================================================
+BROWSERBASE_API_KEY = os.environ.get('BROWSERBASE_API_KEY', '')
+BROWSERBASE_PROJECT_ID = os.environ.get('BROWSERBASE_PROJECT_ID', '')
 
 # ==============================================================================
 # FIRECRAWL CONFIGURATION (Web scraping)

@@ -6,6 +6,19 @@ import os
 
 DEBUG = True
 
+# Remove sync-only middleware that blocks the ASGI event loop.
+# WhiteNoiseMiddleware is sync-only (no async_capable) and poisons the entire
+# middleware chain -- Django falls back to routing ALL requests through a single-
+# thread executor, which starves concurrent requests while an SSE stream is active.
+# With DEBUG=True, Django's staticfiles app serves static files automatically.
+#
+# Also remove middleware that the MCP/SSE path doesn't need (sessions, CSRF,
+# auth, messages, clickjacking). The admin API still works without these in
+# local development since the frontend uses token-based auth.
+MIDDLEWARE = [m for m in MIDDLEWARE if m not in (
+    'whitenoise.middleware.WhiteNoiseMiddleware',
+)]
+
 ALLOWED_HOSTS = ['localhost', '.localhost', '127.0.0.1', '[::1]', 'testserver', '.ngrok-free.dev', '.ngrok.io']
 
 # CORS - Allow all origins in development
@@ -59,6 +72,12 @@ REST_FRAMEWORK['DEFAULT_RENDERER_CLASSES'] = [
     'rest_framework.renderers.JSONRenderer',
     'rest_framework.renderers.BrowsableAPIRenderer',
 ]
+
+# Disable throttling for local development
+REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'].update({
+    'agent_score_scan': '1000/minute',
+    'agent_score_signup': '1000/minute',
+})
 
 # Disable some security features for local development
 SECURE_SSL_REDIRECT = False

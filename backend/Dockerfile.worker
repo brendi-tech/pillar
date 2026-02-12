@@ -8,7 +8,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # Set work directory
 WORKDIR /app
 
-# Install system dependencies and uv
+# Install system dependencies, Playwright browser deps, and uv
 RUN apt-get update && apt-get install -y --no-install-recommends \
     postgresql-client \
     gcc \
@@ -17,6 +17,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     procps \
     ca-certificates \
+    # Playwright/Chromium dependencies (Agent Score browser analysis)
+    libnss3 \
+    libatk-bridge2.0-0 \
+    libdrm2 \
+    libxkbcommon0 \
+    libgbm1 \
+    libasound2 \
+    libxshmfence1 \
     && curl -LsSf https://astral.sh/uv/install.sh | sh \
     && rm -rf /var/lib/apt/lists/*
 
@@ -31,6 +39,9 @@ RUN uv sync --frozen --no-dev
 
 # Add .venv to PATH so installed packages are available
 ENV PATH="/app/.venv/bin:$PATH"
+
+# Install Playwright Chromium browser (Agent Score browser analysis)
+RUN playwright install chromium
 
 # Copy project files
 COPY . .

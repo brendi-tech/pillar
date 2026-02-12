@@ -111,6 +111,9 @@ urlpatterns = [
 
     # Public endpoints (no auth required)
     path('api/public/early-access/', early_access_form, name='public-early-access'),
+
+    # Agent Score (public free tool — no auth)
+    path('api/public/agent-score/', include('apps.agent_score.urls')),
     
     # SDK embed config (public - for SDK initialization)
     path('api/public/products/<slug:subdomain>/embed-config/', EmbedConfigView.as_view(), name='public-embed-config'),

@@ -306,4 +306,54 @@ declare module "@pillar-ai/react" {
   // ============================================================================
 
   export function usePillarContext(): PillarContextValue;
+
+  // ============================================================================
+  // Tool types (unified tool schema)
+  // ============================================================================
+
+  export type ToolType =
+    | "navigate"
+    | "trigger_tool"
+    | "trigger_action"
+    | "inline_ui"
+    | "external_link"
+    | "copy_text"
+    | "open_modal"
+    | "fill_form"
+    | "start_tutorial"
+    | "query";
+
+  export interface ToolExecuteResult {
+    [key: string]: unknown;
+  }
+
+  export interface ToolSchema<TInput = Record<string, unknown>> {
+    name: string;
+    type?: ToolType;
+    description: string;
+    examples?: string[];
+    autoRun?: boolean;
+    autoComplete?: boolean;
+    inputSchema?: Record<string, unknown>;
+    execute: (input: TInput) => void | ToolExecuteResult | Promise<void | ToolExecuteResult>;
+  }
+
+  // ============================================================================
+  // usePillarTool hook
+  // ============================================================================
+
+  /**
+   * Register a single Pillar tool with co-located metadata and handler.
+   */
+  export function usePillarTool<TInput = Record<string, unknown>>(
+    schema: ToolSchema<TInput>
+  ): void;
+
+  /**
+   * Register multiple Pillar tools with co-located metadata and handlers.
+   */
+  export function usePillarTool(schemas: ToolSchema[]): void;
+
+  /** @deprecated Use usePillarTool instead */
+  export const usePillarAction: typeof usePillarTool;
 }

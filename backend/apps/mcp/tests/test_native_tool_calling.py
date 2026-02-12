@@ -136,7 +136,7 @@ class TestNativeMessageFormat:
         )
         
         system_content = messages[0]["content"]
-        assert "Before calling a tool, briefly explain" in system_content
+        assert "briefly explain why you're calling a tool" in system_content
         assert "respond directly to the user without calling any tools" in system_content
 
     def test_build_agentic_prompt_no_respond_tool(self):

@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu, X } from "lucide-react";
+import { Menu, X, ChevronDown, Gauge } from "lucide-react";
 
 function GitHubIcon({ className }: { className?: string }) {
   return (
@@ -19,13 +19,27 @@ function GitHubIcon({ className }: { className?: string }) {
   );
 }
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PillarLogoWithName } from "../marketing/LandingPage/PillarLogoWithName";
 
 const GITHUB_URL = "https://github.com/pillarhq/pillar";
 
-const navLinks = [
+const toolsDropdownItems = [
+  {
+    name: "Agent Readiness Score",
+    description: "Agents are coming. Are you ready?",
+    href: "/tools/agent-score",
+    icon: Gauge,
+  },
+];
+
+type NavLink =
+  | { name: string; href: string; dropdown?: undefined }
+  | { name: string; dropdown: "tools"; href?: undefined };
+
+const navLinks: NavLink[] = [
   { name: "Home", href: "/" },
+  { name: "Tools", dropdown: "tools" },
   { name: "Blog", href: "/blog" },
   { name: "Pricing", href: "/pricing" },
   { name: "Docs", href: "/docs" },
@@ -38,6 +52,17 @@ const navLinks = [
 export function MarketingNavbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [toolsOpen, setToolsOpen] = useState(false);
+  const toolsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const openTools = () => {
+    if (toolsTimeoutRef.current) clearTimeout(toolsTimeoutRef.current);
+    setToolsOpen(true);
+  };
+
+  const closeTools = () => {
+    toolsTimeoutRef.current = setTimeout(() => setToolsOpen(false), 150);
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -49,16 +74,16 @@ export function MarketingNavbar() {
   }, []);
 
   return (
-    <nav className="bg-white/80 backdrop-blur-lg sticky top-0 z-50 w-full relative">
+    <nav className="bg-white backdrop-blur-lg sticky top-0 z-50 w-full relative">
       {/* Animated border from center */}
       <div
-        className="absolute bottom-0 left-1/2 h-px bg-marketing transition-all duration-500 ease-out"
+        className="absolute bottom-0 left-1/2 h-px bg-marketing transition-all duration-500 ease-out z-0 pointer-events-none"
         style={{
           width: isScrolled ? "100%" : "0%",
           transform: "translateX(-50%)",
         }}
       />
-      <div className="max-w-[1334px] mx-auto px-4 sm:px-6">
+      <div className="relative z-10 max-w-[1334px] mx-auto px-4 sm:px-6">
         <div className="relative flex items-center justify-between h-14 sm:h-16 lg:h-20">
           {/* Left: Logo */}
           <div className="shrink-0">
@@ -69,15 +94,69 @@ export function MarketingNavbar() {
 
           {/* Center: Nav Links (absolutely centered) */}
           <div className="hidden md:flex items-center gap-6 lg:gap-8 absolute left-1/2 -translate-x-1/2">
-            {navLinks.map((link) => (
-              <Link
-                key={link.name}
-                href={link.href}
-                className="text-sm sm:text-[0.9375rem] font-medium text-[#1A1A1A] hover:text-[#FF6E00] transition-colors whitespace-nowrap"
-              >
-                {link.name}
-              </Link>
-            ))}
+            {navLinks.map((link) =>
+              link.dropdown === "tools" ? (
+                <div
+                  key={link.name}
+                  className="relative"
+                  onMouseEnter={openTools}
+                  onMouseLeave={closeTools}
+                >
+                  <button
+                    className="inline-flex items-center gap-1 text-sm sm:text-[0.9375rem] font-medium text-[#1A1A1A] hover:text-[#FF6E00] transition-colors whitespace-nowrap"
+                    onClick={() => setToolsOpen((prev) => !prev)}
+                  >
+                    {link.name}
+                    <ChevronDown
+                      className={`h-3.5 w-3.5 transition-transform duration-200 ${toolsOpen ? "rotate-180" : ""}`}
+                    />
+                  </button>
+
+                  {/* Dropdown */}
+                  <div
+                    className={`absolute z-50 top-full left-1/2 -translate-x-1/2 pt-2 transition-all duration-200 ${
+                      toolsOpen
+                        ? "opacity-100 translate-y-0 pointer-events-auto"
+                        : "opacity-0 -translate-y-1 pointer-events-none"
+                    }`}
+                  >
+                    <div
+                      className="w-[280px] rounded-xl border border-gray-200 shadow-lg shadow-black/[0.08] overflow-hidden p-1.5"
+                      style={{ background: "#fff" }}
+                    >
+                      {toolsDropdownItems.map((item) => (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={() => setToolsOpen(false)}
+                          className="flex items-start gap-3 rounded-lg px-3 py-2.5 hover:bg-[#FFF7F0] transition-colors group"
+                        >
+                          <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#FFF1E6] text-[#FF6E00] group-hover:bg-[#FFE4CC] transition-colors">
+                            <item.icon className="h-4 w-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-sm font-medium text-[#1A1A1A] group-hover:text-[#FF6E00] transition-colors">
+                              {item.name}
+                            </div>
+                            <div className="text-xs text-[#6B6B6B] mt-0.5 leading-snug">
+                              {item.description}
+                            </div>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <Link
+                  key={link.name}
+                  href={link.href}
+                  className="text-sm sm:text-[0.9375rem] font-medium text-[#1A1A1A] hover:text-[#FF6E00] transition-colors whitespace-nowrap"
+                >
+                  {link.name}
+                </Link>
+              )
+            )}
           </div>
 
           {/* Right: GitHub + Login + CTA (desktop) */}
@@ -125,16 +204,35 @@ export function MarketingNavbar() {
         {mobileMenuOpen && (
           <div className="md:hidden pb-4 border-t border-[#E5E0D8] bg-white/80 backdrop-blur-lg">
             <div className="flex flex-col space-y-1 pt-4">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.name}
-                  href={link.href}
-                  className="py-2 text-[#1A1A1A] hover:text-[#FF6E00] transition-colors font-medium"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  {link.name}
-                </Link>
-              ))}
+              {navLinks.map((link) =>
+                link.dropdown === "tools" ? (
+                  <div key={link.name} className="flex flex-col">
+                    <span className="py-2 text-[#1A1A1A] font-medium text-xs uppercase tracking-wider text-[#6B6B6B]">
+                      {link.name}
+                    </span>
+                    {toolsDropdownItems.map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className="py-2 pl-3 text-[#1A1A1A] hover:text-[#FF6E00] transition-colors font-medium inline-flex items-center gap-2"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <item.icon className="h-4 w-4 text-[#FF6E00]" />
+                        {item.name}
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <Link
+                    key={link.name}
+                    href={link.href}
+                    className="py-2 text-[#1A1A1A] hover:text-[#FF6E00] transition-colors font-medium"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    {link.name}
+                  </Link>
+                )
+              )}
               <a
                 href={GITHUB_URL}
                 target="_blank"
@@ -166,7 +264,7 @@ export function MarketingNavbar() {
       </div>
       {/* Gradient bottom border */}
       <div
-        className="absolute bottom-0 left-0 right-0 h-[1px]"
+        className="absolute bottom-0 left-0 right-0 h-[1px] z-0 pointer-events-none"
         style={{
           background: "linear-gradient(90deg, rgba(212,212,212,0) 0%, #D4D4D4 30%, #D4D4D4 70%, rgba(212,212,212,0) 100%)",
         }}

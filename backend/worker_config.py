@@ -36,6 +36,14 @@ def get_all_workflows():
     # Import demos workflows
     from apps.demos.workflows import superset_reset_workflow
     
+    # Import agent score workflows
+    from apps.agent_score.workflows import (
+        http_probes_workflow,
+        browser_analysis_workflow,
+        analyze_and_score_workflow,
+        signup_test_workflow,
+    )
+    
     return [
         # Knowledge app workflows (unified content system)
         sync_source_workflow,
@@ -53,4 +61,9 @@ def get_all_workflows():
         sync_actions_workflow,
         # Demos app workflows
         superset_reset_workflow,
+        # Agent Score workflows (public scoring tool)
+        http_probes_workflow,
+        browser_analysis_workflow,
+        analyze_and_score_workflow,
+        signup_test_workflow,
     ]

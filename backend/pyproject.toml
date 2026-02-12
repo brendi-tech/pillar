@@ -74,6 +74,10 @@ dependencies = [
     "tree-sitter-rust>=0.23.0",
     "tree-sitter-java>=0.23.0",
     "tree-sitter-ruby>=0.23.0",
+    # Browser automation (Agent Score)
+    "playwright>=1.49.0",
+    # Stagehand (Browserbase) — AI browser agent for signup test
+    "stagehand>=0.3.0",
     # Workflow Orchestration
     "hatchet-sdk>=1.20.0",
     # Development tools

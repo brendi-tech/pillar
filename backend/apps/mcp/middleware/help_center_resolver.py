@@ -3,17 +3,21 @@ Middleware to resolve HelpCenterConfig from Host header.
 
 Resolves the help center context from subdomain for MCP requests.
 
+Fully async to avoid blocking the ASGI event loop. Sync middleware
+(MiddlewareMixin) funnels all calls through a single-thread executor,
+which starves concurrent requests while an SSE stream is active.
+
 Copyright (C) 2025 Pillar Team
 """
 import logging
+from asgiref.sync import iscoroutinefunction, markcoroutinefunction
 from django.conf import settings
 from django.core.cache import cache
-from django.utils.deprecation import MiddlewareMixin
 
 logger = logging.getLogger(__name__)
 
 
-class HelpCenterResolverMiddleware(MiddlewareMixin):
+class HelpCenterResolverMiddleware:
     """
     Resolves HelpCenterConfig from subdomain.
 
@@ -22,11 +26,27 @@ class HelpCenterResolverMiddleware(MiddlewareMixin):
     - ?help_center_id={id} -> Direct lookup (development/testing)
 
     Sets request.help_center_config and request.organization on success.
+
+    This middleware is fully async-native to avoid serializing ASGI
+    requests through Django's single-thread sync_to_async executor.
     """
+
+    async_capable = True
+    sync_capable = False
 
     CACHE_TTL = 300  # 5 minutes
 
-    def process_request(self, request):
+    def __init__(self, get_response):
+        self.get_response = get_response
+        if iscoroutinefunction(self.get_response):
+            markcoroutinefunction(self)
+
+    async def __call__(self, request):
+        await self.process_request(request)
+        response = await self.get_response(request)
+        return response
+
+    async def process_request(self, request):
         from apps.products.models import Product
 
         # Skip non-MCP paths for efficiency
@@ -46,14 +66,18 @@ class HelpCenterResolverMiddleware(MiddlewareMixin):
             # Try cache first
             config_id = cache.get(cache_key)
             if config_id:
-                config = Product.objects.select_related('organization').filter(
-                    id=config_id
-                ).first()
+                config = await (
+                    Product.objects.select_related('organization')
+                    .filter(id=config_id)
+                    .afirst()
+                )
             else:
                 # Cache miss - query database
-                config = Product.objects.select_related('organization').filter(
-                    subdomain=subdomain
-                ).first()
+                config = await (
+                    Product.objects.select_related('organization')
+                    .filter(subdomain=subdomain)
+                    .afirst()
+                )
                 if config:
                     cache.set(cache_key, str(config.id), self.CACHE_TTL)
 
@@ -64,9 +88,11 @@ class HelpCenterResolverMiddleware(MiddlewareMixin):
         if not config:
             config_id = request.GET.get('help_center_id')
             if config_id:
-                config = Product.objects.select_related('organization').filter(
-                    id=config_id
-                ).first()
+                config = await (
+                    Product.objects.select_related('organization')
+                    .filter(id=config_id)
+                    .afirst()
+                )
                 if config:
                     logger.debug(f"[MCP] Resolved via query param -> {config.name}")
 
@@ -74,9 +100,11 @@ class HelpCenterResolverMiddleware(MiddlewareMixin):
         if not config:
             config_id = request.headers.get('X-Help-Center-Id')
             if config_id:
-                config = Product.objects.select_related('organization').filter(
-                    id=config_id
-                ).first()
+                config = await (
+                    Product.objects.select_related('organization')
+                    .filter(id=config_id)
+                    .afirst()
+                )
                 if config:
                     logger.debug(f"[MCP] Resolved via header -> {config.name}")
 
@@ -86,7 +114,7 @@ class HelpCenterResolverMiddleware(MiddlewareMixin):
             customer_id = request.headers.get('x-customer-id')
             if customer_id:
                 import uuid as uuid_module
-                
+
                 # Check if it's a UUID (org ID)
                 is_uuid = False
                 try:
@@ -94,20 +122,23 @@ class HelpCenterResolverMiddleware(MiddlewareMixin):
                     is_uuid = True
                 except (ValueError, AttributeError):
                     pass
-                
+
                 if is_uuid:
                     # It's a UUID - get default config for that org
-                    config = Product.objects.select_related('organization').filter(
-                        organization_id=customer_id,
-                        is_default=True
-                    ).first()
+                    config = await (
+                        Product.objects.select_related('organization')
+                        .filter(organization_id=customer_id, is_default=True)
+                        .afirst()
+                    )
                     if config:
                         logger.debug(f"[MCP] Resolved via x-customer-id org UUID '{customer_id}' -> {config.name}")
                 else:
                     # Not a UUID - treat as subdomain
-                    config = Product.objects.select_related('organization').filter(
-                        subdomain=customer_id
-                    ).first()
+                    config = await (
+                        Product.objects.select_related('organization')
+                        .filter(subdomain=customer_id)
+                        .afirst()
+                    )
                     if config:
                         logger.debug(f"[MCP] Resolved via x-customer-id subdomain '{customer_id}' -> {config.name}")
 

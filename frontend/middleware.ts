@@ -183,8 +183,8 @@ export function middleware(request: NextRequest) {
   // Note: Cannot use _ prefix as Next.js treats those as private folders
   // Safe because customer subdomains have isMarketing=false, so no collision with "marketing" category
   if (isMarketing && !pathname.startsWith('/marketing')) {
-    // Marketing paths: /, /assistant, /demos/*
-    if (pathname === '/' || pathname === '/assistant' || pathname.startsWith('/demos')) {
+    // Marketing paths: /, /assistant, /demos/*, /tools/*
+    if (pathname === '/' || pathname === '/assistant' || pathname.startsWith('/demos') || pathname.startsWith('/tools')) {
       const newUrl = request.nextUrl.clone();
       newUrl.pathname = `/marketing${pathname === '/' ? '' : pathname}`;
       debugMiddleware(`Rewriting marketing path ${pathname} to ${newUrl.pathname}`);
