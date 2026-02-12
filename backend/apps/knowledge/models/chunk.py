@@ -4,7 +4,7 @@ KnowledgeChunk model - vector chunks for RAG retrieval.
 import hashlib
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
-from pgvector.django import VectorField
+from pgvector.django import HnswIndex, VectorField
 from common.models.base import TenantAwareModel
 
 
@@ -91,6 +91,13 @@ class KnowledgeChunk(TenantAwareModel):
             models.Index(fields=['organization']),
             models.Index(fields=['product']),
             models.Index(fields=['content_hash']),
+            HnswIndex(
+                name='kchunk_embedding_hnsw_idx',
+                fields=['embedding'],
+                m=16,
+                ef_construction=64,
+                opclasses=['vector_cosine_ops'],
+            ),
         ]
         ordering = ['knowledge_item', 'chunk_index']
 

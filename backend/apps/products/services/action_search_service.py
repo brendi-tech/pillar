@@ -6,6 +6,7 @@ Always returns actions to give LLM context about available capabilities.
 
 Copyright (C) 2025 Pillar Team
 """
+import asyncio
 import logging
 import time
 from dataclasses import dataclass, field
@@ -13,6 +14,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from asgiref.sync import sync_to_async
 from django.conf import settings
+from pgvector.django import CosineDistance
 
 logger = logging.getLogger(__name__)
 
@@ -150,36 +152,47 @@ class ActionSearchService:
             service = get_embedding_service()
             query_embedding = await service.embed_query_async(query)
 
-            # Score all actions by embedding similarity (hybrid: description + examples)
-            all_scored: List[Tuple[float, Any]] = []
+            # 1. Score description embeddings in PostgreSQL via pgvector CosineDistance
+            # Single DB roundtrip replaces the previous per-action numpy loop that
+            # blocked the event loop for 15-20 seconds.
+            desc_scored_actions = await sync_to_async(list)(
+                actions.annotate(
+                    desc_distance=CosineDistance('description_embedding', query_embedding)
+                ).order_by('desc_distance')
+            )
 
-            async for action in actions.aiterator():
-                # Score against description embedding
-                desc_score = 0.0
-                if action.description_embedding is not None and len(action.description_embedding) > 0:
-                    desc_score = service.calculate_similarity(
-                        query_embedding,
-                        list(action.description_embedding)
-                    )
+            # 2. Score example embeddings for top candidates in a thread pool
+            # example_embeddings is a JSONField (list of vectors) so can't use pgvector.
+            # Runs in a thread to avoid blocking the event loop.
+            top_candidates = desc_scored_actions[:candidates_limit]
 
-                # Score against example embeddings (take best match)
-                example_score = 0.0
-                if action.example_embeddings:
-                    for ex_embedding in action.example_embeddings:
-                        if ex_embedding:
-                            sim = service.calculate_similarity(query_embedding, ex_embedding)
-                            example_score = max(example_score, sim)
+            def _score_with_examples(candidates, q_embedding):
+                """Score example embeddings synchronously - runs in thread pool."""
+                scored = []
+                for action in candidates:
+                    # CosineDistance: 0 = identical, 2 = opposite → similarity = 1 - distance
+                    desc_score = 1.0 - action.desc_distance if action.desc_distance is not None else 0.0
 
-                # Final score = max of description and best example match
-                final_score = max(desc_score, example_score)
+                    example_score = 0.0
+                    if action.example_embeddings:
+                        for ex_embedding in action.example_embeddings:
+                            if ex_embedding:
+                                sim = service.calculate_similarity(q_embedding, ex_embedding)
+                                example_score = max(example_score, sim)
 
-                # Only include if we have at least one embedding
-                if desc_score > 0 or example_score > 0:
-                    logger.debug(
-                        f"[ActionSearch] '{action.name}' desc={desc_score:.3f} "
-                        f"example={example_score:.3f} final={final_score:.3f}"
-                    )
-                    all_scored.append((final_score, action))
+                    final_score = max(desc_score, example_score)
+
+                    if desc_score > 0 or example_score > 0:
+                        logger.debug(
+                            f"[ActionSearch] '{action.name}' desc={desc_score:.3f} "
+                            f"example={example_score:.3f} final={final_score:.3f}"
+                        )
+                        scored.append((final_score, action))
+                return scored
+
+            all_scored = await asyncio.to_thread(
+                _score_with_examples, top_candidates, query_embedding
+            )
 
             # Sort by similarity descending
             all_scored.sort(key=lambda x: -x[0])

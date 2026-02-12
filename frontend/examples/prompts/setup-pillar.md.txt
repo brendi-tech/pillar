@@ -21,8 +21,8 @@ Pillar provides:
 - Add PillarProvider to the app root
 - Create .env.local with NEXT_PUBLIC_PILLAR_PRODUCT_KEY set to your product key
 
-### 3. Generate Actions (10-15 based on my app)
-Look at my routes, features, and modals to generate actions:
+### 3. Generate Actions (10-30 based on my app)
+Look at my routes, features, modals, and APIs to generate actions:
 
 ```tsx
 // lib/pillar/actions.ts
@@ -31,6 +31,8 @@ import { defineActions } from '@pillar-ai/sdk';
 export const actions = defineActions({
   // Navigation actions based on my routes
   // Trigger actions for modals/wizards I have
+  // Query actions that fetch data and return it to the AI (type: 'query')
+  // API actions that create/update/delete with returns: true
   // Admin-only actions with requiredContext
 });
 ```
@@ -85,7 +87,25 @@ export function PillarActionHandlers() {
 }
 ```
 
-### 6. Add Assistant Button (if sidebar is disabled)
+### 6. (Optional) Add Agent Guidance for Workflows
+If your app has multi-step workflows or API actions, add agent guidance to steer the AI:
+
+```tsx
+// lib/pillar/actions/index.ts (export alongside your actions)
+export const agentGuidance = `
+PREFER API OVER NAVIGATION:
+- When you can accomplish a task via API, prefer that over navigating to a form
+- API actions execute instantly and return structured results
+
+VERIFY BEFORE COMMITTING:
+- When creating resources, test the query or configuration first to confirm it works
+- Only create after validation succeeds
+`;
+```
+
+Then sync with `npx pillar-sync --actions ./lib/pillar/actions/index.ts`.
+
+### 7. Add Assistant Button (if sidebar is disabled)
 If the edge trigger sidebar is disabled, create a custom button to open the panel.
 
 ## Start Here

@@ -453,16 +453,12 @@ function ActionsStep() {
                 <TableCell className="text-sm text-muted-foreground">Go to a page in your app</TableCell>
               </TableRow>
               <TableRow>
-                <TableCell className="font-mono text-xs">trigger_tool</TableCell>
-                <TableCell className="text-sm text-muted-foreground">Run custom logic (modals, wizards)</TableCell>
+                <TableCell className="font-mono text-xs">trigger_action</TableCell>
+                <TableCell className="text-sm text-muted-foreground">Run custom logic (modals, wizards, API calls)</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell className="font-mono text-xs">query</TableCell>
-                <TableCell className="text-sm text-muted-foreground">Search or filter data</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="font-mono text-xs">open_modal</TableCell>
-                <TableCell className="text-sm text-muted-foreground">Open a modal or dialog</TableCell>
+                <TableCell className="text-sm text-muted-foreground">Fetch data and return to the AI agent</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell className="font-mono text-xs">external_link</TableCell>
