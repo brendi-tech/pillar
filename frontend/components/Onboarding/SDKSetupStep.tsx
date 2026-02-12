@@ -432,7 +432,7 @@ function ActionsStep() {
     <div className="space-y-4">
       <p className="text-muted-foreground text-sm">
         Actions let the AI assistant perform tasks in your app, like navigating
-        to pages or triggering features.
+        to pages or triggering features. Use the <code className="bg-muted px-1 rounded">usePillarAction</code> hook to define actions with co-located handlers.
       </p>
 
       <AIPromptBlock title="Build actions for my app" src="build-actions.md" />
@@ -457,16 +457,16 @@ function ActionsStep() {
                 <TableCell className="text-sm text-muted-foreground">Run custom logic (modals, wizards)</TableCell>
               </TableRow>
               <TableRow>
-                <TableCell className="font-mono text-xs">inline_ui</TableCell>
-                <TableCell className="text-sm text-muted-foreground">Show interactive UI in chat</TableCell>
+                <TableCell className="font-mono text-xs">query</TableCell>
+                <TableCell className="text-sm text-muted-foreground">Search or filter data</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="font-mono text-xs">open_modal</TableCell>
+                <TableCell className="text-sm text-muted-foreground">Open a modal or dialog</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell className="font-mono text-xs">external_link</TableCell>
                 <TableCell className="text-sm text-muted-foreground">Open URL in new tab</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="font-mono text-xs">copy_text</TableCell>
-                <TableCell className="text-sm text-muted-foreground">Copy text to clipboard</TableCell>
               </TableRow>
             </TableBody>
           </Table>
@@ -474,23 +474,21 @@ function ActionsStep() {
       </div>
 
       <div className="space-y-2">
-        <h4 className="text-sm font-medium">Define your actions</h4>
-        <SyntaxHighlightedPre code={actionsCode} language="typescript" filePath="lib/pillar/actions.ts" docsUrl="https://trypillar.com/docs/guides/actions" />
-      </div>
-      <div className="bg-amber-100 dark:bg-amber-500/10 rounded-lg p-3 border border-amber-300 dark:border-amber-500/30 flex gap-2">
-        <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-500 shrink-0 mt-0.5" />
-        <p className="text-sm text-amber-800 dark:text-amber-200">
-          <strong>Important:</strong> Export all actions from a single file
-          (e.g., <code className="bg-amber-200 dark:bg-amber-500/20 px-1 rounded">lib/pillar/actions.ts</code>).
-          The sync CLI reads this file to register your actions with Pillar.
-        </p>
+        <h4 className="text-sm font-medium">Define actions with usePillarAction</h4>
+        <SyntaxHighlightedPre code={actionsCode} language="typescript" filePath="hooks/usePillarActions.ts" docsUrl="https://trypillar.com/docs/guides/actions" />
       </div>
 
       <div className="space-y-2">
-        <h4 className="text-sm font-medium">Register action handlers</h4>
+        <h4 className="text-sm font-medium">Use the hook in your app</h4>
         <SyntaxHighlightedPre code={handlerCode} language="tsx" filePath="app/layout.tsx" docsUrl="https://trypillar.com/docs/guides/actions" />
       </div>
 
+      <div className="bg-blue-100 dark:bg-blue-500/10 rounded-lg p-3 border border-blue-300 dark:border-blue-500/30 flex gap-2">
+        <Check className="h-4 w-4 text-blue-600 dark:text-blue-500 shrink-0 mt-0.5" />
+        <p className="text-sm text-blue-800 dark:text-blue-200">
+          The CLI automatically scans your code for <code className="bg-blue-200 dark:bg-blue-500/20 px-1 rounded">usePillarAction</code> calls — no need to export from a single file.
+        </p>
+      </div>
 
       <p className="text-xs text-muted-foreground">
         The AI uses the description and examples to match user requests to the right action.{' '}
@@ -513,23 +511,23 @@ function SyncStep({ subdomain, productId }: { subdomain: string; productId: stri
     setNewlyGeneratedSecret({ secret, name });
   };
 
-  const manualSyncCode = `PILLAR_SLUG=your-slug PILLAR_SECRET=your-secret npx pillar-sync --actions ./lib/pillar/actions.ts`;
+  const manualSyncCode = `PILLAR_SLUG=your-slug PILLAR_SECRET=your-secret npx pillar-sync --scan ./src`;
 
   const syncCode = `# Run in your CI/CD pipeline after building
-npx pillar-sync --actions ./lib/pillar/actions.ts`;
+npx pillar-sync --scan ./src`;
 
   const ciCode = `# Example GitHub Actions step
 - name: Sync Pillar Actions
   env:
     PILLAR_SLUG: \${{ secrets.PILLAR_SLUG }}
     PILLAR_SECRET: \${{ secrets.PILLAR_SECRET }}
-  run: npx pillar-sync --actions ./lib/pillar/actions.ts`;
+  run: npx pillar-sync --scan ./src`;
 
   return (
     <div className="space-y-4">
       <p className="text-muted-foreground text-sm">
-        Sync your actions to Pillar so the AI knows what actions are available.
-        Run this in your CI/CD pipeline.
+        The CLI scans your code for <code className="bg-muted px-1 rounded">usePillarAction</code> calls and syncs them to Pillar.
+        Run this in your CI/CD pipeline to keep actions up to date.
       </p>
 
       {/* PILLAR_SLUG */}

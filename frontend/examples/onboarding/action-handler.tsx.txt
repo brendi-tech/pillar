@@ -1,25 +1,19 @@
-// In your app where you set up PillarProvider
+// app/layout.tsx (or your root component)
 import { PillarProvider } from '@pillar-ai/react';
-import { actions } from './lib/pillar/actions';
-import { useRouter } from 'next/navigation';
+import { usePillarActions } from './hooks/usePillarActions';
 
-function App() {
-  const router = useRouter();
+function PillarActionsProvider({ children }) {
+  // Register all actions - handlers are co-located in the hook
+  usePillarActions();
+  return children;
+}
 
+export default function RootLayout({ children }) {
   return (
-    <PillarProvider
-      productKey="your-product-key"
-      actions={actions}
-      onTask={(taskName, data) => {
-        if (taskName === 'open_settings') {
-          router.push('/settings');
-        }
-        if (taskName === 'contact_support') {
-          // Open your support modal
-        }
-      }}
-    >
-      <YourApp />
+    <PillarProvider productKey="your-product-key">
+      <PillarActionsProvider>
+        {children}
+      </PillarActionsProvider>
     </PillarProvider>
   );
 }

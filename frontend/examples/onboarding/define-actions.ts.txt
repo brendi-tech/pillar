@@ -1,17 +1,24 @@
-// lib/pillar/actions.ts
-import type { SyncActionDefinitions } from '@pillar-ai/sdk';
+// hooks/usePillarActions.ts
+import { usePillarAction } from '@pillar-ai/react';
+import { useRouter } from 'next/navigation';
 
-export const actions = {
-  open_settings: {
+export function usePillarActions() {
+  const router = useRouter();
+
+  usePillarAction({
+    name: 'open_settings',
+    type: 'navigate',
     description: 'Navigate to the settings page',
     examples: ['open settings', 'go to settings', 'settings'],
-    type: 'navigate',
-    path: '/settings',
     autoRun: true,
-  },
-  contact_support: {
+    execute: () => router.push('/settings'),
+  });
+
+  usePillarAction({
+    name: 'contact_support',
+    type: 'open_modal',
     description: 'Open contact support form',
     examples: ['contact support', 'talk to someone', 'get help'],
-    type: 'trigger_action',
-  },
-} satisfies SyncActionDefinitions;
+    execute: () => openSupportModal(),
+  });
+}
