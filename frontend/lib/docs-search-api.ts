@@ -33,7 +33,8 @@ interface MCPResponse {
 }
 
 /**
- * Search docs using MCP keyword_search tool
+ * Search docs using MCP keyword_search tool.
+ * Throws on network/API errors so callers can display error state.
  */
 export async function searchDocs(
   query: string,
@@ -43,39 +44,32 @@ export async function searchDocs(
     return [];
   }
 
-  try {
-    const response = await fetch(`${API_BASE_URL}/mcp/`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-customer-id": "pillar-docs", // Site context
+  const response = await fetch(`${API_BASE_URL}/mcp/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-customer-id": "pillar-docs", // Site context
+    },
+    body: JSON.stringify({
+      jsonrpc: "2.0",
+      id: Date.now(),
+      method: "tools/call",
+      params: {
+        name: "keyword_search",
+        arguments: { query, top_k: topK },
       },
-      body: JSON.stringify({
-        jsonrpc: "2.0",
-        id: Date.now(),
-        method: "tools/call",
-        params: {
-          name: "keyword_search",
-          arguments: { query, top_k: topK },
-        },
-      }),
-    });
+    }),
+  });
 
-    if (!response.ok) {
-      console.error("[DocsSearch] API error:", response.status);
-      return [];
-    }
-
-    const data: MCPResponse = await response.json();
-
-    if (data.error) {
-      console.error("[DocsSearch] MCP error:", data.error.message);
-      return [];
-    }
-
-    return data.result?.results || [];
-  } catch (error) {
-    console.error("[DocsSearch] Failed to search:", error);
-    return [];
+  if (!response.ok) {
+    throw new Error(`Search unavailable (${response.status})`);
   }
+
+  const data: MCPResponse = await response.json();
+
+  if (data.error) {
+    throw new Error(data.error.message);
+  }
+
+  return data.result?.results || [];
 }

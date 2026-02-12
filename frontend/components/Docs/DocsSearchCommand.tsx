@@ -9,7 +9,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { searchDocs, type SearchResult } from "@/lib/docs-search-api";
-import { Hash } from "lucide-react";
+import { AlertCircle, Hash } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
@@ -26,6 +26,7 @@ export function DocsSearchCommand({
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   // Reset state when dialog closes
@@ -34,6 +35,7 @@ export function DocsSearchCommand({
       setQuery("");
       setResults([]);
       setHasSearched(false);
+      setError(null);
     }
   }, [open]);
 
@@ -59,13 +61,22 @@ export function DocsSearchCommand({
 
     // Reset hasSearched when query changes (during debounce)
     setHasSearched(false);
+    setError(null);
 
     const timer = setTimeout(async () => {
       setIsLoading(true);
-      const searchResults = await searchDocs(query);
-      setResults(searchResults);
-      setIsLoading(false);
-      setHasSearched(true); // Only true after search completes
+      try {
+        const searchResults = await searchDocs(query);
+        setResults(searchResults);
+        setError(null);
+      } catch (err) {
+        console.error("[DocsSearch] Failed to search:", err);
+        setResults([]);
+        setError("Search is temporarily unavailable. Please try again.");
+      } finally {
+        setIsLoading(false);
+        setHasSearched(true);
+      }
     }, 300);
 
     return () => clearTimeout(timer);
@@ -116,8 +127,16 @@ export function DocsSearchCommand({
           </div>
         )}
 
+        {/* Error state */}
+        {!isLoading && error && (
+          <div className="px-4 py-6 text-center text-sm">
+            <AlertCircle className="h-4 w-4 text-muted-foreground mx-auto mb-2" />
+            <div className="text-muted-foreground">{error}</div>
+          </div>
+        )}
+
         {/* No results found - only show after search actually completes */}
-        {!isLoading && hasSearched && query && results.length === 0 && (
+        {!isLoading && !error && hasSearched && query && results.length === 0 && (
           <div className="py-6 text-center text-sm">
             <div className="text-muted-foreground">No results found for</div>
             <div className="font-medium mt-1">&ldquo;{query}&rdquo;</div>

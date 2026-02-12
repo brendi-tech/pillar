@@ -452,9 +452,9 @@ HELP_CENTER_URL = os.environ.get('HELP_CENTER_URL', 'http://localhost:3001')
 BACKEND_URL = os.environ.get('HELP_CENTER_BACKEND_URL', os.environ.get('BACKEND_URL', 'http://localhost:8003'))
 
 # Admin dashboard URL (for invitation emails, password reset, etc.)
-# Defaults to admin.localhost:3001 for local dev, but should be set to
-# admin.pillar.bot (dev) or admin.trypillar.com (prod) in production
-ADMIN_URL = os.environ.get('ADMIN_URL', 'http://admin.localhost:3001')
+# Defaults to dev environment — override via ADMIN_URL env var.
+# dev: https://admin.pillar.bot  |  prod: https://admin.trypillar.com
+ADMIN_URL = os.environ.get('ADMIN_URL', 'https://admin.trypillar.com')
 
 # ==============================================================================
 # LOGGING CONFIGURATION
