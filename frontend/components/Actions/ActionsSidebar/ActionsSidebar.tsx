@@ -1,5 +1,6 @@
 "use client";
 
+import { ActionSyncModal } from "@/components/ActionsPageContent/ActionSyncModal";
 import { Button } from "@/components/ui/button";
 import {
   Collapsible,
@@ -14,10 +15,7 @@ import { cn } from "@/lib/utils";
 import { useProduct } from "@/providers";
 import { actionListQuery } from "@/queries/actions.queries";
 import type { Action, ActionType } from "@/types/actions";
-import {
-  ACTION_TYPE_LABELS,
-  deriveActionLabel,
-} from "@/types/actions";
+import { ACTION_TYPE_LABELS, deriveActionLabel } from "@/types/actions";
 import { useQuery } from "@tanstack/react-query";
 import {
   ArrowRight,
@@ -38,7 +36,6 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { ActionSyncModal } from "@/components/ActionsPageContent/ActionSyncModal";
 import { usePathname } from "next/navigation";
 import { useMemo, useState } from "react";
 
@@ -151,6 +148,7 @@ export function ActionsSidebar({
     () => groupActionsByType(filteredActions),
     [filteredActions]
   );
+  console.log(filteredActions);
 
   // Track which groups are expanded
   const [expandedGroups, setExpandedGroups] = useState<Set<ActionType>>(
@@ -304,7 +302,11 @@ interface ActionListItemProps {
   onNavigate?: () => void;
 }
 
-function ActionListItem({ action, isSelected, onNavigate }: ActionListItemProps) {
+function ActionListItem({
+  action,
+  isSelected,
+  onNavigate,
+}: ActionListItemProps) {
   return (
     <Link
       href={`/actions/${action.id}`}

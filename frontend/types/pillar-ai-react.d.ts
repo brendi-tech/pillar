@@ -283,15 +283,17 @@ declare module "@pillar-ai/react" {
    * const { pillar, open, close } = usePillar();
    * ```
    *
-   * @example Type-safe onTask with action definitions
+   * @example Registering actions with usePillarAction (recommended)
    * ```tsx
-   * import { actions } from "@/lib/pillar/actions";
+   * import { usePillarAction } from '@pillar-ai/react';
    *
-   * const { onTask } = usePillar<typeof actions>();
-   *
-   * // TypeScript knows data has the right shape!
-   * onTask("add_new_source", (data) => {
-   *   console.log(data.url); // ✓ Typed
+   * // Co-located metadata and handler
+   * usePillarAction({
+   *   name: 'add_to_cart',
+   *   description: 'Add a product to the cart',
+   *   execute: async ({ productId }) => {
+   *     await cartApi.add(productId);
+   *   },
    * });
    * ```
    */
