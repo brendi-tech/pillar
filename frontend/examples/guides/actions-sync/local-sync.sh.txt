@@ -1,3 +1,3 @@
 # Sync against local Pillar backend (localhost:8003)
 PILLAR_SLUG=my-app PILLAR_SECRET=dev-secret \
-  npx pillar-sync --actions ./lib/pillar/actions.ts --local
+  npx pillar-sync --scan ./src --local

@@ -1,5 +1,16 @@
-pillar.onTask('start_tour', () => {
-  pillar.close(); // Close panel first
-  startOnboardingTour();
-  return { success: true };
-});
+import { usePillarAction, usePillar } from "@pillar-ai/react";
+
+export function useTourAction() {
+  const { close } = usePillar();
+
+  usePillarAction({
+    name: "start_tour",
+    type: "trigger_action",
+    description: "Start the onboarding tour",
+    execute: () => {
+      close(); // Close panel first
+      startOnboardingTour();
+      return { success: true };
+    },
+  });
+}

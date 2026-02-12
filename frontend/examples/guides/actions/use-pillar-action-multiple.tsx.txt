@@ -1,0 +1,31 @@
+import { usePillarAction } from "@pillar-ai/react";
+import { useRouter } from "next/navigation";
+
+export function useNavigationActions() {
+  const router = useRouter();
+
+  // Register multiple related actions in a single call
+  usePillarAction([
+    {
+      name: "open_billing",
+      type: "navigate",
+      description: "Navigate to billing and subscription settings",
+      examples: ["go to billing", "view my subscription", "payment settings"],
+      execute: () => router.push("/settings/billing"),
+    },
+    {
+      name: "open_team",
+      type: "navigate",
+      description: "Navigate to team management page",
+      examples: ["manage team", "invite team members", "team settings"],
+      execute: () => router.push("/settings/team"),
+    },
+    {
+      name: "open_integrations",
+      type: "navigate",
+      description: "Navigate to integrations and connected apps",
+      examples: ["view integrations", "connect apps", "api settings"],
+      execute: () => router.push("/settings/integrations"),
+    },
+  ]);
+}

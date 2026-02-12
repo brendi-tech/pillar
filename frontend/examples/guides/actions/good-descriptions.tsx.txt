@@ -1,5 +1,13 @@
 // Good - specific about when to use
-description: 'Navigate to billing page. Suggest when user asks about payments, invoices, or subscription.'
+usePillarAction({
+  name: "view_billing",
+  description: "Navigate to billing page. Suggest when user asks about payments, invoices, or subscription.",
+  // ...
+});
 
 // Less helpful - too generic
-description: 'Go to billing'
+usePillarAction({
+  name: "view_billing",
+  description: "Go to billing",
+  // ...
+});

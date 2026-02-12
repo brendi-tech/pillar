@@ -1,0 +1,43 @@
+import { usePillarAction } from "@pillar-ai/react";
+import { useRouter } from "next/navigation";
+
+export function usePillarActions() {
+  const router = useRouter();
+
+  // Basic navigation action
+  usePillarAction({
+    name: "open_dashboard",
+    type: "navigate",
+    description: "Navigate to the main dashboard",
+    examples: ["go to dashboard", "show me the dashboard", "open home"],
+    execute: () => {
+      router.push("/dashboard");
+    },
+  });
+
+  // Action with input schema for data extraction
+  usePillarAction({
+    name: "view_user_profile",
+    type: "navigate",
+    description: "View a specific user's profile page",
+    inputSchema: {
+      userId: { type: "string", description: "The user ID to view" },
+    },
+    examples: ["show user 123's profile", "view profile for john@example.com"],
+    execute: ({ userId }) => {
+      router.push(`/users/${userId}`);
+    },
+  });
+
+  // Auto-run action (executes without confirmation)
+  usePillarAction({
+    name: "toggle_dark_mode",
+    type: "trigger_action",
+    description: "Toggle between light and dark theme",
+    autoRun: true,
+    examples: ["switch to dark mode", "turn on light theme"],
+    execute: () => {
+      document.documentElement.classList.toggle("dark");
+    },
+  });
+}

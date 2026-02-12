@@ -1,6 +1,10 @@
-delete_user: {
-  description: 'Delete a user from the organization',
-  type: 'trigger_action',
-  requiredContext: { userRole: 'admin' },
-  handler: ({ userId }) => deleteUser(userId),
-}
+usePillarAction({
+  name: "delete_user",
+  type: "trigger_action",
+  description: "Delete a user from the organization",
+  requiredContext: { userRole: "admin" },
+  inputSchema: {
+    userId: { type: "string", description: "ID of the user to delete" },
+  },
+  execute: ({ userId }) => deleteUser(userId),
+});

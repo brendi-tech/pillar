@@ -1,0 +1,31 @@
+// src/hooks/usePillarActions.ts
+import { usePillarAction } from "@pillar-ai/react";
+import { useRouter } from "next/navigation";
+
+export function usePillarActions() {
+  const router = useRouter();
+
+  usePillarAction({
+    name: "open_settings",
+    type: "navigate",
+    description: "Open the application settings page",
+    examples: ["go to settings", "open preferences", "change my settings"],
+    execute: () => {
+      router.push("/settings");
+    },
+  });
+
+  usePillarAction({
+    name: "search_products",
+    type: "query",
+    description: "Search for products in the catalog",
+    inputSchema: {
+      query: { type: "string", description: "Search term" },
+      category: { type: "string", description: "Optional category filter" },
+    },
+    examples: ["find blue shirts", "search for laptops under $1000"],
+    execute: async ({ query, category }) => {
+      router.push(`/search?q=${query}${category ? `&cat=${category}` : ""}`);
+    },
+  });
+}

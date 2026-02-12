@@ -1,24 +1,15 @@
-add_source: {
-  description: 'Add a new knowledge source',
-  type: 'trigger_action',
-  dataSchema: {
-    type: 'object',
-    properties: {
-      url: {
-        type: 'string',
-        description: 'URL of the source to add',
-      },
-      name: {
-        type: 'string',
-        description: 'Display name for the source',
-      },
-    },
-    required: ['url'],
+usePillarAction({
+  name: "add_source",
+  type: "trigger_action",
+  description: "Add a new knowledge source",
+  inputSchema: {
+    url: { type: "string", description: "URL of the source to add" },
+    name: { type: "string", description: "Display name for the source" },
   },
-  handler: (data) => {
+  execute: ({ url, name }) => {
     openAddSourceWizard({
-      prefillUrl: data.url,
-      prefillName: data.name,
+      prefillUrl: url,
+      prefillName: name,
     });
   },
-}
+});

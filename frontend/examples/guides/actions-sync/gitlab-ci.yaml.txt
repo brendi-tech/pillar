@@ -13,7 +13,7 @@ build:
 sync-pillar:
   stage: sync
   script:
-    - npx pillar-sync --actions ./lib/pillar/actions.ts
+    - npx pillar-sync --scan ./src
   variables:
     PILLAR_SLUG: $PILLAR_SLUG
     PILLAR_SECRET: $PILLAR_SECRET

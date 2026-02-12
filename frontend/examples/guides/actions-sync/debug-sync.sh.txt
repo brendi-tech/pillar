@@ -1,6 +1,6 @@
 # Enable debug mode to write manifest to disk
 PILLAR_DEBUG=1 PILLAR_SLUG=my-app PILLAR_SECRET=xxx \
-  npx pillar-sync --actions ./lib/pillar/actions.ts
+  npx pillar-sync --scan ./src
 
 # Check the generated manifest
 cat actions-manifest.json

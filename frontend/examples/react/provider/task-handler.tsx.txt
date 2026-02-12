@@ -1,13 +1,25 @@
+// Generic handler for dynamic or backend-triggered actions
+// For most cases, prefer usePillarAction for type-safe, co-located handlers
+
 <PillarProvider
   productKey="your-product-key"
   onTask={(task) => {
+    // Handle dynamic action names
+    if (task.name.startsWith('nav_')) {
+      router.push(task.data.path);
+      return;
+    }
+
+    // Handle backend-triggered events
     switch (task.name) {
-      case 'navigate':
-        router.push(task.data.path);
+      case 'notification':
+        showNotification(task.data.message);
         break;
-      case 'open_settings':
-        setShowSettings(true);
+      case 'refresh_data':
+        queryClient.invalidateQueries();
         break;
     }
   }}
 >
+  {children}
+</PillarProvider>

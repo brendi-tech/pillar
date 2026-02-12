@@ -1,9 +1,10 @@
-billing_settings: {
-  description: 'Access billing settings',
-  type: 'navigate',
-  path: '/settings/billing',
+usePillarAction({
+  name: "beta_feature",
+  type: "trigger_action",
+  description: "Access the beta analytics dashboard",
   requiredContext: {
-    userRole: 'admin',
-    userState: 'active',  // Not during trial
+    plan: "enterprise",
+    betaAccess: true,
   },
-}
+  execute: () => router.push("/analytics/beta"),
+});

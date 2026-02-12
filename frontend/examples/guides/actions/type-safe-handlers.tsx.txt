@@ -1,16 +1,24 @@
-import { usePillar } from '@pillar-ai/react';
-import type { actions } from '@/lib/pillar/actions';
+import { usePillarAction } from "@pillar-ai/react";
 
-function ActionHandlers() {
-  const { onTask } = usePillar<typeof actions>();
+// Define input type for type safety
+interface InviteMemberInput {
+  email: string;
+  role: "admin" | "member" | "viewer";
+}
 
-  useEffect(() => {
-    // TypeScript knows the data shape for each action
-    onTask('invite_member', (data) => {
-      console.log(data.email); // Typed!
-      console.log(data.role);  // Typed!
-    });
-  }, [onTask]);
-
-  return null;
+export function useInviteAction() {
+  usePillarAction({
+    name: "invite_member",
+    type: "trigger_action",
+    description: "Invite a new team member",
+    inputSchema: {
+      email: { type: "string", description: "Email of the person to invite" },
+      role: { type: "string", description: "Role: admin, member, or viewer" },
+    },
+    execute: (input: InviteMemberInput) => {
+      // TypeScript knows input has email and role
+      console.log(`Inviting ${input.email} as ${input.role}`);
+      sendInvite(input.email, input.role);
+    },
+  });
 }

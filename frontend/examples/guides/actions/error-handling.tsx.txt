@@ -1,12 +1,17 @@
-pillar.onTask('export_data', async (data) => {
-  try {
-    await exportData(data);
-    return { success: true };
-  } catch (error) {
-    console.error('Export failed:', error);
-    return {
-      success: false,
-      message: 'Export failed. Please try again.',
-    };
-  }
+usePillarAction({
+  name: "export_data",
+  type: "trigger_action",
+  description: "Export all data as CSV",
+  execute: async () => {
+    try {
+      await exportData();
+      return { success: true };
+    } catch (error) {
+      console.error("Export failed:", error);
+      return {
+        success: false,
+        message: "Export failed. Please try again.",
+      };
+    }
+  },
 });

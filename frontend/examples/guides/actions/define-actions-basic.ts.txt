@@ -1,32 +1,35 @@
-// lib/pillar/actions/index.ts
-import type { SyncActionDefinitions } from '@pillar-ai/sdk';
+// src/hooks/usePillarActions.ts
+import { usePillarAction } from "@pillar-ai/react";
+import { useRouter } from "next/navigation";
 
-export const actions = {
-  open_settings: {
-    description: 'Navigate to the settings page',
-    type: 'navigate' as const,
-    path: '/settings',
+export function usePillarActions() {
+  const router = useRouter();
+
+  usePillarAction({
+    name: "open_settings",
+    type: "navigate",
+    description: "Navigate to the settings page",
     autoRun: true,
-    autoComplete: true,
-  },
+    execute: () => router.push("/settings"),
+  });
 
-  invite_member: {
-    description: 'Open the invite team member modal',
+  usePillarAction({
+    name: "invite_member",
+    type: "open_modal",
+    description: "Open the invite team member modal",
     examples: [
-      'invite someone to my team',
-      'add a new user',
-      'how do I invite people?',
+      "invite someone to my team",
+      "add a new user",
+      "how do I invite people?",
     ],
-    type: 'trigger_action' as const,
-  },
+    execute: ({ setShowInviteModal }) => setShowInviteModal(true),
+  });
 
-  view_billing: {
-    description: 'Navigate to billing and subscription settings',
-    type: 'navigate' as const,
-    path: '/settings/billing',
+  usePillarAction({
+    name: "view_billing",
+    type: "navigate",
+    description: "Navigate to billing and subscription settings",
     autoRun: true,
-    autoComplete: true,
-  },
-} as const satisfies SyncActionDefinitions;
-
-export default actions;
+    execute: () => router.push("/settings/billing"),
+  });
+}

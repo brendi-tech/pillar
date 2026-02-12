@@ -1,13 +1,20 @@
-<PillarProvider
-  productKey="your-product-key"
-  onTask={(task) => {
-    switch (task.name) {
-      case 'navigate':
-        router.push(task.data.path);
-        break;
-      case 'invite_member':
-        setShowInviteModal(true);
-        break;
-    }
-  }}
->
+import { usePillar } from "@pillar-ai/react";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+
+export function useGenericHandlers() {
+  const { on, onTask } = usePillar();
+  const router = useRouter();
+
+  useEffect(() => {
+    // Handle any navigate action dynamically
+    onTask("navigate", (data) => {
+      router.push(data.path);
+    });
+
+    // Handle backend-triggered events
+    on("session:updated", (session) => {
+      console.log("Session updated:", session);
+    });
+  }, [on, onTask, router]);
+}

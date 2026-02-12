@@ -1,13 +1,20 @@
-function SourceWizard({ onComplete }) {
-  const { pillar } = usePillar();
+import { usePillarAction, usePillar } from "@pillar-ai/react";
 
-  const handleFinish = (source) => {
-    // 1. Your app logic
-    onComplete(source);
+export function useOnboardingAction() {
+  const { completeAction } = usePillar();
 
-    // 2. Tell Pillar the action is done
-    pillar.completeAction('add_source', true, { sourceId: source.id });
-  };
-
-  return <WizardSteps onFinish={handleFinish} />;
+  usePillarAction({
+    name: "start_onboarding",
+    type: "trigger_action",
+    description: "Start the onboarding wizard",
+    execute: () => {
+      openOnboardingWizard({
+        onComplete: () => {
+          // Signal to Pillar that the action is done
+          completeAction();
+        },
+      });
+      // Don't return success yet - wizard handles completion
+    },
+  });
 }
