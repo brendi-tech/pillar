@@ -40,7 +40,8 @@ RUN uv sync --frozen --no-dev
 # Add .venv to PATH so installed packages are available
 ENV PATH="/app/.venv/bin:$PATH"
 
-# Install Playwright Chromium browser (Agent Score browser analysis)
+# Install Playwright Chromium browser to a shared path accessible by non-root user
+ENV PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright
 RUN playwright install chromium
 
 # Copy project files
