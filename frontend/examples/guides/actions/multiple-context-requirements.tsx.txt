@@ -1,6 +1,6 @@
-usePillarAction({
+usePillarTool({
   name: "beta_feature",
-  type: "trigger_action",
+  type: "trigger_tool",
   description: "Access the beta analytics dashboard",
   requiredContext: {
     plan: "enterprise",

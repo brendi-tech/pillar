@@ -1,4 +1,4 @@
-import { usePillarAction } from "@pillar-ai/react";
+import { usePillarTool } from "@pillar-ai/react";
 
 // Define input type for type safety
 interface InviteMemberInput {
@@ -6,10 +6,10 @@ interface InviteMemberInput {
   role: "admin" | "member" | "viewer";
 }
 
-export function useInviteAction() {
-  usePillarAction({
+export function useInviteTool() {
+  usePillarTool({
     name: "invite_member",
-    type: "trigger_action",
+    type: "trigger_tool",
     description: "Invite a new team member",
     inputSchema: {
       email: { type: "string", description: "Email of the person to invite" },

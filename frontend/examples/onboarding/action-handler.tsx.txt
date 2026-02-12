@@ -1,19 +1,19 @@
 // app/layout.tsx (or your root component)
 import { PillarProvider } from '@pillar-ai/react';
-import { usePillarActions } from './hooks/usePillarActions';
+import { usePillarTools } from './hooks/usePillarTools';
 
-function PillarActionsProvider({ children }) {
-  // Register all actions - handlers are co-located in the hook
-  usePillarActions();
+function PillarToolsProvider({ children }) {
+  // Register all tools - handlers are co-located in the hook
+  usePillarTools();
   return children;
 }
 
 export default function RootLayout({ children }) {
   return (
     <PillarProvider productKey="your-product-key">
-      <PillarActionsProvider>
+      <PillarToolsProvider>
         {children}
-      </PillarActionsProvider>
+      </PillarToolsProvider>
     </PillarProvider>
   );
 }

@@ -76,7 +76,7 @@ export function PillarActionHandlers() {
         router.push(path);
         return { success: true };
       }),
-      // Add handlers for trigger_action types
+      // Add handlers for trigger_tool types
     ];
     return () => handlers.forEach(unsub => unsub?.());
   }, [pillar, router]);

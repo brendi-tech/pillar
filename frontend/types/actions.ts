@@ -9,7 +9,8 @@ export type ActionType =
   | 'navigate'        // Navigate to a page in the host app
   | 'open_modal'      // Open a modal/dialog
   | 'fill_form'       // Fill form fields with data
-  | 'trigger_action'  // Trigger a custom action (generic)
+  | 'trigger_tool'    // Trigger a custom tool (generic)
+  | 'trigger_action'  // @deprecated - Use 'trigger_tool' instead
   | 'query'           // Query data from the client and return to the agent
   | 'copy_text'       // Copy text to clipboard
   | 'external_link'   // Open external link in new tab
@@ -288,7 +289,8 @@ export const ACTION_TYPE_LABELS: Record<ActionType, string> = {
   navigate: 'Navigate to Page',
   open_modal: 'Open Modal/Dialog',
   fill_form: 'Fill Form Fields',
-  trigger_action: 'Trigger Custom Action',
+  trigger_tool: 'Trigger Custom Tool',
+  trigger_action: 'Trigger Custom Tool', // @deprecated alias
   query: 'Query Data',
   copy_text: 'Copy to Clipboard',
   external_link: 'Open External Link',
@@ -304,7 +306,8 @@ export const ACTION_TYPE_ICONS: Record<ActionType, string> = {
   navigate: 'arrow-right',
   open_modal: 'layout',
   fill_form: 'edit-3',
-  trigger_action: 'zap',
+  trigger_tool: 'zap',
+  trigger_action: 'zap', // @deprecated alias
   query: 'database',
   copy_text: 'copy',
   external_link: 'external-link',
@@ -319,7 +322,8 @@ export const ACTION_TYPE_DESCRIPTIONS: Record<ActionType, string> = {
   navigate: 'Redirect the user to a specific page or route in your app',
   open_modal: 'Open a modal, dialog, or slide-over panel',
   fill_form: 'Pre-fill form fields with specific values',
-  trigger_action: 'Execute a custom action handler in your app',
+  trigger_tool: 'Execute a custom tool handler in your app',
+  trigger_action: 'Execute a custom tool handler in your app', // @deprecated alias
   query: 'Query data from the client and return results to the agent',
   copy_text: 'Copy text content to the user\'s clipboard',
   external_link: 'Open an external URL in a new browser tab',

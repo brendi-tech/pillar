@@ -1,19 +1,19 @@
 "use client";
 
 /**
- * usePillarActions Hook
+ * usePillarTools Hook
  *
- * Registers all Pillar actions with co-located metadata and handlers.
- * Uses the new usePillarAction hook that supports multiple actions.
+ * Registers all Pillar tools with co-located metadata and handlers.
+ * Uses the new usePillarTool hook that supports multiple tools.
  *
- * Actions are auto-discovered by the sync CLI via:
- *   npx pillar-sync --scan ./hooks/usePillarActions.ts
+ * Tools are auto-discovered by the sync CLI via:
+ *   npx pillar-sync --scan ./hooks/usePillarTools.ts
  *
  * @example
  * ```tsx
  * // In PillarRouteSync component
  * function PillarRouteSync() {
- *   usePillarActions();
+ *   usePillarTools();
  *   return null;
  * }
  * ```
@@ -23,15 +23,13 @@ import {
   show as showIntercom,
   showNewMessage as showIntercomWithMessage,
 } from "@intercom/messenger-js-sdk";
-import { usePillarAction, usePillarContext } from "@pillar-ai/react";
+import { usePillarContext, usePillarTool } from "@pillar-ai/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTheme } from "next-themes";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect } from "react";
 
-import {
-  openThemeSelectorModal,
-} from "@/components/ThemeSelectorModal";
+import { openThemeSelectorModal } from "@/components/ThemeSelectorModal";
 import { actionsAPI } from "@/lib/admin/actions-api";
 import {
   analyticsAPI,
@@ -42,8 +40,8 @@ import { snippetsAPI } from "@/lib/admin/knowledge-api";
 import { organizationAPI } from "@/lib/admin/organization-api";
 import { knowledgeSourcesAPI } from "@/lib/admin/sources-api";
 import { navigateAndHighlight } from "@/lib/highlight";
-import { configKeys } from "@/queries/config.queries";
 import { useProduct } from "@/providers/ProductProvider";
+import { configKeys } from "@/queries/config.queries";
 
 /**
  * Extract a human-readable feature name from the current path
@@ -51,7 +49,7 @@ import { useProduct } from "@/providers/ProductProvider";
 function getFeatureName(path: string): string {
   const featureMap: Record<string, string> = {
     "/knowledge": "Knowledge",
-    "/actions": "Actions",
+    "/tools": "tools",
     "/settings": "Settings",
     "/team": "Team",
     "/configure": "Configure",
@@ -73,10 +71,10 @@ function getFeatureName(path: string): string {
 }
 
 /**
- * Hook that registers all Pillar actions with co-located metadata and handlers.
+ * Hook that registers all Pillar tools with co-located metadata and handlers.
  * Must be called within PillarProvider context.
  */
-export function usePillarActions() {
+export function usePillarTools() {
   const { pillar } = usePillarContext();
   const pathname = usePathname();
   const router = useRouter();
@@ -93,7 +91,7 @@ export function usePillarActions() {
   );
 
   // =========================================================================
-  // Event Listeners (UI events, not AI-invoked actions)
+  // Event Listeners (UI events, not AI-invoked tools)
   // =========================================================================
   useEffect(() => {
     if (!pillar) return;
@@ -110,7 +108,7 @@ export function usePillarActions() {
       })
     );
 
-    // Generic Navigation Handler - fallback for navigate-type actions
+    // Generic Navigation Handler - fallback for navigate-type tools
     unsubscribers.push(
       pillar.onTask("navigate", (data) => {
         const path = data.path;
@@ -127,9 +125,9 @@ export function usePillarActions() {
   }, [pillar, pathname, nav]);
 
   // =========================================================================
-  // Support Actions
+  // Support tools
   // =========================================================================
-  usePillarAction({
+  usePillarTool({
     name: "escalate",
     type: "external_link",
     description:
@@ -169,9 +167,9 @@ export function usePillarActions() {
   });
 
   // =========================================================================
-  // Navigation Actions
+  // Navigation tools
   // =========================================================================
-  usePillarAction([
+  usePillarTool([
     {
       name: "open_knowledge",
       type: "navigate",
@@ -213,23 +211,23 @@ export function usePillarActions() {
       },
     },
     {
-      name: "open_actions",
+      name: "open_tools",
       type: "navigate",
       description:
-        "Navigate to the Actions page to view and manage AI-suggested actions. " +
-        "Actions are buttons the AI can suggest to users. Use when user asks about " +
-        "actions, tasks, automation, or configuring what the AI can do.",
+        "Navigate to the tools page to view and manage AI-suggested tools. " +
+        "tools are buttons the AI can suggest to users. Use when user asks about " +
+        "tools, tasks, automation, or configuring what the AI can do.",
       examples: [
-        "open actions",
-        "go to actions",
-        "view actions",
-        "actions page",
-        "show me the actions",
+        "open tools",
+        "go to tools",
+        "view tools",
+        "tools page",
+        "show me the tools",
       ],
       autoRun: true,
       autoComplete: true,
       execute: (data: { highlight_selector?: string }) => {
-        nav("/actions", data.highlight_selector);
+        nav("/tools", data.highlight_selector);
       },
     },
     {
@@ -273,31 +271,31 @@ export function usePillarActions() {
       },
     },
     {
-      name: "create_new_action",
+      name: "create_new_tool",
       type: "navigate",
       description:
-        "Navigate to create a new action that the AI can suggest to users. " +
-        "Use when user wants to add a new action, create an automation, " +
+        "Navigate to create a new tool that the AI can suggest to users. " +
+        "Use when user wants to add a new tool, create an automation, " +
         "or define a new task for the AI assistant.",
       examples: [
-        "create new action",
-        "add an action",
-        "new action",
-        "create action",
+        "create new tool",
+        "add an tool",
+        "new tool",
+        "create tool",
         "add new task",
       ],
       autoRun: true,
       autoComplete: true,
       execute: () => {
-        nav("/actions/new");
+        nav("/tools/new");
       },
     },
   ]);
 
   // =========================================================================
-  // Settings Actions
+  // Settings tools
   // =========================================================================
-  usePillarAction([
+  usePillarTool([
     {
       name: "change_theme",
       type: "open_modal",
@@ -374,7 +372,7 @@ export function usePillarActions() {
     },
     {
       name: "enable_dark_mode",
-      type: "trigger_action",
+      type: "trigger_tool",
       description:
         "Switch to dark mode / dark theme. Use when user explicitly wants to " +
         "turn ON dark mode, enable dark mode, or switch TO dark theme.",
@@ -393,7 +391,7 @@ export function usePillarActions() {
     },
     {
       name: "disable_dark_mode",
-      type: "trigger_action",
+      type: "trigger_tool",
       description:
         "Switch to light mode / disable dark theme. Use when user explicitly wants to " +
         "turn OFF dark mode, disable dark mode, or switch TO light theme/mode.",
@@ -412,12 +410,17 @@ export function usePillarActions() {
     },
     {
       name: "toggle_dark_mode",
-      type: "trigger_action",
+      type: "trigger_tool",
       description:
         "Toggle between dark and light mode. Use when user asks to 'toggle dark mode', " +
         "'switch theme', 'change to dark/light', or generally wants to flip their current " +
         "theme without specifying which one they want.",
-      examples: ["toggle dark mode", "switch theme", "toggle theme", "change theme"],
+      examples: [
+        "toggle dark mode",
+        "switch theme",
+        "toggle theme",
+        "change theme",
+      ],
       autoRun: true,
       autoComplete: true,
       execute: () => {
@@ -430,12 +433,12 @@ export function usePillarActions() {
   ]);
 
   // =========================================================================
-  // Settings Autosave Actions
+  // Settings Autosave tools
   // =========================================================================
-  usePillarAction([
+  usePillarTool([
     {
       name: "update_brand_name",
-      type: "trigger_action",
+      type: "trigger_tool",
       description:
         "Update the brand name displayed in the help center. " +
         "Use when user wants to change their company name, brand name, " +
@@ -484,7 +487,7 @@ export function usePillarActions() {
     },
     {
       name: "update_primary_color",
-      type: "trigger_action",
+      type: "trigger_tool",
       description:
         "Update the primary/accent color used throughout the help center. " +
         "Use when user wants to change their brand color, theme color, " +
@@ -543,7 +546,7 @@ export function usePillarActions() {
     },
     {
       name: "update_ai_assistant_name",
-      type: "trigger_action",
+      type: "trigger_tool",
       description:
         "Update the AI assistant's display name shown in the chat widget. " +
         "Use when user wants to rename the chatbot, change the assistant name, " +
@@ -598,7 +601,7 @@ export function usePillarActions() {
     },
     {
       name: "update_ai_welcome_message",
-      type: "trigger_action",
+      type: "trigger_tool",
       description:
         "Update the welcome message shown when users open the AI chat. " +
         "Use when user wants to change the greeting, update the intro message, " +
@@ -647,7 +650,7 @@ export function usePillarActions() {
     },
     {
       name: "set_suggested_questions",
-      type: "trigger_action",
+      type: "trigger_tool",
       description:
         "Set the suggested questions that appear in the AI chat widget. " +
         "Use when user wants to configure starter questions, conversation starters, " +
@@ -704,7 +707,7 @@ export function usePillarActions() {
     },
     {
       name: "update_fallback_message",
-      type: "trigger_action",
+      type: "trigger_tool",
       description:
         "Update the fallback message shown when the AI cannot answer a question. " +
         "Use when user wants to customize what happens when the AI doesn't know, " +
@@ -754,9 +757,9 @@ export function usePillarActions() {
   ]);
 
   // =========================================================================
-  // Knowledge Source Actions
+  // Knowledge Source tools
   // =========================================================================
-  usePillarAction([
+  usePillarTool([
     {
       name: "add_new_source",
       type: "navigate",
@@ -800,7 +803,12 @@ export function usePillarActions() {
           },
         },
       },
-      execute: (data: { type?: string; url?: string; name?: string; highlight_selector?: string }) => {
+      execute: (data: {
+        type?: string;
+        url?: string;
+        name?: string;
+        highlight_selector?: string;
+      }) => {
         const params = new URLSearchParams();
         if (data.type) params.set("type", data.type);
         if (data.url) params.set("url", data.url);
@@ -842,7 +850,7 @@ export function usePillarActions() {
     },
     {
       name: "resync_source",
-      type: "trigger_action",
+      type: "trigger_tool",
       description:
         "Trigger a re-sync for a knowledge source to refresh content. " +
         "Use when user wants to update content, refresh docs, re-crawl a website, " +
@@ -882,10 +890,10 @@ export function usePillarActions() {
     },
     {
       name: "delete_source",
-      type: "trigger_action",
+      type: "trigger_tool",
       description:
         "Delete a knowledge source and remove all its content from the knowledge base. " +
-        "This is a destructive action that cannot be undone. " +
+        "This is a destructive tool that cannot be undone. " +
         "Use when user wants to remove a source, disconnect an integration, " +
         "or delete imported content.",
       examples: [
@@ -922,9 +930,9 @@ export function usePillarActions() {
   ]);
 
   // =========================================================================
-  // Team Management Actions
+  // Team Management tools
   // =========================================================================
-  usePillarAction([
+  usePillarTool([
     {
       name: "open_team_settings",
       type: "navigate",
@@ -1063,9 +1071,9 @@ export function usePillarActions() {
   ]);
 
   // =========================================================================
-  // Billing Actions
+  // Billing tools
   // =========================================================================
-  usePillarAction([
+  usePillarTool([
     {
       name: "open_billing",
       type: "navigate",
@@ -1115,9 +1123,9 @@ export function usePillarActions() {
   ]);
 
   // =========================================================================
-  // Analytics Actions
+  // Analytics tools
   // =========================================================================
-  usePillarAction([
+  usePillarTool([
     {
       name: "view_search_analytics",
       type: "navigate",
@@ -1239,7 +1247,7 @@ export function usePillarActions() {
     },
     {
       name: "export_conversations_csv",
-      type: "trigger_action",
+      type: "trigger_tool",
       description:
         "Export conversations to a CSV file for the specified date range. " +
         "Use when user wants to download conversation data, export chat logs, " +
@@ -1311,16 +1319,16 @@ export function usePillarActions() {
   ]);
 
   // =========================================================================
-  // Query Actions - Return data for agent reasoning
+  // Query tools - Return data for agent reasoning
   // =========================================================================
-  usePillarAction([
+  usePillarTool([
     {
       name: "list_sources",
       type: "query",
       description:
         "Get the list of configured knowledge sources. " +
         "Returns source IDs, names, types, and sync status. " +
-        "Call this before suggesting source-specific actions to know what exists. " +
+        "Call this before suggesting source-specific tools to know what exists. " +
         "Example: Before suggesting 'crawl website', check if a website source exists.",
       autoRun: true,
       autoComplete: true,
@@ -1396,7 +1404,7 @@ export function usePillarActions() {
       description:
         "Get the list of team members and pending invitations. " +
         "Returns member emails, roles, and status. " +
-        "Call this before suggesting invite or role-change actions.",
+        "Call this before suggesting invite or role-change tools.",
       autoRun: true,
       autoComplete: true,
       execute: async () => {
@@ -1538,12 +1546,12 @@ export function usePillarActions() {
       },
     },
     {
-      name: "list_actions",
+      name: "list_tools",
       type: "query",
       description:
-        "Get the list of defined actions for this product. " +
-        "Returns action names, descriptions, and types. " +
-        "Call this when user asks what you can do or what actions are available.",
+        "Get the list of defined tools for this product. " +
+        "Returns tool names, descriptions, and types. " +
+        "Call this when user asks what you can do or what tools are available.",
       autoRun: true,
       autoComplete: true,
       execute: async () => {
@@ -1551,20 +1559,23 @@ export function usePillarActions() {
           const response = await actionsAPI.list({
             status: "published",
           });
-          const actions = response.results || [];
+          const tools = response.results || [];
           return {
-            actions: actions.map((a) => ({
+            tools: tools.map((a) => ({
               name: a.name,
               description: a.description,
               type: a.action_type,
             })),
-            count: actions.length,
+            count: tools.length,
           };
         } catch (error) {
-          console.error("[Pillar] Error listing actions:", error);
-          return { actions: [], count: 0, error: "Failed to load actions" };
+          console.error("[Pillar] Error listing tools:", error);
+          return { tools: [], count: 0, error: "Failed to load tools" };
         }
       },
     },
   ]);
 }
+
+/** @deprecated Use usePillarTools instead */
+export const usePillartools = usePillarTools;

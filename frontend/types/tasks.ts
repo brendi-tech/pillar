@@ -9,7 +9,8 @@ export type TaskType =
   | 'navigate'        // Navigate to a page in the host app
   | 'open_modal'      // Open a modal/dialog
   | 'fill_form'       // Fill form fields with data
-  | 'trigger_action'  // Trigger a custom action (generic)
+  | 'trigger_tool'    // Trigger a custom tool (generic)
+  | 'trigger_action'  // @deprecated - Use 'trigger_tool' instead
   | 'copy_text'       // Copy text to clipboard
   | 'external_link'   // Open external link in new tab
   | 'start_tutorial'; // Start a tutorial/walkthrough
@@ -230,7 +231,8 @@ export const TASK_TYPE_LABELS: Record<TaskType, string> = {
   navigate: 'Navigate to Page',
   open_modal: 'Open Modal/Dialog',
   fill_form: 'Fill Form Fields',
-  trigger_action: 'Trigger Custom Action',
+  trigger_tool: 'Trigger Custom Tool',
+  trigger_action: 'Trigger Custom Tool', // @deprecated alias
   copy_text: 'Copy to Clipboard',
   external_link: 'Open External Link',
   start_tutorial: 'Start Tutorial',
@@ -244,7 +246,8 @@ export const TASK_TYPE_ICONS: Record<TaskType, string> = {
   navigate: 'arrow-right',
   open_modal: 'layout',
   fill_form: 'edit-3',
-  trigger_action: 'zap',
+  trigger_tool: 'zap',
+  trigger_action: 'zap', // @deprecated alias
   copy_text: 'copy',
   external_link: 'external-link',
   start_tutorial: 'play-circle',
@@ -257,7 +260,8 @@ export const TASK_TYPE_DESCRIPTIONS: Record<TaskType, string> = {
   navigate: 'Redirect the user to a specific page or route in your app',
   open_modal: 'Open a modal, dialog, or slide-over panel',
   fill_form: 'Pre-fill form fields with specific values',
-  trigger_action: 'Execute a custom action handler in your app',
+  trigger_tool: 'Execute a custom tool handler in your app',
+  trigger_action: 'Execute a custom tool handler in your app', // @deprecated alias
   copy_text: 'Copy text content to the user\'s clipboard',
   external_link: 'Open an external URL in a new browser tab',
   start_tutorial: 'Start an interactive tutorial or product walkthrough',

@@ -1,6 +1,6 @@
 export { useHasMounted } from "./use-has-mounted";
 export { useIsMobile } from "./use-mobile";
-export { usePillarActions } from "./usePillarActions";
+export { usePillarTools, usePillarActions } from "./usePillarTools";
 export {
   buildReturnToUrl,
   useRedirectToReturnPath,

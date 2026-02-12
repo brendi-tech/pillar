@@ -6,7 +6,7 @@
  * Wraps the admin panel with the Pillar SDK for dogfooding.
  * - Provides the embedded widget for contextual help
  * - Syncs route context as the user navigates
- * - Registers task handlers for AI-suggested actions via usePillarActions hook
+ * - Registers task handlers for AI-suggested tools via usePillarTools hook
  * - Syncs theme with next-themes
  */
 
@@ -27,7 +27,7 @@ import {
   UpdatePermissionsCard,
 } from "@/components/PillarCards";
 import { ThemeSelectorModal } from "@/components/ThemeSelectorModal";
-import { usePillarActions } from "@/hooks/usePillarActions";
+import { usePillarTools } from "@/hooks/usePillarTools";
 import { applyPendingHighlight } from "@/lib/highlight";
 import { useAuth } from "./AuthProvider";
 
@@ -194,7 +194,7 @@ function PillarIdentitySync() {
  * Internal component that syncs route changes and registers task handlers.
  * Separated to keep the main provider clean and allow use of hooks.
  *
- * Uses usePillarActions() hook for co-located action definitions.
+ * Uses usePillarTools() hook for co-located tool definitions.
  */
 function PillarRouteSync() {
   const { pillar } = usePillar();
@@ -218,8 +218,8 @@ function PillarRouteSync() {
     applyPendingHighlight(500);
   }, [pathname]);
 
-  // Register all Pillar actions via the co-located usePillarActions hook
-  usePillarActions();
+  // Register all Pillar tools via the co-located usePillarTools hook
+  usePillarTools();
 
   return null;
 }

@@ -1,5 +1,13 @@
 "use client";
 
+import type { MetadataItem } from "@/components/shared";
+import {
+  DetailHeader,
+  DetailPageShell,
+  MetadataStrip,
+  SectionLabel,
+  TimestampFooter,
+} from "@/components/shared";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -9,14 +17,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  DetailHeader,
-  DetailPageShell,
-  MetadataStrip,
-  SectionLabel,
-  TimestampFooter,
-} from "@/components/shared";
-import type { MetadataItem } from "@/components/shared";
 import { actionDetailQuery } from "@/queries/actions.queries";
 import type { ImplementationStatus } from "@/types/actions";
 import {
@@ -201,9 +201,7 @@ export function ActionDetailPage({ actionId }: ActionDetailPageProps) {
           </Alert>
 
           {/* ── Metadata Row ── */}
-          {metadataItems.length > 0 && (
-            <MetadataStrip items={metadataItems} />
-          )}
+          {metadataItems.length > 0 && <MetadataStrip items={metadataItems} />}
 
           {/* ── Execution Flags ── */}
           <div className="rounded-lg border bg-card p-4">
@@ -268,22 +266,21 @@ export function ActionDetailPage({ actionId }: ActionDetailPageProps) {
           )}
 
           {/* ── Data Schema ── */}
-          {action.data_schema &&
-            Object.keys(action.data_schema).length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Data Schema</CardTitle>
-                  <CardDescription>
-                    Parameters the AI extracts from user messages
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <pre className="overflow-x-auto rounded bg-muted p-3 text-xs">
-                    {JSON.stringify(action.data_schema, null, 2)}
-                  </pre>
-                </CardContent>
-              </Card>
-            )}
+          {action.data_schema && Object.keys(action.data_schema).length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Data Schema</CardTitle>
+                <CardDescription>
+                  Parameters the AI extracts from user messages
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <pre className="overflow-x-auto rounded bg-muted p-3 text-xs">
+                  {JSON.stringify(action.data_schema, null, 2)}
+                </pre>
+              </CardContent>
+            </Card>
+          )}
 
           {/* ── Default Data ── */}
           {action.default_data &&
@@ -432,18 +429,6 @@ export function ActionDetailPage({ actionId }: ActionDetailPageProps) {
                     : undefined
                 }
               />
-            </CardContent>
-          </Card>
-
-          {/* ── SDK Handler ── */}
-          <Card>
-            <CardHeader>
-              <CardTitle>SDK Handler</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <pre className="overflow-x-auto rounded bg-muted p-3 text-xs">
-                {`pillar.onAction('${action.name}', (data) => {\n  // Your handler code\n});`}
-              </pre>
             </CardContent>
           </Card>
         </>

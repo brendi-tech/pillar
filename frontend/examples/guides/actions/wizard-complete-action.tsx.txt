@@ -1,17 +1,17 @@
-import { usePillarAction, usePillar } from "@pillar-ai/react";
+import { usePillarTool, usePillar } from "@pillar-ai/react";
 
-export function useOnboardingAction() {
-  const { completeAction } = usePillar();
+export function useOnboardingTool() {
+  const { completeTool } = usePillar();
 
-  usePillarAction({
+  usePillarTool({
     name: "start_onboarding",
-    type: "trigger_action",
+    type: "trigger_tool",
     description: "Start the onboarding wizard",
     execute: () => {
       openOnboardingWizard({
         onComplete: () => {
-          // Signal to Pillar that the action is done
-          completeAction();
+          // Signal to Pillar that the tool is done
+          completeTool();
         },
       });
       // Don't return success yet - wizard handles completion

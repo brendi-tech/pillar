@@ -1,11 +1,11 @@
-import { usePillarAction, usePillar } from "@pillar-ai/react";
+import { usePillarTool, usePillar } from "@pillar-ai/react";
 
-export function useTourAction() {
+export function useTourTool() {
   const { close } = usePillar();
 
-  usePillarAction({
+  usePillarTool({
     name: "start_tour",
-    type: "trigger_action",
+    type: "trigger_tool",
     description: "Start the onboarding tour",
     execute: () => {
       close(); // Close panel first

@@ -432,7 +432,7 @@ function ActionsStep() {
     <div className="space-y-4">
       <p className="text-muted-foreground text-sm">
         Actions let the AI assistant perform tasks in your app, like navigating
-        to pages or triggering features. Use the <code className="bg-muted px-1 rounded">usePillarAction</code> hook to define actions with co-located handlers.
+        to pages or triggering features. Use the <code className="bg-muted px-1 rounded">usePillarTool</code> hook to define tools with co-located handlers.
       </p>
 
       <AIPromptBlock title="Build actions for my app" src="build-actions.md" />
@@ -453,7 +453,7 @@ function ActionsStep() {
                 <TableCell className="text-sm text-muted-foreground">Go to a page in your app</TableCell>
               </TableRow>
               <TableRow>
-                <TableCell className="font-mono text-xs">trigger_action</TableCell>
+                <TableCell className="font-mono text-xs">trigger_tool</TableCell>
                 <TableCell className="text-sm text-muted-foreground">Run custom logic (modals, wizards)</TableCell>
               </TableRow>
               <TableRow>
@@ -474,8 +474,8 @@ function ActionsStep() {
       </div>
 
       <div className="space-y-2">
-        <h4 className="text-sm font-medium">Define actions with usePillarAction</h4>
-        <SyntaxHighlightedPre code={actionsCode} language="typescript" filePath="hooks/usePillarActions.ts" docsUrl="https://trypillar.com/docs/guides/actions" />
+        <h4 className="text-sm font-medium">Define tools with usePillarTool</h4>
+        <SyntaxHighlightedPre code={actionsCode} language="typescript" filePath="hooks/usePillarTools.ts" docsUrl="https://trypillar.com/docs/guides/actions" />
       </div>
 
       <div className="space-y-2">
@@ -486,7 +486,7 @@ function ActionsStep() {
       <div className="bg-blue-100 dark:bg-blue-500/10 rounded-lg p-3 border border-blue-300 dark:border-blue-500/30 flex gap-2">
         <Check className="h-4 w-4 text-blue-600 dark:text-blue-500 shrink-0 mt-0.5" />
         <p className="text-sm text-blue-800 dark:text-blue-200">
-          The CLI automatically scans your code for <code className="bg-blue-200 dark:bg-blue-500/20 px-1 rounded">usePillarAction</code> calls — no need to export from a single file.
+          The CLI automatically scans your code for <code className="bg-blue-200 dark:bg-blue-500/20 px-1 rounded">usePillarTool</code> calls — no need to export from a single file.
         </p>
       </div>
 
@@ -526,7 +526,7 @@ npx pillar-sync --scan ./src`;
   return (
     <div className="space-y-4">
       <p className="text-muted-foreground text-sm">
-        The CLI scans your code for <code className="bg-muted px-1 rounded">usePillarAction</code> calls and syncs them to Pillar.
+        The CLI scans your code for <code className="bg-muted px-1 rounded">usePillarTool</code> calls and syncs them to Pillar.
         Run this in your CI/CD pipeline to keep actions up to date.
       </p>
 

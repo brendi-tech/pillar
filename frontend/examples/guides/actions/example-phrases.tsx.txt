@@ -1,4 +1,4 @@
-usePillarAction({
+usePillarTool({
   name: "invite_member",
   description: "Invite a new team member",
   examples: [

@@ -13,7 +13,7 @@ import { defineActions } from '@pillar-ai/sdk';
 export const actions = defineActions({
   action_name: {
     description: 'AI-friendly description of what this does',
-    type: 'navigate' | 'trigger_action' | 'inline_ui' | 'external_link' | 'copy_text',
+    type: 'navigate' | 'trigger_tool' | 'inline_ui' | 'external_link' | 'copy_text',
     examples: ['phrases users might say'],
     path: '/route',           // for navigate
     autoRun: true,            // execute without clicking
@@ -25,9 +25,9 @@ export const actions = defineActions({
 });
 ```
 
-### Action Types
+### Tool Types
 - **navigate**: Go to a page (use with `path` and `autoRun: true`)
-- **trigger_action**: Run custom logic (modals, wizards, toggles)
+- **trigger_tool**: Run custom logic (modals, wizards, toggles)
 - **inline_ui**: Show interactive UI in chat
 - **external_link**: Open URL in new tab
 - **copy_text**: Copy to clipboard
@@ -74,7 +74,7 @@ export function PillarActionHandlers() {
    - Dashboard views and detail pages
    - Use `autoRun: true` for simple navigations
 
-   **Trigger Actions** (type: 'trigger_action')
+   **Trigger Tools** (type: 'trigger_tool')
    - Modals: invite users, create items, confirmations
    - Wizards: onboarding, setup flows, multi-step processes
    - Feature toggles: dark mode, sidebar, notifications

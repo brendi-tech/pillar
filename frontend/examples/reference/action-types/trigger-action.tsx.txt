@@ -1,7 +1,7 @@
 {
   invite_member: {
     description: 'Open the invite team member modal',
-    type: 'trigger_action',
+    type: 'trigger_tool',
     examples: ['invite someone', 'add a user'],
     dataSchema: {
       type: 'object',

@@ -1,11 +1,11 @@
-// lib/pillar/actions/index.ts
-import type { SyncActionDefinitions } from '@pillar-ai/sdk';
+// lib/pillar/tools/index.ts
+import type { SyncToolDefinitions } from '@pillar-ai/sdk';
 
-export const actions = {
+export const tools = {
   invite_member: {
     description: 'Open the invite team member modal',
     examples: ['invite someone', 'add a user', 'how do I add teammates?'],
-    type: 'trigger_action' as const,
+    type: 'trigger_tool' as const,
   },
 
   view_settings: {
@@ -14,6 +14,6 @@ export const actions = {
     path: '/settings',
     autoRun: true,
   },
-} as const satisfies SyncActionDefinitions;
+} as const satisfies SyncToolDefinitions;
 
-export default actions;
+export default tools;

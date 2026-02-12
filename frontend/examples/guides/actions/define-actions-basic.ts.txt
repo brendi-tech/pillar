@@ -1,11 +1,11 @@
-// src/hooks/usePillarActions.ts
-import { usePillarAction } from "@pillar-ai/react";
+// src/hooks/usePillarTools.ts
+import { usePillarTool } from "@pillar-ai/react";
 import { useRouter } from "next/navigation";
 
-export function usePillarActions() {
+export function usePillarTools() {
   const router = useRouter();
 
-  usePillarAction({
+  usePillarTool({
     name: "open_settings",
     type: "navigate",
     description: "Navigate to the settings page",
@@ -13,7 +13,7 @@ export function usePillarActions() {
     execute: () => router.push("/settings"),
   });
 
-  usePillarAction({
+  usePillarTool({
     name: "invite_member",
     type: "open_modal",
     description: "Open the invite team member modal",
@@ -25,7 +25,7 @@ export function usePillarActions() {
     execute: ({ setShowInviteModal }) => setShowInviteModal(true),
   });
 
-  usePillarAction({
+  usePillarTool({
     name: "view_billing",
     type: "navigate",
     description: "Navigate to billing and subscription settings",

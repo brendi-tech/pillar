@@ -1,11 +1,11 @@
-// hooks/usePillarActions.ts
-import { usePillarAction } from '@pillar-ai/react';
+// hooks/usePillarTools.ts
+import { usePillarTool } from '@pillar-ai/react';
 import { useRouter } from 'next/navigation';
 
-export function usePillarActions() {
+export function usePillarTools() {
   const router = useRouter();
 
-  usePillarAction({
+  usePillarTool({
     name: 'open_settings',
     type: 'navigate',
     description: 'Navigate to the settings page',
@@ -14,7 +14,7 @@ export function usePillarActions() {
     execute: () => router.push('/settings'),
   });
 
-  usePillarAction({
+  usePillarTool({
     name: 'contact_support',
     type: 'open_modal',
     description: 'Open contact support form',

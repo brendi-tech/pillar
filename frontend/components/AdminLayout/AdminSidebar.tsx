@@ -42,11 +42,11 @@ import {
   Users,
   Zap,
 } from "lucide-react";
-import { EditProductModal } from "./EditProductModal";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { EditProductModal } from "./EditProductModal";
 
 // ============================================================================
 // Types
@@ -74,8 +74,8 @@ const navigationItems: NavItem[] = [
     category: "data",
   },
   {
-    title: "Actions",
-    href: "/actions",
+    title: "Tools",
+    href: "/tools",
     icon: Zap,
     category: "data",
   },
@@ -130,7 +130,9 @@ export function AdminSidebar(props: React.ComponentProps<typeof Sidebar>) {
   } = useProduct();
   const { open: openPillarPanel } = usePillar();
   const [footerPopoverOpen, setFooterPopoverOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<AdminProduct | null>(null);
+  const [editingProduct, setEditingProduct] = useState<AdminProduct | null>(
+    null
+  );
 
   // Handle ⌘K keyboard shortcut to open Pillar panel
   useEffect(() => {
@@ -355,10 +357,7 @@ export function AdminSidebar(props: React.ComponentProps<typeof Sidebar>) {
                   </div>
                   <div className="max-h-40 overflow-y-auto">
                     {availableProducts.map((hc) => (
-                      <div
-                        key={hc.id}
-                        className="flex items-center rounded-md"
-                      >
+                      <div key={hc.id} className="flex items-center rounded-md">
                         <button
                           onClick={() => {
                             switchProduct(hc.id);

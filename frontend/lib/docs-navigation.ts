@@ -61,7 +61,7 @@ export const docsNavigation: NavSection[] = [
     items: [
       { title: "Co-Pilot Chat", href: "/docs/features/chat" },
       { title: "Knowledge Base", href: "/docs/features/knowledge-base" },
-      { title: "Actions", href: "/docs/features/actions" },
+      { title: "Tools", href: "/docs/features/actions" },
       { title: "Custom Cards", href: "/docs/features/custom-cards" },
       { title: "Human Escalation", href: "/docs/features/human-escalation" },
     ],
@@ -70,8 +70,8 @@ export const docsNavigation: NavSection[] = [
     title: "Guides",
     slug: "guides",
     items: [
-      { title: "Setting Up Actions", href: "/docs/guides/actions" },
-      { title: "Syncing Actions", href: "/docs/guides/actions-sync" },
+      { title: "Setting Up Tools", href: "/docs/guides/actions" },
+      { title: "Syncing Tools", href: "/docs/guides/actions-sync" },
       { title: "Agent Guidance", href: "/docs/guides/agent-guidance" },
       { title: "Adding User Context", href: "/docs/guides/context" },
       { title: "Building Custom Cards", href: "/docs/guides/custom-cards" },

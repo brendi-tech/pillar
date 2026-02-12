@@ -1,11 +1,11 @@
-import { usePillarAction } from "@pillar-ai/react";
+import { usePillarTool } from "@pillar-ai/react";
 import { useRouter } from "next/navigation";
 
-export function usePillarActions() {
+export function usePillarTools() {
   const router = useRouter();
 
-  // Basic navigation action
-  usePillarAction({
+  // Basic navigation tool
+  usePillarTool({
     name: "open_dashboard",
     type: "navigate",
     description: "Navigate to the main dashboard",
@@ -15,8 +15,8 @@ export function usePillarActions() {
     },
   });
 
-  // Action with input schema for data extraction
-  usePillarAction({
+  // Tool with input schema for data extraction
+  usePillarTool({
     name: "view_user_profile",
     type: "navigate",
     description: "View a specific user's profile page",
@@ -29,10 +29,10 @@ export function usePillarActions() {
     },
   });
 
-  // Auto-run action (executes without confirmation)
-  usePillarAction({
+  // Auto-run tool (executes without confirmation)
+  usePillarTool({
     name: "toggle_dark_mode",
-    type: "trigger_action",
+    type: "trigger_tool",
     description: "Toggle between light and dark theme",
     autoRun: true,
     examples: ["switch to dark mode", "turn on light theme"],

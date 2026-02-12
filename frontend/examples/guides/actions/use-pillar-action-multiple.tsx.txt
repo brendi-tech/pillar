@@ -1,11 +1,11 @@
-import { usePillarAction } from "@pillar-ai/react";
+import { usePillarTool } from "@pillar-ai/react";
 import { useRouter } from "next/navigation";
 
-export function useNavigationActions() {
+export function useNavigationTools() {
   const router = useRouter();
 
-  // Register multiple related actions in a single call
-  usePillarAction([
+  // Register multiple related tools in a single call
+  usePillarTool([
     {
       name: "open_billing",
       type: "navigate",

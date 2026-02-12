@@ -1,11 +1,11 @@
-// src/hooks/usePillarActions.ts
-import { usePillarAction } from "@pillar-ai/react";
+// src/hooks/usePillarTools.ts
+import { usePillarTool } from "@pillar-ai/react";
 import { useRouter } from "next/navigation";
 
-export function usePillarActions() {
+export function usePillarTools() {
   const router = useRouter();
 
-  usePillarAction({
+  usePillarTool({
     name: "open_settings",
     type: "navigate",
     description: "Open the application settings page",
@@ -15,7 +15,7 @@ export function usePillarActions() {
     },
   });
 
-  usePillarAction({
+  usePillarTool({
     name: "search_products",
     type: "query",
     description: "Search for products in the catalog",

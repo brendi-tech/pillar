@@ -92,9 +92,9 @@ export const actions = {
   },
   invite_team_member: {
     description: 'Opens team member invitation modal',
-    type: 'trigger_action',
+    type: 'trigger_tool',
   },
-} as const satisfies SyncActionDefinitions;
+} as const satisfies SyncToolDefinitions;
 
 export default actions;`}
               </pre>

@@ -1,14 +1,14 @@
-usePillarAction({
+usePillarTool({
   // Required
-  name: string,             // Unique identifier for this action
+  name: string,             // Unique identifier for this tool
   description: string,      // AI uses this to match user intent
   execute: (input) => void, // Your execution logic
 
   // Optional
-  type?: ActionType,        // navigate, trigger_action, query, open_modal, external_link
-  examples?: string[],      // Example phrases that trigger this action
+  type?: ToolType,          // navigate, trigger_tool, query, open_modal, external_link
+  examples?: string[],      // Example phrases that trigger this tool
   inputSchema?: object,     // Schema for extracting data from user queries
   autoRun?: boolean,        // Execute without user clicking (default: false)
   autoComplete?: boolean,   // Mark done immediately (default: false)
-  requiredContext?: object, // Context required for action to be available
+  requiredContext?: object, // Context required for tool to be available
 });

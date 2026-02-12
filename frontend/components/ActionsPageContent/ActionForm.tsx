@@ -185,7 +185,7 @@ export function ActionForm({
     initialData?.description ?? ""
   );
   const [actionType, setActionType] = useState<ActionType>(
-    initialData?.action_type ?? "trigger_action"
+    initialData?.action_type ?? "trigger_tool"
   );
   const [pathTemplate, setPathTemplate] = useState(
     initialData?.path_template ?? ""

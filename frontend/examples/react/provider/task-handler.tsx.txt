@@ -1,5 +1,5 @@
-// Generic handler for dynamic or backend-triggered actions
-// For most cases, prefer usePillarAction for type-safe, co-located handlers
+// Generic handler for dynamic or backend-triggered tools
+// For most cases, prefer usePillarTool for type-safe, co-located handlers
 
 <PillarProvider
   productKey="your-product-key"

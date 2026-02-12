@@ -1,7 +1,7 @@
 {
   delete_user: {
     description: 'Delete a user from the organization',
-    type: 'trigger_action',
+    type: 'trigger_tool',
     requiredContext: {
       userRole: 'admin',
     },

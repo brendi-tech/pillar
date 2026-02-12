@@ -1,6 +1,6 @@
-usePillarAction({
+usePillarTool({
   name: "delete_user",
-  type: "trigger_action",
+  type: "trigger_tool",
   description: "Delete a user from the organization",
   requiredContext: { userRole: "admin" },
   inputSchema: {

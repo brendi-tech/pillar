@@ -1,10 +1,10 @@
-// Example action handler configuration
-export const inviteMemberAction = {
+// Example tool handler configuration
+export const inviteMemberTool = {
   invite_member: {
     description: 'Invite a team member',
-    type: 'trigger_action',
+    type: 'trigger_tool',
     handler: (data: { email: string }) => {
-      // This runs when the user triggers the action
+      // This runs when the user triggers the tool
       openInviteModal({ email: data.email });
     },
   },

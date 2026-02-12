@@ -1,44 +1,50 @@
-'use client';
+"use client";
 
-import { EmptyState } from '@/components/shared';
-import { PageHeader } from '@/components/shared';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Skeleton } from '@/components/ui/skeleton';
+import { EmptyState, PageHeader } from "@/components/shared";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { actionListQuery } from '@/queries/actions.queries';
-import { useProduct } from '@/providers';
-import type { Action, ActionStatus } from '@/types/actions';
-import { ACTION_STATUS_LABELS } from '@/types/actions';
-import { useQuery } from '@tanstack/react-query';
-import { AlertCircle, Code2, RefreshCw, Rocket, Search, Zap } from 'lucide-react';
-import Link from 'next/link';
-import { useState } from 'react';
-import { ActionCard } from './ActionCard';
-import { ActionSyncModal } from './ActionSyncModal';
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useProduct } from "@/providers";
+import { actionListQuery } from "@/queries/actions.queries";
+import type { Action, ActionStatus } from "@/types/actions";
+import { ACTION_STATUS_LABELS } from "@/types/actions";
+import { useQuery } from "@tanstack/react-query";
+import {
+  AlertCircle,
+  Code2,
+  RefreshCw,
+  Rocket,
+  Search,
+  Zap,
+} from "lucide-react";
+import Link from "next/link";
+import { useState } from "react";
+import { ActionCard } from "./ActionCard";
+import { ActionSyncModal } from "./ActionSyncModal";
 
 /**
  * Actions Page Content - Read-Only Viewer
- * 
+ *
  * Code-First Actions: All actions are defined in client code and synced via CI/CD.
  * This page displays synced actions but does not allow creating/editing/deleting.
  */
 export function ActionsPageContent() {
   const { currentProduct } = useProduct();
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<ActionStatus | 'all'>('all');
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<ActionStatus | "all">("all");
 
   const { data, isLoading, error, refetch } = useQuery(
     actionListQuery({
       product: currentProduct?.id,
       search: search || undefined,
-      status: statusFilter !== 'all' ? statusFilter : undefined,
+      status: statusFilter !== "all" ? statusFilter : undefined,
     })
   );
 
@@ -91,7 +97,7 @@ export function ActionsPageContent() {
                 </Button>
               }
             />
-            <Link href="/actions/deployments">
+            <Link href="/tools/deployments">
               <Button variant="outline">
                 <Rocket className="mr-2 h-4 w-4" />
                 Deployments
@@ -112,7 +118,10 @@ export function ActionsPageContent() {
             className="pl-9"
           />
         </div>
-        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as ActionStatus | 'all')}>
+        <Select
+          value={statusFilter}
+          onValueChange={(v) => setStatusFilter(v as ActionStatus | "all")}
+        >
           <SelectTrigger className="w-40">
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
@@ -143,7 +152,7 @@ export function ActionsPageContent() {
                   </Button>
                 }
               />
-              <Link href="/actions/deployments">
+              <Link href="/tools/deployments">
                 <Button variant="outline">
                   <Rocket className="mr-2 h-4 w-4" />
                   View Deployments

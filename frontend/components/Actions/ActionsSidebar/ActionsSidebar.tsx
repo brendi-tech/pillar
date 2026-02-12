@@ -52,7 +52,8 @@ const ACTION_TYPE_ICON_COMPONENTS: Record<ActionType, LucideIcon> = {
   navigate: ArrowRight,
   open_modal: Layout,
   fill_form: Pencil,
-  trigger_action: Zap,
+  trigger_tool: Zap,
+  trigger_action: Zap, // @deprecated alias
   query: Database,
   copy_text: Copy,
   external_link: ExternalLink,
@@ -64,13 +65,13 @@ const ACTION_TYPE_ICON_COMPONENTS: Record<ActionType, LucideIcon> = {
  * Parse action ID from the pathname.
  * Expected patterns:
  * - /actions → no selection
- * - /actions/[actionId] → action selected
- * - /actions/deployments → deployments page
- * - /actions/new → new action wizard
+ * - /tools/[actionId] → action selected
+ * - /tools/deployments → deployments page
+ * - /tools/new → new action wizard
  */
 function parsePathname(pathname: string): { actionId: string | null } {
   const parts = pathname.replace(/\/$/, "").split("/");
-  const actionsIndex = parts.indexOf("actions");
+  const actionsIndex = parts.indexOf("tools");
 
   if (actionsIndex === -1) {
     return { actionId: null };
@@ -95,7 +96,8 @@ function groupActionsByType(actions: Action[]): Record<ActionType, Action[]> {
     navigate: [],
     open_modal: [],
     fill_form: [],
-    trigger_action: [],
+    trigger_tool: [],
+    trigger_action: [], // @deprecated alias
     query: [],
     copy_text: [],
     external_link: [],
@@ -174,9 +176,9 @@ export function ActionsSidebar({
         <div className="flex-shrink-0 border-b p-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold">Actions</h2>
+              <h2 className="text-lg font-semibold">Tools</h2>
               <p className="text-xs text-muted-foreground">
-                {actions.length} action{actions.length !== 1 ? "s" : ""}
+                {actions.length} tool{actions.length !== 1 ? "s" : ""}
               </p>
             </div>
             <div className="flex items-center gap-1">
@@ -190,7 +192,7 @@ export function ActionsSidebar({
                 <RefreshCw className="h-4 w-4" />
               </Button>
               <Button asChild variant="ghost" size="icon" className="h-8 w-8">
-                <Link href="/actions/deployments" title="View deployments">
+                <Link href="/tools/deployments" title="View deployments">
                   <Rocket className="h-4 w-4" />
                 </Link>
               </Button>
@@ -309,7 +311,7 @@ function ActionListItem({
 }: ActionListItemProps) {
   return (
     <Link
-      href={`/actions/${action.id}`}
+      href={`/tools/${action.id}`}
       onClick={onNavigate}
       className={cn(
         "flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-colors",
@@ -370,7 +372,7 @@ function EmptyState({
       <div className="flex flex-col items-center justify-center px-6 py-12 text-center">
         <Search className="mb-4 h-12 w-12 text-muted-foreground/40" />
         <p className="text-sm text-muted-foreground">
-          No actions match &quot;{searchTerm}&quot;
+          No tools match &quot;{searchTerm}&quot;
         </p>
         <p className="mt-1 text-xs text-muted-foreground/60">
           Try a different search term
@@ -384,10 +386,10 @@ function EmptyState({
       <div className="flex flex-col items-center justify-center px-6 py-12 text-center">
         <Zap className="mb-4 h-12 w-12 text-muted-foreground/40" />
         <p className="mb-3 text-sm text-muted-foreground">
-          No actions synced yet
+          No tools synced yet
         </p>
         <p className="text-xs text-muted-foreground/60">
-          Define actions in your client code and deploy to sync them.
+          Define tools in your client code and deploy to sync them.
         </p>
       </div>
     );

@@ -30,7 +30,7 @@ const ICON_COMPONENTS: Record<string, React.ComponentType<{ className?: string }
 };
 
 const ACTION_TYPES: ActionType[] = [
-  'trigger_action',
+  'trigger_tool',
   'navigate',
   'open_modal',
   'external_link',

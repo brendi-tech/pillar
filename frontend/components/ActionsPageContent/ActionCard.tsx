@@ -139,7 +139,7 @@ export function ActionCard({ action }: ActionCardProps) {
   };
 
   return (
-    <Link href={`/actions/${action.id}`}>
+    <Link href={`/tools/${action.id}`}>
       <Card className="group cursor-pointer transition-all hover:border-primary hover:shadow-md">
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
@@ -148,9 +148,7 @@ export function ActionCard({ action }: ActionCardProps) {
                 <IconComponent className="h-5 w-5" />
               </div>
               <div>
-                <CardTitle>
-                  {deriveActionLabel(action.name)}
-                </CardTitle>
+                <CardTitle>{deriveActionLabel(action.name)}</CardTitle>
                 <CardDescription className="text-xs">
                   <code>{action.name}</code>
                 </CardDescription>

@@ -64,7 +64,7 @@ export function NewActionPage() {
         help_center_config: currentProduct!.id,
       });
       queryClient.invalidateQueries({ queryKey: actionKeys.lists() });
-      router.push(`/actions/${newAction.id}`);
+      router.push(`/tools/${newAction.id}`);
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to create action";

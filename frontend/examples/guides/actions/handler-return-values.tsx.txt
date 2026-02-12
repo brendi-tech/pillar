@@ -1,6 +1,6 @@
-usePillarAction({
-  name: "my_action",
-  description: "Example action showing return values",
+usePillarTool({
+  name: "my_tool",
+  description: "Example tool showing return values",
   execute: async () => {
     // Success
     return { success: true };

@@ -182,7 +182,8 @@ declare module "@pillar-ai/react" {
    */
   export interface ActionTypeDataMap {
     navigate: NavigateActionData;
-    trigger_action: TriggerActionData;
+    trigger_tool: TriggerActionData;
+    trigger_action: TriggerActionData; // @deprecated alias for trigger_tool
     inline_ui: InlineUIData;
     external_link: Record<string, unknown>;
     copy_text: { text?: string };
@@ -283,12 +284,12 @@ declare module "@pillar-ai/react" {
    * const { pillar, open, close } = usePillar();
    * ```
    *
-   * @example Registering actions with usePillarAction (recommended)
+   * @example Registering tools with usePillarTool (recommended)
    * ```tsx
-   * import { usePillarAction } from '@pillar-ai/react';
+   * import { usePillarTool } from '@pillar-ai/react';
    *
    * // Co-located metadata and handler
-   * usePillarAction({
+   * usePillarTool({
    *   name: 'add_to_cart',
    *   description: 'Add a product to the cart',
    *   execute: async ({ productId }) => {
