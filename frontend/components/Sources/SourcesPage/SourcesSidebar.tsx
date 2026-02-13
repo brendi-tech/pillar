@@ -107,6 +107,7 @@ export function SourcesSidebar({
 }: SourcesSidebarProps) {
   const { sources, isLoading, refresh } = useSources();
   const [searchTerm, setSearchTerm] = useState("");
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const debouncedSearch = useDebounce(searchTerm, 300);
   const pathname = usePathname();
   const [expandedSources, setExpandedSources] = useState<Set<string>>(
@@ -168,11 +169,21 @@ export function SourcesSidebar({
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => refresh()}
+                onClick={async () => {
+                  setIsRefreshing(true);
+                  try {
+                    await refresh();
+                  } finally {
+                    setIsRefreshing(false);
+                  }
+                }}
                 className="h-8 w-8"
                 title="Refresh sources"
+                disabled={isRefreshing}
               >
-                <RefreshCw className="h-4 w-4" />
+                <RefreshCw
+                  className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+                />
               </Button>
               <Button asChild size="icon" className="h-8 w-8">
                 <Link href="/knowledge/new" title="Add source">
@@ -193,6 +204,7 @@ export function SourcesSidebar({
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-9"
+            autoFocus={false}
           />
         </div>
       </div>

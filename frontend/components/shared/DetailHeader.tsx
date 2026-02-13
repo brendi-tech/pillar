@@ -29,7 +29,7 @@ export function DetailHeader({
 }: DetailHeaderProps) {
   return (
     <div>
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <div className="flex items-center gap-3">
             {icon && (
@@ -37,11 +37,13 @@ export function DetailHeader({
                 {icon}
               </div>
             )}
-            <div>
-              <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
+            <div className="min-w-0">
+              <h1 className="text-xl font-semibold tracking-tight truncate">
+                {title}
+              </h1>
               {subtitle && (
                 <p
-                  className={`mt-0.5 text-sm text-muted-foreground ${subtitleMono ? "font-mono text-xs" : ""}`}
+                  className={`mt-0.5 text-sm text-muted-foreground truncate ${subtitleMono ? "font-mono text-xs" : ""}`}
                 >
                   {subtitle}
                 </p>

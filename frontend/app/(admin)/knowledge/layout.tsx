@@ -23,7 +23,11 @@ export default function KnowledgeLayout({ children }: KnowledgeLayoutProps) {
       {/* Mobile sidebar (Sheet) - visible on small containers */}
       <div className="@[800px]/content:hidden">
         <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-          <SheetContent side="left" className="w-80 p-0 pt-8">
+          <SheetContent
+            side="left"
+            className="w-80 p-0 pt-8"
+            onOpenAutoFocus={(e) => e.preventDefault()}
+          >
             <SheetTitle className="sr-only">Knowledge Sources Navigation</SheetTitle>
             <SourcesSidebar
               onNavigate={() => setSidebarOpen(false)}

@@ -1,5 +1,14 @@
 "use client";
 
+import { DocumentUploadZone } from "@/components/KnowledgePageContent/DocumentUploadZone";
+import type { MetadataItem } from "@/components/shared";
+import {
+  DetailHeader,
+  DetailPageShell,
+  MetadataStrip,
+  SectionLabel,
+  TimestampFooter,
+} from "@/components/shared";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,23 +18,19 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  DetailHeader,
-  DetailPageShell,
-  MetadataStrip,
-  SectionLabel,
-  TimestampFooter,
-} from "@/components/shared";
-import type { MetadataItem } from "@/components/shared";
 import { WarningModal } from "@/components/WarningModal";
+import { useWebSocketEvent } from "@/hooks/use-websocket-event";
 import { cn } from "@/lib/utils";
 import { useSources } from "@/providers";
+import { knowledgeKeys } from "@/queries/knowledge.queries";
 import {
   deleteKnowledgeSourceMutation,
   knowledgeSourceKeys,
   knowledgeSourceSyncHistoryQuery,
   triggerKnowledgeSourceSyncMutation,
 } from "@/queries/sources.queries";
+import type { KnowledgeSourceType } from "@/types/sources";
+import { KNOWLEDGE_SOURCE_TYPE_LABELS } from "@/types/sources";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, formatDistanceToNow } from "date-fns";
 import {
@@ -45,16 +50,8 @@ import {
   X,
 } from "lucide-react";
 import { useCallback, useState } from "react";
-import { useWebSocketEvent } from "@/hooks/use-websocket-event";
 import { toast } from "sonner";
-import type {
-  KnowledgeSourceConfig,
-  KnowledgeSourceType,
-} from "@/types/sources";
-import { KNOWLEDGE_SOURCE_TYPE_LABELS } from "@/types/sources";
 import { SourceEditPanel } from "./SourceEditPanel";
-import { DocumentUploadZone } from "@/components/KnowledgePageContent/DocumentUploadZone";
-import { knowledgeKeys } from "@/queries/knowledge.queries";
 
 // =============================================================================
 // Types
@@ -165,7 +162,7 @@ export function SourceSettingsPanel({
 
   // Refresh sync history when sync completes or fails (via WebSocket)
   useWebSocketEvent(
-    'websocket:source.sync_completed',
+    "websocket:source.sync_completed",
     useCallback(
       (event: CustomEvent) => {
         if (event.detail?.source_id === sourceId) {
@@ -179,7 +176,7 @@ export function SourceSettingsPanel({
   );
 
   useWebSocketEvent(
-    'websocket:source.sync_failed',
+    "websocket:source.sync_failed",
     useCallback(
       (event: CustomEvent) => {
         if (event.detail?.source_id === sourceId) {
@@ -487,7 +484,7 @@ export function SourceSettingsPanel({
           {canSync && (
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm">Recent Sync History</CardTitle>
+                <CardTitle>Recent Sync History</CardTitle>
                 <CardDescription>
                   Last {Math.min(syncHistory.length, 5)} sync operations
                 </CardDescription>
@@ -500,45 +497,44 @@ export function SourceSettingsPanel({
                 ) : (
                   <div className="space-y-2">
                     {syncHistory.slice(0, 5).map((sync) => (
-                      <div
-                        key={sync.id}
-                        className="flex items-center justify-between rounded-lg border p-3"
-                      >
-                        <div className="flex items-center gap-3">
-                          {getSyncStatusBadge(sync.status)}
-                          <div>
-                            <p className="text-sm font-medium">
-                              {sync.sync_type === "full"
-                                ? "Full Sync"
-                                : "Incremental Sync"}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {sync.started_at || sync.created_at
-                                ? format(
-                                    new Date(
-                                      sync.started_at || sync.created_at
-                                    ),
-                                    "MMM d, yyyy h:mm a"
-                                  )
-                                : "\u2014"}
-                            </p>
+                      <div key={sync.id} className="rounded-lg border p-3">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="flex items-center gap-3">
+                            {getSyncStatusBadge(sync.status)}
+                            <div>
+                              <p className="text-sm font-medium">
+                                {sync.sync_type === "full"
+                                  ? "Full Sync"
+                                  : "Incremental Sync"}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {sync.started_at || sync.created_at
+                                  ? format(
+                                      new Date(
+                                        sync.started_at || sync.created_at
+                                      ),
+                                      "MMM d, yyyy h:mm a"
+                                    )
+                                  : "\u2014"}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                        <div className="text-right text-sm">
-                          {sync.status === "completed" && (
-                            <p className="text-muted-foreground tabular-nums">
-                              {sync.items_created} created,{" "}
-                              {sync.items_updated} updated
-                            </p>
-                          )}
-                          {sync.status === "failed" && sync.error_message && (
-                            <p
-                              className="text-red-600 dark:text-red-400 text-xs max-w-xs truncate"
-                              title={sync.error_message}
-                            >
-                              {sync.error_message}
-                            </p>
-                          )}
+                          <div className="text-sm sm:text-right">
+                            {sync.status === "completed" && (
+                              <p className="text-muted-foreground tabular-nums">
+                                {sync.items_created} created,{" "}
+                                {sync.items_updated} updated
+                              </p>
+                            )}
+                            {sync.status === "failed" && sync.error_message && (
+                              <p
+                                className="text-red-600 dark:text-red-400 text-xs truncate sm:max-w-xs"
+                                title={sync.error_message}
+                              >
+                                {sync.error_message}
+                              </p>
+                            )}
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -562,9 +558,9 @@ export function SourceSettingsPanel({
             title="Delete Knowledge Source"
             description={
               <>
-                Are you sure you want to delete{" "}
-                <strong>{source.name}</strong>? This action cannot be undone.
-                All indexed content will be removed.
+                Are you sure you want to delete <strong>{source.name}</strong>?
+                This action cannot be undone. All indexed content will be
+                removed.
               </>
             }
             variant="delete"

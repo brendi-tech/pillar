@@ -120,6 +120,7 @@ export function ActionsSidebar({
 }: ActionsSidebarProps) {
   const { currentProduct } = useProduct();
   const [searchTerm, setSearchTerm] = useState("");
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const debouncedSearch = useDebounce(searchTerm, 300);
   const pathname = usePathname();
 
@@ -185,11 +186,21 @@ export function ActionsSidebar({
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => refetch()}
+                onClick={async () => {
+                  setIsRefreshing(true);
+                  try {
+                    await refetch();
+                  } finally {
+                    setIsRefreshing(false);
+                  }
+                }}
                 className="h-8 w-8"
                 title="Refresh actions"
+                disabled={isRefreshing}
               >
-                <RefreshCw className="h-4 w-4" />
+                <RefreshCw
+                  className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+                />
               </Button>
               <Button asChild variant="ghost" size="icon" className="h-8 w-8">
                 <Link href="/tools/deployments" title="View deployments">
@@ -222,6 +233,7 @@ export function ActionsSidebar({
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-9"
+            autoFocus={false}
           />
         </div>
       </div>
