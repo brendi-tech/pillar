@@ -24,7 +24,7 @@ const LLMS_TXT = `# Pillar
 - [How It Works](https://trypillar.com/docs/overview/how-it-works): Architecture and client-side execution model
 - [React Quickstart](https://trypillar.com/docs/quickstarts/react): Get started with React or Next.js in 5 minutes
 - [Vanilla JS Quickstart](https://trypillar.com/docs/quickstarts/vanilla): Get started without a framework
-- [Actions Guide](https://trypillar.com/docs/guides/actions): Define what the copilot can do in your app
+- [Tools Guide](https://trypillar.com/docs/guides/tools): Define what the copilot can do in your app
 - [Context Guide](https://trypillar.com/docs/guides/context): Provide runtime context to the copilot
 - [Knowledge Base](https://trypillar.com/docs/knowledge-base/overview): Connect your help center and documentation content
 - [Human Escalation](https://trypillar.com/docs/guides/human-escalation): Hand off to human support agents
@@ -35,7 +35,7 @@ const LLMS_TXT = `# Pillar
 
 - [Core SDK API](https://trypillar.com/docs/reference/core): Vanilla JS SDK reference — initialization, configuration, methods
 - [React SDK API](https://trypillar.com/docs/reference/react): React hooks and components — usePillar, PillarProvider
-- [Action Types](https://trypillar.com/docs/reference/action-types): Available action type definitions for task execution
+- [Tool Types](https://trypillar.com/docs/reference/tool-types): Available tool type definitions for task execution
 - [Events](https://trypillar.com/docs/reference/events): SDK event system for lifecycle hooks
 - [Theme Options](https://trypillar.com/docs/reference/theme-options): Theming API and configuration
 

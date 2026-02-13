@@ -223,6 +223,27 @@ const nextConfig: NextConfig = {
         destination: "/docs/knowledge-base/overview",
         permanent: true,
       },
+      // Actions -> Tools rename
+      {
+        source: "/docs/features/actions",
+        destination: "/docs/features/tools",
+        permanent: true,
+      },
+      {
+        source: "/docs/guides/actions",
+        destination: "/docs/guides/tools",
+        permanent: true,
+      },
+      {
+        source: "/docs/guides/actions-sync",
+        destination: "/docs/guides/tools-sync",
+        permanent: true,
+      },
+      {
+        source: "/docs/reference/action-types",
+        destination: "/docs/reference/tool-types",
+        permanent: true,
+      },
     ];
   },
 

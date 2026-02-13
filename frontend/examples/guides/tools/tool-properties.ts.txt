@@ -5,9 +5,9 @@ usePillarTool({
   execute: (input) => void, // Your execution logic
 
   // Optional
-  type?: ToolType,          // navigate, trigger_action, query, inline_ui, external_link, copy_text
-  guidance?: string,        // Per-action instructions for the AI agent
-  examples?: string[],      // Example phrases that trigger this action
+  type?: ToolType,          // navigate, trigger_tool, query, inline_ui, external_link, copy_text
+  guidance?: string,        // Per-tool instructions for the AI agent
+  examples?: string[],      // Example phrases that trigger this tool
   inputSchema?: object,     // Schema for extracting data from user queries
   autoRun?: boolean,        // Execute without user clicking (default: false)
   autoComplete?: boolean,   // Mark done immediately (default: false)

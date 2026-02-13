@@ -135,7 +135,7 @@ The API runs on port 8000, the admin dashboard on port 3000. See [Self-Hosting](
 
 | Feature | Description | |
 |---------|-------------|-|
-| **Actions** | Navigate pages, pre-fill forms, call APIs — the assistant executes, not just explains | [Docs](https://trypillar.com/docs/features/actions) |
+| **Tools** | Navigate pages, pre-fill forms, call APIs — the assistant executes, not just explains | [Docs](https://trypillar.com/docs/features/tools) |
 | **Knowledge Base** | Ingest from websites, files, cloud storage (S3/GCS), and snippets | [Docs](https://trypillar.com/docs/knowledge-base/overview) |
 | **AI Chat** | Streaming, context-aware responses grounded in your documentation | [Docs](https://trypillar.com/docs/features/chat) |
 | **Custom Cards** | Render interactive UI for confirmations and data input inline in chat | [Docs](https://trypillar.com/docs/features/custom-cards) |

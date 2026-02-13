@@ -7,7 +7,7 @@ export function useGenericHandlers() {
   const router = useRouter();
 
   useEffect(() => {
-    // Handle any navigate action dynamically
+    // Handle any navigate tool dynamically
     onTask("navigate", (data) => {
       router.push(data.path);
     });

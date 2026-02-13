@@ -1,4 +1,4 @@
-// Your action definition
+// Your tool definition
 {
   name: 'delete_user',
   description: 'Delete a user from the organization',

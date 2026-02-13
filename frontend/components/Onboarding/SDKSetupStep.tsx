@@ -486,7 +486,7 @@ function ActionsStep() {
         define tools with co-located handlers.
       </p>
 
-      <AIPromptBlock title="Build actions for my app" src="build-actions.md" />
+      <AIPromptBlock title="Build tools for my app" src="build-tools.md" />
 
       <div className="space-y-2">
         <h4 className="text-sm font-medium">Action types</h4>
@@ -538,7 +538,7 @@ function ActionsStep() {
           code={actionsCode}
           language="typescript"
           filePath="hooks/usePillarTools.ts"
-          docsUrl="https://trypillar.com/docs/guides/actions"
+          docsUrl="https://trypillar.com/docs/guides/tools"
         />
       </div>
 
@@ -548,7 +548,7 @@ function ActionsStep() {
           code={handlerCode}
           language="tsx"
           filePath="app/layout.tsx"
-          docsUrl="https://trypillar.com/docs/guides/actions"
+          docsUrl="https://trypillar.com/docs/guides/tools"
         />
       </div>
 
@@ -567,7 +567,7 @@ function ActionsStep() {
         The AI uses the description and examples to match user requests to the
         right action.{" "}
         <a
-          href="https://trypillar.com/docs/guides/actions"
+          href="https://trypillar.com/docs/guides/tools"
           target="_blank"
           rel="noopener noreferrer"
           className="text-primary hover:underline"
@@ -680,7 +680,7 @@ npx pillar-sync --scan ./src`;
         <SyntaxHighlightedPre
           code={manualSyncCode}
           language="bash"
-          docsUrl="https://trypillar.com/docs/guides/actions"
+          docsUrl="https://trypillar.com/docs/guides/tools"
         />
       </div>
 
@@ -689,7 +689,7 @@ npx pillar-sync --scan ./src`;
         <SyntaxHighlightedPre
           code={syncCode}
           language="bash"
-          docsUrl="https://trypillar.com/docs/guides/actions"
+          docsUrl="https://trypillar.com/docs/guides/tools"
         />
       </div>
 
@@ -699,7 +699,7 @@ npx pillar-sync --scan ./src`;
           code={ciCode}
           language="yaml"
           filePath=".github/workflows/deploy.yml"
-          docsUrl="https://trypillar.com/docs/guides/actions"
+          docsUrl="https://trypillar.com/docs/guides/tools"
         />
       </div>
     </div>

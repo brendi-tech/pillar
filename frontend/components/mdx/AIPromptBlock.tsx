@@ -10,12 +10,12 @@ import { cn } from '@/lib/utils';
  * 
  * To add a new prompt:
  * Simply create the file in examples/prompts/ with .md.txt extension
- * (e.g., examples/prompts/build-actions.md.txt)
+ * (e.g., examples/prompts/build-tools.md.txt)
  */
 const promptContext = require.context('@/examples/prompts', false, /\.txt$/);
 const PROMPT_EXAMPLES: Record<string, string> = {};
 promptContext.keys().forEach((key) => {
-  // Transform './build-actions.md.txt' -> 'build-actions.md'
+  // Transform './build-tools.md.txt' -> 'build-tools.md'
   const normalizedKey = key.replace(/^\.\//, '').replace(/\.txt$/, '');
   const content = promptContext<{ default?: string } | string>(key);
   PROMPT_EXAMPLES[normalizedKey] = typeof content === 'string' ? content : (content.default || '');
@@ -25,7 +25,7 @@ interface AIPromptBlockProps {
   title: string;
   /** Inline content (children) or path to external file (src) */
   children?: React.ReactNode;
-  /** Path relative to examples/prompts/ (without .txt suffix), e.g., "build-actions.md" */
+  /** Path relative to examples/prompts/ (without .txt suffix), e.g., "build-tools.md" */
   src?: string;
 }
 
@@ -35,7 +35,7 @@ interface AIPromptBlockProps {
  * 
  * Usage in MDX:
  * - Inline: <AIPromptBlock title="...">{`prompt content`}</AIPromptBlock>
- * - External: <AIPromptBlock title="..." src="build-actions.md" />
+ * - External: <AIPromptBlock title="..." src="build-tools.md" />
  */
 export function AIPromptBlock({ title, children, src }: AIPromptBlockProps) {
   const [isOpen, setIsOpen] = useState(false);

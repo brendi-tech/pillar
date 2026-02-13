@@ -22,14 +22,14 @@ const DOC_PAGES = [
   "quickstarts/react",
   "quickstarts/vanilla",
   // Features
-  "features/actions",
+  "features/tools",
   "features/chat",
   "features/custom-cards",
   "features/human-escalation",
   "features/knowledge-base",
   // Guides
-  "guides/actions",
-  "guides/actions-sync",
+  "guides/tools",
+  "guides/tools-sync",
   "guides/agent-guidance",
   "guides/context",
   "guides/custom-cards",
@@ -48,7 +48,7 @@ const DOC_PAGES = [
   // Reference
   "reference/core",
   "reference/react",
-  "reference/action-types",
+  "reference/tool-types",
   "reference/events",
   "reference/theme-options",
 ];
