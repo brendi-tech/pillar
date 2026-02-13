@@ -44,7 +44,7 @@ export function TopHeroSection() {
         <div className="flex flex-col items-center gap-2 pb-8 md:pb-12 px-4">
           <Link
             href="/signup"
-            className="group/btn inline-flex items-center justify-center rounded-lg bg-[#FF6E00] hover:bg-[#E06200] text-white pl-8 pr-8 hover:pr-5 py-3 text-base font-medium transition-all whitespace-nowrap"
+            className="group/btn inline-flex items-center justify-center rounded-lg bg-[#FF6E00] hover:bg-[#E06200] text-white px-8 py-3 text-base font-medium transition-colors whitespace-nowrap"
           >
             Get Started
             <span className="inline-flex items-center overflow-hidden w-0 ml-0 group-hover/btn:w-4 group-hover/btn:ml-1.5 transition-all duration-200 ease-out">

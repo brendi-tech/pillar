@@ -18,7 +18,7 @@ export const DeploySection = () => {
       <section className="max-w-marketingSection mx-auto border-x border-marketing relative p-6 pb-0">
         <div className="bg-white relative">
           <NumberedHeading className="bg-[#46280B] text-[#FFD446] absolute top-0 lg:left-[64px] left-1/2 -translate-x-1/2 lg:translate-x-0 z-10">
-            [04] DEPLOY
+            [04] EASY TO DEPLOY
           </NumberedHeading>
 
           <div className="relative">
