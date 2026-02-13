@@ -23,6 +23,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.users.models import Organization, OrganizationInvitation, OrganizationMembership
 from apps.users.serializers.user import UserSerializer
+from common.services import slack
 from apps.users.services.oauth_org_matcher import (
     can_user_join_organization,
     extract_domain_from_email,
@@ -270,6 +271,14 @@ def oauth_callback(request: Request) -> Response:
         )
         created = True
     
+    # Notify team of new signup
+    if created:
+        slack.notify_new_signup(
+            email=user.email,
+            full_name=user.full_name,
+            signup_method=provider_name,
+        )
+
     # Auto-create organization for new users with free email providers
     # This allows Gmail/personal email users to skip the organization selection page
     if created:

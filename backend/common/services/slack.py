@@ -177,5 +177,71 @@ def notify_early_access_request(
             return False
 
 
+def notify_new_signup(
+    email: str,
+    full_name: str = "",
+    signup_method: str = "email",
+) -> bool:
+    """
+    Send a notification when someone creates a new account.
+
+    Args:
+        email: New user's email address
+        full_name: New user's full name (if provided)
+        signup_method: How they signed up - "email", "github", "google", etc.
+
+    Returns:
+        True if notification was sent successfully, False otherwise
+    """
+    try:
+        display_name = full_name or email.split('@')[0]
+        text = f"🎉 New signup: {display_name} ({email})"
+
+        blocks = [
+            {
+                "type": "header",
+                "text": {
+                    "type": "plain_text",
+                    "text": "🎉 New Account Created",
+                    "emoji": True
+                }
+            },
+            {
+                "type": "section",
+                "fields": [
+                    {
+                        "type": "mrkdwn",
+                        "text": f"*Name:*\n{display_name}"
+                    },
+                    {
+                        "type": "mrkdwn",
+                        "text": f"*Email:*\n{email}"
+                    },
+                ]
+            },
+            {
+                "type": "context",
+                "elements": [
+                    {
+                        "type": "mrkdwn",
+                        "text": (
+                            f"Signup method: {signup_method} | "
+                            f"{datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}"
+                        )
+                    }
+                ]
+            }
+        ]
+
+        return send_message(text, blocks)
+
+    except Exception as e:
+        logger.error(f"Error building new signup notification: {e}", exc_info=True)
+        try:
+            return send_message(f"New signup: {email} via {signup_method}")
+        except Exception:
+            return False
+
+
 
 

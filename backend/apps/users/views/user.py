@@ -10,6 +10,7 @@ from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiResp
 from apps.users.models import User, Organization, OrganizationInvitation, OrganizationMembership
 from apps.users.serializers import UserSerializer, UserCreateSerializer
 from common.serializers import ErrorResponseSerializer
+from common.services import slack
 
 logger = logging.getLogger(__name__)
 
@@ -180,6 +181,13 @@ class UserViewSet(viewsets.ModelViewSet):
             logger.info(
                 f'Created organization "{org_name}" and default product for new user {user.email}'
             )
+
+        # Notify team of new signup
+        slack.notify_new_signup(
+            email=user.email,
+            full_name=user.full_name,
+            signup_method="email",
+        )
 
         # Serialize user data
         user_serializer = UserSerializer(user, context={'request': request})

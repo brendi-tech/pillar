@@ -276,7 +276,7 @@ export function AdminAuthProvider({
     "/signup-beta",
     "/logout",
     "/accept-invite",
-  ].includes(pathname);
+  ].includes(pathname) || pathname.startsWith("/oauth-callback");
   if (!isAuthPage && !user) {
     return <Rerouter route={buildReturnToUrl("/login", pathname)} />;
   }
