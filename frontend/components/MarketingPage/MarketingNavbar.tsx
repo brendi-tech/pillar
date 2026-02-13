@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu, X, ChevronDown, Gauge } from "lucide-react";
+import { Menu, X, ChevronDown, Gauge, LayoutDashboard, BarChart3 } from "lucide-react";
 
 function GitHubIcon({ className }: { className?: string }) {
   return (
@@ -33,17 +33,40 @@ const toolsDropdownItems = [
   },
 ];
 
+const demosDropdownItems = [
+  {
+    name: "Grafana Copilot",
+    description: "AI copilot embedded in Grafana dashboards.",
+    href: "/demos/grafana",
+    icon: LayoutDashboard,
+  },
+  {
+    name: "Superset Copilot",
+    description: "AI copilot embedded in Apache Superset.",
+    href: "/demos/superset",
+    icon: BarChart3,
+  },
+];
+
+type DropdownType = "tools" | "demos";
+
 type NavLink =
   | { name: string; href: string; dropdown?: undefined }
-  | { name: string; dropdown: "tools"; href?: undefined };
+  | { name: string; dropdown: DropdownType; href?: undefined };
 
 const navLinks: NavLink[] = [
   { name: "Home", href: "/" },
   { name: "Tools", dropdown: "tools" },
+  { name: "Demos", dropdown: "demos" },
   { name: "Blog", href: "/blog" },
   { name: "Pricing", href: "/pricing" },
   { name: "Docs", href: "/docs" },
 ];
+
+const dropdownItemsMap: Record<DropdownType, typeof toolsDropdownItems> = {
+  tools: toolsDropdownItems,
+  demos: demosDropdownItems,
+};
 
 /**
  * MarketingNavbar - Navigation for the marketing site
@@ -52,16 +75,16 @@ const navLinks: NavLink[] = [
 export function MarketingNavbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [toolsOpen, setToolsOpen] = useState(false);
-  const toolsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [openDropdown, setOpenDropdown] = useState<DropdownType | null>(null);
+  const dropdownTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const openTools = () => {
-    if (toolsTimeoutRef.current) clearTimeout(toolsTimeoutRef.current);
-    setToolsOpen(true);
+  const openMenu = (dropdown: DropdownType) => {
+    if (dropdownTimeoutRef.current) clearTimeout(dropdownTimeoutRef.current);
+    setOpenDropdown(dropdown);
   };
 
-  const closeTools = () => {
-    toolsTimeoutRef.current = setTimeout(() => setToolsOpen(false), 150);
+  const closeMenu = () => {
+    dropdownTimeoutRef.current = setTimeout(() => setOpenDropdown(null), 150);
   };
 
   useEffect(() => {
@@ -95,27 +118,27 @@ export function MarketingNavbar() {
           {/* Center: Nav Links (absolutely centered) */}
           <div className="hidden md:flex items-center gap-6 lg:gap-8 absolute left-1/2 -translate-x-1/2">
             {navLinks.map((link) =>
-              link.dropdown === "tools" ? (
+              link.dropdown ? (
                 <div
                   key={link.name}
                   className="relative"
-                  onMouseEnter={openTools}
-                  onMouseLeave={closeTools}
+                  onMouseEnter={() => openMenu(link.dropdown)}
+                  onMouseLeave={closeMenu}
                 >
                   <button
                     className="inline-flex items-center gap-1 text-sm sm:text-[0.9375rem] font-medium text-[#1A1A1A] hover:text-[#FF6E00] transition-colors whitespace-nowrap"
-                    onClick={() => setToolsOpen((prev) => !prev)}
+                    onClick={() => setOpenDropdown((prev) => prev === link.dropdown ? null : link.dropdown)}
                   >
                     {link.name}
                     <ChevronDown
-                      className={`h-3.5 w-3.5 transition-transform duration-200 ${toolsOpen ? "rotate-180" : ""}`}
+                      className={`h-3.5 w-3.5 transition-transform duration-200 ${openDropdown === link.dropdown ? "rotate-180" : ""}`}
                     />
                   </button>
 
                   {/* Dropdown */}
                   <div
                     className={`absolute z-50 top-full left-1/2 -translate-x-1/2 pt-2 transition-all duration-200 ${
-                      toolsOpen
+                      openDropdown === link.dropdown
                         ? "opacity-100 translate-y-0 pointer-events-auto"
                         : "opacity-0 -translate-y-1 pointer-events-none"
                     }`}
@@ -124,11 +147,11 @@ export function MarketingNavbar() {
                       className="w-[280px] rounded-xl border border-gray-200 shadow-lg shadow-black/[0.08] overflow-hidden p-1.5"
                       style={{ background: "#fff" }}
                     >
-                      {toolsDropdownItems.map((item) => (
+                      {dropdownItemsMap[link.dropdown].map((item) => (
                         <Link
                           key={item.href}
                           href={item.href}
-                          onClick={() => setToolsOpen(false)}
+                          onClick={() => setOpenDropdown(null)}
                           className="flex items-start gap-3 rounded-lg px-3 py-2.5 hover:bg-[#FFF7F0] transition-colors group"
                         >
                           <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#FFF1E6] text-[#FF6E00] group-hover:bg-[#FFE4CC] transition-colors">
@@ -205,12 +228,12 @@ export function MarketingNavbar() {
           <div className="md:hidden pb-4 border-t border-[#E5E0D8] bg-white/80 backdrop-blur-lg">
             <div className="flex flex-col space-y-1 pt-4">
               {navLinks.map((link) =>
-                link.dropdown === "tools" ? (
+                link.dropdown ? (
                   <div key={link.name} className="flex flex-col">
                     <span className="py-2 text-[#1A1A1A] font-medium text-xs uppercase tracking-wider text-[#6B6B6B]">
                       {link.name}
                     </span>
-                    {toolsDropdownItems.map((item) => (
+                    {dropdownItemsMap[link.dropdown].map((item) => (
                       <Link
                         key={item.href}
                         href={item.href}
