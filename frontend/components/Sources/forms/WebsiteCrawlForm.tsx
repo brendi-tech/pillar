@@ -29,6 +29,12 @@ export function WebsiteCrawlForm({ onBack, onSubmit, isSubmitting }: WebsiteCraw
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Normalize URL: add https:// if no protocol specified
+    let normalizedUrl = url.trim();
+    if (normalizedUrl && !normalizedUrl.match(/^https?:\/\//i)) {
+      normalizedUrl = `https://${normalizedUrl}`;
+    }
+    
     const crawlConfig: CrawlConfig = {
       max_pages: maxPages,
       include_paths: includePaths
@@ -39,7 +45,7 @@ export function WebsiteCrawlForm({ onBack, onSubmit, isSubmitting }: WebsiteCraw
         : undefined,
     };
 
-    onSubmit({ name: name.trim(), url: url.trim(), crawl_config: crawlConfig });
+    onSubmit({ name: name.trim(), url: normalizedUrl, crawl_config: crawlConfig });
   };
 
   // URL just needs a dot to indicate a domain (e.g., example.com) - backend normalizes

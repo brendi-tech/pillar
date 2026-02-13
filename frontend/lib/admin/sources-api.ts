@@ -2,7 +2,7 @@
  * Knowledge Sources API module for admin dashboard.
  * Simplified to match the backend KnowledgeSource model.
  */
-import { adminFetch, adminPost, adminPatch, adminDelete, apiClient, getStoredAccessToken } from './api-client';
+import { adminFetch, adminPost, adminPatch, adminDelete, apiClient, getStoredAccessToken, getCurrentOrganizationId, getCurrentProductId } from './api-client';
 import type {
   KnowledgeSourceConfig,
   KnowledgeSourceType,
@@ -127,9 +127,17 @@ export const knowledgeSourcesAPI = {
     const formData = new FormData();
     formData.append('file', file);
 
+    // Build query params for org/product context (same as adminFetch/adminPost)
+    const params = new URLSearchParams();
+    const orgId = getCurrentOrganizationId();
+    const productId = getCurrentProductId();
+    if (orgId) params.append('organization', orgId);
+    if (productId) params.append('product', productId);
+    const queryString = params.toString();
+
     const token = getStoredAccessToken();
     const response = await apiClient.post<DocumentUploadResponse>(
-      `/api/admin/knowledge/sources/${sourceId}/upload/`,
+      `/api/admin/knowledge/sources/${sourceId}/upload/${queryString ? `?${queryString}` : ''}`,
       formData,
       {
         headers: {
@@ -164,9 +172,17 @@ export const knowledgeSourcesAPI = {
     const formData = new FormData();
     formData.append('file', file);
 
+    // Build query params for org/product context (same as adminFetch/adminPost)
+    const params = new URLSearchParams();
+    const orgId = getCurrentOrganizationId();
+    const productId = getCurrentProductId();
+    if (orgId) params.append('organization', orgId);
+    if (productId) params.append('product', productId);
+    const queryString = params.toString();
+
     const token = getStoredAccessToken();
     const response = await apiClient.post<PendingUpload>(
-      `/api/admin/knowledge/pending-uploads/`,
+      `/api/admin/knowledge/pending-uploads/${queryString ? `?${queryString}` : ''}`,
       formData,
       {
         headers: {

@@ -23,6 +23,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.users.models import Organization, OrganizationInvitation, OrganizationMembership
 from apps.users.serializers.user import UserSerializer
+from apps.products.models import Product
 from common.services import slack
 from apps.users.services.oauth_org_matcher import (
     can_user_join_organization,
@@ -298,6 +299,9 @@ def oauth_callback(request: Request) -> Response:
                 role=OrganizationMembership.Role.ADMIN
             )
             
+            # Create a default Product for the new organization
+            _create_default_product(organization, user)
+            
             logger.info(f"Auto-created organization '{org_name}' for free email user: {email}")
     
     # Generate JWT token
@@ -332,6 +336,9 @@ def oauth_callback(request: Request) -> Response:
             user=user,
             role=OrganizationMembership.Role.ADMIN
         )
+        
+        # Create a default Product for the new organization
+        _create_default_product(organization, user)
         
         needs_organization = False
         logger.info(f"Auto-created organization '{org_name}' for new user with no matching orgs: {email}")
@@ -513,6 +520,36 @@ def select_organization(request: Request) -> Response:
             'name': organization.name,
         }
     })
+
+
+def _create_default_product(organization: Organization, user) -> Product:
+    """
+    Create a default Product for a new organization.
+    
+    This mirrors the logic in UserViewSet.create() to ensure OAuth signups
+    get the same default product setup as regular email signups.
+    """
+    import re
+    import uuid
+    
+    # Generate a subdomain from the org name (lowercase, alphanumeric, hyphens)
+    org_name = organization.name
+    base_subdomain = re.sub(r'[^a-z0-9-]', '', org_name.lower().replace(' ', '-').replace("'", ''))
+    base_subdomain = re.sub(r'-+', '-', base_subdomain).strip('-')  # Remove duplicate/leading/trailing hyphens
+    if len(base_subdomain) < 3:
+        base_subdomain = f"org-{base_subdomain}" if base_subdomain else "org"
+    # Add a short unique suffix to avoid subdomain conflicts
+    subdomain = f"{base_subdomain[:40]}-{uuid.uuid4().hex[:6]}"
+    
+    product = Product.objects.create(
+        organization=organization,
+        name=f"{user.full_name or user.email.split('@')[0]}",
+        subdomain=subdomain,
+        is_default=True,
+    )
+    
+    logger.info(f'Created default product "{product.name}" for organization "{organization.name}"')
+    return product
 
 
 def _exchange_code_for_user(provider: str, code: str) -> Dict[str, Any]:

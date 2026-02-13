@@ -1,5 +1,6 @@
 "use client";
 
+import type { MetadataItem } from "@/components/shared";
 import {
   DetailHeader,
   DetailPageShell,
@@ -7,7 +8,6 @@ import {
   SectionLabel,
   TimestampFooter,
 } from "@/components/shared";
-import type { MetadataItem } from "@/components/shared";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,16 +22,12 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   deleteKnowledgeItemMutation,
+  getDocumentDownloadUrlMutation,
   knowledgeItemDetailQuery,
   knowledgeKeys,
   knowledgeSourceDetailQuery,
@@ -40,7 +36,6 @@ import {
 } from "@/queries/knowledge.queries";
 import {
   KNOWLEDGE_ITEM_STATUS_COLORS,
-  KNOWLEDGE_ITEM_STATUS_LABELS,
   KNOWLEDGE_ITEM_TYPE_LABELS,
 } from "@/types/knowledge";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -60,7 +55,6 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { getDocumentDownloadUrlMutation } from "@/queries/knowledge.queries";
 
 // =============================================================================
 // File type detection helpers
@@ -309,7 +303,11 @@ export function KnowledgeItemDetail({
     metadataItems.push({
       label: "Status",
       value: (
-        <Badge variant={!item.is_active ? "secondary" : getStatusBadgeVariant(item.status)}>
+        <Badge
+          variant={
+            !item.is_active ? "secondary" : getStatusBadgeVariant(item.status)
+          }
+        >
           {item.status === "processing" && item.is_active && (
             <Loader2 className="mr-1 h-3 w-3 animate-spin" />
           )}
@@ -327,9 +325,7 @@ export function KnowledgeItemDetail({
       metadataItems.push({
         label: "Chunks",
         value: (
-          <span className="font-semibold tabular-nums">
-            {item.chunk_count}
-          </span>
+          <span className="font-semibold tabular-nums">{item.chunk_count}</span>
         ),
       });
     }
@@ -387,8 +383,11 @@ export function KnowledgeItemDetail({
       for (const [key, value] of remainingEntries) {
         if (value == null || value === "") continue;
         metadataItems.push({
-          label: key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
-          value: typeof value === "object" ? JSON.stringify(value) : String(value),
+          label: key
+            .replace(/_/g, " ")
+            .replace(/\b\w/g, (c) => c.toUpperCase()),
+          value:
+            typeof value === "object" ? JSON.stringify(value) : String(value),
         });
       }
     }
@@ -451,9 +450,7 @@ export function KnowledgeItemDetail({
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>
-                        Delete Knowledge Item
-                      </AlertDialogTitle>
+                      <AlertDialogTitle>Delete Knowledge Item</AlertDialogTitle>
                       <AlertDialogDescription>
                         Are you sure you want to delete &quot;{item.title}
                         &quot;? This will remove this content from the knowledge
@@ -547,9 +544,7 @@ export function KnowledgeItemDetail({
           {item.excerpt && (
             <div>
               <SectionLabel>Excerpt</SectionLabel>
-              <p className="text-sm leading-relaxed">
-                {item.excerpt}
-              </p>
+              <p className="text-sm leading-relaxed">{item.excerpt}</p>
             </div>
           )}
 
@@ -585,9 +580,7 @@ export function KnowledgeItemDetail({
                       Original
                     </TabsTrigger>
                   </TabsList>
-                  {!(
-                    activeContentTab === "original" && isDocumentUpload
-                  ) && (
+                  {!(activeContentTab === "original" && isDocumentUpload) && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -630,7 +623,7 @@ export function KnowledgeItemDetail({
 
                 <TabsContent value="original">
                   {isDocumentUpload ? (
-                    <div className="h-[400px] w-full rounded-md border bg-muted/30">
+                    <div className="h-[800px] w-full rounded-md border bg-muted/30">
                       {isLoadingDownloadUrl ? (
                         <div className="flex h-full items-center justify-center">
                           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -687,7 +680,7 @@ export function KnowledgeItemDetail({
                       )}
                     </div>
                   ) : (
-                    <ScrollArea className="h-[400px] w-full rounded-md border bg-muted/30 p-4">
+                    <ScrollArea className="h-[800px] w-full rounded-md border bg-muted/30 p-4">
                       <pre className="whitespace-pre-wrap text-sm font-mono">
                         {item.raw_content || "No original content available"}
                       </pre>

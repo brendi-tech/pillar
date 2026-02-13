@@ -21,6 +21,8 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
+import { AIPromptBlock } from "@/components/mdx/AIPromptBlock";
+import { SyntaxHighlightedPre } from "@/components/mdx/SyntaxHighlightedPre";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   AlertDialog,
@@ -47,8 +49,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AIPromptBlock } from "@/components/mdx/AIPromptBlock";
-import { SyntaxHighlightedPre } from "@/components/mdx/SyntaxHighlightedPre";
 import { adminFetch } from "@/lib/admin/api-client";
 import { cn } from "@/lib/utils";
 import { useProduct } from "@/providers/ProductProvider";
@@ -94,7 +94,15 @@ interface CreateSecretResponse {
   message: string;
 }
 
-function CopyButton({ value, className, disabled }: { value: string; className?: string; disabled?: boolean }) {
+function CopyButton({
+  value,
+  className,
+  disabled,
+}: {
+  value: string;
+  className?: string;
+  disabled?: boolean;
+}) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
@@ -137,7 +145,11 @@ function SecretsManager({ productId, onSecretCreated }: SecretsManagerProps) {
   const [nameError, setNameError] = useState<string | null>(null);
   const autoCreatedRef = useRef(false);
 
-  const { data: secrets, isPending, isError } = useQuery({
+  const {
+    data: secrets,
+    isPending,
+    isError,
+  } = useQuery({
     queryKey: ["sync-secrets", productId],
     queryFn: () => adminFetch<SyncSecret[]>(`/configs/${productId}/secrets/`),
     enabled: !!productId,
@@ -145,10 +157,13 @@ function SecretsManager({ productId, onSecretCreated }: SecretsManagerProps) {
 
   const createSecretMutation = useMutation({
     mutationFn: async (name: string) => {
-      return adminFetch<CreateSecretResponse>(`/configs/${productId}/secrets/`, {
-        method: "POST",
-        body: JSON.stringify({ name }),
-      });
+      return adminFetch<CreateSecretResponse>(
+        `/configs/${productId}/secrets/`,
+        {
+          method: "POST",
+          body: JSON.stringify({ name }),
+        }
+      );
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["sync-secrets", productId] });
@@ -213,14 +228,17 @@ function SecretsManager({ productId, onSecretCreated }: SecretsManagerProps) {
     }
   };
 
-  const isAutoCreating = createSecretMutation.isPending && (!secrets || secrets.length === 0);
+  const isAutoCreating =
+    createSecretMutation.isPending && (!secrets || secrets.length === 0);
 
   if (isPending || isAutoCreating) {
     return (
       <div className="space-y-3">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" />
-          <span>{isAutoCreating ? "Generating your secret key..." : "Loading..."}</span>
+          <span>
+            {isAutoCreating ? "Generating your secret key..." : "Loading..."}
+          </span>
         </div>
         <Skeleton className="h-10 w-full" />
       </div>
@@ -232,7 +250,9 @@ function SecretsManager({ productId, onSecretCreated }: SecretsManagerProps) {
       <Alert variant="destructive">
         <AlertTriangle className="h-4 w-4" />
         <AlertTitle>Error</AlertTitle>
-        <AlertDescription>Failed to load secrets. Please try again.</AlertDescription>
+        <AlertDescription>
+          Failed to load secrets. Please try again.
+        </AlertDescription>
       </Alert>
     );
   }
@@ -257,13 +277,19 @@ function SecretsManager({ productId, onSecretCreated }: SecretsManagerProps) {
             <TableBody>
               {secrets.map((secret) => (
                 <TableRow key={secret.id}>
-                  <TableCell className="font-mono text-sm">{secret.name}</TableCell>
+                  <TableCell className="font-mono text-sm">
+                    {secret.name}
+                  </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
-                    {formatDistanceToNow(new Date(secret.created_at), { addSuffix: true })}
+                    {formatDistanceToNow(new Date(secret.created_at), {
+                      addSuffix: true,
+                    })}
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {secret.last_used_at
-                      ? formatDistanceToNow(new Date(secret.last_used_at), { addSuffix: true })
+                      ? formatDistanceToNow(new Date(secret.last_used_at), {
+                          addSuffix: true,
+                        })
                       : "Never"}
                   </TableCell>
                   <TableCell>
@@ -282,14 +308,17 @@ function SecretsManager({ productId, onSecretCreated }: SecretsManagerProps) {
                         <AlertDialogHeader>
                           <AlertDialogTitle>Revoke Secret</AlertDialogTitle>
                           <AlertDialogDescription>
-                            Are you sure you want to revoke the &quot;{secret.name}&quot; secret? Any CI/CD pipelines
+                            Are you sure you want to revoke the &quot;
+                            {secret.name}&quot; secret? Any CI/CD pipelines
                             using this secret will fail to authenticate.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>Cancel</AlertDialogCancel>
                           <AlertDialogAction
-                            onClick={() => deleteSecretMutation.mutate(secret.id)}
+                            onClick={() =>
+                              deleteSecretMutation.mutate(secret.id)
+                            }
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                           >
                             Revoke
@@ -318,7 +347,9 @@ function SecretsManager({ productId, onSecretCreated }: SecretsManagerProps) {
                 placeholder="e.g., production, staging, dev-ci"
                 value={newSecretName}
                 onChange={(e) => {
-                  setNewSecretName(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""));
+                  setNewSecretName(
+                    e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "")
+                  );
                   setNameError(null);
                 }}
                 onKeyDown={(e) => {
@@ -328,7 +359,9 @@ function SecretsManager({ productId, onSecretCreated }: SecretsManagerProps) {
                 }}
                 className="font-mono"
               />
-              {nameError && <p className="text-xs text-destructive mt-1">{nameError}</p>}
+              {nameError && (
+                <p className="text-xs text-destructive mt-1">{nameError}</p>
+              )}
             </div>
             <Button
               onClick={handleCreateSecret}
@@ -343,14 +376,16 @@ function SecretsManager({ productId, onSecretCreated }: SecretsManagerProps) {
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
-            Create separate secrets for different environments (e.g., production, staging)
+            Create separate secrets for different environments (e.g.,
+            production, staging)
           </p>
         </div>
       )}
 
       {!canCreateMore && (
         <p className="text-xs text-muted-foreground">
-          Maximum 10 secrets per product. Delete an existing secret to create a new one.
+          Maximum 10 secrets per product. Delete an existing secret to create a
+          new one.
         </p>
       )}
     </div>
@@ -371,7 +406,10 @@ const FRAMEWORKS = [
 function InstallStep({ subdomain }: { subdomain: string }) {
   const installCode = `npm install @pillar-ai/sdk @pillar-ai/react`;
 
-  const providerCode = installProviderExample.replace("your-product-key", subdomain);
+  const providerCode = installProviderExample.replace(
+    "your-product-key",
+    subdomain
+  );
 
   return (
     <div className="space-y-4">
@@ -401,17 +439,28 @@ function InstallStep({ subdomain }: { subdomain: string }) {
         <TabsContent value="react" className="space-y-4 mt-4">
           <div className="space-y-2">
             <h4 className="text-sm font-medium">Install packages</h4>
-            <SyntaxHighlightedPre code={installCode} language="bash" docsUrl="https://trypillar.com/docs/quickstarts/react" />
+            <SyntaxHighlightedPre
+              code={installCode}
+              language="bash"
+              docsUrl="https://trypillar.com/docs/quickstarts/react"
+            />
           </div>
 
           <div className="space-y-2">
-            <h4 className="text-sm font-medium">Wrap your app with PillarProvider</h4>
-            <SyntaxHighlightedPre code={providerCode} language="tsx" filePath="app/layout.tsx" docsUrl="https://trypillar.com/docs/quickstarts/react" />
+            <h4 className="text-sm font-medium">
+              Wrap your app with PillarProvider
+            </h4>
+            <SyntaxHighlightedPre
+              code={providerCode}
+              language="tsx"
+              filePath="app/layout.tsx"
+              docsUrl="https://trypillar.com/docs/quickstarts/react"
+            />
           </div>
         </TabsContent>
 
         {/* Placeholder content for future frameworks */}
-        {FRAMEWORKS.filter(f => !f.enabled).map((framework) => (
+        {FRAMEWORKS.filter((f) => !f.enabled).map((framework) => (
           <TabsContent key={framework.id} value={framework.id} className="mt-4">
             <div className="text-center py-8 text-muted-foreground">
               <p>{framework.name} support coming soon!</p>
@@ -432,7 +481,9 @@ function ActionsStep() {
     <div className="space-y-4">
       <p className="text-muted-foreground text-sm">
         Actions let the AI assistant perform tasks in your app, like navigating
-        to pages or triggering features. Use the <code className="bg-muted px-1 rounded">usePillarTool</code> hook to define tools with co-located handlers.
+        to pages or triggering features. Use the{" "}
+        <code className="bg-muted px-1 rounded">usePillarTool</code> hook to
+        define tools with co-located handlers.
       </p>
 
       <AIPromptBlock title="Build actions for my app" src="build-actions.md" />
@@ -450,19 +501,31 @@ function ActionsStep() {
             <TableBody>
               <TableRow>
                 <TableCell className="font-mono text-xs">navigate</TableCell>
-                <TableCell className="text-sm text-muted-foreground">Go to a page in your app</TableCell>
+                <TableCell className="text-sm text-muted-foreground">
+                  Go to a page in your app
+                </TableCell>
               </TableRow>
               <TableRow>
-                <TableCell className="font-mono text-xs">trigger_action</TableCell>
-                <TableCell className="text-sm text-muted-foreground">Run custom logic (modals, wizards, API calls)</TableCell>
+                <TableCell className="font-mono text-xs">
+                  trigger_action
+                </TableCell>
+                <TableCell className="text-sm text-muted-foreground">
+                  Run custom logic (modals, wizards, API calls)
+                </TableCell>
               </TableRow>
               <TableRow>
                 <TableCell className="font-mono text-xs">query</TableCell>
-                <TableCell className="text-sm text-muted-foreground">Fetch data and return to the AI agent</TableCell>
+                <TableCell className="text-sm text-muted-foreground">
+                  Fetch data and return to the AI agent
+                </TableCell>
               </TableRow>
               <TableRow>
-                <TableCell className="font-mono text-xs">external_link</TableCell>
-                <TableCell className="text-sm text-muted-foreground">Open URL in new tab</TableCell>
+                <TableCell className="font-mono text-xs">
+                  external_link
+                </TableCell>
+                <TableCell className="text-sm text-muted-foreground">
+                  Open URL in new tab
+                </TableCell>
               </TableRow>
             </TableBody>
           </Table>
@@ -471,33 +534,59 @@ function ActionsStep() {
 
       <div className="space-y-2">
         <h4 className="text-sm font-medium">Define tools with usePillarTool</h4>
-        <SyntaxHighlightedPre code={actionsCode} language="typescript" filePath="hooks/usePillarTools.ts" docsUrl="https://trypillar.com/docs/guides/actions" />
+        <SyntaxHighlightedPre
+          code={actionsCode}
+          language="typescript"
+          filePath="hooks/usePillarTools.ts"
+          docsUrl="https://trypillar.com/docs/guides/actions"
+        />
       </div>
 
       <div className="space-y-2">
         <h4 className="text-sm font-medium">Use the hook in your app</h4>
-        <SyntaxHighlightedPre code={handlerCode} language="tsx" filePath="app/layout.tsx" docsUrl="https://trypillar.com/docs/guides/actions" />
+        <SyntaxHighlightedPre
+          code={handlerCode}
+          language="tsx"
+          filePath="app/layout.tsx"
+          docsUrl="https://trypillar.com/docs/guides/actions"
+        />
       </div>
 
       <div className="bg-blue-100 dark:bg-blue-500/10 rounded-lg p-3 border border-blue-300 dark:border-blue-500/30 flex gap-2">
         <Check className="h-4 w-4 text-blue-600 dark:text-blue-500 shrink-0 mt-0.5" />
         <p className="text-sm text-blue-800 dark:text-blue-200">
-          The CLI automatically scans your code for <code className="bg-blue-200 dark:bg-blue-500/20 px-1 rounded">usePillarTool</code> calls — no need to export from a single file.
+          The CLI automatically scans your code for{" "}
+          <code className="bg-blue-200 dark:bg-blue-500/20 px-1 rounded">
+            usePillarTool
+          </code>{" "}
+          calls — no need to export from a single file.
         </p>
       </div>
 
       <p className="text-xs text-muted-foreground">
-        The AI uses the description and examples to match user requests to the right action.{' '}
-        <a href="https://trypillar.com/docs/guides/actions" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+        The AI uses the description and examples to match user requests to the
+        right action.{" "}
+        <a
+          href="https://trypillar.com/docs/guides/actions"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-primary hover:underline"
+        >
           Read the full Actions guide
-        </a>{' '}
+        </a>{" "}
         for data extraction, context filtering, and best practices.
       </p>
     </div>
   );
 }
 
-function SyncStep({ subdomain, productId }: { subdomain: string; productId: string | undefined }) {
+function SyncStep({
+  subdomain,
+  productId,
+}: {
+  subdomain: string;
+  productId: string | undefined;
+}) {
   const [newlyGeneratedSecret, setNewlyGeneratedSecret] = useState<{
     secret: string;
     name: string;
@@ -522,8 +611,10 @@ npx pillar-sync --scan ./src`;
   return (
     <div className="space-y-4">
       <p className="text-muted-foreground text-sm">
-        The CLI scans your code for <code className="bg-muted px-1 rounded">usePillarTool</code> calls and syncs them to Pillar.
-        Run this in your CI/CD pipeline to keep actions up to date.
+        The CLI scans your code for{" "}
+        <code className="bg-muted px-1 rounded">usePillarTool</code> calls and
+        syncs them to Pillar. Run this in your CI/CD pipeline to keep actions up
+        to date.
       </p>
 
       {/* PILLAR_SLUG */}
@@ -532,9 +623,7 @@ npx pillar-sync --scan ./src`;
           <Tag className="h-4 w-4 text-purple-500" />
           <code className="font-mono text-sm font-medium">PILLAR_SLUG</code>
         </div>
-        <p className="text-xs text-muted-foreground">
-          Your product identifier
-        </p>
+        <p className="text-xs text-muted-foreground">Your product identifier</p>
         <div className="flex items-center gap-2">
           <div className="flex-1 rounded bg-background border px-3 py-2 font-mono text-xs">
             {subdomain}
@@ -550,23 +639,32 @@ npx pillar-sync --scan ./src`;
           <code className="font-mono text-sm font-medium">PILLAR_SECRET</code>
         </div>
         <p className="text-xs text-muted-foreground">
-          Generate a secret key to authenticate the sync command.
-          Secret values are only displayed once — copy it when it appears.
+          Generate a secret key to authenticate the sync command. Secret values
+          are only displayed once — copy it when it appears.
         </p>
         {productId && (
-          <SecretsManager productId={productId} onSecretCreated={handleSecretCreated} />
+          <SecretsManager
+            productId={productId}
+            onSecretCreated={handleSecretCreated}
+          />
         )}
       </div>
 
       {/* Newly Generated Secret Warning */}
       {newlyGeneratedSecret && (
-        <Alert variant="default" className="border-amber-500/50 bg-amber-50 dark:bg-amber-950/30">
+        <Alert
+          variant="default"
+          className="border-amber-500/50 bg-amber-50 dark:bg-amber-950/30"
+        >
           <Key className="h-4 w-4 text-amber-600" />
           <AlertTitle className="text-amber-800 dark:text-amber-200">
             Copy Your &quot;{newlyGeneratedSecret.name}&quot; Secret Now!
           </AlertTitle>
           <AlertDescription className="text-amber-700 dark:text-amber-300 space-y-2">
-            <p>This secret will only be shown once. Copy it now and store it securely.</p>
+            <p>
+              This secret will only be shown once. Copy it now and store it
+              securely.
+            </p>
             <div className="flex items-center gap-2 mt-2">
               <code className="flex-1 rounded bg-background border px-3 py-2 font-mono text-xs break-all">
                 {newlyGeneratedSecret.secret}
@@ -579,17 +677,30 @@ npx pillar-sync --scan ./src`;
 
       <div className="space-y-2">
         <h4 className="text-sm font-medium">Run manually</h4>
-        <SyntaxHighlightedPre code={manualSyncCode} language="bash" docsUrl="https://trypillar.com/docs/guides/actions" />
+        <SyntaxHighlightedPre
+          code={manualSyncCode}
+          language="bash"
+          docsUrl="https://trypillar.com/docs/guides/actions"
+        />
       </div>
 
       <div className="space-y-2">
         <h4 className="text-sm font-medium">Run in CI/CD pipeline</h4>
-        <SyntaxHighlightedPre code={syncCode} language="bash" docsUrl="https://trypillar.com/docs/guides/actions" />
+        <SyntaxHighlightedPre
+          code={syncCode}
+          language="bash"
+          docsUrl="https://trypillar.com/docs/guides/actions"
+        />
       </div>
 
       <div className="space-y-2">
         <h4 className="text-sm font-medium">GitHub Actions example</h4>
-        <SyntaxHighlightedPre code={ciCode} language="yaml" filePath=".github/workflows/deploy.yml" docsUrl="https://trypillar.com/docs/guides/actions" />
+        <SyntaxHighlightedPre
+          code={ciCode}
+          language="yaml"
+          filePath=".github/workflows/deploy.yml"
+          docsUrl="https://trypillar.com/docs/guides/actions"
+        />
       </div>
     </div>
   );
@@ -609,7 +720,7 @@ function MiniStepperHeader({
   onStepClick: (step: number) => void;
 }) {
   return (
-    <div className="relative flex items-center justify-between mb-6">
+    <div className="relative  mb-6">
       {/* Connector line behind */}
       <div className="absolute top-4 left-0 right-0 h-0.5 bg-muted-foreground/20" />
       <div
@@ -618,43 +729,44 @@ function MiniStepperHeader({
           width: `${((currentSubStep - 1) / (subSteps.length - 1)) * 100}%`,
         }}
       />
-
-      {/* Steps */}
-      {subSteps.map((step) => (
-        <button
-          key={step.id}
-          type="button"
-          onClick={() => onStepClick(step.id)}
-          className="relative z-10 flex flex-col items-center gap-1.5 cursor-pointer"
-        >
-          <div
-            className={cn(
-              "flex h-8 w-8 items-center justify-center rounded-full border-2 transition-colors bg-background",
-              currentSubStep === step.id
-                ? "border-primary bg-primary text-primary-foreground"
-                : currentSubStep > step.id
+      <div className="flex items-center justify-between">
+        {/* Steps */}
+        {subSteps.map((step) => (
+          <button
+            key={step.id}
+            type="button"
+            onClick={() => onStepClick(step.id)}
+            className="relative z-10 flex flex-col items-center gap-1.5 cursor-pointer first:translate-x-[-2px]"
+          >
+            <div
+              className={cn(
+                "flex h-8 w-8 items-center justify-center rounded-full border-2 transition-colors bg-background",
+                currentSubStep === step.id
                   ? "border-primary bg-primary text-primary-foreground"
-                  : "border-muted-foreground/30 text-muted-foreground"
-            )}
-          >
-            {currentSubStep > step.id ? (
-              <Check className="h-4 w-4" />
-            ) : (
-              step.icon
-            )}
-          </div>
-          <span
-            className={cn(
-              "text-xs font-medium",
-              currentSubStep >= step.id
-                ? "text-foreground"
-                : "text-muted-foreground"
-            )}
-          >
-            {step.title}
-          </span>
-        </button>
-      ))}
+                  : currentSubStep > step.id
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-muted-foreground/30 text-muted-foreground"
+              )}
+            >
+              {currentSubStep > step.id ? (
+                <Check className="h-4 w-4" />
+              ) : (
+                step.icon
+              )}
+            </div>
+            <span
+              className={cn(
+                "text-xs font-medium",
+                currentSubStep >= step.id
+                  ? "text-foreground"
+                  : "text-muted-foreground"
+              )}
+            >
+              {step.title}
+            </span>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -669,14 +781,14 @@ const BASE_SUB_STEPS: SubStep[] = [
   { id: 3, title: "Sync", icon: <RefreshCw className="h-4 w-4" /> },
 ];
 
-const TEST_SUB_STEP: SubStep = { 
-  id: 4, 
-  title: "Test", 
-  icon: <Sparkles className="h-4 w-4" /> 
+const TEST_SUB_STEP: SubStep = {
+  id: 4,
+  title: "Test",
+  icon: <Sparkles className="h-4 w-4" />,
 };
 
-export function SDKSetupStep({ 
-  onComplete, 
+export function SDKSetupStep({
+  onComplete,
   initialSubStep = 1,
   showTestStep = false,
 }: SDKSetupStepProps) {
@@ -686,8 +798,8 @@ export function SDKSetupStep({
   const [currentSubStep, setCurrentSubStep] = useState(initialSubStep);
 
   // Include test step if enabled
-  const subSteps = showTestStep 
-    ? [...BASE_SUB_STEPS, TEST_SUB_STEP] 
+  const subSteps = showTestStep
+    ? [...BASE_SUB_STEPS, TEST_SUB_STEP]
     : BASE_SUB_STEPS;
 
   const handleNext = () => {
@@ -725,12 +837,11 @@ export function SDKSetupStep({
         {/* Step Content */}
         {currentSubStep === 1 && <InstallStep subdomain={subdomain} />}
         {currentSubStep === 2 && <ActionsStep />}
-        {currentSubStep === 3 && <SyncStep subdomain={subdomain} productId={productId} />}
+        {currentSubStep === 3 && (
+          <SyncStep subdomain={subdomain} productId={productId} />
+        )}
         {currentSubStep === 4 && showTestStep && (
-          <TestPillarStep 
-            onComplete={onComplete} 
-            onBack={handleBack}
-          />
+          <TestPillarStep onComplete={onComplete} onBack={handleBack} />
         )}
 
         {/* Navigation - hide when on Test step since TestPillarStep has its own buttons */}

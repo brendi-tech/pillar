@@ -1,12 +1,12 @@
 "use client";
 
+import { PillarLogoWithName } from "@/components/marketing/LandingPage/PillarLogoWithName";
 import { OAuthButtons } from "@/components/OAuthButtons/";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRedirectToReturnPath, useReturnToValue } from "@/hooks";
-import { PillarLogoWithName } from "@/components/marketing/LandingPage/PillarLogoWithName";
 import { useAuth } from "@/providers/AuthProvider";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
@@ -190,7 +190,7 @@ export function SignupForm({ requireInviteCode = false }: SignupFormProps) {
 
             <form onSubmit={handleSignup} className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="fullName" className="text-sm font-medium">
+                <Label htmlFor="fullName" className="text-sm font-medium block">
                   Full Name
                 </Label>
                 <Input
@@ -207,7 +207,7 @@ export function SignupForm({ requireInviteCode = false }: SignupFormProps) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium">
+                <Label htmlFor="email" className="text-sm font-medium block">
                   Email
                 </Label>
                 <Input
@@ -224,7 +224,7 @@ export function SignupForm({ requireInviteCode = false }: SignupFormProps) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-medium">
+                <Label htmlFor="password" className="text-sm font-medium block">
                   Password
                 </Label>
                 <Input

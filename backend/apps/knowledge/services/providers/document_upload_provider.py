@@ -214,6 +214,7 @@ class DocumentUploadProvider(BaseProvider):
             external_id=external_id,
             defaults={
                 "organization": source.organization,
+                "product": source.product,  # Denormalized from source
                 "item_type": KnowledgeItem.ItemType.PAGE,
                 "title": Path(file.name).stem,
                 "url": "",  # No external URL

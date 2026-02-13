@@ -2,12 +2,12 @@
 
 // TEMPORARILY DISABLED - OAuth buttons commented out
 // import { OAuthButtons } from "@/components/OAuthButtons/";
+import { PillarLogoWithName } from "@/components/marketing/LandingPage/PillarLogoWithName";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRedirectToReturnPath, useReturnToValue } from "@/hooks";
-import { PillarLogoWithName } from "@/components/marketing/LandingPage/PillarLogoWithName";
 import { useAuth } from "@/providers/AuthProvider";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
@@ -121,7 +121,7 @@ export function LoginForm() {
 
             <form onSubmit={handleLogin} className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium">
+                <Label htmlFor="email" className="block text-sm font-medium">
                   Email
                 </Label>
                 <Input
@@ -138,7 +138,7 @@ export function LoginForm() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-medium">
+                <Label htmlFor="password" className="block text-sm font-medium">
                   Password
                 </Label>
                 <Input

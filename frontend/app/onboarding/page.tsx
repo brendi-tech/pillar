@@ -45,13 +45,13 @@ function OnboardingContent() {
   const searchParams = useSearchParams();
   const isNewProduct = searchParams.get("new") === "true";
 
-  const { currentProduct } = useProduct();
+  const { currentProduct, isLoading: isProductLoading } = useProduct();
   const productId = currentProduct?.id;
 
-  // Fetch knowledge sources (skip if creating new product)
+  // Fetch knowledge sources (skip if creating new product or no product selected yet)
   const { data: sourcesData, isPending: isPendingSources } = useQuery({
     ...knowledgeSourceListQuery(),
-    enabled: !isNewProduct,
+    enabled: !isNewProduct && !!productId,
   });
 
   // Fetch integration status (skip if creating new product)
@@ -61,7 +61,8 @@ function OnboardingContent() {
   });
 
   // Show loader while determining initial step (only for existing products)
-  if (!isNewProduct && (isPendingSources || isPendingIntegration)) {
+  // Also wait for product to be selected before proceeding
+  if (!isNewProduct && (isProductLoading || !productId || isPendingSources || isPendingIntegration)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/30">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
