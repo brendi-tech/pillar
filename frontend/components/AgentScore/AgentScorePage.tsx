@@ -172,12 +172,21 @@ export function AgentScorePage() {
             </div>
           </div>
         ) : (
-          <div>
-            <h1 className="font-editorial text-[28px] sm:text-[40px] text-[#1A1A1A] leading-tight">
+          <div className="relative">
+            {/* Decorative radial glow behind hero */}
+            {phase === "input" && (
+              <div
+                className="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 w-[600px] h-[300px] opacity-[0.12]"
+                style={{
+                  background: "radial-gradient(ellipse at center, #FF6E00 0%, transparent 70%)",
+                }}
+              />
+            )}
+            <h1 className="font-editorial text-[28px] sm:text-[44px] text-[#1A1A1A] leading-tight relative">
               Agent Readiness Score
             </h1>
             {phase === "input" && (
-              <p className="text-[#6B6B6B] text-base sm:text-lg mt-3 max-w-lg mx-auto">
+              <p className="text-[#6B6B6B] text-base sm:text-lg mt-3 max-w-lg mx-auto relative">
                 Agents are coming. Are you ready?
               </p>
             )}
@@ -187,70 +196,80 @@ export function AgentScorePage() {
 
       {/* Input bar — always visible, dimmed when scanning */}
       {(phase === "input" || phase === "scanning") && (
-        <ScanInput
-          onScan={(url, testSignup) => handleScan(url, testSignup)}
-          isScanning={phase === "scanning" || scan.isPending}
-          error={scanError}
-          initialUrl={scanUrl}
-        />
-      )}
-
-      {phase === "input" && (
-        <p className="text-center text-sm text-[#6B6B6B] mt-4">
-          Free. No signup. Results in about a minute.
-        </p>
+        <div className="relative max-w-2xl mx-auto">
+          <div className="bg-white rounded-2xl border border-[#E8E4DC] shadow-[0_2px_24px_rgba(0,0,0,0.06)] p-6 sm:p-8">
+            <ScanInput
+              onScan={(url, testSignup) => handleScan(url, testSignup)}
+              isScanning={phase === "scanning" || scan.isPending}
+              error={scanError}
+              initialUrl={scanUrl}
+            />
+          </div>
+          {phase === "input" && (
+            <p className="text-center text-sm text-[#999] mt-4">
+              Free. No signup. Results in about a minute.
+            </p>
+          )}
+        </div>
       )}
 
       {/* Pre-scan preview */}
       {phase === "input" && (
-        <div className="mt-12 max-w-4xl mx-auto">
+        <div className="mt-16 max-w-4xl mx-auto">
           {/* Greyed-out category gauges */}
-          <div className="flex flex-wrap justify-center gap-6 sm:gap-8">
-            {ALL_CATEGORIES.map((category) => (
-              <div key={category} className="flex flex-col items-center opacity-40">
-                <ScoreGauge score={0} size="sm" label={CATEGORY_LABELS[category]} animated={false} />
-                <p className="text-[10px] text-[#6B6B6B] mt-1 max-w-[100px] text-center leading-tight">
-                  {CATEGORY_DESCRIPTIONS[category]}
-                </p>
-              </div>
-            ))}
-          </div>
+          <div className="relative bg-gradient-to-b from-[#FAFAF8] to-white rounded-2xl border border-[#EDEBE6] px-6 py-8 sm:px-10 sm:py-10">
+            <div className="flex flex-wrap justify-center gap-8 sm:gap-12">
+              {ALL_CATEGORIES.map((category) => (
+                <div key={category} className="flex flex-col items-center opacity-35">
+                  <ScoreGauge score={0} size="sm" label={CATEGORY_LABELS[category]} animated={false} />
+                  <p className="text-[10px] text-[#888] mt-1.5 max-w-[100px] text-center leading-tight">
+                    {CATEGORY_DESCRIPTIONS[category]}
+                  </p>
+                </div>
+              ))}
+            </div>
 
-          {/* Color legend */}
-          <div className="flex items-center justify-center gap-6 mt-6 text-xs text-[#6B6B6B]">
-            <span className="flex items-center gap-1.5">
-              <span className="inline-block w-3 h-3 rounded-full bg-[#FF4E42]" />
-              0&ndash;49
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="inline-block w-3 h-3 rounded-full bg-[#FFA400]" />
-              50&ndash;89
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="inline-block w-3 h-3 rounded-full bg-[#0CCE6B]" />
-              90&ndash;100
-            </span>
+            {/* Color legend */}
+            <div className="flex items-center justify-center gap-6 mt-7 text-xs text-[#999]">
+              <span className="flex items-center gap-1.5">
+                <span className="inline-block w-2.5 h-2.5 rounded-full bg-[#FF4E42]" />
+                0&ndash;49
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="inline-block w-2.5 h-2.5 rounded-full bg-[#FFA400]" />
+                50&ndash;89
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="inline-block w-2.5 h-2.5 rounded-full bg-[#0CCE6B]" />
+                90&ndash;100
+              </span>
+            </div>
           </div>
 
           {/* Methodology explainer */}
-          <div className="mt-10">
-            <h2 className="text-center text-lg font-semibold text-[#1A1A1A] mb-5">
-              How we score your site
-            </h2>
+          <div className="mt-16">
+            {/* Section divider */}
+            <div className="flex items-center gap-4 mb-8">
+              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#E8E4DC] to-transparent" />
+              <h2 className="text-lg font-semibold text-[#1A1A1A] shrink-0">
+                How we score your site
+              </h2>
+              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#E8E4DC] to-transparent" />
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {SCAN_STEPS.map((step) => (
                 <div
                   key={step.number}
-                  className="flex items-start gap-3 bg-white border border-[#E8E4DC] rounded-lg p-4"
+                  className="group flex items-start gap-4 bg-white border border-[#E8E4DC] rounded-xl p-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] hover:border-[#FF6E00]/20 transition-all duration-200"
                 >
-                  <div className="shrink-0 mt-0.5 text-[#FF6E00]">
-                    <step.icon className="h-5 w-5" />
+                  <div className="shrink-0 flex items-center justify-center w-9 h-9 rounded-lg bg-[#FFF4EB] text-[#FF6E00] group-hover:bg-[#FF6E00] group-hover:text-white transition-colors duration-200">
+                    <step.icon className="h-[18px] w-[18px]" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-[#1A1A1A]">
+                    <p className="text-sm font-semibold text-[#1A1A1A]">
                       {step.number}. {step.title}
                     </p>
-                    <p className="text-xs text-[#6B6B6B] mt-0.5">
+                    <p className="text-[13px] text-[#6B6B6B] mt-1 leading-relaxed">
                       {step.description}
                     </p>
                   </div>

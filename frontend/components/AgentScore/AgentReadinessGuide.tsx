@@ -265,23 +265,28 @@ const GUIDE_CATEGORIES: GuideCategory[] = [
 export function AgentReadinessGuide() {
   return (
     <section className="mt-16 mb-8">
-      <h2 className="text-center text-xl sm:text-2xl font-semibold text-[#1A1A1A] mb-3">
-        What we check &mdash; and why it matters
-      </h2>
+      {/* Section divider */}
+      <div className="flex items-center gap-4 mb-4">
+        <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#E8E4DC] to-transparent" />
+        <h2 className="text-lg sm:text-xl font-semibold text-[#1A1A1A] shrink-0">
+          What we check &mdash; and why it matters
+        </h2>
+        <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#E8E4DC] to-transparent" />
+      </div>
       <p className="text-center text-sm text-[#6B6B6B] max-w-2xl mx-auto mb-10 leading-relaxed">
         AI agents interact with websites differently than humans. They read
         through accessibility trees, parse structured data, and consume entire
         pages as tokens. Here&apos;s every signal we evaluate.
       </p>
 
-      <div className="space-y-10">
+      <div className="space-y-6">
         {GUIDE_CATEGORIES.map((category) => (
           <article
             key={category.slug}
-            className="bg-white border border-[#E8E4DC] rounded-xl overflow-hidden"
+            className="bg-white border border-[#E8E4DC] rounded-xl overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
           >
             {/* Category header */}
-            <div className="px-5 sm:px-7 pt-6 pb-4">
+            <div className="px-5 sm:px-7 pt-6 pb-4 border-b border-[#F0EDE8]">
               <h3 className="text-lg font-semibold text-[#1A1A1A]">
                 {category.heading}
               </h3>
@@ -291,10 +296,10 @@ export function AgentReadinessGuide() {
             </div>
 
             {/* Subcategories */}
-            <div className="px-5 sm:px-7 pb-6 space-y-6">
+            <div className="px-5 sm:px-7 pb-6 pt-5 space-y-6 bg-gradient-to-b from-[#FDFCFB] to-white">
               {category.subcategories.map((sub) => (
                 <div key={sub.heading}>
-                  <h4 className="text-xs font-semibold uppercase tracking-wider text-[#999] mb-3">
+                  <h4 className="text-[11px] font-semibold uppercase tracking-wider text-[#B0A99F] mb-3">
                     {sub.heading}
                   </h4>
                   <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">

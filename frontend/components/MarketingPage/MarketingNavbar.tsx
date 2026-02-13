@@ -27,7 +27,7 @@ const GITHUB_URL = "https://github.com/pillarhq/pillar";
 const toolsDropdownItems = [
   {
     name: "Agent Readiness Score",
-    description: "Agents are coming. Are you ready?",
+    description: "Agents are coming.  Is your site ready?",
     href: "/tools/agent-score",
     icon: Gauge,
   },
@@ -144,7 +144,7 @@ export function MarketingNavbar() {
                     }`}
                   >
                     <div
-                      className="w-[280px] rounded-xl border border-gray-200 shadow-lg shadow-black/[0.08] overflow-hidden p-1.5"
+                      className="w-[340px] rounded-xl border border-gray-200 shadow-lg shadow-black/[0.08] overflow-hidden p-1.5"
                       style={{ background: "#fff" }}
                     >
                       {dropdownItemsMap[link.dropdown].map((item) => (

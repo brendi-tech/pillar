@@ -8,7 +8,7 @@ import Link from "next/link";
  */
 export function TopHeroSection() {
   return (
-    <section className="group max-w-marketingSection mx-auto border-x border-marketing bg-white relative h-[500px] md:h-[688px] overflow-hidden">
+    <section className="group max-w-marketingSection mx-auto border-x border-marketing bg-[#2A2A2A] relative h-[500px] md:h-[688px] overflow-hidden">
       <Image
         src="/marketing/pillar-sky-v2.webp"
         alt="Pillar Sky Background"
