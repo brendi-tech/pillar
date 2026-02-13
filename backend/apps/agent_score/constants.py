@@ -2,13 +2,15 @@
 Constants for Agent Score — category weights, check definitions, AI crawler list.
 """
 
-# Category weights for the overall score (must sum to 1.0)
-# When signup_test is disabled, its weight is redistributed proportionally.
+# Category weights for the overall score (must sum to 1.0).
+# WebMCP is scored separately but excluded from the overall score
+# because very few sites support it today — including it would unfairly
+# penalize most sites.  When signup_test is disabled, its weight is
+# redistributed proportionally across the remaining categories.
 CATEGORY_WEIGHTS: dict[str, float] = {
-    "content": 0.35,
-    "interaction": 0.35,
-    "webmcp": 0.15,
-    "signup_test": 0.15,
+    "content": 0.40,
+    "interaction": 0.40,
+    "signup_test": 0.20,
 }
 
 # Score color thresholds (Lighthouse-style)

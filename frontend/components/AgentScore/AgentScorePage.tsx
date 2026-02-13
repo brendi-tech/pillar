@@ -11,6 +11,7 @@ import { ScanInput } from "./ScanInput";
 import { ScanProgress } from "./ScanProgress";
 import { ScoreReport } from "./ScoreReport";
 import { ReportHeaderActions } from "./ScoreReport/ReportHeaderActions";
+import { AgentReadinessGuide } from "./AgentReadinessGuide";
 
 type PagePhase = "input" | "loading" | "scanning" | "report";
 
@@ -37,7 +38,7 @@ const SCAN_STEPS = [
     number: 4,
     icon: Blocks,
     title: "Detect WebMCP tools & score",
-    description: "We detect registered tools and schemas, then weight each check to produce scores across 4 categories.",
+    description: "We detect registered tools and schemas, then weight each check to produce your readiness score.",
   },
 ];
 
@@ -257,6 +258,9 @@ export function AgentScorePage() {
               ))}
             </div>
           </div>
+
+          {/* SEO content: full check descriptions */}
+          <AgentReadinessGuide />
         </div>
       )}
 

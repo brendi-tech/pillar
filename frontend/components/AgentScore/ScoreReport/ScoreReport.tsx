@@ -15,6 +15,7 @@ import type {
 } from "@/components/AgentScore/AgentScore.types";
 import {
   ALL_CATEGORIES,
+  SCORED_CATEGORIES,
   CATEGORY_LABELS,
   getCategoryScore,
 } from "@/components/AgentScore/AgentScore.types";
@@ -44,11 +45,16 @@ export function ScoreReport({
     });
   }, [report.signup_test_enabled]);
 
-  // Find the lowest-scoring category to select by default
+  // Find the lowest-scoring *scored* category to select by default.
+  // WebMCP is excluded — most sites score 0 there, so it's not a useful default.
   const lowestCategory = useMemo(() => {
-    let lowest: CheckCategory = visibleCategories[0];
+    const scoredVisible = visibleCategories.filter((c) =>
+      SCORED_CATEGORIES.includes(c)
+    );
+    const candidates = scoredVisible.length > 0 ? scoredVisible : visibleCategories;
+    let lowest: CheckCategory = candidates[0];
     let lowestScore = getCategoryScore(report, lowest);
-    for (const cat of visibleCategories) {
+    for (const cat of candidates) {
       const s = getCategoryScore(report, cat);
       if (s < lowestScore) {
         lowestScore = s;

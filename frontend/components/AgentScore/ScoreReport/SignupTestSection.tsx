@@ -70,10 +70,13 @@ export function SignupTestSection({ report }: SignupTestSectionProps) {
             {!isGood && !isOk && outcomeType === "payment_required" && (
               <>Signup requires payment information. Agents cannot provide payment details. Consider offering a free tier or trial that doesn&apos;t require payment at signup.</>
             )}
+            {!isGood && !isOk && outcomeType === "error" && (
+              <>The signup test encountered a technical error and could not complete. This doesn&apos;t reflect your site&apos;s signup experience.</>
+            )}
             {!isGood && !isOk && !outcomeType && (
               <>We attempted to sign up for your site as an AI agent. The signup flow could not be completed.</>
             )}
-            {!isGood && !isOk && outcomeType && !["no_signup_found", "captcha_blocked", "payment_required"].includes(outcomeType) && (
+            {!isGood && !isOk && outcomeType && !["no_signup_found", "captcha_blocked", "payment_required", "error"].includes(outcomeType) && (
               <>{outcomeDetail || "The signup flow could not be completed by the agent."}</>
             )}
           </p>

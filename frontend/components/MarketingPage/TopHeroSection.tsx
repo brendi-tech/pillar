@@ -36,9 +36,9 @@ export function TopHeroSection() {
             >
               Open Source
             </a>{" "}
-            SDK for building AI agents into your product.
+            that gives your product its own AI agent.
             <br className="hidden md:inline" />{" "}
-            It takes action, and gets work done for your users.
+            Users type what they want, it takes action, and gets work done.
           </p>
         </div>
         <div className="flex flex-col items-center gap-2 pb-8 md:pb-12 px-4">

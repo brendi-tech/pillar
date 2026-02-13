@@ -74,11 +74,19 @@ export interface ScanResponse {
   status: ReportStatus;
 }
 
-/** All 4 unified categories. */
+/** All 4 unified categories. WebMCP is last — it's scored independently
+ *  and excluded from the overall score. */
 export const ALL_CATEGORIES: CheckCategory[] = [
   "content",
   "interaction",
+  "signup_test",
   "webmcp",
+];
+
+/** Categories that contribute to the overall score. */
+export const SCORED_CATEGORIES: CheckCategory[] = [
+  "content",
+  "interaction",
   "signup_test",
 ];
 

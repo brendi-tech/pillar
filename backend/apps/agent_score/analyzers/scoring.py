@@ -1,9 +1,13 @@
 """
 Scoring algorithm — weighted rollup from individual checks to category and overall scores.
 
-All 4 categories (content, interaction, webmcp, signup_test) contribute to
-the overall score. When signup_test checks are absent (opt-out), the 0.15
-weight is redistributed proportionally across the other 3 categories.
+Content, interaction, and signup_test contribute to the overall score.
+WebMCP is scored as its own category but excluded from the overall score
+because very few sites support it today — including it would unfairly
+penalize most sites.
+
+When signup_test checks are absent (opt-out), its weight is redistributed
+proportionally across the remaining weighted categories.
 """
 from __future__ import annotations
 
@@ -18,8 +22,10 @@ def calculate_overall_score(checks: list[CheckResult | dict]) -> dict:
     Accepts either CheckResult dataclass instances or dicts with the same keys
     (for when loading from AgentScoreCheck model instances).
 
-    When signup_test checks are absent, their weight is redistributed
-    proportionally across the remaining categories.
+    Every category that has checks gets a score (0-100), but only categories
+    listed in CATEGORY_WEIGHTS contribute to the overall score.  WebMCP is
+    scored independently and returned in ``categories`` but does not affect
+    the overall number.
 
     Returns:
         {
@@ -27,17 +33,19 @@ def calculate_overall_score(checks: list[CheckResult | dict]) -> dict:
             "categories": {"content": int, "interaction": int, "webmcp": int, ...}
         }
     """
-    # Build category scores
+    # Discover all categories present in the checks
+    all_categories = {_get_field(c, "category") for c in checks}
+
+    # Build category scores for every category that has checks
     category_scores: dict[str, int] = {}
 
-    for category in CATEGORY_WEIGHTS:
+    for category in all_categories:
         cat_checks = [
             c for c in checks
             if _get_field(c, "category") == category
         ]
 
         if not cat_checks:
-            # Category has no checks — will be excluded from overall
             continue
 
         total_weight = sum(_get_field(c, "weight") for c in cat_checks)
@@ -51,7 +59,9 @@ def calculate_overall_score(checks: list[CheckResult | dict]) -> dict:
         )
         category_scores[category] = round(weighted_sum / total_weight)
 
-    # Build effective weights — redistribute absent categories proportionally
+    # Build effective weights — only categories in CATEGORY_WEIGHTS
+    # contribute to the overall score.  Absent categories (e.g. signup_test
+    # when disabled) have their weight redistributed proportionally.
     active_categories = {
         cat: w for cat, w in CATEGORY_WEIGHTS.items()
         if cat in category_scores
