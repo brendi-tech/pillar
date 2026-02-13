@@ -89,7 +89,7 @@ def _check_structured_data(html: str, metadata: dict, dq: DataQuality) -> CheckR
     if dq.page_metadata != "ok" and dq.raw_html != "ok":
         return CheckResult(
             category="content", check_name="structured_data",
-            check_label="JSON-LD / Schema.org structured data",
+            check_label="Structured data (JSON-LD)",
             passed=False, score=0, weight=9, status="dnf",
             details={"reason": dq.raw_html},
             recommendation=_DNF_RECOMMENDATION,
@@ -134,7 +134,7 @@ def _check_structured_data(html: str, metadata: dict, dq: DataQuality) -> CheckR
     return CheckResult(
         category="content",
         check_name="structured_data",
-        check_label="JSON-LD / Schema.org structured data",
+        check_label="Structured data (JSON-LD)",
         passed=passed,
         score=score,
         weight=9,
@@ -194,7 +194,7 @@ def _check_meta_description(metadata: dict, dq: DataQuality) -> CheckResult:
     if dq.page_metadata != "ok":
         return CheckResult(
             category="content", check_name="meta_description",
-            check_label="Meta description and OpenGraph tags",
+            check_label="Meta & OpenGraph tags",
             passed=False, score=0, weight=5, status="dnf",
             details={"reason": dq.page_metadata},
             recommendation=_DNF_RECOMMENDATION,
@@ -216,7 +216,7 @@ def _check_meta_description(metadata: dict, dq: DataQuality) -> CheckResult:
     return CheckResult(
         category="content",
         check_name="meta_description",
-        check_label="Meta description and OpenGraph tags",
+        check_label="Meta & OpenGraph tags",
         passed=has_desc,
         score=score,
         weight=5,
@@ -238,7 +238,7 @@ def _check_semantic_headings(html: str, dq: DataQuality) -> CheckResult:
     if dq.raw_html != "ok":
         return CheckResult(
             category="content", check_name="semantic_headings",
-            check_label="Proper heading hierarchy (h1–h6)",
+            check_label="Heading hierarchy (h1–h6)",
             passed=False, score=0, weight=6, status="dnf",
             details={"reason": dq.raw_html},
             recommendation=_DNF_RECOMMENDATION,
@@ -247,7 +247,7 @@ def _check_semantic_headings(html: str, dq: DataQuality) -> CheckResult:
         return CheckResult(
             category="content",
             check_name="semantic_headings",
-            check_label="Proper heading hierarchy (h1–h6)",
+            check_label="Heading hierarchy (h1–h6)",
             passed=False, score=0, weight=6,
             details={"error": "no_html"},
             recommendation="Ensure your page has proper heading hierarchy (h1–h6).",
@@ -290,7 +290,7 @@ def _check_semantic_headings(html: str, dq: DataQuality) -> CheckResult:
     return CheckResult(
         category="content",
         check_name="semantic_headings",
-        check_label="Proper heading hierarchy (h1–h6)",
+        check_label="Heading hierarchy (h1–h6)",
         passed=has_h1 and single_h1 and not skipped_levels,
         score=score,
         weight=6,

@@ -121,7 +121,7 @@ def _check_robots_txt_ai(probes: dict, dq: DataQuality) -> CheckResult:
     if not dq.probe_usable("robots_txt"):
         return CheckResult(
             category="content", check_name="robots_txt_ai",
-            check_label="AI crawlers allowed in robots.txt",
+            check_label="AI crawlers in robots.txt",
             passed=False, score=0, weight=10, status="dnf",
             details={"reason": dq.probes.get("robots_txt", "unknown")},
             recommendation=_DNF_RECOMMENDATION,
@@ -135,7 +135,7 @@ def _check_robots_txt_ai(probes: dict, dq: DataQuality) -> CheckResult:
         return CheckResult(
             category="content",
             check_name="robots_txt_ai",
-            check_label="AI crawlers allowed in robots.txt",
+            check_label="AI crawlers in robots.txt",
             passed=True,
             score=80,  # Slightly less than explicit allowance
             weight=10,
@@ -169,7 +169,7 @@ def _check_robots_txt_ai(probes: dict, dq: DataQuality) -> CheckResult:
     return CheckResult(
         category="content",
         check_name="robots_txt_ai",
-        check_label="AI crawlers allowed in robots.txt",
+        check_label="AI crawlers in robots.txt",
         passed=passed,
         score=score,
         weight=10,
@@ -203,7 +203,7 @@ def _check_content_signal_header(report: AgentScoreReport, dq: DataQuality) -> C
     if not dq.probe_usable("markdown_negotiation"):
         return CheckResult(
             category="content", check_name="content_signal_header",
-            check_label="Content-Signal header declares AI usage permissions",
+            check_label="Content-Signal header",
             passed=False, score=0, weight=8, status="dnf",
             details={"reason": dq.probes.get("markdown_negotiation", "unknown")},
             recommendation=_DNF_RECOMMENDATION,
@@ -255,7 +255,7 @@ def _check_content_signal_header(report: AgentScoreReport, dq: DataQuality) -> C
     return CheckResult(
         category="content",
         check_name="content_signal_header",
-        check_label="Content-Signal header declares AI usage permissions",
+        check_label="Content-Signal header",
         passed=has_signal,
         score=score,
         weight=8,

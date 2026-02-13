@@ -335,6 +335,14 @@ async def browser_analysis_workflow(
 
                         return {"status": "partial", "report_id": report_id}
 
+                # Log browser resolved URL for redirect visibility
+                browser_resolved_url = page.url
+                if browser_resolved_url != report.url:
+                    logger.info(
+                        f"[AGENT SCORE] Browser redirected: {report.url} -> "
+                        f"{browser_resolved_url}"
+                    )
+
                 # 1. Accessibility Tree snapshot via CDP
                 ax_tree = {}
                 try:

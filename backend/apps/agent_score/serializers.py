@@ -73,6 +73,8 @@ class ReportSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "url",
+            "resolved_url",
+            "redirect_chain",
             "domain",
             "status",
             "overall_score",

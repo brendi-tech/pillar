@@ -64,6 +64,19 @@ class AgentScoreReport(BaseModel):
         ),
     )
 
+    # ── Redirect tracking ──
+    resolved_url = models.URLField(
+        max_length=2048,
+        blank=True,
+        default="",
+        help_text="Final URL after following all redirects from the homepage",
+    )
+    redirect_chain = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="List of redirect hops: [{status_code, from_url, to_url}, ...]",
+    )
+
     # ── Raw data from Layer 1 (HTTP probes) ──
     raw_html = models.TextField(
         blank=True,

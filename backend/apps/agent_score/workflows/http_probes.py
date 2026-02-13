@@ -162,28 +162,56 @@ async def http_probes_workflow(workflow_input: HttpProbesInput, context: Context
         logger.error(f"[AGENT SCORE] Report {report_id} not found")
         return {"status": "error", "error": "report_not_found"}
 
-    origin = get_origin(report.url)
-
     try:
         async with httpx.AsyncClient(
             timeout=15,
             follow_redirects=True,
             headers={"User-Agent": "PillarAgentScore/1.0 (+https://pillar.bot)"},
         ) as client:
-            results = await asyncio.gather(
-                client.get(report.url),                              # [0] main page
-                client.get(f"{origin}/robots.txt"),                  # [1]
-                client.get(f"{origin}/sitemap.xml"),                 # [2]
-                client.get(f"{origin}/llms.txt"),                    # [3]
-                client.get(                                          # [4] markdown negotiation
-                    report.url,
+            # ── Phase 1: Fetch homepage, capture redirect chain ──
+            main_resp: httpx.Response | Exception
+            try:
+                main_resp = await client.get(report.url)
+            except Exception as e:
+                main_resp = e
+
+            # Extract resolved URL and redirect chain from the response
+            resolved_url = report.url
+            redirect_chain: list[dict] = []
+
+            if isinstance(main_resp, httpx.Response):
+                resolved_url = str(main_resp.url)
+                for hop in main_resp.history:
+                    redirect_chain.append({
+                        "status_code": hop.status_code,
+                        "from_url": str(hop.url),
+                        "to_url": hop.headers.get("location", ""),
+                    })
+                if redirect_chain:
+                    logger.info(
+                        f"[AGENT SCORE] Homepage redirected: {report.url} -> "
+                        f"{resolved_url} ({len(redirect_chain)} hops)"
+                    )
+
+            report.resolved_url = resolved_url
+            report.redirect_chain = redirect_chain
+
+            # Use the resolved origin for well-known path probes
+            resolved_origin = get_origin(resolved_url)
+
+            # ── Phase 2: Fetch well-known paths from resolved origin ──
+            probe_results_raw = await asyncio.gather(
+                client.get(f"{resolved_origin}/robots.txt"),
+                client.get(f"{resolved_origin}/sitemap.xml"),
+                client.get(f"{resolved_origin}/llms.txt"),
+                client.get(
+                    resolved_url,
                     headers={"Accept": "text/markdown, text/html"},
                 ),
                 return_exceptions=True,
             )
 
         # Store the main page HTML
-        main_resp = results[0]
         if isinstance(main_resp, httpx.Response) and main_resp.status_code == 200:
             report.raw_html = main_resp.text
         elif isinstance(main_resp, Exception):
@@ -194,16 +222,18 @@ async def http_probes_workflow(workflow_input: HttpProbesInput, context: Context
         if report.raw_html:
             report.page_metadata = _extract_page_metadata(report.raw_html)
 
-        # Serialize all probe responses
-        probe_labels = [
-            "main_page", "robots_txt", "sitemap", "llms_txt",
-        ]
-        probe_results = {}
-        for label, resp in zip(probe_labels, results[:4], strict=True):
+        # Serialize main page + well-known path probes
+        probe_results: dict = {}
+        probe_results["main_page"] = _serialize_response(main_resp, "main_page")
+
+        well_known_labels = ["robots_txt", "sitemap", "llms_txt"]
+        for label, resp in zip(well_known_labels, probe_results_raw[:3], strict=True):
             probe_results[label] = _serialize_response(resp, label)
 
         # Handle markdown content negotiation probe separately
-        probe_results["markdown_negotiation"] = _serialize_markdown_response(results[4])
+        probe_results["markdown_negotiation"] = _serialize_markdown_response(
+            probe_results_raw[3]
+        )
 
         report.probe_results = probe_results
 
@@ -227,6 +257,8 @@ async def http_probes_workflow(workflow_input: HttpProbesInput, context: Context
                 report.markdown_token_count = count_tokens(md_probe["body"])
 
         await report.asave(update_fields=[
+            "resolved_url",
+            "redirect_chain",
             "raw_html",
             "page_metadata",
             "probe_results",

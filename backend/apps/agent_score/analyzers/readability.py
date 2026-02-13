@@ -57,7 +57,7 @@ def _check_markdown_content_negotiation(report: AgentScoreReport, dq: DataQualit
     if not dq.probe_usable("markdown_negotiation"):
         return CheckResult(
             category="content", check_name="markdown_content_negotiation",
-            check_label="Supports Accept: text/markdown content negotiation",
+            check_label="Markdown content negotiation",
             passed=False, score=0, weight=12, status="dnf",
             details={"reason": dq.probes.get("markdown_negotiation", "unknown")},
             recommendation=_DNF_RECOMMENDATION,
@@ -99,7 +99,7 @@ def _check_markdown_content_negotiation(report: AgentScoreReport, dq: DataQualit
     return CheckResult(
         category="content",
         check_name="markdown_content_negotiation",
-        check_label="Supports Accept: text/markdown content negotiation",
+        check_label="Markdown content negotiation",
         passed=supports,
         score=score,
         weight=12,
@@ -136,7 +136,7 @@ def _check_token_efficiency(html: str, report: AgentScoreReport, dq: DataQuality
     if not dq.html_usable:
         return CheckResult(
             category="content", check_name="token_efficiency",
-            check_label="Token efficiency (content vs HTML ratio)",
+            check_label="Token efficiency",
             passed=False, score=0, weight=10, status="dnf",
             details={"reason": dq.rendered_html or dq.raw_html},
             recommendation=_DNF_RECOMMENDATION,
@@ -145,7 +145,7 @@ def _check_token_efficiency(html: str, report: AgentScoreReport, dq: DataQuality
         return CheckResult(
             category="content",
             check_name="token_efficiency",
-            check_label="Token efficiency (content vs HTML ratio)",
+            check_label="Token efficiency",
             passed=False, score=0, weight=10,
             details={"error": "no_html"},
             recommendation="Ensure your page has renderable HTML content.",
@@ -205,7 +205,7 @@ def _check_token_efficiency(html: str, report: AgentScoreReport, dq: DataQuality
     return CheckResult(
         category="content",
         check_name="token_efficiency",
-        check_label="Token efficiency (content vs HTML ratio)",
+        check_label="Token efficiency",
         passed=passed,
         score=score,
         weight=10,
@@ -225,7 +225,7 @@ def _check_markdown_available(report: AgentScoreReport, dq: DataQuality) -> Chec
     if not dq.probe_usable("llms_txt"):
         return CheckResult(
             category="content", check_name="markdown_available",
-            check_label="Markdown version available (/llms.txt)",
+            check_label="Markdown version (/llms.txt)",
             passed=False, score=0, weight=5, status="dnf",
             details={"reason": dq.probes.get("llms_txt", "unknown")},
             recommendation=_DNF_RECOMMENDATION,
@@ -248,7 +248,7 @@ def _check_markdown_available(report: AgentScoreReport, dq: DataQuality) -> Chec
     return CheckResult(
         category="content",
         check_name="markdown_available",
-        check_label="Markdown version available (/llms.txt)",
+        check_label="Markdown version (/llms.txt)",
         passed=llms_exists,
         score=score,
         weight=5,
@@ -269,7 +269,7 @@ def _check_content_extraction(html: str, dq: DataQuality) -> CheckResult:
     if not dq.html_usable:
         return CheckResult(
             category="content", check_name="content_extraction",
-            check_label="Clean content extraction quality",
+            check_label="Content extraction quality",
             passed=False, score=0, weight=7, status="dnf",
             details={"reason": dq.rendered_html or dq.raw_html},
             recommendation=_DNF_RECOMMENDATION,
@@ -278,7 +278,7 @@ def _check_content_extraction(html: str, dq: DataQuality) -> CheckResult:
         return CheckResult(
             category="content",
             check_name="content_extraction",
-            check_label="Clean content extraction quality",
+            check_label="Content extraction quality",
             passed=False, score=0, weight=7,
             details={"error": "no_html"},
             recommendation="Ensure your page has extractable content.",
@@ -314,7 +314,7 @@ def _check_content_extraction(html: str, dq: DataQuality) -> CheckResult:
     return CheckResult(
         category="content",
         check_name="content_extraction",
-        check_label="Clean content extraction quality",
+        check_label="Content extraction quality",
         passed=has_main_area and md_length > 100,
         score=score,
         weight=7,
@@ -335,7 +335,7 @@ def _check_semantic_html(html: str, dq: DataQuality) -> CheckResult:
     if not dq.html_usable:
         return CheckResult(
             category="content", check_name="semantic_html",
-            check_label="Semantic HTML elements used",
+            check_label="Semantic HTML elements",
             passed=False, score=0, weight=7, status="dnf",
             details={"reason": dq.rendered_html or dq.raw_html},
             recommendation=_DNF_RECOMMENDATION,
@@ -344,7 +344,7 @@ def _check_semantic_html(html: str, dq: DataQuality) -> CheckResult:
         return CheckResult(
             category="content",
             check_name="semantic_html",
-            check_label="Semantic HTML elements used",
+            check_label="Semantic HTML elements",
             passed=False, score=0, weight=7,
             details={"error": "no_html"},
             recommendation="Use semantic HTML elements.",
@@ -371,7 +371,7 @@ def _check_semantic_html(html: str, dq: DataQuality) -> CheckResult:
     return CheckResult(
         category="content",
         check_name="semantic_html",
-        check_label="Semantic HTML elements used",
+        check_label="Semantic HTML elements",
         passed=semantic_count >= 3,
         score=score,
         weight=7,
@@ -400,7 +400,7 @@ def _check_low_token_bloat(html: str, report: AgentScoreReport, dq: DataQuality)
     if not dq.html_usable:
         return CheckResult(
             category="content", check_name="low_token_bloat",
-            check_label="Page token footprint",
+            check_label="Token footprint",
             passed=False, score=0, weight=5, status="dnf",
             details={"reason": dq.rendered_html or dq.raw_html},
             recommendation=_DNF_RECOMMENDATION,
@@ -412,7 +412,7 @@ def _check_low_token_bloat(html: str, report: AgentScoreReport, dq: DataQuality)
         return CheckResult(
             category="content",
             check_name="low_token_bloat",
-            check_label="Page token footprint",
+            check_label="Token footprint",
             passed=False, score=0, weight=5,
             details={"error": "no_html"},
             recommendation="Ensure your page has content.",
@@ -479,7 +479,7 @@ def _check_low_token_bloat(html: str, report: AgentScoreReport, dq: DataQuality)
     return CheckResult(
         category="content",
         check_name="low_token_bloat",
-        check_label="Page token footprint",
+        check_label="Token footprint",
         passed=score >= 50,
         score=score,
         weight=5,
