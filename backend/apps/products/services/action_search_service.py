@@ -146,6 +146,27 @@ class ActionSearchService:
                     f"[ActionSearch] Debug: total={total_actions}, "
                     f"published={published_actions}, with_embedding={action_count}"
                 )
+
+                # ---------------------------------------------------------------
+                # Keyword fallback: if actions exist but lack embeddings, use
+                # simple keyword matching on name + description so the agent
+                # can still discover tools.
+                # ---------------------------------------------------------------
+                if published_actions > 0:
+                    logger.warning(
+                        f"[ActionSearch] {published_actions} published action(s) have no "
+                        "embeddings — falling back to keyword search"
+                    )
+                    keyword_results = await self._keyword_fallback(
+                        query, product, Action, max_results
+                    )
+                    if keyword_results:
+                        search_result.actions = keyword_results
+                        logger.info(
+                            f"[ActionSearch] Keyword fallback returned "
+                            f"{len(keyword_results)} action(s)"
+                        )
+
                 return search_result
 
             # Get query embedding
@@ -284,6 +305,59 @@ class ActionSearchService:
         except Exception as e:
             logger.warning(f"[ActionSearch] Error searching actions: {e}", exc_info=True)
             return search_result
+
+    async def _keyword_fallback(
+        self,
+        query: str,
+        product,
+        Action,
+        max_results: int,
+    ) -> List[Dict[str, Any]]:
+        """
+        Keyword-based fallback when no actions have embeddings.
+
+        Uses Django's icontains on name and description to find relevant
+        actions.  Splits the query into words and scores each action by
+        how many distinct words match.
+
+        Args:
+            query: User query string
+            product: Product instance
+            Action: Action model class
+            max_results: Maximum results to return
+
+        Returns:
+            Formatted action dicts (same shape as _format_action output).
+        """
+        all_actions = Action.objects.filter(
+            product=product,
+            status=Action.Status.PUBLISHED,
+        )
+
+        # Tokenize query into lowercase words (ignore very short words)
+        words = [w.lower() for w in query.split() if len(w) >= 3]
+
+        scored = []
+        async for action in all_actions.aiterator():
+            hits = 0
+            searchable = f"{action.name} {action.description or ''}".lower()
+            for word in words:
+                if word in searchable:
+                    hits += 1
+
+            if hits > 0:
+                # Normalize 0..1 with a small keyword_score for sorting
+                keyword_score = hits / max(len(words), 1)
+                scored.append((keyword_score, action))
+
+        # Sort descending
+        scored.sort(key=lambda t: t[0], reverse=True)
+        selected = scored[:max_results]
+
+        return [
+            self._format_action(action, score, allow_auto_run=(i == 0))
+            for i, (score, action) in enumerate(selected)
+        ]
 
     async def _get_actions_queryset(
         self,
@@ -496,6 +570,7 @@ class ActionSearchService:
             'id': str(action.id),
             'name': action.name,
             'description': action.description,
+            'guidance': action.guidance or '',
             'action_type': action.action_type,
             'auto_run': should_auto_run,
             'auto_complete': behavior['auto_complete'],

@@ -317,11 +317,16 @@ def action_to_tool(action: Dict[str, Any]) -> Dict[str, Any]:
     # Sanitize for Gemini compatibility (arrays need items, objects need properties)
     schema = _sanitize_schema(schema)
     
+    # Concatenate guidance into description so the LLM sees it at tool-selection time
+    desc = action.get("description", "")
+    guidance = action.get("guidance", "")
+    full_desc = f"{desc}\n\nAgent guidance: {guidance}" if guidance else desc
+
     return {
         "type": "function",
         "function": {
             "name": action["name"],
-            "description": action.get("description", ""),
+            "description": full_desc,
             "parameters": schema,
         }
     }

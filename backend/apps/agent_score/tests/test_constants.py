@@ -50,9 +50,13 @@ class TestCheckDefinitions:
                 f"missing fields: {missing}"
             )
 
-    def test_all_4_categories_in_weights(self):
-        """All 4 unified categories should be in CATEGORY_WEIGHTS."""
-        assert set(CATEGORY_WEIGHTS.keys()) == {"content", "interaction", "webmcp", "signup_test"}
+    def test_all_scored_categories_in_weights(self):
+        """All scored categories should be in CATEGORY_WEIGHTS.
+
+        Note: webmcp is scored separately and excluded from the overall
+        score (see constants.py comment), so it is NOT in CATEGORY_WEIGHTS.
+        """
+        assert set(CATEGORY_WEIGHTS.keys()) == {"content", "interaction", "signup_test"}
 
     def test_new_checks_exist(self):
         """Verify the new markdown/content-signal checks are defined."""

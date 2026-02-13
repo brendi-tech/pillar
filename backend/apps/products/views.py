@@ -510,6 +510,7 @@ class ActionSyncData(BaseModel):
     """Schema for a single action in the sync payload."""
     name: str
     description: str
+    guidance: Optional[str] = None
     examples: Optional[list[str]] = None
     type: str  # action_type
     path: Optional[str] = None
@@ -672,6 +673,7 @@ class ActionSyncView(APIView):
 
         # Generate manifest hash for deduplication
         manifest_hash = self._hash_manifest(sync_request.actions)
+        force_sync = request.query_params.get('force', 'false').lower() == 'true'
 
         # Check if this exact manifest already exists for this platform
         existing = ActionDeployment.objects.filter(
@@ -680,7 +682,7 @@ class ActionSyncView(APIView):
             manifest_hash=manifest_hash,
         ).first()
 
-        if existing:
+        if existing and not force_sync:
             # Even if actions unchanged, update agent_guidance if provided
             if sync_request.agent_guidance is not None:
                 product.agent_guidance = sync_request.agent_guidance
@@ -689,6 +691,38 @@ class ActionSyncView(APIView):
                     f"[ActionSync] Updated agent_guidance for {product.subdomain} "
                     f"({len(sync_request.agent_guidance)} chars) - actions unchanged"
                 )
+
+            # Check for actions missing embeddings and backfill them.
+            # This handles the case where a previous sync succeeded but
+            # embedding generation failed silently — without this, those
+            # actions are invisible to search forever.
+            missing_embeddings = existing.actions.filter(
+                status=Action.Status.PUBLISHED,
+                description_embedding__isnull=True,
+            )
+            missing_count = missing_embeddings.count()
+            if missing_count > 0:
+                logger.warning(
+                    f"[ActionSync] {missing_count} action(s) missing embeddings "
+                    f"for {product.subdomain} — backfilling"
+                )
+                try:
+                    from common.services.embedding_service import get_embedding_service
+                    svc = get_embedding_service()
+                    backfilled = 0
+                    for act in missing_embeddings:
+                        if act.description:
+                            act.description_embedding = svc.embed_document(act.description)
+                            act.save(update_fields=['description_embedding'])
+                            backfilled += 1
+                    logger.info(
+                        f"[ActionSync] Backfilled embeddings for {backfilled}/{missing_count} actions"
+                    )
+                except Exception as e:
+                    logger.error(
+                        f"[ActionSync] Embedding backfill failed: {e}",
+                        exc_info=True,
+                    )
             
             logger.info(
                 f"[ActionSync] Manifest unchanged for {product.subdomain} "
@@ -736,6 +770,7 @@ class ActionSyncView(APIView):
                 name=action_data.name,
                 defaults={
                     'description': action_data.description,
+                    'guidance': action_data.guidance or '',
                     'examples': action_data.examples or [],
                     'action_type': action_data.type,
                     'path_template': action_data.path or '',

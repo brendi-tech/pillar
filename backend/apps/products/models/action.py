@@ -71,6 +71,13 @@ class Action(TenantAwareModel):
         help_text="Description for AI to understand when to suggest this action. "
                   "Be specific about use cases. Used for semantic matching."
     )
+    guidance = models.TextField(
+        blank=True,
+        default='',
+        help_text="Agent-facing instructions for when/how to use this tool. "
+                  "Appended to the tool description in the LLM's tool list. "
+                  "Use for disambiguation and prerequisite hints."
+    )
 
     # === Semantic Matching ===
     description_embedding = VectorField(

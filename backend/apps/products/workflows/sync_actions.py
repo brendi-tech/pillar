@@ -227,18 +227,26 @@ def bulk_update_actions(product, actions_data: list[dict]):
         
         for action_data in actions_data:
             name = action_data['name']
+            # Determine returns_data (explicit or inferred from type)
+            returns_data = action_data.get('returns_data')
+            if returns_data is None:
+                returns_data = action_data['type'] == 'query'
+
             if name in existing_actions:
                 # Update existing
                 action = existing_actions[name]
                 action.description = action_data['description']
+                action.guidance = action_data.get('guidance') or ''
                 action.examples = action_data.get('examples') or []
                 action.action_type = action_data['type']
                 action.path_template = action_data.get('path') or ''
                 action.external_url = action_data.get('external_url') or ''
                 action.auto_run = action_data.get('auto_run', False)
                 action.auto_complete = action_data.get('auto_complete', False)
+                action.returns_data = returns_data
                 action.data_schema = action_data.get('data_schema') or {}
                 action.default_data = action_data.get('default_data') or {}
+                action.parameter_examples = action_data.get('parameter_examples') or []
                 action.required_context = action_data.get('required_context') or {}
                 action.status = Action.Status.PUBLISHED
                 # Don't update embeddings here - will be done in batch
@@ -251,14 +259,17 @@ def bulk_update_actions(product, actions_data: list[dict]):
                     organization=product.organization,
                     name=name,
                     description=action_data['description'],
+                    guidance=action_data.get('guidance') or '',
                     examples=action_data.get('examples') or [],
                     action_type=action_data['type'],
                     path_template=action_data.get('path') or '',
                     external_url=action_data.get('external_url') or '',
                     auto_run=action_data.get('auto_run', False),
                     auto_complete=action_data.get('auto_complete', False),
+                    returns_data=returns_data,
                     data_schema=action_data.get('data_schema') or {},
                     default_data=action_data.get('default_data') or {},
+                    parameter_examples=action_data.get('parameter_examples') or [],
                     required_context=action_data.get('required_context') or {},
                     status=Action.Status.PUBLISHED,
                     description_embedding=None,  # Will be set later
@@ -285,9 +296,10 @@ def bulk_update_actions(product, actions_data: list[dict]):
             Action.objects.bulk_update(
                 updated_actions,
                 fields=[
-                    'description', 'examples', 'action_type', 'path_template',
-                    'external_url', 'auto_run', 'auto_complete', 'data_schema',
-                    'default_data', 'required_context', 'status'
+                    'description', 'guidance', 'examples', 'action_type',
+                    'path_template', 'external_url', 'auto_run', 'auto_complete',
+                    'returns_data', 'data_schema', 'default_data',
+                    'parameter_examples', 'required_context', 'status',
                 ]
             )
         

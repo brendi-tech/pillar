@@ -101,6 +101,44 @@ class TestActionToTool:
         
         assert "name" in tool["function"]["parameters"]["properties"]
 
+    def test_guidance_appended_to_description(self):
+        """action_to_tool should append guidance to the description."""
+        action = {
+            "name": "create_dashboard",
+            "description": "Create a new dashboard",
+            "guidance": "First step in dashboard workflow. Returns dashboard_uid.",
+        }
+
+        tool = action_to_tool(action)
+
+        desc = tool["function"]["description"]
+        assert "Create a new dashboard" in desc
+        assert "Agent guidance:" in desc
+        assert "First step in dashboard workflow" in desc
+
+    def test_empty_guidance_leaves_description_unchanged(self):
+        """action_to_tool should not alter description when guidance is empty."""
+        action = {
+            "name": "navigate_home",
+            "description": "Go to the home page",
+            "guidance": "",
+        }
+
+        tool = action_to_tool(action)
+
+        assert tool["function"]["description"] == "Go to the home page"
+
+    def test_missing_guidance_leaves_description_unchanged(self):
+        """action_to_tool should not alter description when guidance is absent."""
+        action = {
+            "name": "navigate_home",
+            "description": "Go to the home page",
+        }
+
+        tool = action_to_tool(action)
+
+        assert tool["function"]["description"] == "Go to the home page"
+
 
 class TestGetDynamicTools:
     """Tests for get_dynamic_tools() function."""
