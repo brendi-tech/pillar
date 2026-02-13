@@ -42,6 +42,48 @@ export function handleWebSocketEvent(event: WebSocketEvent): void {
       }
       break;
 
+    case 'knowledge_item.created':
+      console.log('[WebSocket] Knowledge item created:', event.data);
+      window.dispatchEvent(
+        new CustomEvent('websocket:knowledge_item.created', {
+          detail: event.data,
+        })
+      );
+      break;
+
+    case 'source.sync_completed':
+      console.log('[WebSocket] Source sync completed:', event.data);
+      window.dispatchEvent(
+        new CustomEvent('websocket:source.sync_completed', {
+          detail: event.data,
+        })
+      );
+      // Also dispatch general source updated event
+      if (event.data?.source_id) {
+        window.dispatchEvent(
+          new CustomEvent(`websocket:source.${event.data.source_id}.updated`, {
+            detail: event.data,
+          })
+        );
+      }
+      break;
+
+    case 'source.sync_failed':
+      console.log('[WebSocket] Source sync failed:', event.data);
+      window.dispatchEvent(
+        new CustomEvent('websocket:source.sync_failed', {
+          detail: event.data,
+        })
+      );
+      if (event.data?.source_id) {
+        window.dispatchEvent(
+          new CustomEvent(`websocket:source.${event.data.source_id}.updated`, {
+            detail: event.data,
+          })
+        );
+      }
+      break;
+
     case 'connection.established':
       console.log('[WebSocket] Connection established:', event.data);
       break;

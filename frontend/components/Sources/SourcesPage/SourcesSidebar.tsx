@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDebounce } from "@/hooks/use-debounce";
+import { useSourcesWebSocketEvent } from "./useSourcesWebSocketEvent";
 import { cn } from "@/lib/utils";
 import { useSources } from "@/providers";
 import { knowledgeKeys } from "@/queries/knowledge.queries";
@@ -260,6 +261,9 @@ function CollapsibleSourceItem({
       initialPageParam: 1,
       enabled: isExpanded,
     });
+
+  // Handle WebSocket events for real-time item updates
+  useSourcesWebSocketEvent({ sourceId: source.id, pageSize });
 
   const items = data?.pages.flatMap((page) => page.results) ?? [];
 

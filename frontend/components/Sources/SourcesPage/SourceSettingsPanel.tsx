@@ -45,6 +45,7 @@ import {
   X,
 } from "lucide-react";
 import { useCallback, useState } from "react";
+import { useWebSocketEvent } from "@/hooks/use-websocket-event";
 import { toast } from "sonner";
 import type {
   KnowledgeSourceConfig,
@@ -160,10 +161,36 @@ export function SourceSettingsPanel({
   const { data: syncHistory = [] } = useQuery({
     ...knowledgeSourceSyncHistoryQuery(sourceId),
     enabled: !!sourceId,
-    refetchInterval: () => {
-      return source?.status === "syncing" ? 3000 : false;
-    },
   });
+
+  // Refresh sync history when sync completes or fails (via WebSocket)
+  useWebSocketEvent(
+    'websocket:source.sync_completed',
+    useCallback(
+      (event: CustomEvent) => {
+        if (event.detail?.source_id === sourceId) {
+          queryClient.invalidateQueries({
+            queryKey: knowledgeSourceKeys.syncHistory(sourceId),
+          });
+        }
+      },
+      [sourceId, queryClient]
+    )
+  );
+
+  useWebSocketEvent(
+    'websocket:source.sync_failed',
+    useCallback(
+      (event: CustomEvent) => {
+        if (event.detail?.source_id === sourceId) {
+          queryClient.invalidateQueries({
+            queryKey: knowledgeSourceKeys.syncHistory(sourceId),
+          });
+        }
+      },
+      [sourceId, queryClient]
+    )
+  );
 
   // ── Mutations ──
   const syncMutation = useMutation({

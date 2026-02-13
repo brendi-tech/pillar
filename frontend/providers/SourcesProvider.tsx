@@ -1,5 +1,6 @@
 "use client";
 
+import { useWebSocketEvent } from "@/hooks/use-websocket-event";
 import { getCurrentOrganizationId } from "@/lib/admin/api-client";
 import { knowledgeSourceKeys, knowledgeSourceListQuery } from "@/queries/sources.queries";
 import type { KnowledgeSourceConfig, KnowledgeSourceType } from "@/types/sources";
@@ -88,12 +89,6 @@ export function SourcesProvider({ children }: SourcesProviderProps) {
   } = useQuery({
     ...knowledgeSourceListQuery(),
     enabled: !!currentOrgId,
-    // Poll every 5s while any source is syncing to show live item counts
-    refetchInterval: (query) => {
-      const sources = query.state.data?.results ?? [];
-      const hasSyncing = sources.some((s) => s.status === "syncing");
-      return hasSyncing ? 5000 : false;
-    },
   });
 
   // Get sources from response
@@ -111,6 +106,21 @@ export function SourcesProvider({ children }: SourcesProviderProps) {
   const refresh = useCallback(async () => {
     await queryClient.invalidateQueries({ queryKey: knowledgeSourceKeys.lists() });
   }, [queryClient]);
+
+  // Refresh sources when sync completes or fails (via WebSocket)
+  useWebSocketEvent(
+    'websocket:source.sync_completed',
+    useCallback(() => {
+      queryClient.invalidateQueries({ queryKey: knowledgeSourceKeys.lists() });
+    }, [queryClient])
+  );
+
+  useWebSocketEvent(
+    'websocket:source.sync_failed',
+    useCallback(() => {
+      queryClient.invalidateQueries({ queryKey: knowledgeSourceKeys.lists() });
+    }, [queryClient])
+  );
 
   const getSourceById = useCallback(
     (id: string) => sources.find((s) => s.id === id),
