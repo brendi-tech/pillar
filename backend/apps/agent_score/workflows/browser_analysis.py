@@ -307,11 +307,30 @@ async def browser_analysis_workflow(
                         logger.error(
                             f"[AGENT SCORE] Page navigation failed: {nav_err2}"
                         )
-                        report.status = "failed"
-                        report.error_message = f"Could not load page: {nav_err2}"
-                        await report.asave(update_fields=["status", "error_message"])
+                        # Don't fail the whole scan — let other layers proceed
+                        scan_notes.append({
+                            "type": "warning",
+                            "category": None,
+                            "title": "Could not load page in browser",
+                            "detail": (
+                                "The page could not be loaded in a browser. "
+                                "Checks that require browser rendering "
+                                "(accessibility, form analysis, WebMCP detection) "
+                                "could not be evaluated. Your score is based on "
+                                "HTTP-level checks only."
+                            ),
+                        })
+                        existing_notes = report.scan_notes or []
+                        report.scan_notes = existing_notes + scan_notes
+                        await report.asave(update_fields=["scan_notes"])
                         await browser.close()
-                        return {"status": "error", "error": str(nav_err2)}
+
+                        from apps.agent_score.workflows.fan_in import (
+                            complete_layer,
+                        )
+                        await complete_layer(report_id)
+
+                        return {"status": "partial", "report_id": report_id}
 
                 # 1. Accessibility Tree snapshot via CDP
                 ax_tree = {}
@@ -451,7 +470,23 @@ async def browser_analysis_workflow(
                 f"[AGENT SCORE] Browser analysis failed for {report_id}: {e}",
                 exc_info=True,
             )
-            report.status = "failed"
-            report.error_message = f"Browser analysis failed: {e}"
-            await report.asave(update_fields=["status", "error_message"])
-            return {"status": "error", "error": str(e)}
+            # Don't fail the whole scan — store a warning and let other layers proceed
+            existing_notes = report.scan_notes or []
+            existing_notes.append({
+                "type": "warning",
+                "category": None,
+                "title": "Browser analysis unavailable",
+                "detail": (
+                    "We couldn't launch a browser to analyze this page. "
+                    "Checks that require browser rendering (accessibility, "
+                    "form analysis, WebMCP detection) could not be evaluated. "
+                    "Your score is based on HTTP-level checks only."
+                ),
+            })
+            report.scan_notes = existing_notes
+            await report.asave(update_fields=["scan_notes"])
+
+            from apps.agent_score.workflows.fan_in import complete_layer
+            await complete_layer(report_id)
+
+            return {"status": "partial", "report_id": report_id}

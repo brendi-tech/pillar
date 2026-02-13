@@ -47,7 +47,7 @@ export function LiveDemoBar() {
       </div>
 
       {/* Demo cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-3xl mx-auto">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 max-w-3xl mx-auto">
         {liveDemos.map((demo) => {
           const cardContent = (
             <>

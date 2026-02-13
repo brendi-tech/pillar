@@ -245,8 +245,27 @@ async def http_probes_workflow(workflow_input: HttpProbesInput, context: Context
         return {"status": "success", "report_id": report_id}
 
     except Exception as e:
-        logger.error(f"[AGENT SCORE] HTTP probes failed for {report_id}: {e}", exc_info=True)
-        report.status = "failed"
-        report.error_message = f"HTTP probes failed: {e}"
-        await report.asave(update_fields=["status", "error_message"])
-        return {"status": "error", "error": str(e)}
+        logger.error(
+            f"[AGENT SCORE] HTTP probes failed for {report_id}: {e}",
+            exc_info=True,
+        )
+        # Don't fail the whole scan — store a warning and let other layers proceed
+        existing_notes = report.scan_notes or []
+        existing_notes.append({
+            "type": "warning",
+            "category": None,
+            "title": "HTTP analysis unavailable",
+            "detail": (
+                "We couldn't fetch your page from our servers. "
+                "Checks that rely on HTTP responses (robots.txt, "
+                "sitemap, structured data) could not be evaluated. "
+                "Your score is based on browser-level checks only."
+            ),
+        })
+        report.scan_notes = existing_notes
+        await report.asave(update_fields=["scan_notes"])
+
+        from apps.agent_score.workflows.fan_in import complete_layer
+        await complete_layer(report_id)
+
+        return {"status": "partial", "report_id": report_id}

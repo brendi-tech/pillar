@@ -60,9 +60,6 @@ def _count_ax_tree_roles(tree: dict, target_roles: set) -> dict[str, int]:
 
 def _check_aria_labels(axe_results: dict, ax_tree: dict) -> CheckResult:
     """Interactive elements have ARIA labels (via axe-core violations)."""
-    violations = _get_violations_by_rules(axe_results, _LABEL_AXE_RULES)
-    total_nodes_affected = sum(v.get("nodes_count", 0) for v in violations)
-
     if not axe_results:
         return CheckResult(
             category="interaction",
@@ -72,6 +69,9 @@ def _check_aria_labels(axe_results: dict, ax_tree: dict) -> CheckResult:
             details={"error": "no_axe_results"},
             recommendation="Could not run accessibility audit on this page.",
         )
+
+    violations = _get_violations_by_rules(axe_results, _LABEL_AXE_RULES)
+    total_nodes_affected = sum(v.get("nodes_count", 0) for v in violations)
 
     if total_nodes_affected == 0:
         score = 100
