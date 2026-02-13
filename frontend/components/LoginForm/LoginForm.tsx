@@ -1,7 +1,6 @@
 "use client";
 
-// TEMPORARILY DISABLED - OAuth buttons commented out
-// import { OAuthButtons } from "@/components/OAuthButtons/";
+import { OAuthButtons } from "@/components/OAuthButtons/";
 import { PillarLogoWithName } from "@/components/marketing/LandingPage/PillarLogoWithName";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,9 +13,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 export function LoginForm() {
-  const { login, isAuthenticated } = useAuth();
-  // TEMPORARILY DISABLED - loginWithTokens not needed without OAuth
-  // const { login, loginWithTokens, isAuthenticated } = useAuth();
+  const { login, loginWithTokens, isAuthenticated } = useAuth();
   const redirectToReturnPath = useRedirectToReturnPath();
   const returnTo = useReturnToValue();
 
@@ -56,7 +53,6 @@ export function LoginForm() {
     }
   };
 
-  /* TEMPORARILY DISABLED - OAuth handlers
   const handleOAuthSuccess = async (token: string, refreshToken: string) => {
     setIsLoading(true);
     try {
@@ -72,7 +68,6 @@ export function LoginForm() {
   const handleOAuthError = (errorMessage: string) => {
     setError(errorMessage);
   };
-  */
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/30 p-4">
@@ -100,7 +95,6 @@ export function LoginForm() {
               </div>
             )}
 
-            {/* TEMPORARILY DISABLED - OAuth buttons
             <OAuthButtons
               onSuccess={handleOAuthSuccess}
               onError={handleOAuthError}
@@ -117,7 +111,6 @@ export function LoginForm() {
                 </span>
               </div>
             </div>
-            */}
 
             <form onSubmit={handleLogin} className="space-y-5">
               <div className="space-y-2">
