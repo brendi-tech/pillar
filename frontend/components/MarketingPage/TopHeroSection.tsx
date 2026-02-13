@@ -1,5 +1,3 @@
-"use client";
-
 import { ArrowRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -37,8 +35,8 @@ export function TopHeroSection() {
               Open Source
             </a>{" "}
             SDK that adds an AI agent to your product.
-            <br className="hidden md:inline" />{" "}
-            Users type what they want, Pillar takes action, and gets work done.
+            <br className="hidden md:inline" /> Users type what they want,
+            Pillar takes action, and gets work done.
           </p>
         </div>
         <div className="flex flex-col items-center gap-2 pb-8 md:pb-12 px-4">

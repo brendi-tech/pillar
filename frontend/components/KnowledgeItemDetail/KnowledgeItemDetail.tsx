@@ -410,7 +410,7 @@ export function KnowledgeItemDetail({
             title={item.title || "Untitled"}
             subtitle={KNOWLEDGE_ITEM_TYPE_LABELS[item.item_type]}
             actions={
-              <>
+              <div className="flex flex-wrap items-center gap-2">
                 <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
                   <Switch
                     checked={item.is_active}
@@ -418,7 +418,9 @@ export function KnowledgeItemDetail({
                     disabled={updateMutation.isPending}
                     aria-label="Include in AI search"
                   />
-                  {item.is_active ? "In search" : "Excluded"}
+                  <span className="hidden xs:inline">
+                    {item.is_active ? "In search" : "Excluded"}
+                  </span>
                 </label>
 
                 <Button
@@ -431,11 +433,11 @@ export function KnowledgeItemDetail({
                 >
                   {reprocessMutation.isPending ||
                   item.status === "processing" ? (
-                    <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin sm:mr-1.5" />
                   ) : (
-                    <RefreshCw className="mr-1.5 h-4 w-4" />
+                    <RefreshCw className="h-4 w-4 sm:mr-1.5" />
                   )}
-                  Reprocess
+                  <span className="hidden sm:inline">Reprocess</span>
                 </Button>
 
                 <AlertDialog>
@@ -471,7 +473,7 @@ export function KnowledgeItemDetail({
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
-              </>
+              </div>
             }
           />
 
@@ -496,13 +498,13 @@ export function KnowledgeItemDetail({
           {isDocumentUpload && (
             <div>
               <SectionLabel className="mb-2">File Information</SectionLabel>
-              <div className="flex items-center justify-between rounded-lg border bg-card p-4">
-                <div className="grid gap-4 sm:grid-cols-3 flex-1 text-sm">
-                  <div>
+              <div className="flex flex-col gap-4 rounded-lg border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-3 sm:flex-1">
+                  <div className="col-span-2 sm:col-span-1">
                     <span className="text-xs text-muted-foreground">
                       Filename
                     </span>
-                    <p className="font-medium mt-0.5">
+                    <p className="font-medium mt-0.5 truncate">
                       {originalFilename || "Unknown"}
                     </p>
                   </div>
@@ -528,6 +530,7 @@ export function KnowledgeItemDetail({
                   size="sm"
                   onClick={handleDownload}
                   disabled={isLoadingDownloadUrl || isDownloading}
+                  className="w-full sm:w-auto"
                 >
                   {isLoadingDownloadUrl || isDownloading ? (
                     <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
@@ -560,11 +563,12 @@ export function KnowledgeItemDetail({
                   setActiveContentTab(value as "optimized" | "original")
                 }
               >
-                <div className="flex items-center justify-between mb-4">
-                  <TabsList>
+                <div className="flex flex-col gap-3 mb-4 sm:flex-row sm:items-center sm:justify-between">
+                  <TabsList className="w-full sm:w-auto">
                     <TabsTrigger
                       value="optimized"
                       disabled={!item.optimized_content}
+                      className="flex-1 sm:flex-none"
                     >
                       Optimized
                       {item.optimized_content && (
@@ -576,6 +580,7 @@ export function KnowledgeItemDetail({
                     <TabsTrigger
                       value="original"
                       disabled={!item.raw_content && !isDocumentUpload}
+                      className="flex-1 sm:flex-none"
                     >
                       Original
                     </TabsTrigger>
@@ -601,6 +606,7 @@ export function KnowledgeItemDetail({
                           ? !item.optimized_content
                           : !item.raw_content
                       }
+                      className="w-full sm:w-auto"
                     >
                       {copied ? (
                         <Check className="mr-1.5 h-4 w-4" />
@@ -613,8 +619,8 @@ export function KnowledgeItemDetail({
                 </div>
 
                 <TabsContent value="optimized">
-                  <ScrollArea className="h-[400px] w-full rounded-md border bg-muted/30 p-4">
-                    <pre className="whitespace-pre-wrap text-sm font-mono">
+                  <ScrollArea className="h-[50vh] min-h-[300px] max-h-[500px] w-full rounded-md border bg-muted/30 p-4">
+                    <pre className="whitespace-pre-wrap text-sm font-mono break-words">
                       {item.optimized_content ||
                         "No optimized content available"}
                     </pre>
@@ -623,7 +629,7 @@ export function KnowledgeItemDetail({
 
                 <TabsContent value="original">
                   {isDocumentUpload ? (
-                    <div className="h-[800px] w-full rounded-md border bg-muted/30">
+                    <div className="h-[60vh] min-h-[400px] max-h-[800px] w-full rounded-md border bg-muted/30">
                       {isLoadingDownloadUrl ? (
                         <div className="flex h-full items-center justify-center">
                           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -644,15 +650,15 @@ export function KnowledgeItemDetail({
                           />
                         </div>
                       ) : (
-                        <div className="flex h-full flex-col items-center justify-center gap-4 p-8">
+                        <div className="flex h-full flex-col items-center justify-center gap-4 p-4 sm:p-8">
                           {(() => {
                             const FileIcon = getFileIcon(fileType);
                             return (
-                              <FileIcon className="h-16 w-16 text-muted-foreground" />
+                              <FileIcon className="h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground" />
                             );
                           })()}
                           <div className="text-center">
-                            <p className="font-medium">
+                            <p className="font-medium break-all px-2">
                               {originalFilename || "Document"}
                             </p>
                             <p className="text-sm text-muted-foreground">
@@ -660,12 +666,13 @@ export function KnowledgeItemDetail({
                               {formatFileSize(fileSizeBytes)}
                             </p>
                           </div>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-sm text-muted-foreground text-center">
                             Download to view the original file
                           </p>
                           <Button
                             onClick={handleDownload}
                             disabled={isLoadingDownloadUrl || isDownloading}
+                            className="w-full sm:w-auto"
                           >
                             {isLoadingDownloadUrl || isDownloading ? (
                               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -680,8 +687,8 @@ export function KnowledgeItemDetail({
                       )}
                     </div>
                   ) : (
-                    <ScrollArea className="h-[800px] w-full rounded-md border bg-muted/30 p-4">
-                      <pre className="whitespace-pre-wrap text-sm font-mono">
+                    <ScrollArea className="h-[60vh] min-h-[400px] max-h-[800px] w-full rounded-md border bg-muted/30 p-4">
+                      <pre className="whitespace-pre-wrap text-sm font-mono break-words">
                         {item.raw_content || "No original content available"}
                       </pre>
                     </ScrollArea>
