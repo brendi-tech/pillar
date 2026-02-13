@@ -211,8 +211,8 @@ REST_FRAMEWORK = {
         'public_form_minute': '5/minute',
         'public_form_hour': '15/hour',
         'public_form_day': '30/day',
-        'agent_score_scan': '5/minute',
-        'agent_score_signup': '2/hour',
+        'agent_score_scan': '10/minute',
+        'agent_score_signup': '10/hour',
     },
 }
 
