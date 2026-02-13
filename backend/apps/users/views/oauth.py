@@ -315,6 +315,27 @@ def oauth_callback(request: Request) -> Response:
     # Only show org picker if there are actual matching organizations to show
     should_show_org_picker = len(matching_orgs) > 0
     
+    # Auto-create org for new users with no matching orgs to pick from
+    # (free email users already got one above; this catches corporate emails with no domain match)
+    if created and needs_organization and not should_show_org_picker:
+        domain = extract_domain_from_email(email)
+        org_name = f"{domain.split('.')[0].capitalize()}'s Organization" if domain else f"{email.split('@')[0].capitalize()}'s Organization"
+        default_plan = 'enterprise' if settings.DEBUG else 'free'
+        
+        organization = Organization.objects.create(
+            name=org_name,
+            plan=default_plan
+        )
+        
+        OrganizationMembership.objects.create(
+            organization=organization,
+            user=user,
+            role=OrganizationMembership.Role.ADMIN
+        )
+        
+        needs_organization = False
+        logger.info(f"Auto-created organization '{org_name}' for new user with no matching orgs: {email}")
+    
     # Serialize user data
     user_serializer = UserSerializer(user, context={'request': request})
     
