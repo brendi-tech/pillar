@@ -44,10 +44,12 @@ export function TopHeroSection() {
         <div className="flex flex-col items-center gap-2 pb-8 md:pb-12 px-4">
           <Link
             href="/signup"
-            className="group/btn relative inline-flex items-center justify-center rounded-lg bg-[#FF6E00] hover:bg-[#E06200] text-white px-8 py-3 text-base font-medium transition-colors whitespace-nowrap"
+            className="group/btn inline-flex items-center justify-center rounded-lg bg-[#FF6E00] hover:bg-[#E06200] text-white pl-8 pr-8 hover:pr-5 py-3 text-base font-medium transition-all whitespace-nowrap"
           >
             Get Started
-            <ArrowRight className="absolute right-2.5 w-4 h-4 opacity-0 group-hover/btn:opacity-100 transition-all duration-200" />
+            <span className="inline-flex items-center overflow-hidden w-0 ml-0 group-hover/btn:w-4 group-hover/btn:ml-1.5 transition-all duration-200 ease-out">
+              <ArrowRight className="w-4 h-4 shrink-0" />
+            </span>
           </Link>
         </div>
       </div>
