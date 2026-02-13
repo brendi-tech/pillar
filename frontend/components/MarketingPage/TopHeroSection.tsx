@@ -38,7 +38,7 @@ export function TopHeroSection() {
             </a>{" "}
             SDK that adds an AI agent to your product.
             <br className="hidden md:inline" />{" "}
-            Users type what they want, it takes action, and gets work done.
+            Users type what they want, Pillar takes action, and gets work done.
           </p>
         </div>
         <div className="flex flex-col items-center gap-2 pb-8 md:pb-12 px-4">
