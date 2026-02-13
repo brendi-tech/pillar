@@ -10,13 +10,14 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDebounce } from "@/hooks/use-debounce";
-import { useSourcesWebSocketEvent } from "./useSourcesWebSocketEvent";
+import { knowledgeItemsAPI } from "@/lib/admin/knowledge-api";
 import { cn } from "@/lib/utils";
 import { useSources } from "@/providers";
 import { knowledgeKeys } from "@/queries/knowledge.queries";
-import { knowledgeItemsAPI } from "@/lib/admin/knowledge-api";
-import type { KnowledgeItem } from "@/types/knowledge";
-import type { KnowledgeItemListResponse } from "@/types/knowledge";
+import type {
+  KnowledgeItem,
+  KnowledgeItemListResponse,
+} from "@/types/knowledge";
 import type { KnowledgeSourceConfig } from "@/types/sources";
 import { KNOWLEDGE_SOURCE_TYPE_LABELS } from "@/types/sources";
 import { useInfiniteQuery } from "@tanstack/react-query";
@@ -35,6 +36,7 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSourcesWebSocketEvent } from "./useSourcesWebSocketEvent";
 
 interface SourcesSidebarProps {
   /** Callback when navigation occurs (used to close mobile sidebar) */
@@ -249,7 +251,10 @@ function CollapsibleSourceItem({
   // Fetch items with infinite pagination when expanded
   const { data, isPending, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteQuery<KnowledgeItemListResponse>({
-      queryKey: knowledgeKeys.itemList({ source: source.id, page_size: pageSize }),
+      queryKey: knowledgeKeys.itemList({
+        source: source.id,
+        page_size: pageSize,
+      }),
       queryFn: ({ pageParam }) =>
         knowledgeItemsAPI.list({
           source: source.id,
@@ -291,7 +296,7 @@ function CollapsibleSourceItem({
       <div className="flex items-center">
         <CollapsibleTrigger asChild>
           <button
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md hover:bg-muted"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md "
             aria-label={isExpanded ? "Collapse" : "Expand"}
           >
             <ChevronRight

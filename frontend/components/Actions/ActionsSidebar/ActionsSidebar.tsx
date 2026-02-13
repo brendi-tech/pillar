@@ -218,7 +218,7 @@ export function ActionsSidebar({
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search actions..."
+            placeholder="Search tools..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-9"
@@ -291,7 +291,7 @@ export function ActionsSidebar({
       <div className="flex-shrink-0 border-t p-3">
         <div className="flex items-start gap-2 rounded-md bg-muted/50 p-2 text-xs text-muted-foreground">
           <Code2 className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-          <span>Actions are defined in code and synced via CI/CD.</span>
+          <span>Tools are defined in code and synced via CI/CD.</span>
         </div>
       </div>
     </div>
