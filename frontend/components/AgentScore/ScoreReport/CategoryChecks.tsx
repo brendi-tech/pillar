@@ -65,7 +65,21 @@ export function CategoryChecks({
       {visibleCategories.map((category) => {
         const checks = checksByCategory[category];
         const score = getCategoryScore(report, category);
-        const passedCount = checks.filter((c) => c.passed).length;
+        const evaluatedChecks = checks.filter((c) => c.status !== "dnf");
+        const passedCount = evaluatedChecks.filter((c) => c.passed).length;
+        const dnfCount = checks.length - evaluatedChecks.length;
+
+        // Sort: failed first, DNF second, passed last
+        const sortedChecks = [...checks].sort((a, b) => {
+          const order = (c: typeof checks[number]) =>
+            c.status === "dnf" ? 1 : c.passed ? 2 : 0;
+          return order(a) - order(b);
+        });
+
+        const passedLabel =
+          dnfCount > 0
+            ? `${passedCount}/${evaluatedChecks.length} passed, ${dnfCount} could not run`
+            : `${passedCount}/${checks.length} passed`;
 
         return (
           <AccordionItem
@@ -85,13 +99,13 @@ export function CategoryChecks({
                   </span>
                 </div>
                 <span className="text-sm text-[#6B6B6B] shrink-0">
-                  {passedCount}/{checks.length} passed
+                  {passedLabel}
                 </span>
               </div>
             </AccordionTrigger>
             <AccordionContent className="px-5 pb-4">
               <div className="divide-y divide-[#E8E4DC]">
-                {checks.map((check, i) => (
+                {sortedChecks.map((check, i) => (
                   <CheckRow key={check.check_name} check={check} index={i} />
                 ))}
               </div>

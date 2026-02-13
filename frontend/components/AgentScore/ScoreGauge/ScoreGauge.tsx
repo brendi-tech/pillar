@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 interface ScoreGaugeProps {
-  score: number;
+  score: number | null;
   size: "lg" | "md" | "sm";
   label?: string;
   animated?: boolean;
@@ -21,7 +21,9 @@ function getScoreColor(score: number): string {
  * Uses SVG stroke-dasharray for the arc fill and rAF for number animation.
  */
 export function ScoreGauge({ score, size, label, animated = true }: ScoreGaugeProps) {
-  const [displayScore, setDisplayScore] = useState(animated ? 0 : score);
+  const isNull = score === null;
+  const effectiveScore = score ?? 0;
+  const [displayScore, setDisplayScore] = useState<number | null>(animated ? 0 : effectiveScore);
   const [mounted, setMounted] = useState(!animated);
   const rafRef = useRef<number | null>(null);
 
@@ -35,9 +37,9 @@ export function ScoreGauge({ score, size, label, animated = true }: ScoreGaugePr
   const rotation = 90 + (360 * gapFraction) / 2; // Rotate so gap is at bottom
 
   // Compute how much of the arc should be filled (proportional to score)
-  const filledArc = arcLength * (score / 100);
+  const filledArc = isNull ? 0 : arcLength * (effectiveScore / 100);
   const animatedFill = animated && !mounted ? 0 : filledArc;
-  const color = getScoreColor(score);
+  const color = isNull ? "#9A9A9A" : getScoreColor(effectiveScore);
 
   // Animate mount
   useEffect(() => {
@@ -49,8 +51,12 @@ export function ScoreGauge({ score, size, label, animated = true }: ScoreGaugePr
 
   // Animate number count-up
   useEffect(() => {
+    if (isNull) {
+      setDisplayScore(null);
+      return;
+    }
     if (!animated) {
-      setDisplayScore(score);
+      setDisplayScore(effectiveScore);
       return;
     }
     if (!mounted) return;
@@ -64,7 +70,7 @@ export function ScoreGauge({ score, size, label, animated = true }: ScoreGaugePr
       const progress = Math.min(elapsed / duration, 1);
       // Ease-out cubic
       const eased = 1 - Math.pow(1 - progress, 3);
-      setDisplayScore(Math.round(from + (score - from) * eased));
+      setDisplayScore(Math.round(from + (effectiveScore - from) * eased));
 
       if (progress < 1) {
         rafRef.current = requestAnimationFrame(tick);
@@ -75,7 +81,7 @@ export function ScoreGauge({ score, size, label, animated = true }: ScoreGaugePr
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [score, animated, mounted]);
+  }, [effectiveScore, isNull, animated, mounted]);
 
   return (
     <div className="flex flex-col items-center gap-1">
@@ -123,7 +129,7 @@ export function ScoreGauge({ score, size, label, animated = true }: ScoreGaugePr
             )}
             style={{ color }}
           >
-            {displayScore}
+            {displayScore === null ? "—" : displayScore}
           </span>
         </div>
       </div>

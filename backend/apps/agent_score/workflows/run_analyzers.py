@@ -99,6 +99,7 @@ async def analyze_and_score_workflow(
     from asgiref.sync import sync_to_async
 
     from apps.agent_score.analyzers import (
+        assess_data_quality,
         run_accessibility,
         run_discovery,
         run_interactability,
@@ -124,14 +125,17 @@ async def analyze_and_score_workflow(
         return {"status": "error", "error": "report_not_found"}
 
     try:
+        # ── Phase 0: Assess data quality ────────────────────────────────────
+        dq = await sync_to_async(assess_data_quality)(report)
+
         # ── Phase 1: Run all analyzers ──────────────────────────────────────
         all_check_results = await sync_to_async(lambda: (
-            run_discovery(report)
-            + run_readability(report)
-            + run_interactability(report)
-            + run_permissions(report)
-            + run_accessibility(report)
-            + run_webmcp(report)
+            run_discovery(report, dq)
+            + run_readability(report, dq)
+            + run_interactability(report, dq)
+            + run_permissions(report, dq)
+            + run_accessibility(report, dq)
+            + run_webmcp(report, dq)
         ))()
 
         # Data center reality check (Layer 3)
@@ -149,6 +153,7 @@ async def analyze_and_score_workflow(
                 weight=cr.weight,
                 details=cr.details,
                 recommendation=cr.recommendation,
+                status=cr.status,
             )
             for cr in all_check_results
         ]
@@ -156,6 +161,25 @@ async def analyze_and_score_workflow(
         await sync_to_async(
             lambda: AgentScoreCheck.objects.bulk_create(check_objects)
         )()
+
+        # Auto-append scan note when >50% of checks are DNF
+        dnf_count = sum(1 for cr in all_check_results if cr.status == "dnf")
+        total_count = len(all_check_results)
+        if total_count > 0 and dnf_count / total_count > 0.5:
+            existing_notes = report.scan_notes or []
+            existing_notes.append({
+                "type": "warning",
+                "category": None,
+                "title": "Limited scan results",
+                "detail": (
+                    f"{dnf_count} of {total_count} checks could not run "
+                    "because our servers were blocked from accessing this "
+                    "site. The score shown is based on the checks that "
+                    "completed successfully."
+                ),
+            })
+            report.scan_notes = existing_notes
+            await report.asave(update_fields=["scan_notes"])
 
         # Store datacenter issues
         report.datacenter_issues = datacenter_issues

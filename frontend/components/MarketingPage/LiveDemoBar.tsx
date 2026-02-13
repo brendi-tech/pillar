@@ -19,13 +19,13 @@ const liveDemos: LiveDemo[] = [
     slug: "superset",
     name: "Superset",
     description: "AI copilot for Apache Superset dashboards and data exploration.",
-    previewImage: "/marketing/superset-preview.png",
+    previewImage: "/marketing/superset-preview.webp",
   },
   {
     slug: "grafana",
     name: "Grafana",
     description: "AI copilot for Grafana monitoring, queries, and alert management.",
-    previewImage: "/marketing/grafana-preview.png",
+    previewImage: "/marketing/grafana-preview.webp",
   },
 ];
 
@@ -57,6 +57,7 @@ export function LiveDemoBar() {
                   src={demo.previewImage}
                   alt={`${demo.name} demo preview`}
                   fill
+                  unoptimized
                   className={`object-cover object-top transition-transform duration-300 ${demo.comingSoon ? "grayscale opacity-60" : "group-hover:scale-[1.02]"}`}
                   sizes="(max-width: 640px) 100vw, 50vw"
                 />

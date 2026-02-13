@@ -11,6 +11,8 @@ export type CheckCategory =
   | "webmcp"
   | "signup_test";
 
+export type CheckStatus = "evaluated" | "dnf";
+
 export interface TokenMetrics {
   html_token_count: number | null;
   markdown_token_count: number | null;
@@ -26,6 +28,7 @@ export interface AgentScoreCheck {
   check_label: string;
   passed: boolean;
   score: number;
+  status: CheckStatus;
   details: Record<string, unknown>;
   recommendation: string;
 }
@@ -53,10 +56,10 @@ export interface AgentScoreReport {
   url: string;
   domain: string;
   status: ReportStatus;
-  overall_score: number;
-  content_score: number;
-  interaction_score: number;
-  webmcp_score: number;
+  overall_score: number | null;
+  content_score: number | null;
+  interaction_score: number | null;
+  webmcp_score: number | null;
   signup_test_enabled: boolean;
   signup_test_score: number | null;
   signup_test_data: Record<string, unknown>;
@@ -108,7 +111,9 @@ export const CATEGORY_DESCRIPTIONS: Record<CheckCategory, string> = {
 export function getCategoryScore(
   report: AgentScoreReport,
   category: CheckCategory
-): number {
+): number | null {
   const key = `${category}_score` as keyof AgentScoreReport;
-  return (report[key] as number) ?? 0;
+  const value = report[key];
+  if (value === null || value === undefined) return null;
+  return value as number;
 }

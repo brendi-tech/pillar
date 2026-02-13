@@ -55,10 +55,10 @@ const nextConfig: NextConfig = {
   // Enable MDX pages
   pageExtensions: ["js", "jsx", "md", "mdx", "ts", "tsx"],
 
-  // Image optimization configuration
+  // Disable server-side image optimization — images are pre-optimized at build time.
+  // This avoids CPU-intensive Sharp/squoosh work blocking the single-threaded Node server.
   images: {
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 2560],
-    formats: ["image/avif", "image/webp"],
+    unoptimized: true,
   },
 
   // Turbopack configuration (for next dev --turbopack)

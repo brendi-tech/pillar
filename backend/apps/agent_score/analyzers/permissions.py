@@ -9,6 +9,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from apps.agent_score.analyzers.base import CheckResult
+from apps.agent_score.analyzers.data_quality import DataQuality
 from apps.agent_score.constants import AI_CRAWLERS
 
 if TYPE_CHECKING:
@@ -16,14 +17,19 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+_DNF_RECOMMENDATION = (
+    "This check could not run because our servers were blocked "
+    "from fetching this page."
+)
 
-def run(report: AgentScoreReport) -> list[CheckResult]:
+
+def run(report: AgentScoreReport, dq: DataQuality) -> list[CheckResult]:
     """Run all permissions checks against the report data."""
     checks: list[CheckResult] = []
     probes = report.probe_results or {}
 
-    checks.append(_check_robots_txt_ai(probes))
-    checks.append(_check_content_signal_header(report))
+    checks.append(_check_robots_txt_ai(probes, dq))
+    checks.append(_check_content_signal_header(report, dq))
 
     return checks
 
@@ -110,8 +116,16 @@ def _parse_robots_txt(body: str) -> dict:
     return result
 
 
-def _check_robots_txt_ai(probes: dict) -> CheckResult:
+def _check_robots_txt_ai(probes: dict, dq: DataQuality) -> CheckResult:
     """Fetch robots.txt, check if AI crawlers are allowed."""
+    if not dq.probe_usable("robots_txt"):
+        return CheckResult(
+            category="content", check_name="robots_txt_ai",
+            check_label="AI crawlers allowed in robots.txt",
+            passed=False, score=0, weight=10, status="dnf",
+            details={"reason": dq.probes.get("robots_txt", "unknown")},
+            recommendation=_DNF_RECOMMENDATION,
+        )
     probe = probes.get("robots_txt", {})
     exists = probe.get("ok", False)
     body = probe.get("body", "")
@@ -174,7 +188,7 @@ def _check_robots_txt_ai(probes: dict) -> CheckResult:
     )
 
 
-def _check_content_signal_header(report: AgentScoreReport) -> CheckResult:
+def _check_content_signal_header(report: AgentScoreReport, dq: DataQuality) -> CheckResult:
     """
     Check for the Content-Signal response header (contentsignals.org).
 
@@ -186,6 +200,15 @@ def _check_content_signal_header(report: AgentScoreReport) -> CheckResult:
       - search: Content can appear in search results
       - ai-input: Content can be used as AI input (agentic use)
     """
+    if not dq.probe_usable("markdown_negotiation"):
+        return CheckResult(
+            category="content", check_name="content_signal_header",
+            check_label="Content-Signal header declares AI usage permissions",
+            passed=False, score=0, weight=8, status="dnf",
+            details={"reason": dq.probes.get("markdown_negotiation", "unknown")},
+            recommendation=_DNF_RECOMMENDATION,
+        )
+
     content_signal = report.content_signal or ""
 
     # Also check the probe results in case the model field wasn't populated

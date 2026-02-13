@@ -52,6 +52,15 @@ class AgentScoreCheck(BaseModel):
         default="",
         help_text="Actionable recommendation if check didn't pass",
     )
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ("evaluated", "Evaluated"),
+            ("dnf", "Did Not Finish"),
+        ],
+        default="evaluated",
+        help_text="Whether this check ran successfully or could not be evaluated",
+    )
 
     class Meta:
         verbose_name = "Agent Score Check"

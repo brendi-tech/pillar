@@ -14,25 +14,31 @@ from typing import TYPE_CHECKING
 from bs4 import BeautifulSoup
 
 from apps.agent_score.analyzers.base import CheckResult
+from apps.agent_score.analyzers.data_quality import DataQuality
 
 if TYPE_CHECKING:
     from apps.agent_score.models import AgentScoreReport
 
 logger = logging.getLogger(__name__)
 
+_DNF_RECOMMENDATION = (
+    "This check could not run because our servers were blocked "
+    "from fetching this page."
+)
 
-def run(report: AgentScoreReport) -> list[CheckResult]:
+
+def run(report: AgentScoreReport, dq: DataQuality) -> list[CheckResult]:
     """Run all discovery checks against the report data."""
     checks: list[CheckResult] = []
     probes = report.probe_results or {}
     html = report.raw_html or ""
 
-    checks.append(_check_llms_txt(probes))
-    checks.append(_check_structured_data(html, report.page_metadata))
-    checks.append(_check_sitemap(probes))
-    checks.append(_check_meta_description(report.page_metadata))
-    checks.append(_check_semantic_headings(html))
-    checks.append(_check_canonical_url(report.page_metadata))
+    checks.append(_check_llms_txt(probes, dq))
+    checks.append(_check_structured_data(html, report.page_metadata, dq))
+    checks.append(_check_sitemap(probes, dq))
+    checks.append(_check_meta_description(report.page_metadata, dq))
+    checks.append(_check_semantic_headings(html, dq))
+    checks.append(_check_canonical_url(report.page_metadata, dq))
 
     return checks
 
@@ -40,8 +46,16 @@ def run(report: AgentScoreReport) -> list[CheckResult]:
 # ──────────────────────────────────────────────────────────────────────────────
 
 
-def _check_llms_txt(probes: dict) -> CheckResult:
+def _check_llms_txt(probes: dict, dq: DataQuality) -> CheckResult:
     """Fetch /llms.txt — exists, valid markdown, reasonable size."""
+    if not dq.probe_usable("llms_txt"):
+        return CheckResult(
+            category="content", check_name="llms_txt_present",
+            check_label="Has /llms.txt",
+            passed=False, score=0, weight=8, status="dnf",
+            details={"reason": dq.probes.get("llms_txt", "unknown")},
+            recommendation=_DNF_RECOMMENDATION,
+        )
     probe = probes.get("llms_txt", {})
     exists = probe.get("ok", False)
     body = probe.get("body", "")
@@ -70,8 +84,16 @@ def _check_llms_txt(probes: dict) -> CheckResult:
     )
 
 
-def _check_structured_data(html: str, metadata: dict) -> CheckResult:
+def _check_structured_data(html: str, metadata: dict, dq: DataQuality) -> CheckResult:
     """Parse HTML for JSON-LD / Schema.org markup."""
+    if dq.page_metadata != "ok" and dq.raw_html != "ok":
+        return CheckResult(
+            category="content", check_name="structured_data",
+            check_label="JSON-LD / Schema.org structured data",
+            passed=False, score=0, weight=9, status="dnf",
+            details={"reason": dq.raw_html},
+            recommendation=_DNF_RECOMMENDATION,
+        )
     json_ld_raw = metadata.get("json_ld_raw", [])
     count = len(json_ld_raw)
 
@@ -130,8 +152,16 @@ def _check_structured_data(html: str, metadata: dict) -> CheckResult:
     )
 
 
-def _check_sitemap(probes: dict) -> CheckResult:
+def _check_sitemap(probes: dict, dq: DataQuality) -> CheckResult:
     """Fetch /sitemap.xml — does it exist?"""
+    if not dq.probe_usable("sitemap"):
+        return CheckResult(
+            category="content", check_name="sitemap_present",
+            check_label="Has /sitemap.xml",
+            passed=False, score=0, weight=5, status="dnf",
+            details={"reason": dq.probes.get("sitemap", "unknown")},
+            recommendation=_DNF_RECOMMENDATION,
+        )
     probe = probes.get("sitemap", {})
     exists = probe.get("ok", False)
     body = probe.get("body", "")
@@ -159,8 +189,16 @@ def _check_sitemap(probes: dict) -> CheckResult:
     )
 
 
-def _check_meta_description(metadata: dict) -> CheckResult:
+def _check_meta_description(metadata: dict, dq: DataQuality) -> CheckResult:
     """Check for <meta name="description"> and OpenGraph tags."""
+    if dq.page_metadata != "ok":
+        return CheckResult(
+            category="content", check_name="meta_description",
+            check_label="Meta description and OpenGraph tags",
+            passed=False, score=0, weight=5, status="dnf",
+            details={"reason": dq.page_metadata},
+            recommendation=_DNF_RECOMMENDATION,
+        )
     desc = metadata.get("meta_description", "")
     og_tags = metadata.get("og_tags", {})
     has_desc = bool(desc and len(desc) > 10)
@@ -195,8 +233,16 @@ def _check_meta_description(metadata: dict) -> CheckResult:
     )
 
 
-def _check_semantic_headings(html: str) -> CheckResult:
+def _check_semantic_headings(html: str, dq: DataQuality) -> CheckResult:
     """Proper h1-h6 hierarchy — no skipped levels, single h1."""
+    if dq.raw_html != "ok":
+        return CheckResult(
+            category="content", check_name="semantic_headings",
+            check_label="Proper heading hierarchy (h1–h6)",
+            passed=False, score=0, weight=6, status="dnf",
+            details={"reason": dq.raw_html},
+            recommendation=_DNF_RECOMMENDATION,
+        )
     if not html:
         return CheckResult(
             category="content",
@@ -261,8 +307,16 @@ def _check_semantic_headings(html: str) -> CheckResult:
     )
 
 
-def _check_canonical_url(metadata: dict) -> CheckResult:
+def _check_canonical_url(metadata: dict, dq: DataQuality) -> CheckResult:
     """Has <link rel="canonical">."""
+    if dq.page_metadata != "ok":
+        return CheckResult(
+            category="content", check_name="canonical_url",
+            check_label="Has canonical URL",
+            passed=False, score=0, weight=3, status="dnf",
+            details={"reason": dq.page_metadata},
+            recommendation=_DNF_RECOMMENDATION,
+        )
     canonical = metadata.get("canonical_url", "")
     has_canonical = bool(canonical)
 

@@ -9,6 +9,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from apps.agent_score.analyzers.base import CheckResult
+from apps.agent_score.analyzers.data_quality import DataQuality
 from apps.agent_score.constants import GENERIC_ACTION_TEXT
 
 if TYPE_CHECKING:
@@ -16,15 +17,20 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+_DNF_RECOMMENDATION = (
+    "This check could not run because our servers were blocked "
+    "from loading this page."
+)
 
-def run(report: AgentScoreReport) -> list[CheckResult]:
+
+def run(report: AgentScoreReport, dq: DataQuality) -> list[CheckResult]:
     """Run all interactability checks against the report data."""
     checks: list[CheckResult] = []
     probes = report.probe_results or {}
 
-    checks.append(_check_labeled_forms(report.forms_data))
-    checks.append(_check_semantic_actions(report.accessibility_tree))
-    checks.append(_check_api_documentation(probes))
+    checks.append(_check_labeled_forms(report.forms_data, dq))
+    checks.append(_check_semantic_actions(report.accessibility_tree, dq))
+    checks.append(_check_api_documentation(probes, dq))
 
     return checks
 
@@ -32,8 +38,16 @@ def run(report: AgentScoreReport) -> list[CheckResult]:
 # ──────────────────────────────────────────────────────────────────────────────
 
 
-def _check_labeled_forms(forms_data: list | dict) -> CheckResult:
+def _check_labeled_forms(forms_data: list | dict, dq: DataQuality) -> CheckResult:
     """All form inputs have associated labels or aria-label."""
+    if dq.forms_data != "ok":
+        return CheckResult(
+            category="interaction", check_name="labeled_forms",
+            check_label="All form inputs labeled",
+            passed=False, score=0, weight=20, status="dnf",
+            details={"reason": dq.forms_data},
+            recommendation=_DNF_RECOMMENDATION,
+        )
     if not forms_data or not isinstance(forms_data, list):
         # No forms on page — that's not a failure
         return CheckResult(
@@ -110,8 +124,16 @@ def _check_labeled_forms(forms_data: list | dict) -> CheckResult:
     )
 
 
-def _check_semantic_actions(ax_tree: dict) -> CheckResult:
+def _check_semantic_actions(ax_tree: dict, dq: DataQuality) -> CheckResult:
     """Buttons/links have descriptive text, not 'Click here'."""
+    if dq.accessibility_tree != "ok":
+        return CheckResult(
+            category="interaction", check_name="semantic_actions",
+            check_label="Buttons and links have descriptive text",
+            passed=False, score=0, weight=15, status="dnf",
+            details={"reason": dq.accessibility_tree},
+            recommendation=_DNF_RECOMMENDATION,
+        )
     if not ax_tree:
         return CheckResult(
             category="interaction",
@@ -183,8 +205,16 @@ def _check_semantic_actions(ax_tree: dict) -> CheckResult:
     )
 
 
-def _check_api_documentation(probes: dict) -> CheckResult:
+def _check_api_documentation(probes: dict, dq: DataQuality) -> CheckResult:
     """Check for OpenAPI/Swagger/GraphQL mentions in page HTML."""
+    if not dq.probe_usable("main_page"):
+        return CheckResult(
+            category="interaction", check_name="api_documentation",
+            check_label="API documentation available",
+            passed=False, score=0, weight=5, status="dnf",
+            details={"reason": dq.probes.get("main_page", "unknown")},
+            recommendation=_DNF_RECOMMENDATION,
+        )
     main_body = probes.get("main_page", {}).get("body", "")
     has_api_link = any(
         keyword in main_body.lower()

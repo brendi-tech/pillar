@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Play, Loader2 } from "lucide-react";
+import { Play, Loader2, ChevronDown, ChevronRight } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -14,14 +14,16 @@ import { agentScoreAPI } from "@/lib/public/agent-score-api";
 
 interface SessionReplayProps {
   reportId: string;
+  instruction?: string;
 }
 
-export function SessionReplay({ reportId }: SessionReplayProps) {
+export function SessionReplay({ reportId, instruction }: SessionReplayProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<unknown>(null);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [promptExpanded, setPromptExpanded] = useState(false);
 
   const initPlayer = useCallback(async () => {
     if (!containerRef.current) return;
@@ -96,6 +98,28 @@ export function SessionReplay({ reportId }: SessionReplayProps) {
             Replay of the AI agent attempting to sign up on your site.
           </DialogDescription>
         </DialogHeader>
+
+        {instruction && (
+          <div className="px-6 pt-2">
+            <button
+              type="button"
+              onClick={() => setPromptExpanded((v) => !v)}
+              className="flex items-center gap-1.5 text-xs font-medium text-[#6B6B6B] hover:text-[#1A1A1A] transition-colors cursor-pointer"
+            >
+              {promptExpanded ? (
+                <ChevronDown className="h-3.5 w-3.5" />
+              ) : (
+                <ChevronRight className="h-3.5 w-3.5" />
+              )}
+              Stagehand prompt
+            </button>
+            {promptExpanded && (
+              <pre className="mt-2 rounded-lg bg-[#F9F7F3] border border-[#E8E4DC] p-4 text-xs text-[#4A4A4A] leading-relaxed whitespace-pre-wrap max-h-[200px] overflow-y-auto font-mono">
+                {instruction}
+              </pre>
+            )}
+          </div>
+        )}
 
         <div className="px-6 pb-6">
           {loading && (

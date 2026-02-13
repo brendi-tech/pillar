@@ -14,6 +14,7 @@ import html2text
 from bs4 import BeautifulSoup
 
 from apps.agent_score.analyzers.base import CheckResult
+from apps.agent_score.analyzers.data_quality import DataQuality
 from apps.agent_score.utils import count_tokens
 
 if TYPE_CHECKING:
@@ -21,18 +22,23 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+_DNF_RECOMMENDATION = (
+    "This check could not run because our servers were blocked "
+    "from fetching this page."
+)
 
-def run(report: AgentScoreReport) -> list[CheckResult]:
+
+def run(report: AgentScoreReport, dq: DataQuality) -> list[CheckResult]:
     """Run all readability checks against the report data."""
     checks: list[CheckResult] = []
     html = report.rendered_html or report.raw_html or ""
 
-    checks.append(_check_markdown_content_negotiation(report))
-    checks.append(_check_token_efficiency(html, report))
-    checks.append(_check_markdown_available(report))
-    checks.append(_check_content_extraction(html))
-    checks.append(_check_semantic_html(html))
-    checks.append(_check_low_token_bloat(html, report))
+    checks.append(_check_markdown_content_negotiation(report, dq))
+    checks.append(_check_token_efficiency(html, report, dq))
+    checks.append(_check_markdown_available(report, dq))
+    checks.append(_check_content_extraction(html, dq))
+    checks.append(_check_semantic_html(html, dq))
+    checks.append(_check_low_token_bloat(html, report, dq))
 
     return checks
 
@@ -40,7 +46,7 @@ def run(report: AgentScoreReport) -> list[CheckResult]:
 # ──────────────────────────────────────────────────────────────────────────────
 
 
-def _check_markdown_content_negotiation(report: AgentScoreReport) -> CheckResult:
+def _check_markdown_content_negotiation(report: AgentScoreReport, dq: DataQuality) -> CheckResult:
     """
     Does the site respond with text/markdown when Accept: text/markdown is sent?
 
@@ -48,6 +54,15 @@ def _check_markdown_content_negotiation(report: AgentScoreReport) -> CheckResult
     converts HTML to clean markdown on-the-fly via content negotiation.
     Cloudflare's "Markdown for Agents" is the first major implementation.
     """
+    if not dq.probe_usable("markdown_negotiation"):
+        return CheckResult(
+            category="content", check_name="markdown_content_negotiation",
+            check_label="Supports Accept: text/markdown content negotiation",
+            passed=False, score=0, weight=12, status="dnf",
+            details={"reason": dq.probes.get("markdown_negotiation", "unknown")},
+            recommendation=_DNF_RECOMMENDATION,
+        )
+
     probes = report.probe_results or {}
     md_probe = probes.get("markdown_negotiation", {})
     supports = md_probe.get("supports_markdown", False)
@@ -110,7 +125,7 @@ def _html_to_markdown(html: str) -> str:
     return converter.handle(html)
 
 
-def _check_token_efficiency(html: str, report: AgentScoreReport) -> CheckResult:
+def _check_token_efficiency(html: str, report: AgentScoreReport, dq: DataQuality) -> CheckResult:
     """
     Token efficiency — what agents actually pay to consume your content.
 
@@ -118,6 +133,14 @@ def _check_token_efficiency(html: str, report: AgentScoreReport) -> CheckResult:
     token cost is the markdown token count, not the raw HTML. We score based
     on the best available delivery path.
     """
+    if not dq.html_usable:
+        return CheckResult(
+            category="content", check_name="token_efficiency",
+            check_label="Token efficiency (content vs HTML ratio)",
+            passed=False, score=0, weight=10, status="dnf",
+            details={"reason": dq.rendered_html or dq.raw_html},
+            recommendation=_DNF_RECOMMENDATION,
+        )
     if not html:
         return CheckResult(
             category="content",
@@ -191,7 +214,7 @@ def _check_token_efficiency(html: str, report: AgentScoreReport) -> CheckResult:
     )
 
 
-def _check_markdown_available(report: AgentScoreReport) -> CheckResult:
+def _check_markdown_available(report: AgentScoreReport, dq: DataQuality) -> CheckResult:
     """
     Check if a static markdown version of the site is available (/llms.txt).
 
@@ -199,6 +222,14 @@ def _check_markdown_available(report: AgentScoreReport) -> CheckResult:
     by markdown_content_negotiation. This check covers the static discovery
     file that provides a site-wide markdown index.
     """
+    if not dq.probe_usable("llms_txt"):
+        return CheckResult(
+            category="content", check_name="markdown_available",
+            check_label="Markdown version available (/llms.txt)",
+            passed=False, score=0, weight=5, status="dnf",
+            details={"reason": dq.probes.get("llms_txt", "unknown")},
+            recommendation=_DNF_RECOMMENDATION,
+        )
     probes = report.probe_results or {}
     llms_probe = probes.get("llms_txt", {})
     llms_exists = llms_probe.get("ok", False)
@@ -233,8 +264,16 @@ def _check_markdown_available(report: AgentScoreReport) -> CheckResult:
     )
 
 
-def _check_content_extraction(html: str) -> CheckResult:
+def _check_content_extraction(html: str, dq: DataQuality) -> CheckResult:
     """Run readability-style content extraction and measure quality."""
+    if not dq.html_usable:
+        return CheckResult(
+            category="content", check_name="content_extraction",
+            check_label="Clean content extraction quality",
+            passed=False, score=0, weight=7, status="dnf",
+            details={"reason": dq.rendered_html or dq.raw_html},
+            recommendation=_DNF_RECOMMENDATION,
+        )
     if not html:
         return CheckResult(
             category="content",
@@ -291,8 +330,16 @@ def _check_content_extraction(html: str) -> CheckResult:
     )
 
 
-def _check_semantic_html(html: str) -> CheckResult:
+def _check_semantic_html(html: str, dq: DataQuality) -> CheckResult:
     """Uses <article>, <main>, <nav>, <section> vs div soup."""
+    if not dq.html_usable:
+        return CheckResult(
+            category="content", check_name="semantic_html",
+            check_label="Semantic HTML elements used",
+            passed=False, score=0, weight=7, status="dnf",
+            details={"reason": dq.rendered_html or dq.raw_html},
+            recommendation=_DNF_RECOMMENDATION,
+        )
     if not html:
         return CheckResult(
             category="content",
@@ -341,7 +388,7 @@ def _check_semantic_html(html: str) -> CheckResult:
     )
 
 
-def _check_low_token_bloat(html: str, report: AgentScoreReport) -> CheckResult:
+def _check_low_token_bloat(html: str, report: AgentScoreReport, dq: DataQuality) -> CheckResult:
     """
     Page token footprint relative to agent context windows.
 
@@ -350,6 +397,15 @@ def _check_low_token_bloat(html: str, report: AgentScoreReport) -> CheckResult:
     content negotiation is available, we score based on the effective token
     cost (markdown tokens) rather than raw HTML.
     """
+    if not dq.html_usable:
+        return CheckResult(
+            category="content", check_name="low_token_bloat",
+            check_label="Page token footprint",
+            passed=False, score=0, weight=5, status="dnf",
+            details={"reason": dq.rendered_html or dq.raw_html},
+            recommendation=_DNF_RECOMMENDATION,
+        )
+
     html_tokens = report.html_token_count or count_tokens(html) if html else 0
 
     if html_tokens == 0:

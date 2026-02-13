@@ -56,7 +56,8 @@ RUN chmod +x /app/hatchet-worker-healthcheck.py
 # Create non-root user for running hatchet worker
 RUN groupadd hatchet && \
     useradd -g hatchet -u 1000 hatchet -m && \
-    chown -R hatchet:hatchet /app
+    chown -R hatchet:hatchet /app && \
+    chmod -R o+rx /opt/ms-playwright
 
 # Switch to non-root user
 USER hatchet

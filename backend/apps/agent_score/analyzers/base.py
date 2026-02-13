@@ -23,3 +23,4 @@ class CheckResult:
     weight: float  # relative weight within category
     details: dict = field(default_factory=dict)
     recommendation: str = ""
+    status: str = "evaluated"  # "evaluated" | "dnf"

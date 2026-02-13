@@ -11,25 +11,31 @@ import re
 from typing import TYPE_CHECKING
 
 from apps.agent_score.analyzers.base import CheckResult
+from apps.agent_score.analyzers.data_quality import DataQuality
 
 if TYPE_CHECKING:
     from apps.agent_score.models import AgentScoreReport
 
 logger = logging.getLogger(__name__)
 
+_DNF_RECOMMENDATION = (
+    "This check could not run because our servers were blocked "
+    "from loading this page."
+)
 
-def run(report: AgentScoreReport) -> list[CheckResult]:
+
+def run(report: AgentScoreReport, dq: DataQuality) -> list[CheckResult]:
     """Run all WebMCP checks against the report data."""
     checks: list[CheckResult] = []
     webmcp = report.webmcp_data or {}
     html = report.rendered_html or report.raw_html or ""
 
-    checks.append(_check_meta_tag(html))
-    checks.append(_check_script_detected(html))
-    checks.append(_check_tools_registered(webmcp))
-    checks.append(_check_tool_descriptions_quality(webmcp))
-    checks.append(_check_tool_count(webmcp))
-    checks.append(_check_context_provided(webmcp))
+    checks.append(_check_meta_tag(html, dq))
+    checks.append(_check_script_detected(html, dq))
+    checks.append(_check_tools_registered(webmcp, dq))
+    checks.append(_check_tool_descriptions_quality(webmcp, dq))
+    checks.append(_check_tool_count(webmcp, dq))
+    checks.append(_check_context_provided(webmcp, dq))
 
     return checks
 
@@ -37,8 +43,16 @@ def run(report: AgentScoreReport) -> list[CheckResult]:
 # ──────────────────────────────────────────────────────────────────────────────
 
 
-def _check_meta_tag(html: str) -> CheckResult:
+def _check_meta_tag(html: str, dq: DataQuality) -> CheckResult:
     """Page declares WebMCP support via meta tag."""
+    if not dq.html_usable:
+        return CheckResult(
+            category="webmcp", check_name="webmcp_meta_tag",
+            check_label="Page declares WebMCP support",
+            passed=False, score=0, weight=15, status="dnf",
+            details={"reason": dq.rendered_html or dq.raw_html},
+            recommendation=_DNF_RECOMMENDATION,
+        )
     # Look for <meta name="webmcp" ...> or similar declarations
     has_meta = bool(
         re.search(r'<meta[^>]*name=["\']webmcp["\']', html, re.IGNORECASE)
@@ -69,8 +83,16 @@ def _check_meta_tag(html: str) -> CheckResult:
     )
 
 
-def _check_script_detected(html: str) -> CheckResult:
+def _check_script_detected(html: str, dq: DataQuality) -> CheckResult:
     """navigator.modelContext referenced in page scripts."""
+    if not dq.html_usable:
+        return CheckResult(
+            category="webmcp", check_name="webmcp_script_detected",
+            check_label="WebMCP API referenced in scripts",
+            passed=False, score=0, weight=20, status="dnf",
+            details={"reason": dq.rendered_html or dq.raw_html},
+            recommendation=_DNF_RECOMMENDATION,
+        )
     if not html:
         return CheckResult(
             category="webmcp",
@@ -125,8 +147,16 @@ def _check_script_detected(html: str) -> CheckResult:
     )
 
 
-def _check_tools_registered(webmcp: dict) -> CheckResult:
+def _check_tools_registered(webmcp: dict, dq: DataQuality) -> CheckResult:
     """Tools actually registered (requires JS execution)."""
+    if dq.webmcp_data != "ok":
+        return CheckResult(
+            category="webmcp", check_name="tools_registered",
+            check_label="WebMCP tools registered",
+            passed=False, score=0, weight=25, status="dnf",
+            details={"reason": dq.webmcp_data},
+            recommendation=_DNF_RECOMMENDATION,
+        )
     api_exists = webmcp.get("api_exists", False)
     tools = webmcp.get("tools", [])
     has_tools = len(tools) > 0
@@ -157,8 +187,16 @@ def _check_tools_registered(webmcp: dict) -> CheckResult:
     )
 
 
-def _check_tool_descriptions_quality(webmcp: dict) -> CheckResult:
+def _check_tool_descriptions_quality(webmcp: dict, dq: DataQuality) -> CheckResult:
     """Tools have clear names, descriptions, and typed schemas."""
+    if dq.webmcp_data != "ok":
+        return CheckResult(
+            category="webmcp", check_name="tool_descriptions_quality",
+            check_label="Tool descriptions and schemas quality",
+            passed=False, score=0, weight=20, status="dnf",
+            details={"reason": dq.webmcp_data},
+            recommendation=_DNF_RECOMMENDATION,
+        )
     tools = webmcp.get("tools", [])
 
     if not tools:
@@ -209,8 +247,16 @@ def _check_tool_descriptions_quality(webmcp: dict) -> CheckResult:
     )
 
 
-def _check_tool_count(webmcp: dict) -> CheckResult:
+def _check_tool_count(webmcp: dict, dq: DataQuality) -> CheckResult:
     """Number of tools exposed."""
+    if dq.webmcp_data != "ok":
+        return CheckResult(
+            category="webmcp", check_name="tool_count",
+            check_label="Number of WebMCP tools exposed",
+            passed=False, score=0, weight=10, status="dnf",
+            details={"reason": dq.webmcp_data},
+            recommendation=_DNF_RECOMMENDATION,
+        )
     tools = webmcp.get("tools", [])
     count = len(tools)
 
@@ -237,8 +283,16 @@ def _check_tool_count(webmcp: dict) -> CheckResult:
     )
 
 
-def _check_context_provided(webmcp: dict) -> CheckResult:
+def _check_context_provided(webmcp: dict, dq: DataQuality) -> CheckResult:
     """Uses provideContext() to give agents page state."""
+    if dq.webmcp_data != "ok":
+        return CheckResult(
+            category="webmcp", check_name="context_provided",
+            check_label="Uses provideContext() for page state",
+            passed=False, score=0, weight=10, status="dnf",
+            details={"reason": dq.webmcp_data},
+            recommendation=_DNF_RECOMMENDATION,
+        )
     context_provided = webmcp.get("context_provided", False)
 
     return CheckResult(

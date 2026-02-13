@@ -20,7 +20,8 @@ import {
   getCategoryScore,
 } from "@/components/AgentScore/AgentScore.types";
 
-function getScoreColor(score: number): string {
+function getScoreColor(score: number | null): string {
+  if (score === null) return "#9A9A9A";
   if (score >= 90) return "#0CCE6B";
   if (score >= 50) return "#FFA400";
   return "#FF4E42";
@@ -47,15 +48,17 @@ export function ScoreReport({
 
   // Find the lowest-scoring *scored* category to select by default.
   // WebMCP is excluded — most sites score 0 there, so it's not a useful default.
+  // null scores (all-DNF categories) are treated as Infinity so they don't
+  // "win" lowest unless everything is null.
   const lowestCategory = useMemo(() => {
     const scoredVisible = visibleCategories.filter((c) =>
       SCORED_CATEGORIES.includes(c)
     );
     const candidates = scoredVisible.length > 0 ? scoredVisible : visibleCategories;
     let lowest: CheckCategory = candidates[0];
-    let lowestScore = getCategoryScore(report, lowest);
+    let lowestScore = getCategoryScore(report, lowest) ?? Infinity;
     for (const cat of candidates) {
-      const s = getCategoryScore(report, cat);
+      const s = getCategoryScore(report, cat) ?? Infinity;
       if (s < lowestScore) {
         lowestScore = s;
         lowest = cat;
@@ -69,14 +72,15 @@ export function ScoreReport({
 
   const activeScore = getCategoryScore(report, activeCategory);
 
-  // Sort: failed checks first, then passed
+  // Sort: failed first (red), then DNF (gray), then passed (green)
   const activeChecks = useMemo(() => {
     const checks = report.checks.filter(
       (c) => c.category === activeCategory
     );
     return [...checks].sort((a, b) => {
-      if (a.passed === b.passed) return 0;
-      return a.passed ? 1 : -1;
+      const order = (c: typeof checks[number]) =>
+        c.status === "dnf" ? 1 : c.passed ? 2 : 0;
+      return order(a) - order(b);
     });
   }, [report.checks, activeCategory]);
 
@@ -91,7 +95,7 @@ export function ScoreReport({
 
   // WebMCP CTA for webmcp tab
   const showWebMCPCta =
-    activeCategory === "webmcp" && report.webmcp_score < 90;
+    activeCategory === "webmcp" && (report.webmcp_score === null || report.webmcp_score < 90);
 
   // Signup test narrative
   const showSignupNarrative = activeCategory === "signup_test";
@@ -216,6 +220,10 @@ export function ScoreReport({
             <span className="inline-block w-2.5 h-2.5 rounded-full bg-[#0CCE6B]" />
             90&ndash;100
           </span>
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block w-2.5 h-2.5 rounded-full bg-[#9A9A9A]" />
+            Could not evaluate
+          </span>
         </div>
       </div>
 
@@ -236,7 +244,7 @@ export function ScoreReport({
             href="/signup"
             className="flex items-center justify-center gap-2 w-full mt-6 h-11 px-6 text-sm font-medium rounded-lg bg-[#FF6E00] hover:bg-[#E06200] text-white transition-colors"
           >
-            {report.webmcp_score === 0
+            {report.webmcp_score === 0 || report.webmcp_score === null
               ? "Add WebMCP to your site with Pillar"
               : "Improve your WebMCP score with Pillar"}
             <ArrowRight className="h-4 w-4" />
@@ -299,7 +307,10 @@ export function ScoreReport({
                 "The signup test could not determine what happened."}
             </p>
             {hasSessionRecording && (
-              <SessionReplay reportId={report.id} />
+              <SessionReplay
+                reportId={report.id}
+                instruction={report.signup_test_data?.instruction as string | undefined}
+              />
             )}
           </div>
         )}

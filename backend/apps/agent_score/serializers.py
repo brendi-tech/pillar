@@ -55,6 +55,7 @@ class CheckSerializer(serializers.ModelSerializer):
             "check_label",
             "passed",
             "score",
+            "status",
             "details",
             "recommendation",
         ]
@@ -92,9 +93,19 @@ class ReportSerializer(serializers.ModelSerializer):
 
     def get_progress(self, obj: AgentScoreReport) -> dict:
         """Compute step completion from model state for the progress UI."""
+        # Browser analysis is "done" if we got a screenshot (success) OR
+        # if a failure note was recorded (graceful degradation).
+        _BROWSER_FAIL_TITLES = {
+            "Browser analysis unavailable",
+            "Could not load page in browser",
+        }
+        browser_done = bool(obj.screenshot_url) or any(
+            note.get("title") in _BROWSER_FAIL_TITLES
+            for note in (obj.scan_notes or [])
+        )
         return {
             "http_probes_done": bool(obj.probe_results),
-            "browser_analysis_done": bool(obj.screenshot_url),
+            "browser_analysis_done": browser_done,
             "analyzers_done": obj.checks.exists(),
             "signup_test_done": (
                 not obj.signup_test_enabled

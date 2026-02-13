@@ -14,9 +14,9 @@ export function TopHeroSection() {
         alt="Pillar Sky Background"
         fill
         priority
+        unoptimized
         sizes="100vw"
         className="object-cover object-[15%_center] md:object-center z-0 transition-all duration-200 ease-out group-hover:scale-[1.025]"
-        quality={80}
       />
       {/* Hero Header */}
       <div className="relative z-10 flex flex-col h-full">

@@ -26,6 +26,8 @@ interface CheckRowProps {
  * the verbose generic fallback.
  */
 function formatDetails(check: AgentScoreCheck): string | null {
+  if (check.status === "dnf") return "Could not evaluate";
+
   const d = check.details;
   if (!d || Object.keys(d).length === 0) return null;
 
@@ -263,6 +265,7 @@ function formatTokenCount(count: number): string {
 }
 
 function getDotColor(check: AgentScoreCheck): string {
+  if (check.status === "dnf") return "#9A9A9A";
   if (check.passed) return "#0CCE6B";
   if (check.score >= 50) return "#FFA400";
   return "#FF4E42";
@@ -270,7 +273,8 @@ function getDotColor(check: AgentScoreCheck): string {
 
 export function CheckRow({ check, index }: CheckRowProps) {
   const details = formatDetails(check);
-  const isExpandable = !check.passed && !!check.recommendation;
+  const isDnf = check.status === "dnf";
+  const isExpandable = (!check.passed || isDnf) && !!check.recommendation;
   const rightValue = details ?? String(check.score);
   const tooltip = CHECK_TOOLTIPS[check.check_name];
 
@@ -334,7 +338,11 @@ export function CheckRow({ check, index }: CheckRowProps) {
       <span
         className={cn(
           "text-xs tabular-nums shrink-0 text-right truncate max-w-[45%]",
-          check.passed ? "text-[#6B6B6B]" : "text-[#FF4E42]"
+          isDnf
+            ? "text-[#9A9A9A]"
+            : check.passed
+              ? "text-[#6B6B6B]"
+              : "text-[#FF4E42]"
         )}
         title={rightValue}
       >

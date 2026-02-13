@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Check, X } from "lucide-react";
+import { ArrowRight, Check, X, Minus } from "lucide-react";
 import { ScoreGauge } from "@/components/AgentScore/ScoreGauge";
 import { cn } from "@/lib/utils";
 import type { AgentScoreReport } from "@/components/AgentScore/AgentScore.types";
@@ -15,8 +15,8 @@ export function WebMCPSection({ report }: WebMCPSectionProps) {
   const webmcpChecks = report.checks.filter((c) => c.category === "webmcp");
 
   // Determine state
-  const isNone = score === 0;
-  const isFull = score >= 90;
+  const isNone = score === null || score === 0;
+  const isFull = score !== null && score >= 90;
 
   return (
     <div className="relative border-2 border-dashed border-[#D4D4D4] rounded-xl p-6 sm:p-8 bg-[#FAFAF8]">
@@ -79,7 +79,9 @@ export function WebMCPSection({ report }: WebMCPSectionProps) {
         <div className="mt-6 space-y-2">
           {webmcpChecks.map((check) => (
             <div key={check.check_name} className="flex items-center gap-2">
-              {check.passed ? (
+              {check.status === "dnf" ? (
+                <Minus className="h-4 w-4 text-[#9A9A9A] shrink-0" />
+              ) : check.passed ? (
                 <Check className="h-4 w-4 text-[#0CCE6B] shrink-0" />
               ) : (
                 <X className="h-4 w-4 text-[#FF4E42] shrink-0" />
@@ -87,10 +89,17 @@ export function WebMCPSection({ report }: WebMCPSectionProps) {
               <span
                 className={cn(
                   "text-sm",
-                  check.passed ? "text-[#1A1A1A]" : "text-[#6B6B6B]"
+                  check.status === "dnf"
+                    ? "text-[#9A9A9A]"
+                    : check.passed
+                      ? "text-[#1A1A1A]"
+                      : "text-[#6B6B6B]"
                 )}
               >
                 {check.check_label}
+                {check.status === "dnf" && (
+                  <span className="ml-1 text-xs">(could not evaluate)</span>
+                )}
               </span>
             </div>
           ))}

@@ -248,6 +248,41 @@ async def _run_stagehand_signup(
         await client.sessions.navigate(session_id, url=url)
         test_data["steps"].append({"step": "navigate", "url": url})
 
+        # Build the instruction for the agent
+        instruction = (
+            f"Find the signup or registration page on this website and create an account.\n\n"
+            f"ACCOUNT DETAILS:\n"
+            f"- Full name: {identity['full_name']}\n"
+            f"- First name: {identity['first_name']}\n"
+            f"- Last name: {identity['last_name']}\n"
+            f"- Email: {identity['email']}\n"
+            f"- Username (if needed): {identity['username']}\n"
+            f"- Password: {identity['password']}\n"
+            f"- Company (if needed): {identity['company']}\n\n"
+            f"STEPS TO FOLLOW:\n"
+            f"1. Navigate to the signup/registration page.\n"
+            f"2. Fill in ALL required form fields using the details above.\n"
+            f"3. CLICK THE SUBMIT BUTTON (e.g. 'Create account', 'Sign up', 'Register', "
+            f"'Submit', or similar). You MUST actually click it — do not stop after filling the form.\n"
+            f"4. WAIT for the page to respond after clicking submit.\n"
+            f"5. Report EXACTLY what the page shows AFTER you clicked the submit button: "
+            f"the confirmation message, error message, or where you were redirected.\n\n"
+            f"IMPORTANT RULES:\n"
+            f"- If you encounter a CAPTCHA, STOP and report 'captcha_blocked'.\n"
+            f"- If payment info is required, STOP and report 'payment_required'.\n"
+            f"- Do NOT fill phone number fields — leave them blank.\n"
+            f"- Do NOT click OAuth/SSO buttons (Google, GitHub, etc.).\n"
+            f"- If you filled the form but could NOT find or click a submit button, "
+            f"report 'form_filled_not_submitted'.\n"
+            f"- If you cannot find a signup page, report 'no_signup_found'.\n"
+            f"- Report the EXACT text of any confirmation or error message you see after submission."
+        )
+
+        # Store instruction in test_data (redact password for display)
+        test_data["instruction"] = instruction.replace(
+            identity["password"], "••••••••"
+        )
+
         # Use agent execute mode to handle the entire signup flow
         await update_status("Finding signup page & filling form...")
         execute_result = await client.sessions.execute(
@@ -262,34 +297,7 @@ async def _run_stagehand_signup(
                 ),
             },
             execute_options={
-                "instruction": (
-                    f"Find the signup or registration page on this website and create an account.\n\n"
-                    f"ACCOUNT DETAILS:\n"
-                    f"- Full name: {identity['full_name']}\n"
-                    f"- First name: {identity['first_name']}\n"
-                    f"- Last name: {identity['last_name']}\n"
-                    f"- Email: {identity['email']}\n"
-                    f"- Username (if needed): {identity['username']}\n"
-                    f"- Password: {identity['password']}\n"
-                    f"- Company (if needed): {identity['company']}\n\n"
-                    f"STEPS TO FOLLOW:\n"
-                    f"1. Navigate to the signup/registration page.\n"
-                    f"2. Fill in ALL required form fields using the details above.\n"
-                    f"3. CLICK THE SUBMIT BUTTON (e.g. 'Create account', 'Sign up', 'Register', "
-                    f"'Submit', or similar). You MUST actually click it — do not stop after filling the form.\n"
-                    f"4. WAIT for the page to respond after clicking submit.\n"
-                    f"5. Report EXACTLY what the page shows AFTER you clicked the submit button: "
-                    f"the confirmation message, error message, or where you were redirected.\n\n"
-                    f"IMPORTANT RULES:\n"
-                    f"- If you encounter a CAPTCHA, STOP and report 'captcha_blocked'.\n"
-                    f"- If payment info is required, STOP and report 'payment_required'.\n"
-                    f"- Do NOT fill phone number fields — leave them blank.\n"
-                    f"- Do NOT click OAuth/SSO buttons (Google, GitHub, etc.).\n"
-                    f"- If you filled the form but could NOT find or click a submit button, "
-                    f"report 'form_filled_not_submitted'.\n"
-                    f"- If you cannot find a signup page, report 'no_signup_found'.\n"
-                    f"- Report the EXACT text of any confirmation or error message you see after submission."
-                ),
+                "instruction": instruction,
                 "max_steps": 25,
             },
             timeout=50.0,
