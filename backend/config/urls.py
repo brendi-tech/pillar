@@ -19,6 +19,7 @@ from .admin_views import (
     AdminSpectacularRedocView,
     AdminSpectacularSwaggerView,
 )
+from .admin_redis import redis_manager_view, redis_delete_key, redis_delete_pattern
 from common.auth_views import (
     CustomTokenObtainPairView,
     CustomTokenRefreshView,
@@ -60,6 +61,9 @@ urlpatterns = [
     path('', root_view, name='root'),
 
     # Admin
+    path('admin/redis/', redis_manager_view, name='admin-redis-manager'),
+    path('admin/redis/delete-key/', redis_delete_key, name='admin-redis-delete-key'),
+    path('admin/redis/delete-pattern/', redis_delete_pattern, name='admin-redis-delete-pattern'),
     path('admin/', admin.site.urls),
 
     # Health check

@@ -1,0 +1,138 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}Redis Key Manager{% endblock %}
+
+{% block content %}
+<style>
+  .redis-manager { max-width: 960px; }
+  .redis-manager input[type="text"] {
+    width: 500px; padding: 8px 12px; border: 1px solid #ccc; border-radius: 4px;
+    font-family: monospace; font-size: 14px;
+  }
+  .redis-manager .btn {
+    padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;
+    font-size: 13px; font-weight: 600;
+  }
+  .redis-manager .btn-search { background: #417690; color: #fff; }
+  .redis-manager .btn-search:hover { background: #205067; }
+  .redis-manager .btn-delete { background: #ba2121; color: #fff; font-size: 12px; padding: 4px 10px; }
+  .redis-manager .btn-delete:hover { background: #8b1a1a; }
+  .redis-manager .btn-delete-all { background: #ba2121; color: #fff; }
+  .redis-manager .btn-delete-all:hover { background: #8b1a1a; }
+  .redis-manager table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+  .redis-manager th { text-align: left; padding: 8px 12px; background: #f8f8f8; border-bottom: 2px solid #ddd; font-size: 13px; }
+  .redis-manager td { padding: 6px 12px; border-bottom: 1px solid #eee; font-size: 13px; }
+  .redis-manager td.key { font-family: monospace; word-break: break-all; }
+  .redis-manager .meta { color: #999; font-size: 12px; margin-top: 8px; }
+  .redis-manager .error { color: #ba2121; background: #fff0f0; padding: 10px; border-radius: 4px; margin: 12px 0; }
+  .redis-manager .hint { color: #666; font-size: 12px; margin-top: 6px; }
+  .redis-manager .deleted-row { opacity: 0.3; text-decoration: line-through; }
+  .redis-manager .toolbar { display: flex; align-items: center; gap: 8px; margin-top: 16px; }
+</style>
+
+<div class="redis-manager">
+  <p>Search and delete Redis cache keys. All keys are prefixed with <code>help_center:</code>.</p>
+
+  <form method="get" action="">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <input type="text" name="pattern" value="{{ pattern }}" placeholder="throttle_agent_score*" autofocus>
+      <button type="submit" class="btn btn-search">Search</button>
+    </div>
+    <p class="hint">
+      Enter a pattern (e.g. <code>throttle*</code>, <code>throttle_agent_score*</code>, <code>suggested_questions*</code>).
+      The <code>help_center:</code> prefix is added automatically.
+    </p>
+  </form>
+
+  {% if error %}
+    <div class="error">{{ error }}</div>
+  {% endif %}
+
+  {% if results is not None %}
+    <div class="toolbar">
+      <p class="meta">
+        Found <strong>{{ result_count }}</strong> key{{ result_count|pluralize }}
+        matching <code>{{ pattern }}</code>
+        {% if result_count >= 200 %} (showing first 200){% endif %}
+      </p>
+      {% if result_count > 0 %}
+        <button class="btn btn-delete-all" onclick="deleteAll('{{ pattern }}')">
+          Delete all {{ result_count }}
+        </button>
+      {% endif %}
+    </div>
+
+    {% if results %}
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 60%">Key</th>
+            <th>Type</th>
+            <th>TTL</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in results %}
+            <tr id="row-{{ forloop.counter }}">
+              <td class="key">{{ item.key }}</td>
+              <td>{{ item.type }}</td>
+              <td>{{ item.ttl }}{% if item.ttl != "no expiry" %}s{% endif %}</td>
+              <td>
+                <button class="btn btn-delete" onclick="deleteKey('{{ item.key }}', {{ forloop.counter }})">
+                  Delete
+                </button>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+  {% endif %}
+</div>
+
+<script>
+function getCookie(name) {
+  const v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
+  return v ? v[2] : null;
+}
+
+async function deleteKey(key, rowNum) {
+  if (!confirm('Delete key: ' + key + '?')) return;
+  const resp = await fetch('{% url "admin-redis-delete-key" %}', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'X-CSRFToken': getCookie('csrftoken'),
+    },
+    body: 'key=' + encodeURIComponent(key),
+  });
+  const data = await resp.json();
+  if (data.deleted) {
+    document.getElementById('row-' + rowNum).classList.add('deleted-row');
+  } else if (data.error) {
+    alert('Error: ' + data.error);
+  }
+}
+
+async function deleteAll(pattern) {
+  if (!confirm('Delete ALL keys matching "' + pattern + '"?')) return;
+  const resp = await fetch('{% url "admin-redis-delete-pattern" %}', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'X-CSRFToken': getCookie('csrftoken'),
+    },
+    body: 'pattern=' + encodeURIComponent(pattern),
+  });
+  const data = await resp.json();
+  if (data.error) {
+    alert('Error: ' + data.error);
+  } else {
+    alert('Deleted ' + data.deleted + ' keys');
+    location.reload();
+  }
+}
+</script>
+{% endblock %}
