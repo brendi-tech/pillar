@@ -1,0 +1,18 @@
+{
+  "eval_id": "column_exploration",
+  "description": "Ask about columns in a specific dataset - should call get_dataset_columns",
+  "product_slug": "superset",
+  "fixture_product": "superset",
+  "turns": [
+    {
+      "user_message": "What columns are in the birth_names dataset?",
+      "expected_tools": ["list_datasets|search_datasets|get_dataset_columns"],
+      "expected_response": {
+        "must_contain_any": ["column", "field", "name", "birth"],
+        "must_not_contain": ["error occurred", "cannot help"],
+        "min_length": 50
+      },
+      "rubric": "Response should describe the columns available in the birth_names dataset. It should mention specific column names or types from the fixture data. The agent should have explored the dataset schema rather than guessing."
+    }
+  ]
+}

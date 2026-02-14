@@ -30,6 +30,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect } from "react";
 
 import { openThemeSelectorModal } from "@/components/ThemeSelectorModal";
+import { executeAddAllowedDomain } from "./addAllowedDomain";
 import { actionsAPI } from "@/lib/admin/actions-api";
 import {
   analyticsAPI,
@@ -1118,6 +1119,51 @@ export function usePillarTools() {
       },
       execute: () => {
         nav("/billing?section=alerts");
+      },
+    },
+  ]);
+
+  // =========================================================================
+  // Domain security tools
+  // =========================================================================
+  usePillarTool([
+    {
+      name: "add_allowed_domain",
+      type: "trigger_tool",
+      description:
+        "Add a domain to the allowed domains list for embed security. " +
+        "Use when user wants to whitelist a domain, allow a new domain, " +
+        "add localhost for testing, or configure CORS/embed domains. " +
+        "This saves immediately.",
+      examples: [
+        "add localhost:3000 to allowed domains",
+        "allow localhost for testing",
+        "whitelist *.example.com",
+        "add my domain to the embed allowlist",
+      ],
+      autoRun: false,
+      autoComplete: false,
+      inputSchema: {
+        type: "object",
+        properties: {
+          domain: {
+            type: "string",
+            description:
+              "Domain to allow (e.g., localhost:3000, *.example.com, app.mysite.com)",
+          },
+        },
+        required: ["domain"],
+      },
+      execute: async (data: { domain?: string }) => {
+        return executeAddAllowedDomain(data, {
+          currentProduct: currentProduct as Parameters<
+            typeof executeAddAllowedDomain
+          >[1]["currentProduct"],
+          adminPatch,
+          invalidateQueries: () =>
+            queryClient.invalidateQueries({ queryKey: configKeys.all }),
+          nav: (path: string) => nav(path),
+        });
       },
     },
   ]);

@@ -1,0 +1,22 @@
+{
+  "eval_id": "gender_analysis",
+  "description": "Analytical question requiring the agent to find gender-related data in the birth_names dataset and provide analysis.",
+  "product_slug": "superset",
+  "fixture_product": "superset",
+  "turns": [
+    {
+      "user_message": "What's the gender breakdown of baby names in my data? Are there more boy or girl names?",
+      "expected_tools": ["list_datasets|search_datasets", "get_dataset_columns|get_sample_data"],
+      "expected_response": {
+        "must_contain_any": ["gender", "boy", "girl", "male", "female", "name"],
+        "must_not_contain": ["cannot help", "error occurred", "I don't have access"],
+        "min_length": 50
+      },
+      "rubric": "The agent should discover the birth_names dataset, identify the gender column, and analyze or explain the gender distribution. It should reference the actual data structure (gender column with 'boy'/'girl' values, num_boys and num_girls columns). It may create a chart (pie chart or bar chart by gender) or provide data-driven insights. The response should be analytical and reference specifics from the data.",
+      "regression_patterns": [
+        "retrieved data with fields",
+        "responding with fetched data"
+      ]
+    }
+  ]
+}

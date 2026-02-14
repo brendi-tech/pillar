@@ -1,0 +1,24 @@
+{
+  "eval_id": "unique_names_by_state",
+  "description": "Complex analytical query requiring data discovery, column inspection, distinct value checks, and chart creation. Based on real session 8229059292.",
+  "product_slug": "superset",
+  "fixture_product": "superset",
+  "turns": [
+    {
+      "user_message": "What baby names are popular in different states? Show me names by state.",
+      "expected_tools": ["list_datasets|search_datasets", "get_dataset_columns|get_sample_data|get_column_distinct_values"],
+      "expected_response": {
+        "must_contain_any": ["state", "name", "birth", "data"],
+        "must_not_contain": ["cannot help", "I don't have access", "error occurred"],
+        "min_length": 50
+      },
+      "geval_threshold": 0.3,
+      "rubric": "The agent should find relevant data and provide information about baby names by state. A good response references actual data, creates visualizations, or describes patterns. Partial success is acceptable if the agent made a genuine effort to explore the data and provide useful output.",
+      "regression_patterns": [
+        "retrieved data with fields",
+        "success, datasets, count",
+        "responding with fetched data"
+      ]
+    }
+  ]
+}

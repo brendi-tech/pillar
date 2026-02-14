@@ -20,9 +20,6 @@ from common.utils.cors import add_cors_headers
 logger = logging.getLogger(__name__)
 
 
-# Use shared CORS utility
-_add_cors_headers = add_cors_headers
-
 
 @csrf_exempt
 @require_http_methods(["POST", "OPTIONS"])
@@ -60,18 +57,18 @@ async def identify(request):
     # Handle CORS preflight
     if request.method == "OPTIONS":
         response = JsonResponse({}, status=200)
-        return _add_cors_headers(response, request)
+        return add_cors_headers(response, request)
 
-    # Get help center context from middleware
-    help_center_config = getattr(request, 'help_center_config', None)
+    # Get product context from middleware
+    product = getattr(request, 'product', None)
     organization = getattr(request, 'organization', None)
 
-    if not help_center_config or not organization:
+    if not product or not organization:
         response = JsonResponse(
-            {'error': 'Help center context not available'},
+            {'error': 'Product context not available'},
             status=403
         )
-        return _add_cors_headers(response, request)
+        return add_cors_headers(response, request)
 
     # Get analytics context from middleware
     analytics = getattr(request, 'analytics', {})
@@ -82,7 +79,7 @@ async def identify(request):
             {'error': 'x-visitor-id header required'},
             status=400
         )
-        return _add_cors_headers(response, request)
+        return add_cors_headers(response, request)
 
     # Parse request body
     try:
@@ -92,7 +89,7 @@ async def identify(request):
             {'error': 'Invalid JSON body'},
             status=400
         )
-        return _add_cors_headers(response, request)
+        return add_cors_headers(response, request)
 
     # Validate required fields
     user_id = data.get('userId')
@@ -101,7 +98,7 @@ async def identify(request):
             {'error': 'userId is required'},
             status=400
         )
-        return _add_cors_headers(response, request)
+        return add_cors_headers(response, request)
 
     # Merge visitor records (links anonymous to authenticated)
     try:
@@ -123,7 +120,7 @@ async def identify(request):
             'success': True,
             'visitorId': str(visitor.id),
         })
-        return _add_cors_headers(response, request)
+        return add_cors_headers(response, request)
 
     except Exception as e:
         logger.error(f"[Identify] Failed to identify user: {e}", exc_info=True)
@@ -131,7 +128,7 @@ async def identify(request):
             {'error': 'Failed to identify user'},
             status=500
         )
-        return _add_cors_headers(response, request)
+        return add_cors_headers(response, request)
 
 
 @csrf_exempt
@@ -161,18 +158,18 @@ async def logout(request):
     # Handle CORS preflight
     if request.method == "OPTIONS":
         response = JsonResponse({}, status=200)
-        return _add_cors_headers(response, request)
+        return add_cors_headers(response, request)
 
-    # Get help center context from middleware
-    help_center_config = getattr(request, 'help_center_config', None)
+    # Get product context from middleware
+    product = getattr(request, 'product', None)
     organization = getattr(request, 'organization', None)
 
-    if not help_center_config or not organization:
+    if not product or not organization:
         response = JsonResponse(
-            {'error': 'Help center context not available'},
+            {'error': 'Product context not available'},
             status=403
         )
-        return _add_cors_headers(response, request)
+        return add_cors_headers(response, request)
 
     # Get analytics context from middleware
     analytics = getattr(request, 'analytics', {})
@@ -183,7 +180,7 @@ async def logout(request):
             {'error': 'x-visitor-id header required'},
             status=400
         )
-        return _add_cors_headers(response, request)
+        return add_cors_headers(response, request)
 
     logger.info(
         f"[Logout] User logged out: visitor_id={visitor_id[:8]}..., "
@@ -193,4 +190,4 @@ async def logout(request):
     # Simply acknowledge the logout
     # The SDK stops sending x-external-user-id, so future requests are anonymous
     response = JsonResponse({'success': True})
-    return _add_cors_headers(response, request)
+    return add_cors_headers(response, request)

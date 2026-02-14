@@ -1,0 +1,18 @@
+{
+  "eval_id": "multi_action_flow",
+  "description": "Multi-step query requiring chaining: discover dataset, get columns, get sample data",
+  "product_slug": "superset",
+  "fixture_product": "superset",
+  "turns": [
+    {
+      "user_message": "Get sample data from the birth_names dataset and tell me the most common name",
+      "expected_tools": ["list_datasets|search_datasets", "get_dataset_columns|get_sample_data"],
+      "expected_response": {
+        "must_contain_any": ["name", "birth", "data", "sample"],
+        "must_not_contain": ["cannot help", "error occurred"],
+        "min_length": 40
+      },
+      "rubric": "Response should demonstrate that the agent discovered the birth_names dataset, retrieved sample data or column information, and provided an analysis or summary of the data. Should mention specific names or data points from the fixture responses."
+    }
+  ]
+}

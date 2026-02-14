@@ -82,7 +82,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'apps.products.middleware.CustomerIdMiddleware',  # Customer resolution
     'apps.analytics.middleware.AnalyticsMiddleware',  # Analytics
-    'apps.mcp.middleware.help_center_resolver.HelpCenterResolverMiddleware',  # MCP
+    'apps.mcp.middleware.product_resolver.ProductResolverMiddleware',  # MCP product resolution
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -334,7 +334,7 @@ STORAGE_BACKEND = os.environ.get('STORAGE_BACKEND', 'local')  # 'local', 's3', o
 # GCS Configuration
 GS_BUCKET_NAME = os.environ.get('GS_BUCKET_NAME', 'pillar-storage')
 GS_BUCKET_DOCUMENTS = os.environ.get('GCS_BUCKET_DOCUMENTS', 'pillar-storage')
-GCS_BUCKET_PUBLIC = os.environ.get('GCS_BUCKET_PUBLIC', 'pillar-public')
+GCS_BUCKET_PUBLIC = os.environ.get('GCS_BUCKET_PUBLIC', 'pillar-prod-public')
 GS_PROJECT_ID = os.environ.get('GCP_PROJECT_ID', os.environ.get('GS_PROJECT_ID', ''))
 
 # Article images use public bucket (no signed URLs needed)

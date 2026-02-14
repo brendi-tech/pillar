@@ -1,0 +1,23 @@
+{
+  "eval_id": "chart_creation_bar_chart",
+  "description": "User asks to create a bar chart of popular names - full multi-step flow",
+  "product_slug": "superset",
+  "fixture_product": "superset",
+  "turns": [
+    {
+      "user_message": "Create a bar chart showing the top 10 most popular given names",
+      "expected_tools": ["list_datasets|search_datasets", "get_dataset_columns|get_sample_data"],
+      "expected_response": {
+        "must_contain_any": ["chart", "bar chart", "visualization", "bar", "names"],
+        "must_not_contain": ["cannot help", "I don't have access", "error occurred"],
+        "min_length": 50
+      },
+      "rubric": "Response should identify the birth_names dataset, explore its columns, and either create a chart via the API or provide clear step-by-step instructions for creating a bar chart of popular names. Should be substantive and actionable.",
+      "regression_patterns": [
+        "retrieved data with fields",
+        "success, datasets, count",
+        "responding with fetched data"
+      ]
+    }
+  ]
+}

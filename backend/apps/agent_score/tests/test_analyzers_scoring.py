@@ -103,9 +103,9 @@ class TestCalculateOverallScore:
         assert result["overall"] == 60
 
     def test_empty_checks_scores_0(self):
-        """Empty checks list yields 0."""
+        """Empty checks list yields None (no data to score)."""
         result = calculate_overall_score([])
-        assert result["overall"] == 0
+        assert result["overall"] is None
         assert result["categories"] == {}
 
     def test_accepts_dicts(self):

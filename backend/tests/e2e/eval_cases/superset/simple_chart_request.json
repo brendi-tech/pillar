@@ -1,0 +1,22 @@
+{
+  "eval_id": "simple_chart_request",
+  "description": "Simple chart creation request. Agent should find data and build a chart. Based on real session 8229231592.",
+  "product_slug": "superset",
+  "fixture_product": "superset",
+  "turns": [
+    {
+      "user_message": "Build me a chart about given names.",
+      "expected_tools": ["list_datasets|search_datasets", "get_dataset_columns|get_sample_data|test_chart_query|create_chart_api"],
+      "expected_response": {
+        "must_contain_any": ["chart", "name", "birth", "visualization", "created"],
+        "must_not_contain": ["cannot help", "I don't have access", "error occurred"],
+        "min_length": 50
+      },
+      "rubric": "The agent should search for relevant datasets, find the birth_names dataset, explore its columns or sample data, and attempt to create a chart or provide clear guidance on how to visualize the data. The response should be actionable and reference specific data from the dataset.",
+      "regression_patterns": [
+        "retrieved data with fields",
+        "responding with fetched data"
+      ]
+    }
+  ]
+}

@@ -14,6 +14,8 @@ export const agentScoreKeys = {
   all: ["agent-score"] as const,
   reports: () => [...agentScoreKeys.all, "report"] as const,
   report: (id: string) => [...agentScoreKeys.reports(), id] as const,
+  domainLookups: () => [...agentScoreKeys.all, "domain-lookup"] as const,
+  domainLookup: (domain: string) => [...agentScoreKeys.domainLookups(), domain] as const,
 };
 
 // =============================================================================
@@ -39,6 +41,21 @@ export const agentScoreReportQuery = (
           if (status === "complete" || status === "failed") return false;
           return 3000;
         },
+  });
+
+/**
+ * Look up the latest completed report for a domain.
+ * Returns the full report or null if none exists.
+ */
+export const agentScoreDomainLookupQuery = (
+  domain: string,
+  enabled: boolean = true,
+) =>
+  queryOptions({
+    queryKey: agentScoreKeys.domainLookup(domain),
+    queryFn: () => agentScoreAPI.lookupByDomain(domain),
+    enabled: enabled && !!domain,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
 // =============================================================================

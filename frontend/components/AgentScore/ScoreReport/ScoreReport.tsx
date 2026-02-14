@@ -20,6 +20,9 @@ import {
   getCategoryScore,
 } from "@/components/AgentScore/AgentScore.types";
 
+const isUnscoredCategory = (category: CheckCategory) =>
+  !SCORED_CATEGORIES.includes(category);
+
 function getScoreColor(score: number | null): string {
   if (score === null) return "#9A9A9A";
   if (score >= 90) return "#0CCE6B";
@@ -167,47 +170,56 @@ export function ScoreReport({
 
       {/* Section 2: Category tab row */}
       <div className="mt-10">
-        <div className="flex flex-wrap justify-center gap-3 sm:gap-4">
+        <div className="flex flex-wrap justify-center items-stretch gap-3 sm:gap-4">
           {visibleCategories.map((category) => {
             const score = getCategoryScore(report, category);
             const color = getScoreColor(score);
             const isActive = category === activeCategory;
+            const unscored = isUnscoredCategory(category);
 
             return (
-              <button
-                key={category}
-                onClick={() => setActiveCategory(category)}
-                className={cn(
-                  "flex flex-col items-center px-4 py-3 rounded-xl border-2 transition-all cursor-pointer",
-                  isActive
-                    ? "bg-white shadow-md"
-                    : "bg-transparent border-transparent hover:bg-white/60"
+              <div key={category} className="flex items-stretch gap-3 sm:gap-4">
+                {/* Thin vertical divider before unscored categories */}
+                {unscored && (
+                  <div className="hidden sm:flex items-center">
+                    <div className="w-px h-3/5 bg-[#D8D8D8]" />
+                  </div>
                 )}
-                style={{
-                  borderColor: isActive ? color : "transparent",
-                }}
-                type="button"
-              >
-                <ScoreGauge
-                  score={score}
-                  size="sm"
-                  animated={false}
-                />
-                <span
+                <button
+                  onClick={() => setActiveCategory(category)}
                   className={cn(
-                    "text-xs font-medium mt-1",
-                    isActive ? "text-[#1A1A1A]" : "text-[#6B6B6B]"
+                    "flex flex-col items-center px-4 py-3 rounded-xl border-2 transition-all cursor-pointer",
+                    isActive
+                      ? "bg-white shadow-md"
+                      : "bg-transparent border-transparent hover:bg-white/60",
+                    unscored && "opacity-60"
                   )}
+                  style={{
+                    borderColor: isActive ? color : "transparent",
+                  }}
+                  type="button"
                 >
-                  {CATEGORY_LABELS[category]}
-                </span>
-              </button>
+                  <ScoreGauge
+                    score={score}
+                    size="sm"
+                    animated={false}
+                  />
+                  <span
+                    className={cn(
+                      "text-xs font-medium mt-1",
+                      isActive ? "text-[#1A1A1A]" : "text-[#6B6B6B]"
+                    )}
+                  >
+                    {CATEGORY_LABELS[category]}{unscored && " *"}
+                  </span>
+                </button>
+              </div>
             );
           })}
         </div>
 
         {/* Color legend */}
-        <div className="flex items-center justify-center gap-6 mt-5 text-xs text-[#6B6B6B]">
+        <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-1 mt-5 text-xs text-[#6B6B6B]">
           <span className="flex items-center gap-1.5">
             <span className="inline-block w-2.5 h-2.5 rounded-full bg-[#FF4E42]" />
             0&ndash;49
@@ -225,6 +237,9 @@ export function ScoreReport({
             Could not evaluate
           </span>
         </div>
+        <p className="text-center text-[11px] text-[#999] mt-2">
+          * Not included in overall score &mdash; when WebMCP ships, we&rsquo;ll add it.
+        </p>
       </div>
 
       {/* Section 3: Detail panel for active category */}

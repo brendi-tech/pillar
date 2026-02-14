@@ -1,0 +1,9 @@
+{
+  "success": true,
+  "dashboard_id": 42,
+  "dashboard_title": "Baby Names Dashboard",
+  "url": "/superset/dashboard/42/",
+  "status": "published",
+  "charts_added": [],
+  "message": "Dashboard created successfully"
+}

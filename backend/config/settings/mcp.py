@@ -24,8 +24,8 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.middleware.common.CommonMiddleware',
-    # MCP-specific middleware for help center resolution
-    'apps.mcp.middleware.help_center_resolver.HelpCenterResolverMiddleware',
+    # MCP-specific middleware for product resolution
+    'apps.mcp.middleware.product_resolver.ProductResolverMiddleware',
     # Analytics middleware for SDK header extraction (visitor_id, session_id, etc.)
     'apps.analytics.middleware.AnalyticsMiddleware',
 ]

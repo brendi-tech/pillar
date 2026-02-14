@@ -1,7 +1,7 @@
 """
 MCP middleware.
 """
-from apps.mcp.middleware.help_center_resolver import HelpCenterResolverMiddleware
+from apps.mcp.middleware.product_resolver import ProductResolverMiddleware
 from apps.mcp.middleware.disconnect_detection import ASGIDisconnectMiddleware
 
-__all__ = ['HelpCenterResolverMiddleware', 'ASGIDisconnectMiddleware']
+__all__ = ['ProductResolverMiddleware', 'ASGIDisconnectMiddleware']

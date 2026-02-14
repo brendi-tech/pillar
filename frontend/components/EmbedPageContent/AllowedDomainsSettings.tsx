@@ -14,6 +14,7 @@ import {
   X,
   AlertTriangle,
 } from 'lucide-react';
+import { validateDomain } from '@/lib/utils/domain-validation';
 
 export function AllowedDomainsSettings() {
   const { embedConfig, updateEmbedConfig } = useEmbed();
@@ -27,12 +28,6 @@ export function AllowedDomainsSettings() {
     });
   };
 
-  const validateDomain = (domain: string): boolean => {
-    // Basic domain validation
-    const domainRegex = /^(\*\.)?[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*(\.[a-zA-Z]{2,})?(:\d+)?$/;
-    return domainRegex.test(domain) || domain === 'localhost' || domain.startsWith('localhost:');
-  };
-
   const handleAddDomain = () => {
     const domain = newDomain.trim().toLowerCase();
     setDomainError(null);
@@ -43,7 +38,7 @@ export function AllowedDomainsSettings() {
     }
 
     if (!validateDomain(domain)) {
-      setDomainError('Please enter a valid domain (e.g., example.com, *.example.com, localhost:3000)');
+      setDomainError('Please enter a valid domain (e.g., example.com, *.example.com, localhost:*)');
       return;
     }
 
@@ -146,7 +141,8 @@ export function AllowedDomainsSettings() {
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
-            Use <code className="bg-muted px-1 rounded">*.example.com</code> to allow all subdomains
+            Use <code className="bg-muted px-1 rounded">*.example.com</code> to allow all subdomains,
+            or <code className="bg-muted px-1 rounded">localhost:*</code> for any local port
           </p>
         </div>
 
@@ -180,7 +176,7 @@ export function AllowedDomainsSettings() {
         <div className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground space-y-1">
           <p className="font-medium">Common entries:</p>
           <ul className="list-disc list-inside space-y-0.5">
-            <li><code className="bg-muted px-1 rounded">localhost:3000</code> - Local development</li>
+            <li><code className="bg-muted px-1 rounded">localhost:*</code> - Local development (any port)</li>
             <li><code className="bg-muted px-1 rounded">staging.yourapp.com</code> - Staging environment</li>
             <li><code className="bg-muted px-1 rounded">app.yourapp.com</code> - Production app</li>
           </ul>

@@ -160,6 +160,45 @@ class AgentScoreViewSet(viewsets.GenericViewSet):
         }).data
         return Response(response_data, status=status.HTTP_201_CREATED)
 
+    @action(detail=False, methods=["get"], url_path="lookup-by-domain")
+    def lookup_by_domain(self, request: Request) -> Response:
+        """
+        Look up the latest completed report for a domain.
+
+        GET /lookup-by-domain/?domain=gusto.com
+        Returns the report if a completed one exists, otherwise 404.
+        """
+        domain = request.query_params.get("domain", "").strip().lower()
+        if not domain:
+            return Response(
+                {"detail": "The 'domain' query parameter is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Strip protocol and trailing slashes if someone passes a full URL
+        if "://" in domain:
+            domain = extract_domain(domain)
+
+        report = (
+            AgentScoreReport.objects.filter(
+                domain=domain,
+                status="complete",
+            )
+            .order_by("-created_at")
+            .first()
+        )
+
+        if not report:
+            return Response(
+                {"detail": f"No completed report found for {domain}."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        serializer = ReportSerializer(
+            self.get_queryset().get(pk=report.pk)
+        )
+        return Response(serializer.data)
+
     @action(detail=True, methods=["get"], url_path="report")
     def report(self, request: Request, pk=None) -> Response:
         """Retrieve the full scored report with all check results."""

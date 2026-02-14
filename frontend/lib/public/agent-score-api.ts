@@ -34,6 +34,25 @@ export const agentScoreAPI = {
   },
 
   /**
+   * Look up the latest completed report for a domain.
+   * Returns the full report if one exists, or null if not found.
+   */
+  lookupByDomain: async (domain: string): Promise<AgentScoreReport | null> => {
+    try {
+      const { data } = await publicClient.get<AgentScoreReport>(
+        "/api/public/agent-score/lookup-by-domain/",
+        { params: { domain } }
+      );
+      return data;
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 404) {
+        return null;
+      }
+      throw error;
+    }
+  },
+
+  /**
    * Get a report by ID. Poll this while status is pending/running.
    */
   getReport: async (reportId: string): Promise<AgentScoreReport> => {

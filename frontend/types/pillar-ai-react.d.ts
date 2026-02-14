@@ -32,6 +32,7 @@ declare module "@pillar-ai/react" {
   }
 
   export interface PanelConfig {
+    enabled?: boolean;
     position?: "left" | "right";
     mode?: "push" | "overlay";
     width?: number;
@@ -40,6 +41,14 @@ declare module "@pillar-ai/react" {
   export interface FloatingButtonConfig {
     enabled?: boolean;
     position?: "bottom-left" | "bottom-right" | "top-left" | "top-right";
+  }
+
+  export interface EdgeTriggerConfig {
+    enabled?: boolean;
+  }
+
+  export interface MobileTriggerConfig {
+    enabled?: boolean;
   }
 
   export interface SidebarTabConfig {
@@ -61,6 +70,8 @@ declare module "@pillar-ai/react" {
     apiBaseUrl?: string;
     panel?: PanelConfig;
     floatingButton?: FloatingButtonConfig;
+    edgeTrigger?: EdgeTriggerConfig;
+    mobileTrigger?: MobileTriggerConfig;
     sidebarTabs?: SidebarTabConfig[];
     theme?: ThemeConfig;
     customCSS?: string;

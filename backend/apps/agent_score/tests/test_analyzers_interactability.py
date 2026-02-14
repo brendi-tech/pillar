@@ -11,7 +11,7 @@ from apps.agent_score.analyzers.interactability import (
     _check_semantic_actions,
 )
 
-from .conftest import FULL_PROBE_RESULTS, SAMPLE_AX_TREE
+from .conftest import DQ_ALL_OK, FULL_PROBE_RESULTS, SAMPLE_AX_TREE
 
 
 # ─── _check_labeled_forms ────────────────────────────────────────────────────
@@ -22,7 +22,7 @@ class TestCheckLabeledForms:
 
     def test_no_forms_passes(self):
         """No forms on page is not a failure."""
-        result = _check_labeled_forms([])
+        result = _check_labeled_forms([], DQ_ALL_OK)
         assert result.passed is True
         assert result.score == 100
         assert result.details["form_count"] == 0
@@ -34,7 +34,7 @@ class TestCheckLabeledForms:
             {"index": 0, "inputs": [{"type": "text", "name": "email", "has_label": True}]},
             {"index": 1, "inputs": [{"type": "password", "name": "pass", "has_label": True}]},
         ]
-        result = _check_labeled_forms(forms_data)
+        result = _check_labeled_forms(forms_data, DQ_ALL_OK)
         assert result.passed is True
         assert result.score == 100
         assert result.details["total_inputs"] == 2
@@ -51,7 +51,7 @@ class TestCheckLabeledForms:
                 ],
             },
         ]
-        result = _check_labeled_forms(forms_data)
+        result = _check_labeled_forms(forms_data, DQ_ALL_OK)
         assert result.passed is False
         assert result.details["total_inputs"] == 2
         assert result.details["labeled_inputs"] == 1
@@ -60,7 +60,7 @@ class TestCheckLabeledForms:
 
     def test_forms_data_not_list_passes(self):
         """Non-list forms_data (e.g. None or dict) treated as no forms."""
-        result = _check_labeled_forms(None)
+        result = _check_labeled_forms(None, DQ_ALL_OK)
         assert result.passed is True
         assert result.score == 100
 
@@ -73,7 +73,7 @@ class TestCheckSemanticActions:
 
     def test_good_semantic_action_passes(self):
         """SAMPLE_AX_TREE has 'Home' link — descriptive, not generic."""
-        result = _check_semantic_actions(SAMPLE_AX_TREE)
+        result = _check_semantic_actions(SAMPLE_AX_TREE, DQ_ALL_OK)
         assert result.passed is True
         assert result.score == 100
         assert result.details["total_actions"] >= 1
@@ -91,7 +91,7 @@ class TestCheckSemanticActions:
                 },
             ],
         }
-        result = _check_semantic_actions(ax_tree)
+        result = _check_semantic_actions(ax_tree, DQ_ALL_OK)
         assert result.passed is False
         assert result.details["generic_actions"] >= 1
         assert result.details["examples"][0]["name"] == "click here"
@@ -99,7 +99,7 @@ class TestCheckSemanticActions:
 
     def test_no_ax_tree_fails(self):
         """Missing accessibility tree fails."""
-        result = _check_semantic_actions(None)
+        result = _check_semantic_actions(None, DQ_ALL_OK)
         assert result.passed is False
         assert result.score == 0
         assert result.details["error"] == "no_accessibility_tree"
@@ -107,7 +107,7 @@ class TestCheckSemanticActions:
     def test_no_actions_passes(self):
         """Page with no buttons/links passes (nothing to flag)."""
         ax_tree = {"role": "WebArea", "children": [{"role": "heading", "name": "Title"}]}
-        result = _check_semantic_actions(ax_tree)
+        result = _check_semantic_actions(ax_tree, DQ_ALL_OK)
         assert result.passed is True
         assert result.score == 100
         assert result.details["total_actions"] == 0
@@ -125,7 +125,7 @@ class TestCheckApiDocumentation:
             **FULL_PROBE_RESULTS,
             "main_page": {"ok": True, "body": "Check our OpenAPI docs at /api/docs"},
         }
-        result = _check_api_documentation(probes)
+        result = _check_api_documentation(probes, DQ_ALL_OK)
         assert result.passed is True
         assert result.details["has_api_link_in_page"] is True
         assert result.score == 100
@@ -133,7 +133,7 @@ class TestCheckApiDocumentation:
     def test_neither_fails(self):
         """No OpenAPI mention fails."""
         probes = FULL_PROBE_RESULTS
-        result = _check_api_documentation(probes)
+        result = _check_api_documentation(probes, DQ_ALL_OK)
         assert result.passed is False
         assert result.score == 0
         assert "OpenAPI" in result.recommendation or "Swagger" in result.recommendation
@@ -144,7 +144,7 @@ class TestCheckApiDocumentation:
             **FULL_PROBE_RESULTS,
             "main_page": {"ok": True, "body": "GraphQL endpoint at /graphql"},
         }
-        result = _check_api_documentation(probes)
+        result = _check_api_documentation(probes, DQ_ALL_OK)
         assert result.passed is True
         assert result.details["has_api_link_in_page"] is True
 
@@ -157,11 +157,11 @@ class TestInteractabilityRun:
     """Integration tests for interactability.run()."""
 
     def test_returns_3_checks(self, report_with_markdown):
-        results = interactability.run(report_with_markdown)
+        results = interactability.run(report_with_markdown, DQ_ALL_OK)
         assert len(results) == 3
 
     def test_check_names(self, report_with_markdown):
-        results = interactability.run(report_with_markdown)
+        results = interactability.run(report_with_markdown, DQ_ALL_OK)
         names = {r.check_name for r in results}
         assert names == {
             "labeled_forms",
@@ -170,6 +170,6 @@ class TestInteractabilityRun:
         }
 
     def test_all_checks_interaction_category(self, report_with_markdown):
-        results = interactability.run(report_with_markdown)
+        results = interactability.run(report_with_markdown, DQ_ALL_OK)
         for r in results:
             assert r.category == "interaction"

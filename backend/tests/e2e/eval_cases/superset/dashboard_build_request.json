@@ -1,0 +1,23 @@
+{
+  "eval_id": "dashboard_build_request",
+  "description": "Dashboard creation request requiring multi-step planning: discover data, build multiple charts, create dashboard. Based on real sessions 8229064449 and 8229230442.",
+  "product_slug": "superset",
+  "fixture_product": "superset",
+  "turns": [
+    {
+      "user_message": "Build me a dashboard with a few charts about the baby names data. Include titles and descriptions.",
+      "expected_tools": ["list_datasets|search_datasets", "get_dataset_columns|get_sample_data"],
+      "expected_response": {
+        "must_contain_any": ["dashboard", "chart", "name", "birth"],
+        "must_not_contain": ["cannot help", "error occurred", "I don't have access"],
+        "min_length": 50
+      },
+      "geval_threshold": 0.35,
+      "rubric": "The agent should discover the birth_names dataset and inspect its schema. Ideally it creates charts and a dashboard, but partial success is acceptable if the agent explored the data, described what charts could be built, or made a genuine multi-step effort. The response should be substantive and reference specific data dimensions like name, gender, state, or time.",
+      "regression_patterns": [
+        "retrieved data with fields",
+        "responding with fetched data"
+      ]
+    }
+  ]
+}

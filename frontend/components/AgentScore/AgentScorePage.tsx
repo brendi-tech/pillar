@@ -4,14 +4,18 @@ import { useState, useEffect, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Globe, FileSearch, Monitor, Blocks } from "lucide-react";
-import { agentScoreReportQuery, scanUrlMutation } from "@/queries/agentScore.queries";
+import { agentScoreReportQuery, agentScoreDomainLookupQuery, scanUrlMutation } from "@/queries/agentScore.queries";
 import { ScoreGauge } from "@/components/AgentScore/ScoreGauge";
-import { ALL_CATEGORIES, CATEGORY_LABELS, CATEGORY_DESCRIPTIONS } from "./AgentScore.types";
+import { ALL_CATEGORIES, SCORED_CATEGORIES, CATEGORY_LABELS, CATEGORY_DESCRIPTIONS } from "./AgentScore.types";
+
+const isUnscoredCategory = (category: string) =>
+  !SCORED_CATEGORIES.includes(category as never);
 import { ScanInput } from "./ScanInput";
 import { ScanProgress } from "./ScanProgress";
 import { ScoreReport } from "./ScoreReport";
 import { ReportHeaderActions } from "./ScoreReport/ReportHeaderActions";
 import { AgentReadinessGuide } from "./AgentReadinessGuide";
+import { CompanyShowcase } from "./CompanyShowcase";
 
 type PagePhase = "input" | "loading" | "scanning" | "report";
 
@@ -46,18 +50,55 @@ export function AgentScorePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const reportParam = searchParams.get("report");
+  const domainParam = searchParams.get("domain");
 
   // State
-  const [phase, setPhase] = useState<PagePhase>(reportParam ? "loading" : "input");
+  const hasDomain = !!domainParam && !reportParam;
+  const [phase, setPhase] = useState<PagePhase>(
+    reportParam ? "loading" : hasDomain ? "loading" : "input"
+  );
   const [reportId, setReportId] = useState<string | null>(reportParam);
   const [scanStartedAt, setScanStartedAt] = useState<number>(Date.now());
   const [scanError, setScanError] = useState<string | undefined>();
   const [scanUrl, setScanUrl] = useState("");
+  const [domainLookupDone, setDomainLookupDone] = useState(false);
 
-  // Polling query — active when we have a reportId and are scanning or viewing
-  const { data: report } = useQuery(
-    agentScoreReportQuery(reportId ?? "", phase !== "input" && !!reportId)
+  // Domain lookup query — fires when ?domain= is present and no ?report=
+  const { data: domainReport, isFetched: domainLookupFetched } = useQuery(
+    agentScoreDomainLookupQuery(domainParam ?? "", hasDomain && !domainLookupDone)
   );
+
+  // Handle domain lookup result
+  useEffect(() => {
+    if (!hasDomain || domainLookupDone || !domainLookupFetched) return;
+
+    setDomainLookupDone(true);
+
+    if (domainReport) {
+      // Found a report — show it directly
+      setReportId(domainReport.id);
+      setPhase("report");
+      // Update URL to include report ID for shareability
+      router.replace(
+        `/tools/agent-score?report=${domainReport.id}`,
+        { scroll: false }
+      );
+    } else {
+      // No report found — prefill the input with the domain
+      setScanUrl(`https://${domainParam}`);
+      setPhase("input");
+    }
+  }, [hasDomain, domainReport, domainLookupFetched, domainLookupDone, domainParam, router]);
+
+  // Polling query — active when we have a reportId and are scanning or viewing.
+  // Skip polling when the domain lookup already supplied this exact report.
+  const domainDataCoversReport = domainReport?.id === reportId;
+  const { data: polledReport } = useQuery(
+    agentScoreReportQuery(reportId ?? "", phase !== "input" && !!reportId && !domainDataCoversReport)
+  );
+
+  // Use domain report data if it matches, otherwise use polled report
+  const report = domainDataCoversReport ? domainReport : polledReport;
 
   // Scan mutation
   const scan = useMutation({
@@ -128,6 +169,7 @@ export function AgentScorePage() {
     setPhase("input");
     setReportId(null);
     setScanError(undefined);
+    setScanUrl("");
     router.push("/tools/agent-score", { scroll: false });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [router]);
@@ -218,19 +260,35 @@ export function AgentScorePage() {
         <div className="mt-16 max-w-4xl mx-auto">
           {/* Greyed-out category gauges */}
           <div className="relative bg-gradient-to-b from-[#FAFAF8] to-white rounded-2xl border border-[#EDEBE6] px-6 py-8 sm:px-10 sm:py-10">
-            <div className="flex flex-wrap justify-center gap-8 sm:gap-12">
-              {ALL_CATEGORIES.map((category) => (
-                <div key={category} className="flex flex-col items-center opacity-35">
-                  <ScoreGauge score={0} size="sm" label={CATEGORY_LABELS[category]} animated={false} />
-                  <p className="text-[10px] text-[#888] mt-1.5 max-w-[100px] text-center leading-tight">
-                    {CATEGORY_DESCRIPTIONS[category]}
-                  </p>
-                </div>
-              ))}
+            <div className="flex flex-wrap justify-center items-stretch gap-8 sm:gap-12">
+              {ALL_CATEGORIES.map((category) => {
+                const unscored = isUnscoredCategory(category);
+                return (
+                  <div key={category} className="flex items-stretch gap-8 sm:gap-12">
+                    {/* Thin vertical divider before unscored categories */}
+                    {unscored && (
+                      <div className="hidden sm:flex items-center">
+                        <div className="w-px h-3/5 bg-[#D8D8D8] opacity-50" />
+                      </div>
+                    )}
+                    <div className={`flex flex-col items-center ${unscored ? "opacity-25" : "opacity-35"}`}>
+                      <ScoreGauge
+                        score={0}
+                        size="sm"
+                        label={`${CATEGORY_LABELS[category]}${unscored ? " *" : ""}`}
+                        animated={false}
+                      />
+                      <p className="text-[10px] text-[#888] mt-1.5 max-w-[100px] text-center leading-tight">
+                        {CATEGORY_DESCRIPTIONS[category]}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
 
             {/* Color legend */}
-            <div className="flex items-center justify-center gap-6 mt-7 text-xs text-[#999]">
+            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-1 mt-7 text-xs text-[#999]">
               <span className="flex items-center gap-1.5">
                 <span className="inline-block w-2.5 h-2.5 rounded-full bg-[#FF4E42]" />
                 0&ndash;49
@@ -244,7 +302,13 @@ export function AgentScorePage() {
                 90&ndash;100
               </span>
             </div>
+            <p className="text-center text-[10px] text-[#999] mt-2 opacity-70">
+              * Not included in overall score
+            </p>
           </div>
+
+          {/* Social proof: how real companies score */}
+          <CompanyShowcase />
 
           {/* Methodology explainer */}
           <div className="mt-16">

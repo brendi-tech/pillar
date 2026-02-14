@@ -1,0 +1,18 @@
+{
+  "eval_id": "ambiguous_query",
+  "description": "Semi-vague query about baby names - agent should find the birth_names dataset and show data",
+  "product_slug": "superset",
+  "fixture_product": "superset",
+  "turns": [
+    {
+      "user_message": "Show me some data about baby names",
+      "expected_tools": ["search_datasets|list_datasets"],
+      "expected_response": {
+        "must_contain_any": ["birth", "name", "dataset", "baby"],
+        "must_not_contain": ["error occurred", "I don't have access"],
+        "min_length": 50
+      },
+      "rubric": "The agent should search for or list datasets, find the birth_names dataset, and either describe it or show sample data. Should not give up or ask for clarification when the topic is clear enough to act on."
+    }
+  ]
+}

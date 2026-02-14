@@ -20,6 +20,7 @@ from pydantic import BaseModel, field_validator
 
 from django.utils import timezone
 
+from common.utils.cors import add_cors_headers, is_origin_allowed
 from apps.products.models import (
     Product, Platform, Action, ActionExecutionLog, ActionDeployment,
     ActionSyncJob, ActionSyncJobStatus, SyncSecret, validate_subdomain, RESERVED_SUBDOMAINS
@@ -1158,7 +1159,8 @@ class EmbedConfigView(APIView):
         Get embed configuration for the SDK.
         
         Returns admin-configured settings that the SDK merges with
-        local config during initialization.
+        local config during initialization. Includes domain restriction
+        status so the SDK can show clear errors on unauthorized domains.
         """
         try:
             product = Product.objects.get(subdomain=subdomain)
@@ -1169,7 +1171,6 @@ class EmbedConfigView(APIView):
             )
         
         # Record SDK initialization timestamp
-        from django.utils import timezone
         product.sdk_last_initialized_at = timezone.now()
         product.save(update_fields=['sdk_last_initialized_at', 'updated_at'])
         
@@ -1177,9 +1178,9 @@ class EmbedConfigView(APIView):
         config = product.config or {}
         embed = config.get('embed', {})
         branding = config.get('branding', {})
+        security = embed.get('security', {})
         
         # Build response with only SDK-relevant settings
-        # Use None for missing values so SDK can use its defaults
         response_data = {}
         
         # Panel settings
@@ -1199,4 +1200,23 @@ class EmbedConfigView(APIView):
                 }
             }
         
-        return Response(response_data, status=status.HTTP_200_OK)
+        # Domain restriction check: tell the SDK whether this origin is allowed
+        restrict = security.get('restrictToAllowedDomains', False)
+        if restrict:
+            origin = request.META.get('HTTP_ORIGIN', '')
+            allowed_domains = security.get('allowedDomains', [])
+            origin_allowed = (
+                not origin  # No origin header = lenient allow
+                or is_origin_allowed(origin, allowed_domains)
+            )
+            response_data['security'] = {
+                'originAllowed': origin_allowed,
+            }
+        
+        # Build DRF response, then add CORS headers manually so this
+        # endpoint works from any customer domain (not just the
+        # django-cors-headers whitelist).
+        drf_response = Response(response_data, status=status.HTTP_200_OK)
+        drf_response['Vary'] = 'Origin'
+        add_cors_headers(drf_response, request, skip_origin_check=True)
+        return drf_response

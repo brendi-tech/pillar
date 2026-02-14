@@ -258,14 +258,9 @@ async def handle_cancel_notification(params: dict, context: dict = None):
     return {'cancelled': False}
 
 
-def add_cors_headers(response, request):
-    """Add CORS headers to response."""
-    response['Access-Control-Allow-Origin'] = request.META.get('HTTP_ORIGIN', '*')
-    response['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
-    response['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, Mcp-Session-Id, X-Help-Center-Id'
-    response['Access-Control-Allow-Credentials'] = 'true'
-    response['Access-Control-Expose-Headers'] = 'Mcp-Session-Id'
-    return response
+
+# CORS headers are handled by the shared utility in common.utils.cors.
+from common.utils.cors import add_cors_headers  # noqa: E402
 
 
 def get_session_id(request) -> Optional[str]:
@@ -825,7 +820,7 @@ async def streamable_http(request):
     This endpoint supports both standard JSON-RPC requests and streaming SSE responses
     on the same route, with session management via Mcp-Session-Id header.
 
-    Help center context is resolved via HelpCenterResolverMiddleware from Host header.
+    Product context is resolved via ProductResolverMiddleware from Host header.
     """
     # Handle CORS preflight
     if request.method == 'OPTIONS':
@@ -836,13 +831,13 @@ async def streamable_http(request):
     if request.method == 'GET':
         try:
             from apps.mcp.services.server_info_service import server_info_service
-            help_center_config = getattr(request, 'help_center_config', None)
-            logger.info(f"[Streamable HTTP GET] Help center resolved: {help_center_config}")
+            product = getattr(request, 'product', None)
+            logger.info(f"[Streamable HTTP GET] Product resolved: {product}")
 
             # Wrap the sync DB call in sync_to_async
             response_data = await sync_to_async(
                 server_info_service.get_landing_page_response
-            )(help_center_config=help_center_config)
+            )(help_center_config=product)
 
             # Always pretty print for GET
             json_dumps_params = {'indent': 2}
@@ -878,22 +873,22 @@ async def streamable_http(request):
         response = set_session_id(response, session_id)
         return add_cors_headers(response, request)
 
-    # Get help center from middleware or request params
-    help_center_config = getattr(request, 'help_center_config', None)
+    # Get product from middleware or request params
+    product = getattr(request, 'product', None)
     organization = getattr(request, 'organization', None)
 
     # Fallback: allow help_center_id in params for development
-    if not help_center_config and isinstance(request_data, dict):
+    if not product and isinstance(request_data, dict):
         params = request_data.get('params', {})
         if isinstance(params, dict) and 'help_center_id' in params:
             from apps.products.models import Product
             try:
-                help_center_config = await Product.objects.select_related('organization').aget(
+                product = await Product.objects.select_related('organization').aget(
                     id=params['help_center_id']
                 )
-                organization = help_center_config.organization
+                organization = product.organization
             except Product.DoesNotExist:
-                logger.warning(f"Help center not found: {params['help_center_id']}")
+                logger.warning(f"Product not found: {params['help_center_id']}")
 
     # Determine if streaming is requested
     accept_header = request.META.get('HTTP_ACCEPT', '')
@@ -912,11 +907,11 @@ async def streamable_http(request):
         logger.info(f"[Streamable HTTP] Starting SSE stream for {method} | request_id: {request_data.get('id')}")
 
         # Determine effective language for AI responses
-        effective_language = get_effective_language(request, help_center_config)
+        effective_language = get_effective_language(request, product)
 
-        # Initialize MCP server with help center context
+        # Initialize MCP server with product context
         mcp_server = MCPServer(
-            help_center_config=help_center_config,
+            help_center_config=product,
             organization=organization,
             request=request,
             language=effective_language
@@ -934,14 +929,14 @@ async def streamable_http(request):
         return add_cors_headers(response, request)
 
     # Standard JSON-RPC request
-    logger.debug(f"[Streamable HTTP] Processing {method} | help_center: {help_center_config.id if help_center_config else 'None'}")
+    logger.debug(f"[Streamable HTTP] Processing {method} | product: {product.id if product else 'None'}")
 
     # Determine effective language for AI responses
-    effective_language = get_effective_language(request, help_center_config)
+    effective_language = get_effective_language(request, product)
 
-    # Initialize MCP server with help center context
+    # Initialize MCP server with product context
     mcp_server = MCPServer(
-        help_center_config=help_center_config,
+        help_center_config=product,
         organization=organization,
         request=request,
         language=effective_language
@@ -975,7 +970,7 @@ async def streamable_http(request):
 
     # Handle request
     context = {
-        'help_center_config': help_center_config,
+        'help_center_config': product,
         'organization': organization,
         'request': request,
         'session_id': session_id

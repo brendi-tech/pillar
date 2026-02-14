@@ -1,0 +1,16 @@
+{
+  "eval_id": "greeting",
+  "description": "Simple greeting should complete without calling any actions",
+  "product_slug": "superset",
+  "fixture_product": "superset",
+  "turns": [
+    {
+      "user_message": "Hello",
+      "expected_tools": [],
+      "expected_response": {
+        "must_not_contain": ["error", "cannot"],
+        "min_length": 1
+      }
+    }
+  ]
+}

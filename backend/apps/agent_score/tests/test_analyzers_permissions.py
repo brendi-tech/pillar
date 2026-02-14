@@ -10,6 +10,8 @@ from apps.agent_score.analyzers.permissions import (
     _parse_robots_txt,
 )
 
+from .conftest import DQ_ALL_OK
+
 # ── Content-Signal header tests ──
 
 
@@ -19,7 +21,7 @@ class TestContentSignalHeader:
 
     def test_full_permissions_scores_100(self, report_with_markdown):
         """ai-input=yes should score 100."""
-        result = _check_content_signal_header(report_with_markdown)
+        result = _check_content_signal_header(report_with_markdown, DQ_ALL_OK)
         assert result.passed is True
         assert result.score == 100
         assert result.details["ai_input_allowed"] is True
@@ -29,7 +31,7 @@ class TestContentSignalHeader:
     def test_search_only_scores_70(self, report_with_markdown):
         """search=yes but no ai-input should score 70."""
         report_with_markdown.content_signal = "search=yes"
-        result = _check_content_signal_header(report_with_markdown)
+        result = _check_content_signal_header(report_with_markdown, DQ_ALL_OK)
         assert result.passed is True
         assert result.score == 70
         assert result.details["ai_input_allowed"] is False
@@ -38,12 +40,12 @@ class TestContentSignalHeader:
     def test_restrictive_header_scores_50(self, report_with_markdown):
         """Header present but with restrictive directives."""
         report_with_markdown.content_signal = "ai-train=no, search=no, ai-input=no"
-        result = _check_content_signal_header(report_with_markdown)
+        result = _check_content_signal_header(report_with_markdown, DQ_ALL_OK)
         assert result.passed is True  # header exists
         assert result.score == 50  # but restrictive
 
     def test_missing_scores_0(self, report_no_markdown):
-        result = _check_content_signal_header(report_no_markdown)
+        result = _check_content_signal_header(report_no_markdown, DQ_ALL_OK)
         assert result.passed is False
         assert result.score == 0
         assert "Content-Signal" in result.recommendation
@@ -51,7 +53,7 @@ class TestContentSignalHeader:
     def test_parses_directives(self, report_with_markdown):
         """Check that directive parsing works correctly."""
         report_with_markdown.content_signal = "ai-train=yes, search=yes, ai-input=yes"
-        result = _check_content_signal_header(report_with_markdown)
+        result = _check_content_signal_header(report_with_markdown, DQ_ALL_OK)
         directives = result.details["directives"]
         assert directives["ai-train"] == "yes"
         assert directives["search"] == "yes"
@@ -68,12 +70,12 @@ class TestContentSignalHeader:
                 "x_markdown_tokens": 1000,
             },
         }
-        result = _check_content_signal_header(report_no_markdown)
+        result = _check_content_signal_header(report_no_markdown, DQ_ALL_OK)
         assert result.passed is True
         assert result.score == 100
 
     def test_weight_is_8(self, report_with_markdown):
-        result = _check_content_signal_header(report_with_markdown)
+        result = _check_content_signal_header(report_with_markdown, DQ_ALL_OK)
         assert result.weight == 8
 
 
@@ -119,25 +121,25 @@ class TestRobotsTxtAi:
 
     def test_no_robots_txt_scores_80(self):
         probes = {"robots_txt": {"ok": False, "body": ""}}
-        result = _check_robots_txt_ai(probes)
+        result = _check_robots_txt_ai(probes, DQ_ALL_OK)
         assert result.passed is True
         assert result.score == 80
 
     def test_all_allowed_scores_100(self):
         probes = {"robots_txt": {"ok": True, "body": "User-agent: *\nAllow: /\n"}}
-        result = _check_robots_txt_ai(probes)
+        result = _check_robots_txt_ai(probes, DQ_ALL_OK)
         assert result.passed is True
         assert result.score == 100
 
     def test_all_blocked_scores_10(self):
         probes = {"robots_txt": {"ok": True, "body": "User-agent: *\nDisallow: /\n"}}
-        result = _check_robots_txt_ai(probes)
+        result = _check_robots_txt_ai(probes, DQ_ALL_OK)
         assert result.passed is False
         assert result.score == 10
 
     def test_weight_is_10(self):
         probes = {"robots_txt": {"ok": False, "body": ""}}
-        result = _check_robots_txt_ai(probes)
+        result = _check_robots_txt_ai(probes, DQ_ALL_OK)
         assert result.weight == 10
 
 
@@ -146,11 +148,11 @@ class TestRunAllPermissionsChecks:
     """Integration test: run() returns all expected checks."""
 
     def test_returns_2_checks(self, report_with_markdown):
-        results = permissions.run(report_with_markdown)
+        results = permissions.run(report_with_markdown, DQ_ALL_OK)
         assert len(results) == 2
 
     def test_check_names(self, report_with_markdown):
-        results = permissions.run(report_with_markdown)
+        results = permissions.run(report_with_markdown, DQ_ALL_OK)
         names = {r.check_name for r in results}
         assert names == {
             "robots_txt_ai",
@@ -158,6 +160,6 @@ class TestRunAllPermissionsChecks:
         }
 
     def test_all_checks_are_content_category(self, report_with_markdown):
-        results = permissions.run(report_with_markdown)
+        results = permissions.run(report_with_markdown, DQ_ALL_OK)
         for r in results:
             assert r.category == "content"

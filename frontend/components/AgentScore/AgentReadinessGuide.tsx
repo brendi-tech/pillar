@@ -1,6 +1,8 @@
 "use client";
 
-import { ExternalLink } from "lucide-react";
+import { useState, useCallback } from "react";
+import { ExternalLink, ChevronDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
 // Data — curated from CheckRow.tooltips.ts, organized for SEO-friendly prose
@@ -263,6 +265,20 @@ const GUIDE_CATEGORIES: GuideCategory[] = [
 // ---------------------------------------------------------------------------
 
 export function AgentReadinessGuide() {
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+
+  const toggle = useCallback((slug: string) => {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(slug)) {
+        next.delete(slug);
+      } else {
+        next.add(slug);
+      }
+      return next;
+    });
+  }, []);
+
   return (
     <section className="mt-16 mb-8">
       {/* Section divider */}
@@ -279,57 +295,85 @@ export function AgentReadinessGuide() {
         pages as tokens. Here&apos;s every signal we evaluate.
       </p>
 
-      <div className="space-y-6">
-        {GUIDE_CATEGORIES.map((category) => (
-          <article
-            key={category.slug}
-            className="bg-white border border-[#E8E4DC] rounded-xl overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
-          >
-            {/* Category header */}
-            <div className="px-5 sm:px-7 pt-6 pb-4 border-b border-[#F0EDE8]">
-              <h3 className="text-lg font-semibold text-[#1A1A1A]">
-                {category.heading}
-              </h3>
-              <p className="text-sm text-[#6B6B6B] mt-1 leading-relaxed">
-                {category.intro}
-              </p>
-            </div>
+      <div className="space-y-3">
+        {GUIDE_CATEGORIES.map((category) => {
+          const isOpen = expanded.has(category.slug);
+          return (
+            <article
+              key={category.slug}
+              className="bg-white border border-[#E8E4DC] rounded-xl overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
+            >
+              {/* Clickable category header */}
+              <button
+                type="button"
+                onClick={() => toggle(category.slug)}
+                className={cn(
+                  "w-full text-left px-5 sm:px-7 py-5 flex items-center justify-between gap-4",
+                  "hover:bg-[#FAFAF8] transition-colors duration-150",
+                  isOpen && "border-b border-[#F0EDE8]"
+                )}
+              >
+                <div className="min-w-0">
+                  <h3 className="text-lg font-semibold text-[#1A1A1A]">
+                    {category.heading}
+                  </h3>
+                  <p className="text-sm text-[#6B6B6B] mt-1 leading-relaxed">
+                    {category.intro}
+                  </p>
+                </div>
+                <ChevronDown
+                  className={cn(
+                    "h-5 w-5 shrink-0 text-[#999] transition-transform duration-200",
+                    isOpen && "rotate-180"
+                  )}
+                />
+              </button>
 
-            {/* Subcategories */}
-            <div className="px-5 sm:px-7 pb-6 pt-5 space-y-6 bg-gradient-to-b from-[#FDFCFB] to-white">
-              {category.subcategories.map((sub) => (
-                <div key={sub.heading}>
-                  <h4 className="text-[11px] font-semibold uppercase tracking-wider text-[#B0A99F] mb-3">
-                    {sub.heading}
-                  </h4>
-                  <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
-                    {sub.checks.map((check) => (
-                      <div key={check.title} className="min-w-0">
-                        <dt className="text-sm font-medium text-[#1A1A1A]">
-                          {check.title}
-                        </dt>
-                        <dd className="text-sm text-[#6B6B6B] mt-0.5 leading-relaxed">
-                          {check.description}
-                          {check.link && (
-                            <a
-                              href={check.link}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-[#FF6E00] hover:text-[#E06200] ml-1 whitespace-nowrap"
-                            >
-                              {check.linkLabel || "Learn more"}
-                              <ExternalLink className="h-3 w-3" />
-                            </a>
-                          )}
-                        </dd>
+              {/* Collapsible subcategories */}
+              <div
+                className={cn(
+                  "grid transition-[grid-template-rows] duration-300 ease-in-out",
+                  isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                )}
+              >
+                <div className="overflow-hidden">
+                  <div className="px-5 sm:px-7 pb-6 pt-5 space-y-6 bg-gradient-to-b from-[#FDFCFB] to-white">
+                    {category.subcategories.map((sub) => (
+                      <div key={sub.heading}>
+                        <h4 className="text-[11px] font-semibold uppercase tracking-wider text-[#B0A99F] mb-3">
+                          {sub.heading}
+                        </h4>
+                        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+                          {sub.checks.map((check) => (
+                            <div key={check.title} className="min-w-0">
+                              <dt className="text-sm font-medium text-[#1A1A1A]">
+                                {check.title}
+                              </dt>
+                              <dd className="text-sm text-[#6B6B6B] mt-0.5 leading-relaxed">
+                                {check.description}
+                                {check.link && (
+                                  <a
+                                    href={check.link}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 text-[#FF6E00] hover:text-[#E06200] ml-1 whitespace-nowrap"
+                                  >
+                                    {check.linkLabel || "Learn more"}
+                                    <ExternalLink className="h-3 w-3" />
+                                  </a>
+                                )}
+                              </dd>
+                            </div>
+                          ))}
+                        </dl>
                       </div>
                     ))}
-                  </dl>
+                  </div>
                 </div>
-              ))}
-            </div>
-          </article>
-        ))}
+              </div>
+            </article>
+          );
+        })}
       </div>
     </section>
   );

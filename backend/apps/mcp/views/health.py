@@ -11,6 +11,7 @@ from django.core.cache import cache
 from django.db import connection
 from asgiref.sync import sync_to_async
 from apps.mcp.services.server_info_service import server_info_service
+from common.utils.cors import add_cors_headers
 
 logger = logging.getLogger(__name__)
 
@@ -22,12 +23,12 @@ async def index(request):
 
     For JSON-RPC requests, use the root /mcp/ endpoint instead.
     """
-    help_center_config = getattr(request, 'help_center_config', None)
+    product = getattr(request, 'product', None)
 
     # Use centralized service to build response
     response_data = await sync_to_async(
         server_info_service.get_landing_page_response
-    )(help_center_config=help_center_config)
+    )(help_center_config=product)
 
     # Always pretty print for browser
     json_dumps_params = {'indent': 2}
@@ -37,10 +38,7 @@ async def index(request):
     response = JsonResponse(response_data, status=status_code, json_dumps_params=json_dumps_params)
 
     # Add CORS headers
-    response['Access-Control-Allow-Origin'] = request.META.get('HTTP_ORIGIN', '*')
-    response['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
-    response['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
-    response['Access-Control-Allow-Credentials'] = 'true'
+    add_cors_headers(response, request)
 
     return response
 

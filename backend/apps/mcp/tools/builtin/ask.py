@@ -952,7 +952,7 @@ Guidelines:
 
         Args:
             query: User query string
-            product: Product instance (from request.help_center_config)
+            product: Product instance (from request.product)
             max_results: Maximum number of actions to return
             platform: Optional platform filter from X-Pillar-Platform header
             version: Optional version filter from X-Pillar-Action-Version header

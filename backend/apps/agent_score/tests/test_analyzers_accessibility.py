@@ -12,7 +12,7 @@ from apps.agent_score.analyzers.accessibility import (
     _check_landmark_roles,
 )
 
-from .conftest import SAMPLE_AX_TREE, SAMPLE_AXE_RESULTS
+from .conftest import DQ_ALL_OK, SAMPLE_AX_TREE, SAMPLE_AXE_RESULTS
 
 # ─── _check_aria_labels ─────────────────────────────────────────────────────
 
@@ -22,7 +22,7 @@ class TestCheckAriaLabels:
 
     def test_no_violations_passes(self):
         """SAMPLE_AXE_RESULTS has no violations."""
-        result = _check_aria_labels(SAMPLE_AXE_RESULTS, SAMPLE_AX_TREE)
+        result = _check_aria_labels(SAMPLE_AXE_RESULTS, SAMPLE_AX_TREE, DQ_ALL_OK)
         assert result.passed is True
         assert result.score == 100
         assert result.details["total_unlabeled_elements"] == 0
@@ -36,7 +36,7 @@ class TestCheckAriaLabels:
             ],
             "passes": [],
         }
-        result = _check_aria_labels(axe_results, SAMPLE_AX_TREE)
+        result = _check_aria_labels(axe_results, SAMPLE_AX_TREE, DQ_ALL_OK)
         assert result.passed is False
         assert result.details["total_unlabeled_elements"] == 5
         assert result.score < 100
@@ -44,7 +44,7 @@ class TestCheckAriaLabels:
 
     def test_no_axe_results_fails(self):
         """Missing/empty axe_results yields error."""
-        result = _check_aria_labels({}, SAMPLE_AX_TREE)
+        result = _check_aria_labels({}, SAMPLE_AX_TREE, DQ_ALL_OK)
         assert result.passed is False
         assert result.score == 0
         assert result.details["error"] == "no_axe_results"
@@ -52,7 +52,7 @@ class TestCheckAriaLabels:
     def test_empty_violations_list_passes(self):
         """Empty violations list passes."""
         axe_results = {"violations": [], "passes": [{"id": "button-name"}]}
-        result = _check_aria_labels(axe_results, SAMPLE_AX_TREE)
+        result = _check_aria_labels(axe_results, SAMPLE_AX_TREE, DQ_ALL_OK)
         assert result.passed is True
         assert result.score == 100
 
@@ -65,7 +65,7 @@ class TestCheckLandmarkRoles:
 
     def test_good_landmarks_passes(self):
         """SAMPLE_AX_TREE has banner, navigation, main, contentinfo."""
-        result = _check_landmark_roles(SAMPLE_AX_TREE)
+        result = _check_landmark_roles(SAMPLE_AX_TREE, DQ_ALL_OK)
         assert result.passed is True
         assert result.score == 100
         assert result.details["has_main"] is True
@@ -74,7 +74,7 @@ class TestCheckLandmarkRoles:
 
     def test_no_ax_tree_fails(self):
         """Missing accessibility tree fails."""
-        result = _check_landmark_roles(None)
+        result = _check_landmark_roles(None, DQ_ALL_OK)
         assert result.passed is False
         assert result.score == 0
         assert result.details["error"] == "no_accessibility_tree"
@@ -85,7 +85,7 @@ class TestCheckLandmarkRoles:
             "role": "WebArea",
             "children": [{"role": "main", "name": "", "children": []}],
         }
-        result = _check_landmark_roles(ax_tree)
+        result = _check_landmark_roles(ax_tree, DQ_ALL_OK)
         assert result.passed is False
         assert result.details["has_main"] is True
         assert result.details["has_navigation"] is False
@@ -94,7 +94,7 @@ class TestCheckLandmarkRoles:
     def test_no_landmarks_scores_0(self):
         """Tree with no landmark roles scores 0."""
         ax_tree = {"role": "WebArea", "children": [{"role": "paragraph", "name": "x"}]}
-        result = _check_landmark_roles(ax_tree)
+        result = _check_landmark_roles(ax_tree, DQ_ALL_OK)
         assert result.passed is False
         assert result.score == 0
 
@@ -107,7 +107,7 @@ class TestCheckKeyboardFocusable:
 
     def test_no_violations_passes(self):
         """SAMPLE_AXE_RESULTS has no violations."""
-        result = _check_keyboard_focusable(SAMPLE_AXE_RESULTS)
+        result = _check_keyboard_focusable(SAMPLE_AXE_RESULTS, DQ_ALL_OK)
         assert result.passed is True
         assert result.score == 100
         assert result.details["total_issues"] == 0
@@ -121,14 +121,14 @@ class TestCheckKeyboardFocusable:
             ],
             "passes": [],
         }
-        result = _check_keyboard_focusable(axe_results)
+        result = _check_keyboard_focusable(axe_results, DQ_ALL_OK)
         assert result.passed is False
         assert result.details["total_issues"] >= 6
         assert "keyboard" in result.recommendation.lower()
 
     def test_no_axe_results_fails(self):
         """Missing/empty axe_results yields error."""
-        result = _check_keyboard_focusable({})
+        result = _check_keyboard_focusable({}, DQ_ALL_OK)
         assert result.passed is False
         assert result.score == 0
         assert result.details["error"] == "no_axe_results"
@@ -142,7 +142,7 @@ class TestCheckConsistentNav:
 
     def test_good_nav_structure_passes(self):
         """SAMPLE_AX_TREE has nav with name 'Main' and Home link."""
-        result = _check_consistent_nav(SAMPLE_AX_TREE)
+        result = _check_consistent_nav(SAMPLE_AX_TREE, DQ_ALL_OK)
         assert result.passed is True
         assert result.score == 100
         assert result.details["has_named_nav"] is True
@@ -150,7 +150,7 @@ class TestCheckConsistentNav:
 
     def test_no_ax_tree_fails(self):
         """Missing accessibility tree fails."""
-        result = _check_consistent_nav(None)
+        result = _check_consistent_nav(None, DQ_ALL_OK)
         assert result.passed is False
         assert result.score == 0
         assert result.details["error"] == "no_accessibility_tree"
@@ -167,7 +167,7 @@ class TestCheckConsistentNav:
                 },
             ],
         }
-        result = _check_consistent_nav(ax_tree)
+        result = _check_consistent_nav(ax_tree, DQ_ALL_OK)
         assert result.passed is False
         assert len(result.details["nav_landmarks"]) == 1
         assert result.details["nav_landmarks"][0]["total_links"] == 0
@@ -176,7 +176,7 @@ class TestCheckConsistentNav:
     def test_no_nav_scores_0(self):
         """Tree with no navigation role scores 0."""
         ax_tree = {"role": "WebArea", "children": [{"role": "main", "children": []}]}
-        result = _check_consistent_nav(ax_tree)
+        result = _check_consistent_nav(ax_tree, DQ_ALL_OK)
         assert result.passed is False
         assert result.score == 0
         assert result.details["nav_landmarks"] == []
@@ -190,11 +190,11 @@ class TestAccessibilityRun:
     """Integration tests for accessibility.run()."""
 
     def test_returns_4_checks(self, report_with_markdown):
-        results = accessibility.run(report_with_markdown)
+        results = accessibility.run(report_with_markdown, DQ_ALL_OK)
         assert len(results) == 4
 
     def test_check_names(self, report_with_markdown):
-        results = accessibility.run(report_with_markdown)
+        results = accessibility.run(report_with_markdown, DQ_ALL_OK)
         names = {r.check_name for r in results}
         assert names == {
             "aria_labels",
@@ -204,6 +204,6 @@ class TestAccessibilityRun:
         }
 
     def test_all_checks_interaction_category(self, report_with_markdown):
-        results = accessibility.run(report_with_markdown)
+        results = accessibility.run(report_with_markdown, DQ_ALL_OK)
         for r in results:
             assert r.category == "interaction"

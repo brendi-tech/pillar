@@ -1,13 +1,22 @@
-# E2E Tests for Agent (Agentic Loop)
+# Agent Evaluation Tests (DeepEval)
 #
-# Tests the full agent flow with real LLM calls and fixture-based client responses.
-# Uses real API keys from GitHub secrets.
+# Runs parametrized agent eval cases from tests/e2e/eval_cases/superset/*.json
+# using DeepEval metrics (ToolCorrectnessMetric, GEval rubric scoring).
+#
+# Each eval case defines:
+# - A user question
+# - Expected tool trajectory
+# - Deterministic response checks (must_contain, must_not_contain, min_length)
+# - Optional LLM-as-judge rubric
+#
+# The agent runs for real (LLM calls, search, embeddings) with fixture-based
+# client responses simulating the frontend SDK.
 #
 # Triggered:
-# - On PRs that touch agent-related code
+# - On PRs that touch agent-related code or eval cases
 # - Manually via workflow_dispatch
 
-name: Tests - Agent E2E
+name: Tests - Agent Evals
 
 on:
   pull_request:
@@ -29,8 +38,8 @@ permissions:
   pull-requests: write
 
 jobs:
-  test-agent-e2e:
-    name: Agent E2E Tests
+  test-agent-evals:
+    name: Agent Eval Tests
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -131,12 +140,20 @@ jobs:
           fi
           echo "Required API keys are set"
 
-      - name: Run Agent E2E tests
+      - name: List eval cases
+        run: |
+          echo "Eval cases to run:"
+          find backend/tests/e2e/eval_cases -name "*.json" | sort | while read f; do
+            eval_id=$(python3 -c "import json; print(json.load(open('$f')).get('eval_id', '?'))")
+            echo "  - $eval_id ($(basename $f))"
+          done
+
+      - name: Run Agent Eval Tests
         run: |
           cd backend
-          uv run pytest tests/e2e/ \
+          uv run pytest tests/e2e/test_agent_eval.py \
             -m e2e \
-            -n auto \
+            -n 13 \
             -v \
             --tb=short \
             --confcutdir=tests/e2e \
@@ -147,13 +164,13 @@ jobs:
           TEST_EXIT_CODE=${PIPESTATUS[0]}
           exit $TEST_EXIT_CODE
 
-      - name: Print Agent Thinking Logs
+      - name: Print Agent Session Logs
         if: always()
         run: |
           cd backend
           echo ""
           echo "========================================"
-          echo "       AGENT THINKING LOGS"
+          echo "       AGENT SESSION LOGS"
           echo "========================================"
           echo ""
           
@@ -179,28 +196,32 @@ jobs:
       - name: Test Summary
         if: always()
         run: |
-          echo "## Agent E2E Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "## Agent Eval Test Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Status:** ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Count eval cases
+          EVAL_COUNT=$(find backend/tests/e2e/eval_cases -name "*.json" | wc -l | tr -d ' ')
           echo "### Test Configuration" >> $GITHUB_STEP_SUMMARY
-          echo "- Python: 3.12" >> $GITHUB_STEP_SUMMARY
-          echo "- PostgreSQL: pgvector/pgvector:pg16" >> $GITHUB_STEP_SUMMARY
-          echo "- LLM: Budget tier (via OpenRouter)" >> $GITHUB_STEP_SUMMARY
-          echo "- Embeddings: Gemini" >> $GITHUB_STEP_SUMMARY
-          echo "- Reranking: Cohere" >> $GITHUB_STEP_SUMMARY
+          echo "- **Eval cases:** $EVAL_COUNT" >> $GITHUB_STEP_SUMMARY
+          echo "- **Framework:** DeepEval (ToolCorrectness + GEval rubric)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Agent:** Real LLM calls with fixture-based client responses" >> $GITHUB_STEP_SUMMARY
+          echo "- **Python:** 3.12" >> $GITHUB_STEP_SUMMARY
+          echo "- **PostgreSQL:** pgvector/pgvector:pg16" >> $GITHUB_STEP_SUMMARY
+          echo "- **LLM:** Budget tier (via OpenRouter)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           if [ "${{ job.status }}" == "success" ]; then
-            echo "All Agent E2E tests passed!" >> $GITHUB_STEP_SUMMARY
+            echo "All $EVAL_COUNT eval cases passed!" >> $GITHUB_STEP_SUMMARY
           else
-            echo "Tests failed. Check logs for details." >> $GITHUB_STEP_SUMMARY
+            echo "Some eval cases failed. Check logs for details." >> $GITHUB_STEP_SUMMARY
           fi
 
       - name: Upload test logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: agent-e2e-test-logs-${{ github.run_number }}
+          name: agent-eval-logs-${{ github.run_number }}
           path: |
             backend/test_output.log
             backend/logs/agent-sessions/

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { MarketingSDKProvider } from "@/providers/MarketingSDKProvider";
 
 export const metadata: Metadata = {
   title: {
@@ -77,7 +78,7 @@ export default function MarketingLayout({
           `,
         }}
       />
-      {children}
+      <MarketingSDKProvider>{children}</MarketingSDKProvider>
     </div>
   );
 }

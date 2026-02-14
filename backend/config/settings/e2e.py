@@ -43,6 +43,23 @@ if os.environ.get('HC_POSTGRES_HOST'):
         }
     }
 
+# Re-enable Redis cache for e2e tests (overrides test.py's LocMemCache)
+# Required for agent action result signaling via signal_query_result/wait_for_query_result.
+# Without Redis, the in-memory fallback has a race condition where the result is stored
+# before the waiting loop creates its asyncio.Event, causing 60s timeouts on every action.
+REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379')
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': REDIS_URL,
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            'SOCKET_CONNECT_TIMEOUT': 5,
+            'SOCKET_TIMEOUT': 5,
+        },
+    }
+}
+
 # Validate required keys for E2E tests
 _missing = [k for k in ['GOOGLE_API_KEY'] if not os.environ.get(k)]
 if _missing:

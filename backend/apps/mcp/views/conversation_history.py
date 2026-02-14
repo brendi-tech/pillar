@@ -24,9 +24,6 @@ from common.utils.cors import add_cors_headers
 logger = logging.getLogger(__name__)
 
 
-# Use shared CORS utility
-_add_cors_headers = add_cors_headers
-
 
 def _extract_gcs_path(signed_url: str) -> Optional[str]:
     """Extract the storage path from a GCS signed URL.
@@ -150,18 +147,18 @@ async def list_conversations(request):
     # Handle CORS preflight
     if request.method == "OPTIONS":
         response = JsonResponse({}, status=200)
-        return _add_cors_headers(response, request)
+        return add_cors_headers(response, request)
     
-    # Get help center context from middleware
-    help_center_config = getattr(request, 'help_center_config', None)
+    # Get product context from middleware
+    product = getattr(request, 'product', None)
     organization = getattr(request, 'organization', None)
     
-    if not help_center_config or not organization:
+    if not product or not organization:
         response = JsonResponse(
             {'error': 'Help center context not available'},
             status=403
         )
-        return _add_cors_headers(response, request)
+        return add_cors_headers(response, request)
     
     # Get analytics context from middleware
     analytics = getattr(request, 'analytics', {})
@@ -173,7 +170,7 @@ async def list_conversations(request):
             {'error': 'x-visitor-id header required'},
             status=400
         )
-        return _add_cors_headers(response, request)
+        return add_cors_headers(response, request)
     
     # Resolve visitor
     visitor = await _resolve_visitor(
@@ -185,7 +182,7 @@ async def list_conversations(request):
     if not visitor:
         # No visitor record yet - return empty history
         response = JsonResponse({'conversations': []})
-        return _add_cors_headers(response, request)
+        return add_cors_headers(response, request)
     
     # Get query params
     try:
@@ -196,7 +193,7 @@ async def list_conversations(request):
     # Query conversations with message counts in a single query (avoids N+1)
     conversations_qs = ChatConversation.objects.filter(
         visitor=visitor,
-        product=help_center_config,
+        product=product,
         logging_enabled=True,
     ).annotate(
         message_count=Count('messages')
@@ -215,7 +212,7 @@ async def list_conversations(request):
         })
     
     response = JsonResponse({'conversations': conversations})
-    return _add_cors_headers(response, request)
+    return add_cors_headers(response, request)
 
 
 @csrf_exempt
@@ -251,18 +248,18 @@ async def get_conversation(request, conversation_id: str):
     # Handle CORS preflight
     if request.method == "OPTIONS":
         response = JsonResponse({}, status=200)
-        return _add_cors_headers(response, request)
+        return add_cors_headers(response, request)
     
-    # Get help center context from middleware
-    help_center_config = getattr(request, 'help_center_config', None)
+    # Get product context from middleware
+    product = getattr(request, 'product', None)
     organization = getattr(request, 'organization', None)
     
-    if not help_center_config or not organization:
+    if not product or not organization:
         response = JsonResponse(
             {'error': 'Help center context not available'},
             status=403
         )
-        return _add_cors_headers(response, request)
+        return add_cors_headers(response, request)
     
     # Get analytics context from middleware
     analytics = getattr(request, 'analytics', {})
@@ -274,7 +271,7 @@ async def get_conversation(request, conversation_id: str):
             {'error': 'x-visitor-id header required'},
             status=400
         )
-        return _add_cors_headers(response, request)
+        return add_cors_headers(response, request)
     
     # Resolve visitor
     visitor = await _resolve_visitor(
@@ -288,21 +285,21 @@ async def get_conversation(request, conversation_id: str):
             {'error': 'Conversation not found'},
             status=404
         )
-        return _add_cors_headers(response, request)
+        return add_cors_headers(response, request)
     
     # Get conversation
     try:
         conversation = await ChatConversation.objects.aget(
             id=conversation_id,
             visitor=visitor,
-            product=help_center_config,
+            product=product,
         )
     except ChatConversation.DoesNotExist:
         response = JsonResponse(
             {'error': 'Conversation not found'},
             status=404
         )
-        return _add_cors_headers(response, request)
+        return add_cors_headers(response, request)
     
     # Get messages (exclude tool role from display)
     messages = []
@@ -346,4 +343,4 @@ async def get_conversation(request, conversation_id: str):
         'messageCount': len(messages),
         'messages': messages,
     })
-    return _add_cors_headers(response, request)
+    return add_cors_headers(response, request)

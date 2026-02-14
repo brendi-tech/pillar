@@ -1,0 +1,18 @@
+{
+  "eval_id": "dataset_discovery",
+  "description": "Asking about available datasets should trigger dataset-related actions",
+  "product_slug": "superset",
+  "fixture_product": "superset",
+  "turns": [
+    {
+      "user_message": "What datasets are available?",
+      "expected_tools": ["list_datasets|search_datasets"],
+      "expected_response": {
+        "must_contain_any": ["dataset", "data"],
+        "must_not_contain": ["error occurred", "cannot help"],
+        "min_length": 50
+      },
+      "rubric": "Response should list or describe the available datasets. It should mention specific dataset names from the fixture data (e.g. birth_names, covid_vaccines, FCC 2018 Survey). Should not give up or say it has no access."
+    }
+  ]
+}

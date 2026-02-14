@@ -48,9 +48,6 @@ def _validate_image_file(file) -> tuple[bool, str]:
         return False, f"Invalid image: {str(e)}"
 
 
-# Use shared CORS utility
-_add_cors_headers = add_cors_headers
-
 
 @csrf_exempt
 @require_http_methods(["POST", "OPTIONS"])
@@ -58,41 +55,41 @@ def upload_image(request):
     """
     Upload image for conversation, return signed GCS URL.
 
-    Uses help_center_config from middleware for authentication.
-    Storage path: conversations/images/{org_id}/{help_center_id}/{uuid}.{ext}
+    Uses product from middleware for authentication.
+    Storage path: conversations/images/{org_id}/{product_id}/{uuid}.{ext}
     """
     # Handle CORS preflight
     if request.method == "OPTIONS":
         response = JsonResponse({}, status=200)
-        return _add_cors_headers(response, request)
+        return add_cors_headers(response, request)
 
-    # Get help center context from middleware
-    help_center_config = getattr(request, 'help_center_config', None)
+    # Get product context from middleware
+    product = getattr(request, 'product', None)
     organization = getattr(request, 'organization', None)
 
-    if not help_center_config or not organization:
+    if not product or not organization:
         response = JsonResponse(
-            {'error': 'Help center context not available'},
+            {'error': 'Product context not available'},
             status=403
         )
-        return _add_cors_headers(response, request)
+        return add_cors_headers(response, request)
 
     # Check for image in request
     if 'image' not in request.FILES:
         response = JsonResponse({'error': 'No image provided'}, status=400)
-        return _add_cors_headers(response, request)
+        return add_cors_headers(response, request)
 
     uploaded_file = request.FILES['image']
     is_valid, error_msg = _validate_image_file(uploaded_file)
     if not is_valid:
         response = JsonResponse({'error': error_msg}, status=400)
-        return _add_cors_headers(response, request)
+        return add_cors_headers(response, request)
 
     # Generate storage path
     file_extension = Path(uploaded_file.name).suffix.lower().lstrip('.')
     file_path = (
         f"conversations/images/{organization.id}/"
-        f"{help_center_config.id}/{uuid.uuid4()}.{file_extension}"
+        f"{product.id}/{uuid.uuid4()}.{file_extension}"
     )
 
     try:
@@ -117,7 +114,7 @@ def upload_image(request):
         ).get('default', {}).get('OPTIONS', {}).get('expiration', 86400)
         expires_at = datetime.utcnow() + timedelta(seconds=storage_expiration)
 
-        logger.info(f"Image uploaded: {saved_path} for help_center={help_center_config.id}")
+        logger.info(f"Image uploaded: {saved_path} for product={product.id}")
 
         # Kick off background summary generation
         # This runs async - response returns immediately
@@ -144,9 +141,9 @@ def upload_image(request):
             'path': saved_path,
             'expires_at': expires_at.isoformat() + 'Z'
         })
-        return _add_cors_headers(response, request)
+        return add_cors_headers(response, request)
 
     except Exception as e:
         logger.error(f"Upload failed: {e}", exc_info=True)
         response = JsonResponse({'error': 'Upload failed'}, status=500)
-        return _add_cors_headers(response, request)
+        return add_cors_headers(response, request)

@@ -69,8 +69,6 @@ class CustomerIdMiddleware:
         request.customer_id = customer_id
         request.customer_organization = customer_organization
         request.product = product
-        # Backward compatibility alias
-        request.help_center_config = product
 
         return None
 

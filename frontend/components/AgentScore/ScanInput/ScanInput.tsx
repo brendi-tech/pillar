@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowRight, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -38,6 +38,14 @@ export function ScanInput({ onScan, isScanning, error, initialUrl = "" }: ScanIn
   const [inputValue, setInputValue] = useState(initialUrl);
   const [testSignup, setTestSignup] = useState(true);
   const [localError, setLocalError] = useState<string | null>(null);
+
+  // Sync input value when initialUrl prop changes (e.g. domain lookup prefill)
+  useEffect(() => {
+    if (initialUrl && initialUrl !== inputValue) {
+      setInputValue(initialUrl);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialUrl]);
 
   const displayError = error || localError;
 

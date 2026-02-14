@@ -1,0 +1,22 @@
+{
+  "eval_id": "time_trend_analysis",
+  "description": "Time series analysis question requiring the agent to understand the temporal dimension of the data.",
+  "product_slug": "superset",
+  "fixture_product": "superset",
+  "turns": [
+    {
+      "user_message": "How have baby name trends changed over the years? Show me what's happening over time.",
+      "expected_tools": ["list_datasets|search_datasets", "get_dataset_columns|get_sample_data|get_column_distinct_values"],
+      "expected_response": {
+        "must_contain_any": ["time", "year", "trend", "over", "change", "chart", "line"],
+        "must_not_contain": ["cannot help", "error occurred", "I don't have access"],
+        "min_length": 50
+      },
+      "rubric": "The agent should discover the birth_names dataset, identify the datetime column (ds) as the time dimension, and understand the data spans multiple years. It should either create a time series chart (line chart with ds on x-axis) or explain the temporal patterns in the data. The response should reference the actual time range and suggest meaningful time-based analysis like trends in name popularity, diversity changes, or year-over-year comparisons.",
+      "regression_patterns": [
+        "retrieved data with fields",
+        "responding with fetched data"
+      ]
+    }
+  ]
+}

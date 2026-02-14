@@ -7,6 +7,7 @@ from unittest.mock import patch
 
 import pytest
 
+from apps.agent_score.analyzers.data_quality import DataQuality
 from apps.agent_score.models import AgentScoreCheck, AgentScoreReport
 
 # ── Sample HTML snippets ──
@@ -146,6 +147,28 @@ SAMPLE_PAGE_METADATA = {
     "json_ld_count": 1,
     "json_ld_raw": ['{"@context": "https://schema.org", "@type": "WebPage", "name": "Test"}'],
 }
+
+
+# ── Data Quality constants ──
+
+DQ_ALL_OK = DataQuality(
+    raw_html="ok",
+    page_metadata="ok",
+    rendered_html="ok",
+    accessibility_tree="ok",
+    axe_results="ok",
+    forms_data="ok",
+    webmcp_data="ok",
+    probes={
+        "main_page": "ok",
+        "robots_txt": "ok",
+        "sitemap": "ok",
+        "llms_txt": "ok",
+        "markdown_negotiation": "ok",
+    },
+)
+
+DQ_EMPTY = DataQuality()  # all fields default to "empty"
 
 
 # ── Fixtures ──

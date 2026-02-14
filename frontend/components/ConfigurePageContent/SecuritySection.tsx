@@ -14,6 +14,7 @@ import {
   X,
   AlertTriangle,
 } from 'lucide-react';
+import { validateDomain } from '@/lib/utils/domain-validation';
 
 export function SecuritySection() {
   const { embedConfig, updateEmbedConfig } = useConfigure();
@@ -25,12 +26,6 @@ export function SecuritySection() {
     updateEmbedConfig({
       security: { ...security, restrictToAllowedDomains: restrict },
     });
-  };
-
-  const validateDomain = (domain: string): boolean => {
-    // Basic domain validation
-    const domainRegex = /^(\*\.)?[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*(\.[a-zA-Z]{2,})?(:\d+)?$/;
-    return domainRegex.test(domain) || domain === 'localhost' || domain.startsWith('localhost:');
   };
 
   const handleAddDomain = () => {

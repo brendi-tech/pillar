@@ -1,0 +1,17 @@
+{
+  "eval_id": "error_recovery",
+  "description": "Query that may trigger actions without fixtures - agent should handle errors gracefully",
+  "product_slug": "superset",
+  "fixture_product": "superset",
+  "turns": [
+    {
+      "user_message": "Delete the test dashboard and recreate it with new filters",
+      "expected_tools": [],
+      "expected_response": {
+        "must_not_contain": ["traceback", "exception", "500"],
+        "min_length": 20
+      },
+      "rubric": "The agent should handle this gracefully. It may explain that it cannot delete dashboards, suggest alternative approaches, or ask for clarification. It should not crash, return a raw error, or produce an empty response."
+    }
+  ]
+}

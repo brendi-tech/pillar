@@ -36,7 +36,7 @@ class PublicArticleStorage:
         if self.backend == 'gcs':
             from storages.backends.gcloud import GoogleCloudStorage
 
-            bucket_name = getattr(settings, 'ARTICLE_IMAGES_BUCKET', 'pillar-public')
+            bucket_name = getattr(settings, 'ARTICLE_IMAGES_BUCKET', settings.GCS_BUCKET_PUBLIC)
             project_id = getattr(settings, 'GS_PROJECT_ID', '')
 
             kwargs = {
@@ -67,7 +67,7 @@ class PublicArticleStorage:
             from storages.backends.s3boto3 import S3Boto3Storage
 
             return S3Boto3Storage(
-                bucket_name=getattr(settings, 'ARTICLE_IMAGES_BUCKET', 'pillar-public'),
+                bucket_name=getattr(settings, 'ARTICLE_IMAGES_BUCKET', settings.GCS_BUCKET_PUBLIC),
                 querystring_auth=False,
                 default_acl='public-read',
             )
