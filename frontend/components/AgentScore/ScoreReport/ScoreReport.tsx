@@ -2,7 +2,8 @@
 
 import { useState, useMemo, useCallback } from "react";
 import Link from "next/link";
-import { ArrowRight, UserPlus, Link2, Check, Info, AlertTriangle, Loader2, Bot, CheckCircle2, XCircle, ExternalLink } from "lucide-react";
+import Image from "next/image";
+import { ArrowRight, Link2, Check, Info, AlertTriangle, Loader2, Bot, CheckCircle2, XCircle, ExternalLink } from "lucide-react";
 import { SessionReplay } from "@/components/AgentScore/SessionReplay";
 import { cn } from "@/lib/utils";
 import { ScoreGauge } from "@/components/AgentScore/ScoreGauge";
@@ -344,7 +345,7 @@ export function ScoreReport({
         {showSignupNarrative && signupOutcome && (
           <div className="mt-6 rounded-lg bg-[#F9F7F3] border border-[#E8E4DC] p-5">
             <div className="flex items-center gap-2 mb-2">
-              <UserPlus className="h-4 w-4 text-[#6B6B6B]" />
+              <Image src="/browserbase-logo.svg" alt="BrowserBase" width={16} height={16} className="shrink-0" />
               <span className="text-sm font-semibold text-[#1A1A1A]">What happened</span>
             </div>
             <p className="text-sm text-[#6B6B6B] leading-relaxed">

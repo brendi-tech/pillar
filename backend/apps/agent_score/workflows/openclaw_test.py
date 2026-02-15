@@ -201,6 +201,9 @@ async def _ensure_openclaw_config(openclaw_bin: str) -> None:
         await ver_proc.wait()
 
     settings = [
+        # Gateway mode — required since openclaw 2026.2.x; must be set
+        # before starting the gateway or it will refuse to start.
+        ("gateway.mode", "local"),
         # Gateway settings
         ("gateway.http.endpoints.responses.enabled", "true"),
         ("gateway.auth.mode", "token"),

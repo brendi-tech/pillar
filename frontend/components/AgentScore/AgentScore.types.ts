@@ -69,6 +69,7 @@ export interface OpenclawTaskTried {
   detail: string;
 }
 
+
 export interface OpenclawData {
   score: number | null;
   summary: string;
@@ -95,6 +96,7 @@ export interface ActivityLogEntry {
 }
 
 // ── Scan progress ───────────────────────────────────────────────────────
+
 
 export interface ScanProgress {
   http_probes_done: boolean;

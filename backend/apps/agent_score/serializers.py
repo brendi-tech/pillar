@@ -137,9 +137,14 @@ class ReportSerializer(serializers.ModelSerializer):
             "Browser analysis unavailable",
             "Could not load page in browser",
         }
-        browser_done = bool(obj.screenshot_url) or any(
-            note.get("title") in _BROWSER_FAIL_TITLES
-            for note in (obj.scan_notes or [])
+        browser_done = (
+            bool(obj.screenshot_url)
+            or bool(obj.accessibility_tree)
+            or bool(obj.rendered_html)
+            or any(
+                note.get("title") in _BROWSER_FAIL_TITLES
+                for note in (obj.scan_notes or [])
+            )
         )
         return {
             "http_probes_done": bool(obj.probe_results),
