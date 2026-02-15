@@ -1,71 +1,17 @@
-# Help Center Hatchet Worker Dockerfile
-FROM python:3.12-slim
+# Help Center Hatchet Worker — Deploy Image
+#
+# Thin image that extends the pre-built base (Dockerfile.worker-base).
+# Only copies application code and config — all heavy dependencies
+# (Node.js, OpenClaw, Python packages, Playwright/Chromium) live in
+# the base image, making deploys fast (~1-2 min).
+#
+# Pass --build-arg BASE_REGISTRY=gcr.io/<project> to select the
+# correct base image for each environment (dev vs prod).
 
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+ARG BASE_REGISTRY=gcr.io/pillar-production
+FROM ${BASE_REGISTRY}/pillar-worker-base:latest
 
-# Set work directory
 WORKDIR /app
-
-# Install system dependencies, uv, and Node.js 22 (for OpenClaw)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    postgresql-client \
-    gcc \
-    python3-dev \
-    libpq-dev \
-    curl \
-    procps \
-    psmisc \
-    ca-certificates \
-    gnupg \
-    git \
-    && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
-    && apt-get install -y --no-install-recommends nodejs \
-    && curl -LsSf https://astral.sh/uv/install.sh | sh \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install OpenClaw globally for agent experience testing.
-RUN npm install -g openclaw@latest
-
-# Add uv to PATH
-ENV PATH="/root/.local/bin:$PATH"
-
-# Copy project files
-COPY pyproject.toml uv.lock* ./
-
-# Install Python dependencies (includes hatchet-sdk)
-RUN uv sync --frozen --no-dev
-
-# Add .venv to PATH so installed packages are available
-ENV PATH="/app/.venv/bin:$PATH"
-
-# Install Playwright Chromium browser AND all required system dependencies.
-# `--with-deps` uses Playwright's own dependency list, which is kept in sync
-# with each Chromium revision and avoids missing-library errors like
-# "libXcomposite.so.1: cannot open shared object file".
-#
-# PLAYWRIGHT_BROWSERS_PATH must be set BEFORE any install so both
-# Python Playwright (used by our code) and Node.js Playwright (used by
-# OpenClaw) share the same browser binaries directory.
-#
-# IMPORTANT: Only run Python Playwright's install — NOT the Node.js
-# playwright-core CLI.  OpenClaw bundles playwright-core (not full
-# playwright), and `playwright-core install chromium` overwrites the
-# full Chrome binary with just a headless shell, breaking the browser.
-# Python's `playwright install` downloads the full Chrome for Testing
-# AND the headless shell; OpenClaw's Playwright can use either.
-#
-# After installing, create a /usr/bin/chromium symlink so OpenClaw's
-# browser auto-detection finds it (it looks for system Chrome/Chromium).
-ENV PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright
-RUN playwright install --with-deps chromium \
-    && CHROME=$(find /opt/ms-playwright/chromium-* -name "chrome" -not -path "*headless*" -type f 2>/dev/null | head -1) \
-    && echo "Playwright Chromium: ${CHROME:-NOT FOUND}" \
-    && if [ -n "$CHROME" ]; then \
-         ln -sf "$CHROME" /usr/bin/chromium; \
-         echo "Created /usr/bin/chromium -> $CHROME"; \
-       fi
 
 # Copy project files
 COPY . .
@@ -77,24 +23,13 @@ COPY openclaw_config/openclaw.json /etc/openclaw/openclaw.json
 COPY openclaw_config/skills/ /etc/openclaw/skills/
 RUN chmod -R a+r /etc/openclaw
 
-# Create necessary directories
+# Create necessary directories (may already exist from base, but ensure)
 RUN mkdir -p /app/static /app/media
 
 # Make health check script executable
 RUN chmod +x /app/hatchet-worker-healthcheck.py
 
-# Create non-root user for running hatchet worker.
-# - /home/hatchet/.openclaw: writable dir for OpenClaw's browser profile data
-# - /opt/ms-playwright: shared Playwright browser binaries (read+execute)
-# - /usr/lib/node_modules: global npm packages including openclaw (read+execute)
-RUN groupadd hatchet && \
-    useradd -g hatchet -u 1000 hatchet -m && \
-    mkdir -p /home/hatchet/.openclaw && \
-    chown -R hatchet:hatchet /app /home/hatchet/.openclaw && \
-    chmod -R o+rx /opt/ms-playwright && \
-    chmod -R o+rx /usr/lib/node_modules
-
-# Switch to non-root user
+# Switch to non-root user (created in base image)
 USER hatchet
 
 # Expose health check port
