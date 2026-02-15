@@ -77,9 +77,9 @@ async def finalize_report_workflow(
         merged_categories = {**(report.category_scores or {}), **scores["categories"]}
         report.category_scores = merged_categories
 
-        # Legacy per-category columns
-        report.content_score = scores["categories"].get("content")
-        report.interaction_score = scores["categories"].get("interaction")
+        # Legacy per-category columns (rules replaces content+interaction)
+        report.content_score = scores["categories"].get("rules")
+        report.interaction_score = scores["categories"].get("rules")
         report.webmcp_score = scores["categories"].get("webmcp")
         report.status = "complete"
 
@@ -113,6 +113,14 @@ async def finalize_report_workflow(
             f"Report finalized: {scores['overall']}/100",
             {"overall_score": scores["overall"], "category_scores": scores["categories"]},
         )
+
+        # Send score report email if subscribed.
+        # Re-fetch to pick up email subscriptions that arrived while scoring.
+        fresh_report = await AgentScoreReport.objects.aget(id=report_id)
+        if fresh_report.email:
+            from apps.agent_score.services.email_service import send_score_report_email
+
+            await sync_to_async(send_score_report_email)(fresh_report)
 
         return {
             "status": "success",

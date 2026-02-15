@@ -81,6 +81,12 @@ Scoring guidelines:
 - 30-49: Mostly difficult. Many blockers.
 - 0-29: Site is effectively unusable by agents.
 
+If you cannot access the site at all — due to bot blocking, CAPTCHAs on the \
+homepage, network errors, or scraping restrictions — still respond with the \
+JSON format above. Set score to 0, explain what happened in the summary, and \
+list what you attempted in tasks_tried. A site that blocks agents entirely \
+deserves a 0.
+
 Be honest. Score based on what actually happened."""
 
 
@@ -850,6 +856,43 @@ async def _run_openclaw_test(report, report_id, _update_status, workflow_input):
         )
 
         result = parse_json_from_llm(raw_message, expected_type="object")
+
+        # If parsing returned an empty dict, the model returned freeform text
+        # instead of structured JSON. This typically means the site blocked
+        # the agent entirely. Default to score 0.
+        if not result or "score" not in result:
+            result = {
+                "score": 0,
+                "summary": (
+                    raw_message[:500]
+                    if raw_message
+                    else "OpenClaw could not evaluate this site."
+                ),
+                "what_worked": [],
+                "what_didnt": [
+                    "Site could not be accessed or evaluated by the agent"
+                ],
+                "mcp_found": False,
+                "mcp_usable": False,
+                "signup_attempted": False,
+                "signup_succeeded": False,
+                "tasks_tried": [
+                    {
+                        "task": "Access and evaluate website",
+                        "succeeded": False,
+                        "detail": (
+                            raw_message[:300]
+                            if raw_message
+                            else "No response from agent"
+                        ),
+                    }
+                ],
+            }
+            logger.warning(
+                "[AGENT SCORE] OpenClaw returned non-JSON for %s, "
+                "defaulting to score=0",
+                report_id,
+            )
 
         # Validate and clamp score
         score = result.get("score")

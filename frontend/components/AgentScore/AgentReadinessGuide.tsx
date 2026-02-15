@@ -27,10 +27,88 @@ interface GuideCategory {
 
 const GUIDE_CATEGORIES: GuideCategory[] = [
   {
-    heading: "Content Readiness",
-    slug: "content",
+    heading: "Agent Experience",
+    slug: "openclaw",
     intro:
-      "Can AI agents find, read, and understand your content? These checks measure how efficiently agents consume your pages — from discovery signals to token efficiency.",
+      "What happens when a real AI agent tries to use your site? We release an autonomous agent — powered by OpenClaw — to browse, navigate, sign up, and complete tasks on your site, then report what worked and what didn't.",
+    subcategories: [
+      {
+        heading: "End-to-End Agent Test",
+        checks: [
+          {
+            title: "Navigation & Exploration",
+            description:
+              "The agent explores your site freely — clicking links, reading pages, and building a mental model of your information architecture. Sites with clear navigation and semantic structure score higher.",
+          },
+          {
+            title: "Task Completion",
+            description:
+              "The agent attempts real tasks: signing up, searching, filtering, or completing flows. Each successful task demonstrates that your site works for AI-driven automation.",
+          },
+          {
+            title: "Error Handling & Feedback",
+            description:
+              "When the agent hits errors or dead ends, how your site responds matters. Clear error messages and recovery paths help agents self-correct — vague failures leave them stuck.",
+          },
+          {
+            title: "Overall Agent Experience Score",
+            description:
+              "After exploring your site, the agent self-scores its overall experience. This reflects a holistic assessment of how well your site works for AI agents, not just individual checks.",
+            link: "https://openclaw.ai",
+            linkLabel: "OpenClaw",
+          },
+        ],
+      },
+    ],
+  },
+  {
+    heading: "Signup Test",
+    slug: "signup",
+    intro:
+      "Can an AI agent create an account on your site? We run a real browser-based agent through your signup flow — finding the form, filling fields, and clicking submit.",
+    subcategories: [
+      {
+        heading: "Signup Flow",
+        checks: [
+          {
+            title: "Signup Page Discoverable",
+            description:
+              "If an AI agent can't find your signup page from the homepage, it can't onboard users on your behalf. Clear \"Sign up\" links in navigation or hero sections are essential.",
+          },
+          {
+            title: "Signup Form Parseable",
+            description:
+              "Standard HTML form elements — <form>, <input>, <label> — are what agents know how to interact with. Custom JavaScript widgets or non-standard inputs can block agent form parsing.",
+          },
+          {
+            title: "Fields Identifiable",
+            description:
+              "Agents identify form fields by their labels and autocomplete attributes. Fields without labels force agents to guess — often incorrectly — what data to enter.",
+          },
+          {
+            title: "No CAPTCHA Blocking",
+            description:
+              "AI agents cannot solve CAPTCHAs. If your signup form requires one, agents are completely blocked. Consider risk-based challenges that only trigger for suspicious behavior.",
+          },
+          {
+            title: "Submission Succeeds",
+            description:
+              "This tests whether an AI agent can complete your signup flow end-to-end. Failures here mean agents cannot create accounts, which blocks any downstream automation.",
+          },
+          {
+            title: "Clear Outcome Signal",
+            description:
+              "After submitting a form, agents need a clear signal of what happened — a success message, redirect, or specific error. Ambiguous outcomes leave agents unable to determine their next step.",
+          },
+        ],
+      },
+    ],
+  },
+  {
+    heading: "Rules",
+    slug: "rules",
+    intro:
+      "Does your site follow best practices for AI agent access and interaction? These checks cover content discovery, readability, permissions, form labeling, and accessibility — everything an agent needs to read and act on your site.",
     subcategories: [
       {
         heading: "Discovery",
@@ -122,14 +200,6 @@ const GUIDE_CATEGORIES: GuideCategory[] = [
           },
         ],
       },
-    ],
-  },
-  {
-    heading: "Interaction Readiness",
-    slug: "interaction",
-    intro:
-      "Can AI agents take actions on your site? These checks evaluate whether agents can navigate, fill forms, and interact with your pages using the accessibility tree.",
-    subcategories: [
       {
         heading: "Interactability",
         checks: [
@@ -210,49 +280,6 @@ const GUIDE_CATEGORIES: GuideCategory[] = [
             title: "Page State via provideContext()",
             description:
               "provideContext() shares your page's current state — selected filters, user info, cart contents — with agents. Without it, agents must infer state from the DOM, which is error-prone.",
-          },
-        ],
-      },
-    ],
-  },
-  {
-    heading: "Agent Signup Readiness",
-    slug: "signup",
-    intro:
-      "Can an AI agent create an account on your site? We test this by running a real browser-based agent through your signup flow — finding the form, filling fields, and clicking submit.",
-    subcategories: [
-      {
-        heading: "Signup Flow",
-        checks: [
-          {
-            title: "Signup Page Discoverable",
-            description:
-              "If an AI agent can't find your signup page from the homepage, it can't onboard users on your behalf. Clear \"Sign up\" links in navigation or hero sections are essential.",
-          },
-          {
-            title: "Signup Form Parseable",
-            description:
-              "Standard HTML form elements — <form>, <input>, <label> — are what agents know how to interact with. Custom JavaScript widgets or non-standard inputs can block agent form parsing.",
-          },
-          {
-            title: "Fields Identifiable",
-            description:
-              "Agents identify form fields by their labels and autocomplete attributes. Fields without labels force agents to guess — often incorrectly — what data to enter.",
-          },
-          {
-            title: "No CAPTCHA Blocking",
-            description:
-              "AI agents cannot solve CAPTCHAs. If your signup form requires one, agents are completely blocked. Consider risk-based challenges that only trigger for suspicious behavior.",
-          },
-          {
-            title: "Submission Succeeds",
-            description:
-              "This tests whether an AI agent can complete your signup flow end-to-end. Failures here mean agents cannot create accounts, which blocks any downstream automation.",
-          },
-          {
-            title: "Clear Outcome Signal",
-            description:
-              "After submitting a form, agents need a clear signal of what happened — a success message, redirect, or specific error. Ambiguous outcomes leave agents unable to determine their next step.",
           },
         ],
       },

@@ -19,22 +19,6 @@ class ScanRequestSerializer(serializers.Serializer):
         default="",
         help_text="Optional email for follow-up",
     )
-    test_signup = serializers.BooleanField(
-        required=False,
-        default=True,
-        help_text=(
-            "When enabled, we attempt to create a test account on the site "
-            "using an AI agent. Default: true."
-        ),
-    )
-    test_openclaw = serializers.BooleanField(
-        required=False,
-        default=False,
-        help_text=(
-            "When enabled, an OpenClaw agent will test the site end-to-end "
-            "and self-score the experience. Default: false."
-        ),
-    )
     force_rescan = serializers.BooleanField(
         required=False,
         default=False,
@@ -42,6 +26,14 @@ class ScanRequestSerializer(serializers.Serializer):
             "When true, bypasses the 1-hour cache and runs a fresh scan. "
             "Default: false."
         ),
+    )
+
+
+class SubscribeRequestSerializer(serializers.Serializer):
+    """Validates the POST /{id}/subscribe/ request body."""
+
+    email = serializers.EmailField(
+        help_text="Email address to receive the score report",
     )
 
 
@@ -126,21 +118,20 @@ class ReportSerializer(serializers.ModelSerializer):
             "activity_log",
             "progress",
             "error_message",
+            "email_sent_at",
             "created_at",
         ]
 
     @staticmethod
-    def _layer_state(enabled: bool, data: dict, result_key: str) -> str:
+    def _layer_state(data: dict, result_key: str) -> str:
         """
-        Derive a layer's state from its enabled flag and data dict.
+        Derive a layer's state from its data dict.
 
-        Returns one of: "disabled", "running", "success", "error".
+        Returns one of: "running", "success", "error".
         - "success" means the test produced a meaningful result (result_key is truthy).
         - "error" means it ran but failed (has data, but result is empty/missing).
         - "running" means no data has been written yet.
         """
-        if not enabled:
-            return "disabled"
         if not data:
             return "running"
         if data.get(result_key):
@@ -169,21 +160,17 @@ class ReportSerializer(serializers.ModelSerializer):
         # "summary" is the result key for openclaw (empty on error).
         # "outcome" is the result key for signup (None on infra error,
         # present for both success and site-attributable errors).
-        signup_state = self._layer_state(
-            obj.signup_test_enabled, obj.signup_test_data, "outcome",
-        )
-        openclaw_state = self._layer_state(
-            obj.openclaw_test_enabled, obj.openclaw_data, "summary",
-        )
+        signup_state = self._layer_state(obj.signup_test_data, "outcome")
+        openclaw_state = self._layer_state(obj.openclaw_data, "summary")
 
         return {
             "http_probes_done": bool(obj.probe_results),
             "browser_analysis_done": browser_done,
             "analyzers_done": obj.checks.exists(),
-            "signup_test_done": signup_state in ("disabled", "success", "error"),
+            "signup_test_done": signup_state in ("success", "error"),
             "signup_test_state": signup_state,
             "signup_test_status": obj.signup_test_status or "",
-            "openclaw_test_done": openclaw_state in ("disabled", "success", "error"),
+            "openclaw_test_done": openclaw_state in ("success", "error"),
             "openclaw_test_state": openclaw_state,
             "openclaw_test_status": obj.openclaw_test_status or "",
             "scoring_done": obj.status == "complete",
@@ -208,10 +195,17 @@ class ReportSerializer(serializers.ModelSerializer):
         """Return category scores, falling back to legacy columns for old reports."""
         if obj.category_scores:
             return obj.category_scores
-        # Fallback for pre-migration reports that only have individual columns
+        # Fallback for pre-migration reports that only have individual columns.
+        # Old reports had content + interaction; we map both to "rules" using
+        # the average of the two if both exist, otherwise whichever is present.
+        content = obj.content_score
+        interaction = obj.interaction_score
+        if content is not None and interaction is not None:
+            rules_score = round((content + interaction) / 2)
+        else:
+            rules_score = content if content is not None else interaction
         return {
-            "content": obj.content_score,
-            "interaction": obj.interaction_score,
+            "rules": rules_score,
             "webmcp": obj.webmcp_score,
             "signup_test": obj.signup_test_score,
         }

@@ -195,7 +195,19 @@ async def signup_test_workflow(workflow_input: SignupTestInput, context: Context
     scan_notes: list[dict] = []
     outcome_type = outcome.get("outcome_type", "unknown")
 
-    if outcome_type == "unknown":
+    if outcome_type == "bot_blocked":
+        scan_notes.append({
+            "type": "warning",
+            "category": "signup_test",
+            "title": "Site blocked the agent",
+            "detail": (
+                "The AI agent was blocked by bot detection, a WAF, "
+                "Cloudflare challenge, or access-denied response before "
+                "it could reach the signup page. Agents running from "
+                "cloud data centers will face the same block."
+            ),
+        })
+    elif outcome_type == "unknown":
         scan_notes.append({
             "type": "info",
             "category": "signup_test",
@@ -241,7 +253,9 @@ async def signup_test_workflow(workflow_input: SignupTestInput, context: Context
 
     outcome_type = outcome.get("outcome_type", "unknown")
     outcome_level = "success" if outcome_type in ("success", "verify_email") else (
-        "warning" if outcome_type in ("captcha_blocked", "timeout", "form_filled_not_submitted") else "info"
+        "warning" if outcome_type in (
+            "captcha_blocked", "bot_blocked", "timeout", "form_filled_not_submitted",
+        ) else "info"
     )
     await log_activity(
         report_id, "signup_test", outcome_level,
@@ -268,7 +282,8 @@ def _classify_error_type(raw_error: str, exc: Exception | None = None) -> str:
     """
     Classify an exception as site-attributable or infrastructure.
 
-    Returns ``"site"`` for errors the target site caused (CAPTCHA, etc.)
+    Returns ``"site"`` for errors the target site caused (CAPTCHA, bot
+    blocking, access denied, Cloudflare challenges, WAF blocks, etc.)
     and ``"infra"`` for errors from our own infrastructure (Browserbase
     outages, rate limits, connection failures, API timeouts).
 
@@ -303,6 +318,20 @@ def _classify_error_type(raw_error: str, exc: Exception | None = None) -> str:
     if "captcha" in err_lower:
         return "site"
 
+    # Site-attributable: bot blocking, access denied, Cloudflare challenges,
+    # WAF blocks.  Agents running from cloud IPs hit the same wall.
+    _SITE_PATTERNS = (
+        "403", "forbidden", "access denied",
+        "blocked", "bot detected", "bot protection",
+        "cloudflare", "just a moment", "challenge-platform",
+        "waf", "firewall",
+        "verify you are human", "verify you're human",
+        "please verify", "security check",
+        "datadome", "perimeterx", "incapsula", "imperva",
+    )
+    if any(p in err_lower for p in _SITE_PATTERNS):
+        return "site"
+
     # Infrastructure: Browserbase / our services are down
     return "infra"
 
@@ -311,8 +340,8 @@ def _build_site_error_outcome(raw_error: str) -> dict:
     """
     Build a structured outcome for site-attributable errors.
 
-    Timeouts and CAPTCHAs are things agents would also hit, so they
-    produce real scored outcomes rather than DNF.
+    CAPTCHAs, bot blocking, and timeouts are things agents would also
+    hit, so they produce real scored outcomes rather than DNF.
     """
     err_lower = raw_error.lower()
 
@@ -326,6 +355,29 @@ def _build_site_error_outcome(raw_error: str) -> dict:
             "outcome_clear": True,
             "outcome_type": "captcha_blocked",
             "detail": "A CAPTCHA blocked the signup attempt before the agent could proceed.",
+        }
+
+    # Bot blocking / access denied / WAF / Cloudflare challenge
+    _BOT_BLOCK_PATTERNS = (
+        "403", "forbidden", "access denied", "blocked", "bot detected",
+        "bot protection", "cloudflare", "just a moment", "waf", "firewall",
+        "verify you are human", "verify you're human", "please verify",
+        "security check", "datadome", "perimeterx", "incapsula", "imperva",
+    )
+    if any(p in err_lower for p in _BOT_BLOCK_PATTERNS):
+        return {
+            "signup_page_found": False,
+            "form_found": False,
+            "fields_identifiable": False,
+            "captcha_detected": False,
+            "submission_succeeded": False,
+            "outcome_clear": True,
+            "outcome_type": "bot_blocked",
+            "detail": (
+                "The site blocked the agent entirely — likely via bot detection, "
+                "a WAF, Cloudflare challenge, or access-denied response. "
+                f"Error: {raw_error[:200]}"
+            ),
         }
 
     # Default site error: timeout
@@ -501,10 +553,15 @@ async def _run_stagehand_signup(
 
         # Use agent execute mode to handle the entire signup flow
         await update_status("Finding signup page & filling form...")
+        # The execute timeout must exceed (max_steps * avg_step_time).
+        # Each step = LLM inference + browser action + page load ≈ 10-20s,
+        # so 15 steps can take up to ~300s. Use 180s as a practical ceiling;
+        # the Hatchet task timeout (10 min) is the outer safety net.
+        execute_timeout = 180.0
         await log_activity(
             report_id, "signup_test", "info",
             "Agent executing signup flow...",
-            {"max_steps": 15, "timeout": 50.0},
+            {"max_steps": 15, "timeout": execute_timeout},
         )
         execute_result = await client.sessions.execute(
             session_id,
@@ -521,7 +578,7 @@ async def _run_stagehand_signup(
                 "instruction": instruction,
                 "max_steps": 15,
             },
-            timeout=50.0,
+            timeout=execute_timeout,
         )
 
         # Extract agent message, page state, and completion flag
@@ -647,8 +704,8 @@ async def _classify_outcome_with_llm(
         '  "submission_succeeded": boolean,  // After submitting, did the account get created or verification start?\n'
         '  "outcome_clear": boolean,  // Is the outcome clearly determinable from the evidence?\n'
         '  "outcome_type": string,  // One of: "success", "verify_email", "captcha_blocked", '
-        '"payment_required", "no_signup_found", "form_error", '
-        '"form_filled_not_submitted", "unknown"\n'
+        '"bot_blocked", "payment_required", "no_signup_found", "form_error", '
+        '"form_filled_not_submitted", "timeout", "unknown"\n'
         '  "detail": string,  // Brief description of what happened\n'
         '  "reasoning": string  // Your reasoning, citing specific evidence\n'
         "}"

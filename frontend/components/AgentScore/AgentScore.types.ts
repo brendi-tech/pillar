@@ -122,7 +122,7 @@ export interface AgentScoreReport {
   status: ReportStatus;
   overall_score: number | null;
 
-  /** Config-driven category scores map, e.g. {"content": 85, "interaction": 72} */
+  /** Config-driven category scores map, e.g. {"openclaw": 72, "signup_test": 80, "rules": 85} */
   category_scores: Record<string, number | null>;
   /** Category registry from the backend — drives all frontend rendering */
   category_config: CategoryConfigMap;
@@ -156,25 +156,25 @@ export interface ScanResponse {
 // Mirrors the backend CATEGORY_REGISTRY.
 
 export const DEFAULT_CATEGORY_CONFIG: CategoryConfigMap = {
-  content: {
-    label: "Content",
-    description: "Can agents find, read, and access your content?",
+  openclaw: {
+    label: "Agent Experience",
+    description: "What happened when a real AI agent tried to use your site?",
     scored: true,
     optional: false,
     sort_order: 1,
-  },
-  interaction: {
-    label: "Interaction",
-    description: "Can agents take actions and navigate your site?",
-    scored: true,
-    optional: false,
-    sort_order: 2,
   },
   signup_test: {
     label: "Signup Test",
     description: "Can an AI agent create an account on your site?",
     scored: true,
-    optional: true,
+    optional: false,
+    sort_order: 2,
+  },
+  rules: {
+    label: "Rules",
+    description: "Does your site follow best practices for AI agent access and interaction?",
+    scored: true,
+    optional: false,
     sort_order: 3,
   },
   webmcp: {
@@ -183,13 +183,6 @@ export const DEFAULT_CATEGORY_CONFIG: CategoryConfigMap = {
     scored: false,
     optional: false,
     sort_order: 4,
-  },
-  openclaw: {
-    label: "Agent Experience",
-    description: "What happened when a real AI agent tried to use your site?",
-    scored: true,
-    optional: true,
-    sort_order: 5,
   },
 };
 
@@ -206,19 +199,23 @@ export function getReportCategoryConfig(report: AgentScoreReport): CategoryConfi
 /** Categories sorted by sort_order, filtered to those present in the report. */
 export function getVisibleCategories(report: AgentScoreReport): string[] {
   const config = getReportCategoryConfig(report);
+  const hasExplicitConfig = report.category_config && Object.keys(report.category_config).length > 0;
+
   return Object.entries(config)
-    .filter(([key, cfg]) => {
-      // Hide optional categories that weren't enabled for this scan
-      if (cfg.optional && key === "signup_test") return report.signup_test_enabled;
-      if (cfg.optional && key === "openclaw") return report.openclaw_test_enabled;
-      // While the report is still running, show all non-optional categories
+    .filter(([key]) => {
+      // While the report is still running, show all categories
       // as loading placeholders even before analyze-and-score populates them.
-      // Only hide categories with no data on *completed* reports (e.g. new
-      // category on old report).
       if (report.status !== "complete" && report.status !== "failed") return true;
+      // If the report has its own category_config, always show all its
+      // categories — even ones that errored with no checks/score. They
+      // render as "could not evaluate" (gray dash) instead of vanishing.
+      if (hasExplicitConfig) return true;
+      // For old reports using the fallback DEFAULT_CATEGORY_CONFIG, only
+      // show categories that actually have data (avoids showing new
+      // categories that didn't exist when the report was created).
       const hasChecks = report.checks.some((c) => c.category === key);
       const hasScore = getCategoryScore(report, key) !== null;
-      if (!cfg.optional && !hasChecks && !hasScore) return false;
+      if (!hasChecks && !hasScore) return false;
       return true;
     })
     .sort((a, b) => a[1].sort_order - b[1].sort_order)

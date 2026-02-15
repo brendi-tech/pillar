@@ -23,13 +23,11 @@ export const agentScoreAPI = {
   scan: async (
     url: string,
     email?: string,
-    testSignup: boolean = true,
-    testOpenclaw: boolean = false,
     forceRescan: boolean = false,
   ): Promise<ScanResponse> => {
     const { data } = await publicClient.post<ScanResponse>(
       "/api/public/agent-score/scan/",
-      { url, email, test_signup: testSignup, test_openclaw: testOpenclaw, force_rescan: forceRescan }
+      { url, email, force_rescan: forceRescan }
     );
     return data;
   },
@@ -59,6 +57,20 @@ export const agentScoreAPI = {
   getReport: async (reportId: string): Promise<AgentScoreReport> => {
     const { data } = await publicClient.get<AgentScoreReport>(
       `/api/public/agent-score/${reportId}/report/`
+    );
+    return data;
+  },
+
+  /**
+   * Subscribe an email to a report to receive scores when complete.
+   */
+  subscribe: async (
+    reportId: string,
+    email: string,
+  ): Promise<{ status: string; report_id: string }> => {
+    const { data } = await publicClient.post<{ status: string; report_id: string }>(
+      `/api/public/agent-score/${reportId}/subscribe/`,
+      { email }
     );
     return data;
   },

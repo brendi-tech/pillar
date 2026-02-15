@@ -2,7 +2,8 @@
 Layer 2: Browser analysis — headless Chromium via Playwright.
 
 Renders the page, captures Accessibility Tree, runs axe-core,
-detects WebMCP/CAPTCHA, analyzes forms, and takes a screenshot.
+detects WebMCP, analyzes forms, checks for CAPTCHA/bot blocks via LLM,
+and takes a screenshot.
 """
 import asyncio
 import logging
@@ -49,32 +50,87 @@ _DETECT_WEBMCP_JS = """() => {
     return result;
 }"""
 
-_DETECT_CAPTCHA_JS = """() => {
-    const result = { detected: false, type: null, details: {} };
+async def _detect_captcha_or_block(page) -> dict:
+    """
+    Detect CAPTCHA or bot-block pages by screenshotting the page and
+    sending it to a vision model.
 
-    // reCAPTCHA
-    if (document.querySelector('iframe[src*="recaptcha"], .g-recaptcha, #g-recaptcha')) {
-        result.detected = true;
-        result.type = 'reCAPTCHA';
-    }
-    // hCaptcha
-    if (document.querySelector('iframe[src*="hcaptcha"], .h-captcha')) {
-        result.detected = true;
-        result.type = 'hCaptcha';
-    }
-    // Cloudflare Turnstile
-    if (document.querySelector('iframe[src*="challenges.cloudflare.com"], .cf-turnstile')) {
-        result.detected = true;
-        result.type = 'Cloudflare Turnstile';
-    }
-    // Cloudflare challenge page
-    if (document.title.includes('Just a moment') ||
-        document.querySelector('#challenge-running')) {
-        result.detected = true;
-        result.type = 'Cloudflare Challenge';
-    }
-    return result;
-}"""
+    CAPTCHAs are visual — they render in iframes, as images, or as
+    interstitials that don't appear in the DOM text at all. A vision
+    model looking at the actual rendered page catches them all without
+    enumerating providers or parsing selectors.
+
+    Falls back to a simple page-title check if the vision call fails.
+    """
+    import base64
+
+    # Take a viewport screenshot (not full-page — CAPTCHAs appear in the
+    # visible area and a viewport screenshot is smaller / faster).
+    try:
+        screenshot_bytes = await page.screenshot(type="png")
+        b64 = base64.b64encode(screenshot_bytes).decode("utf-8")
+        data_url = f"data:image/png;base64,{b64}"
+    except Exception:
+        return {"detected": False, "type": None, "details": {}}
+
+    # Ask a vision model to classify what it sees
+    try:
+        from common.utils.json_parser import parse_json_from_llm
+        from common.utils.llm_client import get_llm_client
+        from common.utils.llm_config import LLMConfigService
+
+        resolved_model = LLMConfigService.get_openrouter_model("google/budget")
+        llm = get_llm_client(model=resolved_model)
+
+        response = await llm.complete_async(
+            prompt=(
+                "Look at this screenshot of a web page. Is it showing a CAPTCHA "
+                "challenge, bot-detection block, access-denied page, WAF "
+                "interstitial, or Cloudflare challenge? Or is it a normal "
+                "website page with real content?\n\n"
+                "Respond with ONLY this JSON:\n"
+                '{"detected": true/false, "type": "reCAPTCHA"|"hCaptcha"'
+                '|"Cloudflare Challenge"|"Cloudflare Turnstile"|"Bot Block Page"'
+                '|"Access Denied"|null}'
+            ),
+            system_prompt=(
+                "You are a visual classifier. You look at screenshots of web "
+                "pages and determine if they show a CAPTCHA, bot challenge, "
+                "or access-denied page. Respond with ONLY the JSON requested."
+            ),
+            images=[{"url": data_url, "detail": "low"}],
+            max_tokens=60,
+            temperature=0.0,
+        )
+
+        result = parse_json_from_llm(response, expected_type="object")
+        if result and "detected" in result:
+            return {
+                "detected": bool(result["detected"]),
+                "type": result.get("type"),
+                "details": {"method": "vision"},
+            }
+    except Exception as e:
+        logger.warning(f"[AGENT SCORE] Vision CAPTCHA detection failed, using fallback: {e}")
+
+    # Fallback: check the page title for obvious signals
+    try:
+        title = await page.title()
+        title_lower = (title or "").lower()
+        block_signals = (
+            "just a moment", "access denied", "403 forbidden",
+            "attention required", "blocked", "forbidden",
+        )
+        if any(s in title_lower for s in block_signals):
+            return {
+                "detected": True,
+                "type": "Bot Block Page",
+                "details": {"method": "title_fallback"},
+            }
+    except Exception:
+        pass
+
+    return {"detected": False, "type": None, "details": {}}
 
 _ANALYZE_FORMS_JS = """() => {
     const forms = [];
@@ -415,10 +471,10 @@ async def browser_analysis_workflow(
                 except Exception as e:
                     logger.warning(f"[AGENT SCORE] WebMCP detection error: {e}")
 
-                # 4. CAPTCHA detection
+                # 4. CAPTCHA / bot-block detection (LLM-based)
                 captcha_data = {}
                 try:
-                    captcha_data = await page.evaluate(_DETECT_CAPTCHA_JS)
+                    captcha_data = await _detect_captcha_or_block(page)
                 except Exception as e:
                     logger.warning(f"[AGENT SCORE] CAPTCHA detection error: {e}")
 

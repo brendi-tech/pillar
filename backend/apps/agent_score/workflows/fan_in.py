@@ -1,18 +1,18 @@
 """
 Fan-in coordination for parallel Hatchet tasks.
 
-http_probes, browser_analysis (and optionally signup_test and/or
-openclaw_test) each call complete_layer() when done.
+http_probes, browser_analysis, signup_test, and openclaw_test each call
+complete_layer() when done.
 
 Two-phase triggering for progressive results:
   Phase 1 — base layers (http_probes + browser_analysis) ready →
              trigger analyze-and-score immediately so the user sees
-             content / interaction / webmcp scores within ~7 s.
-  Phase 2 — all optional layers (signup_test, openclaw_test) finish
-             after partial scoring → trigger finalize-report to
-             recompute overall score.
+             rules / webmcp scores within ~7 s.
+  Phase 2 — all layers (signup_test, openclaw_test) finish after
+             partial scoring → trigger finalize-report to recompute
+             overall score.
 
-When optional layers finish before (or at the same time as) the base
+When all layers finish before (or at the same time as) the base
 layers, everything fires in a single pass — no finalize needed.
 """
 import logging
@@ -77,9 +77,9 @@ async def complete_layer(report_id: str) -> bool:
         return False
 
     base_ready = _base_layers_ready(report)
-    signup_ready = not report.signup_test_enabled or bool(report.signup_test_data)
-    openclaw_ready = not report.openclaw_test_enabled or bool(report.openclaw_data)
-    optional_ready = signup_ready and openclaw_ready
+    signup_ready = bool(report.signup_test_data)
+    openclaw_ready = bool(report.openclaw_data)
+    all_layers_ready = signup_ready and openclaw_ready
     checks_exist = await sync_to_async(report.checks.exists)()
 
     # Phase 1: base layers done, no checks yet → run analyzers
@@ -95,10 +95,10 @@ async def complete_layer(report_id: str) -> bool:
         )
         return True
 
-    # Phase 2: all optional layers finished after partial scoring → finalize
-    if checks_exist and optional_ready and report.status != "complete":
+    # Phase 2: all layers finished after partial scoring → finalize
+    if checks_exist and all_layers_ready and report.status != "complete":
         logger.info(
-            f"[AGENT SCORE] All optional layers complete for report {report_id} "
+            f"[AGENT SCORE] All layers complete for report {report_id} "
             f"— triggering finalize-report"
         )
         TaskRouter.execute(

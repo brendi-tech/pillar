@@ -70,8 +70,8 @@ async def calculate_scores_workflow(
         report.category_scores = scores["categories"]
 
         # Legacy per-category columns — kept for backward compat
-        report.content_score = scores["categories"].get("content")
-        report.interaction_score = scores["categories"].get("interaction")
+        report.content_score = scores["categories"].get("rules")
+        report.interaction_score = scores["categories"].get("rules")
         report.webmcp_score = scores["categories"].get("webmcp")
 
         # Signup test score (only if enabled and present)

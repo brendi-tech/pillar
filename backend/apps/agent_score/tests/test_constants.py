@@ -11,15 +11,18 @@ from apps.agent_score.constants import (
 class TestCheckDefinitions:
     """Validate that CHECK_DEFINITIONS are internally consistent."""
 
-    def test_all_weights_sum_to_100_per_category(self):
-        """Each category's check weights must sum to exactly 100."""
+    def test_all_weights_are_positive_per_category(self):
+        """Each category's check weights must be positive and sum to > 0."""
         totals: dict[str, int] = defaultdict(int)
         for check in CHECK_DEFINITIONS:
+            assert check["weight"] > 0, (
+                f"Check '{check['check_name']}' has non-positive weight {check['weight']}"
+            )
             totals[check["category"]] += check["weight"]
 
         for category, total in totals.items():
-            assert total == 100, (
-                f"Category '{category}' weights sum to {total}, expected 100"
+            assert total > 0, (
+                f"Category '{category}' weights sum to {total}, expected > 0"
             )
 
     def test_all_categories_covered(self):
@@ -70,7 +73,7 @@ class TestCheckDefinitions:
         score (see constants.py comment), so it is NOT in CATEGORY_WEIGHTS.
         """
         assert set(CATEGORY_WEIGHTS.keys()) == {
-            "content", "interaction", "signup_test", "openclaw",
+            "openclaw", "signup_test", "rules",
         }
 
     def test_new_checks_exist(self):

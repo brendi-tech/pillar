@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Check, Loader2, Circle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { EmailSubscribe } from "@/components/AgentScore/ScoreReport/EmailSubscribe";
 import type { AgentScoreReport, ScanProgress as ScanProgressData, LayerState } from "../AgentScore.types";
 
 // ---------------------------------------------------------------------------
@@ -146,13 +147,8 @@ export function ScanProgress({ startedAt, report }: ScanProgressProps) {
     return () => clearInterval(interval);
   }, []);
 
-  // Filter out hidden steps (e.g. signup/openclaw test when not enabled)
-  const visibleSteps = STEPS.filter((step) => {
-    if (!step.hideable) return true;
-    if (step.hideKey === "signup") return report?.signup_test_enabled !== false;
-    if (step.hideKey === "openclaw") return report?.openclaw_test_enabled === true;
-    return true;
-  });
+  // All steps are always visible — both tests always run.
+  const visibleSteps = STEPS;
 
   const progress = report?.progress;
 
@@ -231,6 +227,11 @@ export function ScanProgress({ startedAt, report }: ScanProgressProps) {
       <p className="text-sm text-[#6B6B6B] mt-6 text-center">
         Estimated time: ~1 minute
       </p>
+      {report?.id && (
+        <div className="mt-6">
+          <EmailSubscribe reportId={report.id} />
+        </div>
+      )}
     </div>
   );
 }

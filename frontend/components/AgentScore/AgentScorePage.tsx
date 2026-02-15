@@ -177,7 +177,7 @@ export function AgentScorePage() {
 
   // Handle scan submit
   const handleScan = useCallback(
-    (url: string, testSignup: boolean = true, testOpenclaw: boolean = false, forceRescan: boolean = false) => {
+    (url: string, forceRescan: boolean = false) => {
       setScanError(undefined);
       setScanUrl(url);
       if (forceRescan) {
@@ -185,7 +185,7 @@ export function AgentScorePage() {
         setPhase("scanning");
         setScanStartedAt(Date.now());
       }
-      scan.mutate({ url, testSignup, testOpenclaw, forceRescan });
+      scan.mutate({ url, forceRescan });
     },
     [scan]
   );
@@ -210,7 +210,7 @@ export function AgentScorePage() {
               {report.status === "complete" && (
                 <ReportHeaderActions
                   report={report}
-                  onResync={(url, testSignup) => handleScan(url, testSignup, false, true)}
+                  onResync={(url) => handleScan(url, true)}
                   isResyncing={scan.isPending}
                 />
               )}
@@ -244,7 +244,7 @@ export function AgentScorePage() {
         <div className="relative max-w-2xl mx-auto">
           <div className="bg-white rounded-2xl border border-[#E8E4DC] shadow-[0_2px_24px_rgba(0,0,0,0.06)] p-6 sm:p-8">
             <ScanInput
-              onScan={(url, testSignup, testOpenclaw) => handleScan(url, testSignup, testOpenclaw)}
+              onScan={(url) => handleScan(url)}
               isScanning={phase === "scanning" || scan.isPending}
               error={scanError}
               initialUrl={scanUrl}
@@ -366,7 +366,7 @@ export function AgentScorePage() {
                 />
                 <div className="min-w-0">
                   <p className="text-sm text-[#6B6B6B] leading-relaxed">
-                    The agent test that powers this score is an open-source{" "}
+                    The agent test that powers part of this score is an open-source{" "}
                     <a
                       href="https://openclaw.ai"
                       target="_blank"

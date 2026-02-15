@@ -39,7 +39,7 @@ class AgentScoreReport(BaseModel):
         default=dict,
         blank=True,
         help_text=(
-            'Category score map, e.g. {"content": 85, "interaction": 72, "webmcp": null}. '
+            'Category score map, e.g. {"rules": 85, "openclaw": 72, "signup_test": 80, "webmcp": null}. '
             "New reports write here; the legacy per-category columns below are kept "
             "for backward compatibility with old reports."
         ),
@@ -224,6 +224,11 @@ class AgentScoreReport(BaseModel):
         blank=True,
         default="",
         help_text="Optional email for follow-up",
+    )
+    email_sent_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When the score report email was sent (null = not yet sent)",
     )
 
     class Meta:

@@ -193,4 +193,4 @@ class TestInteractabilityRun:
     def test_all_checks_interaction_category(self, report_with_markdown):
         results = interactability.run(report_with_markdown, DQ_ALL_OK)
         for r in results:
-            assert r.category == "interaction"
+            assert r.category == "rules"

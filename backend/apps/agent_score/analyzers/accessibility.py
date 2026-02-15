@@ -76,7 +76,7 @@ def _check_aria_labels(axe_results: dict, ax_tree: dict, dq: DataQuality) -> Che
     if dq.axe_results != "ok":
         blocked = dq.source_site_blocked("axe_results")
         return CheckResult(
-            category="interaction", check_name="aria_labels",
+            category="rules", check_name="aria_labels",
             check_label="Interactive elements have ARIA labels",
             passed=False, score=0, weight=20,
             status="evaluated" if blocked else "dnf",
@@ -85,7 +85,7 @@ def _check_aria_labels(axe_results: dict, ax_tree: dict, dq: DataQuality) -> Che
         )
     if not axe_results:
         return CheckResult(
-            category="interaction",
+            category="rules",
             check_name="aria_labels",
             check_label="Interactive elements have ARIA labels",
             passed=False, score=0, weight=20,
@@ -106,7 +106,7 @@ def _check_aria_labels(axe_results: dict, ax_tree: dict, dq: DataQuality) -> Che
         score = 15
 
     return CheckResult(
-        category="interaction",
+        category="rules",
         check_name="aria_labels",
         check_label="Interactive elements have ARIA labels",
         passed=total_nodes_affected == 0,
@@ -132,7 +132,7 @@ def _check_landmark_roles(ax_tree: dict, dq: DataQuality) -> CheckResult:
     if dq.accessibility_tree != "ok":
         blocked = dq.source_site_blocked("accessibility_tree")
         return CheckResult(
-            category="interaction", check_name="landmark_roles",
+            category="rules", check_name="landmark_roles",
             check_label="Page uses landmark roles",
             passed=False, score=0, weight=15,
             status="evaluated" if blocked else "dnf",
@@ -141,7 +141,7 @@ def _check_landmark_roles(ax_tree: dict, dq: DataQuality) -> CheckResult:
         )
     if not ax_tree:
         return CheckResult(
-            category="interaction",
+            category="rules",
             check_name="landmark_roles",
             check_label="Page uses landmark roles",
             passed=False, score=0, weight=15,
@@ -166,7 +166,7 @@ def _check_landmark_roles(ax_tree: dict, dq: DataQuality) -> CheckResult:
         score = 0
 
     return CheckResult(
-        category="interaction",
+        category="rules",
         check_name="landmark_roles",
         check_label="Page uses landmark roles",
         passed=has_main and has_navigation,
@@ -190,7 +190,7 @@ def _check_keyboard_focusable(axe_results: dict, dq: DataQuality) -> CheckResult
     if dq.axe_results != "ok":
         blocked = dq.source_site_blocked("axe_results")
         return CheckResult(
-            category="interaction", check_name="keyboard_focusable",
+            category="rules", check_name="keyboard_focusable",
             check_label="Interactive elements are keyboard-reachable",
             passed=False, score=0, weight=15,
             status="evaluated" if blocked else "dnf",
@@ -199,7 +199,7 @@ def _check_keyboard_focusable(axe_results: dict, dq: DataQuality) -> CheckResult
         )
     if not axe_results:
         return CheckResult(
-            category="interaction",
+            category="rules",
             check_name="keyboard_focusable",
             check_label="Interactive elements are keyboard-reachable",
             passed=False, score=0, weight=15,
@@ -229,7 +229,7 @@ def _check_keyboard_focusable(axe_results: dict, dq: DataQuality) -> CheckResult
         score = 15
 
     return CheckResult(
-        category="interaction",
+        category="rules",
         check_name="keyboard_focusable",
         check_label="Interactive elements are keyboard-reachable",
         passed=combined == 0,
@@ -257,7 +257,7 @@ def _check_consistent_nav(ax_tree: dict, dq: DataQuality) -> CheckResult:
     if dq.accessibility_tree != "ok":
         blocked = dq.source_site_blocked("accessibility_tree")
         return CheckResult(
-            category="interaction", check_name="consistent_nav",
+            category="rules", check_name="consistent_nav",
             check_label="Navigation structure is consistent",
             passed=False, score=0, weight=10,
             status="evaluated" if blocked else "dnf",
@@ -266,7 +266,7 @@ def _check_consistent_nav(ax_tree: dict, dq: DataQuality) -> CheckResult:
         )
     if not ax_tree:
         return CheckResult(
-            category="interaction",
+            category="rules",
             check_name="consistent_nav",
             check_label="Navigation structure is consistent",
             passed=False, score=0, weight=10,
@@ -319,7 +319,7 @@ def _check_consistent_nav(ax_tree: dict, dq: DataQuality) -> CheckResult:
         score = 0
 
     return CheckResult(
-        category="interaction",
+        category="rules",
         check_name="consistent_nav",
         check_label="Navigation structure is consistent",
         passed=has_nav and has_links,

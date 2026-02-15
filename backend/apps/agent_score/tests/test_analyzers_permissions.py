@@ -162,4 +162,4 @@ class TestRunAllPermissionsChecks:
     def test_all_checks_are_content_category(self, report_with_markdown):
         results = permissions.run(report_with_markdown, DQ_ALL_OK)
         for r in results:
-            assert r.category == "content"
+            assert r.category == "rules"

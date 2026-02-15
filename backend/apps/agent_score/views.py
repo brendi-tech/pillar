@@ -20,6 +20,7 @@ from apps.agent_score.serializers import (
     ReportSerializer,
     ScanRequestSerializer,
     ScanResponseSerializer,
+    SubscribeRequestSerializer,
 )
 from apps.agent_score.throttles import AgentScoreScanThrottle, AgentScoreSignupThrottle
 from apps.agent_score.utils import extract_domain, validate_url
@@ -67,17 +68,9 @@ class AgentScoreViewSet(viewsets.GenericViewSet):
         """Apply scan-specific throttles to the scan action."""
         if self.action == "scan":
             throttles = [AgentScoreScanThrottle()]
-            # Signup test gets a stricter throttle (2/hour) because it
-            # creates real accounts on the target site.
-            # Read directly from request.data since get_throttles runs
-            # before the action method sets instance attributes.
-            test_signup = True
-            try:
-                test_signup = self.request.data.get("test_signup", True)
-            except Exception:
-                pass
-            if test_signup:
-                throttles.append(AgentScoreSignupThrottle())
+            # Signup test always runs and creates real accounts on the
+            # target site, so apply the stricter throttle.
+            throttles.append(AgentScoreSignupThrottle())
             return throttles
         return []
 
@@ -94,8 +87,6 @@ class AgentScoreViewSet(viewsets.GenericViewSet):
 
         url: str = serializer.validated_data["url"]
         email: str = serializer.validated_data.get("email", "")
-        test_signup: bool = serializer.validated_data.get("test_signup", True)
-        test_openclaw: bool = serializer.validated_data.get("test_openclaw", False)
         force_rescan: bool = serializer.validated_data.get("force_rescan", False)
 
         # Validate URL safety
@@ -110,13 +101,12 @@ class AgentScoreViewSet(viewsets.GenericViewSet):
 
         if not force_rescan:
             # Check domain cache — return recent completed report if one exists.
-            # Match on signup_test_enabled so toggling the checkbox gives fresh results.
             one_hour_ago = timezone.now() - timedelta(hours=1)
             recent_report = AgentScoreReport.objects.filter(
                 domain=domain,
                 status="complete",
-                signup_test_enabled=test_signup,
-                openclaw_test_enabled=test_openclaw,
+                signup_test_enabled=True,
+                openclaw_test_enabled=True,
                 created_at__gte=one_hour_ago,
             ).first()
 
@@ -130,13 +120,13 @@ class AgentScoreViewSet(viewsets.GenericViewSet):
                 }).data
                 return Response(response_data, status=status.HTTP_200_OK)
 
-        # Create new report
+        # Create new report — both tests always run
         report = AgentScoreReport.objects.create(
             url=url,
             domain=domain,
             email=email,
-            signup_test_enabled=test_signup,
-            openclaw_test_enabled=test_openclaw,
+            signup_test_enabled=True,
+            openclaw_test_enabled=True,
             status="running",
         )
 
@@ -154,16 +144,14 @@ class AgentScoreViewSet(viewsets.GenericViewSet):
             "agent-score-browser-analysis",
             report_id=report_id,
         )
-        if test_signup:
-            TaskRouter.execute(
-                "agent-score-signup-test",
-                report_id=report_id,
-            )
-        if test_openclaw:
-            TaskRouter.execute(
-                "agent-score-openclaw-test",
-                report_id=report_id,
-            )
+        TaskRouter.execute(
+            "agent-score-signup-test",
+            report_id=report_id,
+        )
+        TaskRouter.execute(
+            "agent-score-openclaw-test",
+            report_id=report_id,
+        )
 
         response_data = ScanResponseSerializer({
             "report_id": report.id,
@@ -227,6 +215,53 @@ class AgentScoreViewSet(viewsets.GenericViewSet):
         report = self.get_object()
         serializer = ReportSerializer(report)
         return Response(serializer.data)
+
+    @action(detail=True, methods=["post"], url_path="subscribe")
+    def subscribe(self, request: Request, pk=None) -> Response:
+        """
+        Add an email to an existing report to receive scores when complete.
+
+        POST /{id}/subscribe/  { "email": "user@example.com" }
+
+        If the report is already complete, sends the email immediately.
+        Otherwise, the email is stored and sent when the report finalizes.
+        """
+        serializer = SubscribeRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        email = serializer.validated_data["email"]
+
+        # get_object() defers the email field, so fetch the report directly
+        # to read and write email + email_sent_at reliably.
+        report_id = self.get_object().id
+        report = AgentScoreReport.objects.get(id=report_id)
+
+        report.email = email
+        report.save(update_fields=["email"])
+
+        logger.info(
+            f"[AGENT SCORE] Email {email} subscribed to report {report.id}"
+        )
+
+        # If report is already complete and email hasn't been sent yet,
+        # send it now. This also serves as a retry path if the workflow
+        # send failed (email_sent_at would still be null).
+        email_sent = False
+        if report.status == "complete" and report.email_sent_at is None:
+            from apps.agent_score.services.email_service import (
+                send_score_report_email,
+            )
+
+            email_sent = send_score_report_email(report)
+
+        return Response(
+            {
+                "status": "subscribed",
+                "report_id": str(report.id),
+                "email_sent": email_sent,
+            },
+            status=status.HTTP_200_OK,
+        )
 
     @action(detail=True, methods=["get"])
     def recording(self, request: Request, pk=None) -> Response:

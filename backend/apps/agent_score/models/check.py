@@ -18,8 +18,7 @@ class AgentScoreCheck(BaseModel):
     category = models.CharField(
         max_length=30,
         choices=[
-            ("content", "Content"),
-            ("interaction", "Interaction"),
+            ("rules", "Rules"),
             ("webmcp", "WebMCP"),
             ("signup_test", "Signup Test"),
             ("openclaw", "Agent Experience"),

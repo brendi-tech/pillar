@@ -16,9 +16,6 @@ interface SignupTestSectionProps {
  * score with its own gauge and check list, plus a narrative of what happened.
  */
 export function SignupTestSection({ report }: SignupTestSectionProps) {
-  // Don't render if signup test was not enabled
-  if (!report.signup_test_enabled) return null;
-
   const score = report.signup_test_score ?? 0;
   const signupChecks = report.checks.filter((c) => c.category === "signup_test");
   const testData = report.signup_test_data || {};

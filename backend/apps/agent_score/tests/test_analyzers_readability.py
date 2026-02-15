@@ -60,7 +60,7 @@ class TestMarkdownContentNegotiation:
 
     def test_category_is_content(self, report_with_markdown):
         result = _check_markdown_content_negotiation(report_with_markdown, DQ_ALL_OK)
-        assert result.category == "content"
+        assert result.category == "rules"
 
 
 @pytest.mark.django_db
@@ -294,4 +294,4 @@ class TestRunAllReadabilityChecks:
     def test_all_checks_are_content_category(self, report_with_markdown):
         results = readability.run(report_with_markdown, DQ_ALL_OK)
         for r in results:
-            assert r.category == "content"
+            assert r.category == "rules"

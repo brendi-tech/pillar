@@ -1,12 +1,11 @@
 """
 Tests for the discovery analyzer — llms_txt, structured_data, sitemap,
-meta_description, semantic_headings, canonical_url.
+meta_description, semantic_headings.
 """
 import pytest
 
 from apps.agent_score.analyzers import discovery
 from apps.agent_score.analyzers.discovery import (
-    _check_canonical_url,
     _check_llms_txt,
     _check_meta_description,
     _check_semantic_headings,
@@ -226,36 +225,13 @@ class TestCheckSemanticHeadings:
         assert result.score == 0
 
 
-class TestCheckCanonicalUrl:
-    """Tests for _check_canonical_url."""
-
-    def test_present_scores_100(self):
-        result = _check_canonical_url(SAMPLE_PAGE_METADATA, DQ_ALL_OK)
-        assert result.check_name == "canonical_url"
-        assert result.passed is True
-        assert result.score == 100
-        assert result.details["canonical_url"] == "https://example.com/"
-        assert result.recommendation == ""
-
-    def test_absent_scores_0(self):
-        result = _check_canonical_url({"canonical_url": ""}, DQ_ALL_OK)
-        assert result.passed is False
-        assert result.score == 0
-        assert "canonical" in result.recommendation.lower()
-
-    def test_empty_metadata_scores_0(self):
-        result = _check_canonical_url({}, DQ_ALL_OK)
-        assert result.passed is False
-        assert result.score == 0
-
-
 @pytest.mark.django_db
 class TestRunDiscoveryChecks:
-    """Integration test: run() returns all 6 discovery checks."""
+    """Integration test: run() returns all 5 discovery checks."""
 
-    def test_returns_6_checks(self, report_with_markdown):
+    def test_returns_5_checks(self, report_with_markdown):
         results = discovery.run(report_with_markdown, DQ_ALL_OK)
-        assert len(results) == 6
+        assert len(results) == 5
 
     def test_check_names(self, report_with_markdown):
         results = discovery.run(report_with_markdown, DQ_ALL_OK)
@@ -266,17 +242,16 @@ class TestRunDiscoveryChecks:
             "sitemap_present",
             "meta_description",
             "semantic_headings",
-            "canonical_url",
         ]
 
     def test_all_checks_are_content_category(self, report_with_markdown):
         results = discovery.run(report_with_markdown, DQ_ALL_OK)
         for r in results:
-            assert r.category == "content"
+            assert r.category == "rules"
 
     def test_run_with_empty_probes(self, report_no_markdown):
         results = discovery.run(report_no_markdown, DQ_ALL_OK)
-        assert len(results) == 6
+        assert len(results) == 5
         llms_result = next(r for r in results if r.check_name == "llms_txt_present")
         assert llms_result.passed is False
         sitemap_result = next(r for r in results if r.check_name == "sitemap_present")

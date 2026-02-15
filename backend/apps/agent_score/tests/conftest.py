@@ -243,7 +243,7 @@ def report_with_checks(report_with_markdown, mock_task_router):
     checks = [
         AgentScoreCheck(
             report=report_with_markdown,
-            category="content",
+            category="rules",
             check_name="markdown_content_negotiation",
             check_label="Markdown content negotiation",
             passed=True,
@@ -253,7 +253,7 @@ def report_with_checks(report_with_markdown, mock_task_router):
         ),
         AgentScoreCheck(
             report=report_with_markdown,
-            category="content",
+            category="rules",
             check_name="token_efficiency",
             check_label="Token efficiency",
             passed=True,
@@ -263,7 +263,7 @@ def report_with_checks(report_with_markdown, mock_task_router):
         ),
         AgentScoreCheck(
             report=report_with_markdown,
-            category="content",
+            category="rules",
             check_name="content_signal_header",
             check_label="Content-Signal header",
             passed=True,

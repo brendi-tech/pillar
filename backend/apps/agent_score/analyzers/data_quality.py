@@ -25,8 +25,16 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-# Strings that indicate a Cloudflare challenge page rather than real content.
-_CF_MARKERS = ("Just a moment", "challenge-platform")
+# Strings that indicate a Cloudflare challenge or bot-block page rather than
+# real content.  Checked in raw HTML / rendered HTML to flag garbage data.
+_CF_MARKERS = (
+    "Just a moment",
+    "challenge-platform",
+    "challenge-running",
+    "challenge-form",
+    "Attention Required",
+    "Access Denied",
+)
 
 # Statuses that mean the SITE actively blocked our request — agents running
 # from cloud data centers would face the same block.  "empty" is excluded

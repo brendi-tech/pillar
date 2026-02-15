@@ -1,7 +1,7 @@
 """
 Scoring algorithm — weighted rollup from individual checks to category and overall scores.
 
-Content, interaction, signup_test, and openclaw (agent experience) contribute
+Rules, signup_test, and openclaw (agent experience) contribute
 to the overall score.  WebMCP is scored as its own category but excluded from
 the overall score because very few sites support it today — including it would
 unfairly penalize most sites.
@@ -36,7 +36,7 @@ def calculate_overall_score(checks: list[CheckResult | dict]) -> dict:
     Returns:
         {
             "overall": int | None,
-            "categories": {"content": int | None, ...}
+            "categories": {"rules": int | None, ...}
         }
     """
     # Filter to only evaluated (non-DNF) checks

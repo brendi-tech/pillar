@@ -2,7 +2,7 @@
 Discovery analyzer — can agents find and understand your site?
 
 Checks: llms_txt_present, structured_data, sitemap_present,
-        meta_description, semantic_headings, canonical_url
+        meta_description, semantic_headings
 """
 from __future__ import annotations
 
@@ -45,7 +45,6 @@ def run(report: AgentScoreReport, dq: DataQuality) -> list[CheckResult]:
     checks.append(_check_sitemap(probes, dq))
     checks.append(_check_meta_description(report.page_metadata, dq))
     checks.append(_check_semantic_headings(html, dq))
-    checks.append(_check_canonical_url(report.page_metadata, dq))
 
     return checks
 
@@ -58,7 +57,7 @@ def _check_llms_txt(probes: dict, dq: DataQuality) -> CheckResult:
     if not dq.probe_usable("llms_txt"):
         blocked = dq.probe_site_blocked("llms_txt")
         return CheckResult(
-            category="content", check_name="llms_txt_present",
+            category="rules", check_name="llms_txt_present",
             check_label="Has /llms.txt",
             passed=False, score=0, weight=8,
             status="evaluated" if blocked else "dnf",
@@ -79,7 +78,7 @@ def _check_llms_txt(probes: dict, dq: DataQuality) -> CheckResult:
         score = 0
 
     return CheckResult(
-        category="content",
+        category="rules",
         check_name="llms_txt_present",
         check_label="Has /llms.txt",
         passed=exists and is_markdown,
@@ -98,7 +97,7 @@ def _check_structured_data(html: str, metadata: dict, dq: DataQuality) -> CheckR
     if dq.page_metadata != "ok" and dq.raw_html != "ok":
         blocked = dq.html_site_blocked() or dq.source_site_blocked("page_metadata")
         return CheckResult(
-            category="content", check_name="structured_data",
+            category="rules", check_name="structured_data",
             check_label="Structured data (JSON-LD)",
             passed=False, score=0, weight=9,
             status="evaluated" if blocked else "dnf",
@@ -143,7 +142,7 @@ def _check_structured_data(html: str, metadata: dict, dq: DataQuality) -> CheckR
     passed = valid_blocks > 0
 
     return CheckResult(
-        category="content",
+        category="rules",
         check_name="structured_data",
         check_label="Structured data (JSON-LD)",
         passed=passed,
@@ -168,7 +167,7 @@ def _check_sitemap(probes: dict, dq: DataQuality) -> CheckResult:
     if not dq.probe_usable("sitemap"):
         blocked = dq.probe_site_blocked("sitemap")
         return CheckResult(
-            category="content", check_name="sitemap_present",
+            category="rules", check_name="sitemap_present",
             check_label="Has /sitemap.xml",
             passed=False, score=0, weight=5,
             status="evaluated" if blocked else "dnf",
@@ -188,7 +187,7 @@ def _check_sitemap(probes: dict, dq: DataQuality) -> CheckResult:
         score = 0
 
     return CheckResult(
-        category="content",
+        category="rules",
         check_name="sitemap_present",
         check_label="Has /sitemap.xml",
         passed=exists and is_xml,
@@ -207,7 +206,7 @@ def _check_meta_description(metadata: dict, dq: DataQuality) -> CheckResult:
     if dq.page_metadata != "ok":
         blocked = dq.source_site_blocked("page_metadata")
         return CheckResult(
-            category="content", check_name="meta_description",
+            category="rules", check_name="meta_description",
             check_label="Meta & OpenGraph tags",
             passed=False, score=0, weight=5,
             status="evaluated" if blocked else "dnf",
@@ -229,7 +228,7 @@ def _check_meta_description(metadata: dict, dq: DataQuality) -> CheckResult:
         score = 0
 
     return CheckResult(
-        category="content",
+        category="rules",
         check_name="meta_description",
         check_label="Meta & OpenGraph tags",
         passed=has_desc,
@@ -253,7 +252,7 @@ def _check_semantic_headings(html: str, dq: DataQuality) -> CheckResult:
     if dq.raw_html != "ok":
         blocked = dq.raw_html in ("cloudflare_challenge", "blocked", "error")
         return CheckResult(
-            category="content", check_name="semantic_headings",
+            category="rules", check_name="semantic_headings",
             check_label="Heading hierarchy (h1–h6)",
             passed=False, score=0, weight=6,
             status="evaluated" if blocked else "dnf",
@@ -262,7 +261,7 @@ def _check_semantic_headings(html: str, dq: DataQuality) -> CheckResult:
         )
     if not html:
         return CheckResult(
-            category="content",
+            category="rules",
             check_name="semantic_headings",
             check_label="Heading hierarchy (h1–h6)",
             passed=False, score=0, weight=6,
@@ -305,7 +304,7 @@ def _check_semantic_headings(html: str, dq: DataQuality) -> CheckResult:
         score = 0
 
     return CheckResult(
-        category="content",
+        category="rules",
         check_name="semantic_headings",
         check_label="Heading hierarchy (h1–h6)",
         passed=has_h1 and single_h1 and not skipped_levels,
@@ -320,35 +319,5 @@ def _check_semantic_headings(html: str, dq: DataQuality) -> CheckResult:
         recommendation="" if (has_h1 and not skipped_levels) else (
             "Use a single <h1> and sequential heading levels (h1 → h2 → h3) without "
             "skipping. Agents fold content by heading to navigate efficiently."
-        ),
-    )
-
-
-def _check_canonical_url(metadata: dict, dq: DataQuality) -> CheckResult:
-    """Has <link rel="canonical">."""
-    if dq.page_metadata != "ok":
-        blocked = dq.source_site_blocked("page_metadata")
-        return CheckResult(
-            category="content", check_name="canonical_url",
-            check_label="Has canonical URL",
-            passed=False, score=0, weight=3,
-            status="evaluated" if blocked else "dnf",
-            details={"reason": dq.page_metadata},
-            recommendation=_BLOCKED_RECOMMENDATION if blocked else _INFRA_RECOMMENDATION,
-        )
-    canonical = metadata.get("canonical_url", "")
-    has_canonical = bool(canonical)
-
-    return CheckResult(
-        category="content",
-        check_name="canonical_url",
-        check_label="Has canonical URL",
-        passed=has_canonical,
-        score=100 if has_canonical else 0,
-        weight=3,
-        details={"canonical_url": canonical},
-        recommendation="" if has_canonical else (
-            "Add a <link rel=\"canonical\"> tag to help AI systems identify the "
-            "authoritative version of your page."
         ),
     )

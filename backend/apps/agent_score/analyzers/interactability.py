@@ -50,7 +50,7 @@ def _check_labeled_forms(forms_data: list | dict, dq: DataQuality) -> CheckResul
     if dq.forms_data != "ok":
         blocked = dq.source_site_blocked("forms_data")
         return CheckResult(
-            category="interaction", check_name="labeled_forms",
+            category="rules", check_name="labeled_forms",
             check_label="All form inputs labeled",
             passed=False, score=0, weight=20,
             status="evaluated" if blocked else "dnf",
@@ -60,7 +60,7 @@ def _check_labeled_forms(forms_data: list | dict, dq: DataQuality) -> CheckResul
     if not forms_data or not isinstance(forms_data, list):
         # No forms on page — that's not a failure
         return CheckResult(
-            category="interaction",
+            category="rules",
             check_name="labeled_forms",
             check_label="All form inputs labeled",
             passed=True,
@@ -92,7 +92,7 @@ def _check_labeled_forms(forms_data: list | dict, dq: DataQuality) -> CheckResul
 
     if total_inputs == 0:
         return CheckResult(
-            category="interaction",
+            category="rules",
             check_name="labeled_forms",
             check_label="All form inputs labeled",
             passed=True, score=100, weight=20,
@@ -113,7 +113,7 @@ def _check_labeled_forms(forms_data: list | dict, dq: DataQuality) -> CheckResul
         score = 15
 
     return CheckResult(
-        category="interaction",
+        category="rules",
         check_name="labeled_forms",
         check_label="All form inputs labeled",
         passed=all_labeled,
@@ -138,7 +138,7 @@ def _check_semantic_actions(ax_tree: dict, dq: DataQuality) -> CheckResult:
     if dq.accessibility_tree != "ok":
         blocked = dq.source_site_blocked("accessibility_tree")
         return CheckResult(
-            category="interaction", check_name="semantic_actions",
+            category="rules", check_name="semantic_actions",
             check_label="Buttons and links have descriptive text",
             passed=False, score=0, weight=15,
             status="evaluated" if blocked else "dnf",
@@ -147,7 +147,7 @@ def _check_semantic_actions(ax_tree: dict, dq: DataQuality) -> CheckResult:
         )
     if not ax_tree:
         return CheckResult(
-            category="interaction",
+            category="rules",
             check_name="semantic_actions",
             check_label="Buttons and links have descriptive text",
             passed=False, score=0, weight=15,
@@ -176,7 +176,7 @@ def _check_semantic_actions(ax_tree: dict, dq: DataQuality) -> CheckResult:
 
     if total_actions == 0:
         return CheckResult(
-            category="interaction",
+            category="rules",
             check_name="semantic_actions",
             check_label="Buttons and links have descriptive text",
             passed=True, score=100, weight=15,
@@ -197,7 +197,7 @@ def _check_semantic_actions(ax_tree: dict, dq: DataQuality) -> CheckResult:
         score = 20
 
     return CheckResult(
-        category="interaction",
+        category="rules",
         check_name="semantic_actions",
         check_label="Buttons and links have descriptive text",
         passed=generic_count == 0,
@@ -221,7 +221,7 @@ def _check_api_documentation(probes: dict, dq: DataQuality) -> CheckResult:
     if not dq.probe_usable("main_page"):
         blocked = dq.probe_site_blocked("main_page")
         return CheckResult(
-            category="interaction", check_name="api_documentation",
+            category="rules", check_name="api_documentation",
             check_label="MCP or API documentation exposed",
             passed=False, score=0, weight=5,
             status="evaluated" if blocked else "dnf",
@@ -251,7 +251,7 @@ def _check_api_documentation(probes: dict, dq: DataQuality) -> CheckResult:
     found = has_mcp_endpoint or has_api_link or has_mcp_link
 
     return CheckResult(
-        category="interaction",
+        category="rules",
         check_name="api_documentation",
         check_label="MCP or API documentation exposed",
         passed=found,

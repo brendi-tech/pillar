@@ -50,14 +50,15 @@ class TestScanEndpoint:
         assert report.status == "running"
 
     def test_fires_all_tasks_in_parallel(self, client, mock_task_router):
-        """View should fire http_probes, browser_analysis, and signup_test in parallel."""
+        """View should fire all 4 tasks in parallel (http_probes, browser_analysis, signup_test, openclaw_test)."""
         client.post(self.URL, {"url": "https://example.com/"}, format="json")
-        assert mock_task_router.call_count == 3
+        assert mock_task_router.call_count == 4
 
         task_names = [call[0][0] for call in mock_task_router.call_args_list]
         assert "agent-score-http-probes" in task_names
         assert "agent-score-browser-analysis" in task_names
         assert "agent-score-signup-test" in task_names
+        assert "agent-score-openclaw-test" in task_names
 
     def test_invalid_url_rejected(self, client, mock_task_router):
         response = client.post(self.URL, {"url": "not-a-url"}, format="json")
@@ -93,6 +94,8 @@ class TestScanEndpoint:
             domain="cached.com",
             status="complete",
             overall_score=75,
+            signup_test_enabled=True,
+            openclaw_test_enabled=True,
         )
 
         response = client.post(self.URL, {"url": "https://cached.com/page"}, format="json")
@@ -113,8 +116,8 @@ class TestScanEndpoint:
 
         response = client.post(self.URL, {"url": "https://running.com/"}, format="json")
         assert response.status_code == status.HTTP_201_CREATED
-        # All parallel tasks should be triggered (http_probes + browser_analysis + signup_test)
-        assert mock_task_router.call_count == 3
+        # All parallel tasks should be triggered
+        assert mock_task_router.call_count == 4
 
     def test_force_rescan_bypasses_cache(self, client, mock_task_router):
         """force_rescan should always create a fresh report."""
@@ -133,7 +136,7 @@ class TestScanEndpoint:
         assert response.status_code == status.HTTP_201_CREATED
         assert str(response.data["report_id"]) != str(existing.id)
         assert response.data["status"] == "running"
-        assert mock_task_router.call_count == 3
+        assert mock_task_router.call_count == 4
 
 
 @pytest.mark.django_db
@@ -184,10 +187,10 @@ class TestReportEndpoint:
         assert "category_config" in response.data
         cfg = response.data["category_config"]
         # Must contain all registry categories
-        assert "content" in cfg
-        assert "interaction" in cfg
-        assert "webmcp" in cfg
+        assert "openclaw" in cfg
         assert "signup_test" in cfg
+        assert "rules" in cfg
+        assert "webmcp" in cfg
         # Each entry must have the expected fields
         for key, entry in cfg.items():
             assert "label" in entry, f"category_config['{key}'] missing 'label'"
@@ -197,8 +200,8 @@ class TestReportEndpoint:
             assert "sort_order" in entry
         # WebMCP should not be scored
         assert cfg["webmcp"]["scored"] is False
-        # Content should be scored
-        assert cfg["content"]["scored"] is True
+        # Rules should be scored
+        assert cfg["rules"]["scored"] is True
 
     def test_category_scores_fallback_for_legacy_report(self, client, mock_task_router):
         """Old reports without category_scores JSON should fall back to legacy columns."""
@@ -218,8 +221,8 @@ class TestReportEndpoint:
 
         assert "category_scores" in response.data
         scores = response.data["category_scores"]
-        assert scores["content"] == 80
-        assert scores["interaction"] == 60
+        # Legacy content_score=80 and interaction_score=60 are averaged to rules
+        assert scores["rules"] == 70  # (80 + 60) / 2
         assert scores["webmcp"] == 0
         assert scores["signup_test"] == 50
 
@@ -230,7 +233,7 @@ class TestReportEndpoint:
             domain="new.com",
             status="complete",
             overall_score=72,
-            category_scores={"content": 85, "interaction": 60, "webmcp": 10, "signup_test": None},
+            category_scores={"rules": 85, "webmcp": 10, "signup_test": None},
             content_score=85,
             interaction_score=60,
         )
@@ -238,8 +241,7 @@ class TestReportEndpoint:
         response = client.get(url)
 
         scores = response.data["category_scores"]
-        assert scores["content"] == 85
-        assert scores["interaction"] == 60
+        assert scores["rules"] == 85
         assert scores["webmcp"] == 10
         assert scores["signup_test"] is None
 

@@ -128,7 +128,7 @@ def _check_robots_txt_ai(probes: dict, dq: DataQuality) -> CheckResult:
     if not dq.probe_usable("robots_txt"):
         blocked = dq.probe_site_blocked("robots_txt")
         return CheckResult(
-            category="content", check_name="robots_txt_ai",
+            category="rules", check_name="robots_txt_ai",
             check_label="AI crawlers in robots.txt",
             passed=False, score=0, weight=10,
             status="evaluated" if blocked else "dnf",
@@ -142,7 +142,7 @@ def _check_robots_txt_ai(probes: dict, dq: DataQuality) -> CheckResult:
     if not exists:
         # No robots.txt means everything is allowed by default
         return CheckResult(
-            category="content",
+            category="rules",
             check_name="robots_txt_ai",
             check_label="AI crawlers in robots.txt",
             passed=True,
@@ -176,7 +176,7 @@ def _check_robots_txt_ai(probes: dict, dq: DataQuality) -> CheckResult:
         passed = False
 
     return CheckResult(
-        category="content",
+        category="rules",
         check_name="robots_txt_ai",
         check_label="AI crawlers in robots.txt",
         passed=passed,
@@ -212,7 +212,7 @@ def _check_content_signal_header(report: AgentScoreReport, dq: DataQuality) -> C
     if not dq.probe_usable("markdown_negotiation"):
         blocked = dq.probe_site_blocked("markdown_negotiation")
         return CheckResult(
-            category="content", check_name="content_signal_header",
+            category="rules", check_name="content_signal_header",
             check_label="Content-Signal header",
             passed=False, score=0, weight=8,
             status="evaluated" if blocked else "dnf",
@@ -264,7 +264,7 @@ def _check_content_signal_header(report: AgentScoreReport, dq: DataQuality) -> C
         score = 0
 
     return CheckResult(
-        category="content",
+        category="rules",
         check_name="content_signal_header",
         check_label="Content-Signal header",
         passed=has_signal,

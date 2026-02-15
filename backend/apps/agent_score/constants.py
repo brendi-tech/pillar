@@ -11,40 +11,31 @@ Adding a new category here is all the backend needs (besides the analyzer itself
 # ──────────────────────────────────────────────
 # weight: float  → contributes to overall score with this weight
 # weight: None   → scored independently, excluded from overall score
-# optional: True → only runs when the user opts in (e.g. signup_test)
 
 CATEGORY_REGISTRY: dict[str, dict] = {
-    "content": {
-        "label": "Content",
-        "description": "Can agents find, read, and access your content?",
-        "weight": 0.30,
+    "openclaw": {
+        "label": "Agent Experience",
+        "description": "What happened when a real AI agent tried to use your site?",
+        "weight": 0.50,
         "sort_order": 1,
-    },
-    "interaction": {
-        "label": "Interaction",
-        "description": "Can agents take actions and navigate your site?",
-        "weight": 0.30,
-        "sort_order": 2,
     },
     "signup_test": {
         "label": "Signup Test",
         "description": "Can an AI agent create an account on your site?",
-        "weight": 0.10,
+        "weight": 0.25,
+        "sort_order": 2,
+    },
+    "rules": {
+        "label": "Rules",
+        "description": "Does your site follow best practices for AI agent access and interaction?",
+        "weight": 0.25,
         "sort_order": 3,
-        "optional": True,
     },
     "webmcp": {
         "label": "WebMCP (Beta)",
         "description": "Does your site expose tools for AI agents?",
         "weight": None,  # excluded from overall score
         "sort_order": 4,
-    },
-    "openclaw": {
-        "label": "Agent Experience",
-        "description": "What happened when a real AI agent tried to use your site?",
-        "weight": 0.30,
-        "sort_order": 5,
-        "optional": True,
     },
 }
 
@@ -117,130 +108,123 @@ AGENT_RELEVANT_AXE_RULES: set[str] = {
 # ──────────────────────────────────────────────
 
 CHECK_DEFINITIONS: list[dict] = [
-    # === Content (35%) — discovery + readability + permissions ===
+    # === Rules (25%) — discovery + readability + permissions + interactability + accessibility ===
     {
-        "category": "content",
+        "category": "rules",
         "check_name": "markdown_content_negotiation",
         "check_label": "Markdown content negotiation",
         "weight": 12,
     },
     {
-        "category": "content",
+        "category": "rules",
         "check_name": "token_efficiency",
         "check_label": "Token efficiency",
         "weight": 10,
     },
     {
-        "category": "content",
+        "category": "rules",
         "check_name": "robots_txt_ai",
         "check_label": "AI crawlers in robots.txt",
         "weight": 10,
     },
     {
-        "category": "content",
+        "category": "rules",
         "check_name": "structured_data",
         "check_label": "Structured data (JSON-LD)",
         "weight": 9,
     },
     {
-        "category": "content",
+        "category": "rules",
         "check_name": "llms_txt_present",
         "check_label": "Has /llms.txt",
         "weight": 8,
     },
     {
-        "category": "content",
+        "category": "rules",
         "check_name": "content_signal_header",
         "check_label": "Content-Signal header",
         "weight": 8,
     },
     {
-        "category": "content",
+        "category": "rules",
         "check_name": "semantic_html",
         "check_label": "Semantic HTML elements",
         "weight": 7,
     },
     {
-        "category": "content",
+        "category": "rules",
         "check_name": "content_extraction",
         "check_label": "Content extraction quality",
         "weight": 7,
     },
     {
-        "category": "content",
+        "category": "rules",
         "check_name": "semantic_headings",
         "check_label": "Heading hierarchy (h1–h6)",
         "weight": 6,
     },
     {
-        "category": "content",
+        "category": "rules",
         "check_name": "meta_description",
         "check_label": "Meta & OpenGraph tags",
         "weight": 5,
     },
     {
-        "category": "content",
+        "category": "rules",
         "check_name": "low_token_bloat",
         "check_label": "Token footprint",
         "weight": 5,
     },
     {
-        "category": "content",
+        "category": "rules",
         "check_name": "markdown_available",
         "check_label": "Markdown version (/llms.txt)",
         "weight": 5,
     },
     {
-        "category": "content",
+        "category": "rules",
         "check_name": "sitemap_present",
         "check_label": "Has /sitemap.xml",
         "weight": 5,
     },
     {
-        "category": "content",
-        "check_name": "canonical_url",
-        "check_label": "Has canonical URL",
-        "weight": 3,
-    },
-    # === Interaction (35%) — interactability + accessibility ===
-    {
-        "category": "interaction",
+        "category": "rules",
         "check_name": "labeled_forms",
         "check_label": "All form inputs labeled",
         "weight": 20,
     },
     {
-        "category": "interaction",
+        "category": "rules",
         "check_name": "aria_labels",
         "check_label": "Interactive elements have ARIA labels",
         "weight": 20,
     },
     {
-        "category": "interaction",
+        "category": "rules",
         "check_name": "semantic_actions",
         "check_label": "Buttons and links have descriptive text",
         "weight": 15,
     },
     {
-        "category": "interaction",
+        "category": "rules",
         "check_name": "landmark_roles",
         "check_label": "Page uses landmark roles",
         "weight": 15,
     },
     {
-        "category": "interaction",
+        "category": "rules",
         "check_name": "keyboard_focusable",
         "check_label": "Interactive elements are keyboard-reachable",
         "weight": 15,
     },
     {
-        "category": "interaction",
+        "category": "rules",
         "check_name": "consistent_nav",
         "check_label": "Navigation structure is consistent",
         "weight": 10,
     },
     {
-        "category": "interaction",
+        "category": "rules",
         "check_name": "api_documentation",
         "check_label": "MCP or API documentation exposed",
         "weight": 5,

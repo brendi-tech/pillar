@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { ScoreGauge } from "@/components/AgentScore/ScoreGauge";
 import { ActivityLog } from "./ActivityLog";
 import { CheckRow } from "./CheckRow";
+import { EmailSubscribe } from "./EmailSubscribe";
 import { ReportCTA } from "./ReportCTA";
 import type {
   AgentScoreReport,
@@ -93,9 +94,9 @@ export function ScoreReport({
   const leftChecks = activeChecks.slice(0, midpoint);
   const rightChecks = activeChecks.slice(midpoint);
 
-  // Token metrics for content tab
+  // Token metrics for rules tab (content checks live here now)
   const showTokenMetrics =
-    activeCategory === "content" && report.token_metrics;
+    activeCategory === "rules" && report.token_metrics;
 
   // WebMCP CTA for webmcp tab
   const showWebMCPCta =
@@ -118,20 +119,36 @@ export function ScoreReport({
   const showOpenclawNarrative = activeCategory === "openclaw";
   const openclawData = report.openclaw_data as OpenclawData | undefined;
 
+  // Helper: determine if a specific category is still loading.
+  // Uses category-specific layer states so errored/completed categories
+  // stop spinning even while the overall report is still running.
+  const isCategoryLoading = useCallback(
+    (category: string, score: number | null): boolean => {
+      if (!isPartial) return false;
+      if (score !== null) return false;
+
+      // Openclaw and signup have explicit layer states
+      if (category === "openclaw") return openclawState === "running";
+      if (category === "signup_test") return signupState === "running";
+
+      // Rules/webmcp are done once scoring completes
+      if (report.progress?.scoring_done) return false;
+
+      return true;
+    },
+    [isPartial, openclawState, signupState, report.progress?.scoring_done]
+  );
+
   // Is the active category still loading? Used for gauge spinner + checks placeholder.
-  const activeCategoryLoading =
-    showOpenclawNarrative ? openclawState === "running" :
-    showSignupNarrative ? signupState === "running" :
-    (isPartial && activeScore === null);
+  const activeCategoryLoading = isCategoryLoading(activeCategory, activeScore);
 
   // Map each category to the workflows whose activity log entries are relevant
   const CATEGORY_WORKFLOWS: Record<string, string[]> = useMemo(
     () => ({
-      content: ["http_probes", "browser_analysis", "analyze_and_score"],
-      interaction: ["browser_analysis", "analyze_and_score"],
-      webmcp: ["browser_analysis", "analyze_and_score"],
-      signup_test: ["signup_test"],
       openclaw: ["openclaw_test"],
+      signup_test: ["signup_test"],
+      rules: ["http_probes", "browser_analysis", "analyze_and_score"],
+      webmcp: ["browser_analysis", "analyze_and_score"],
     }),
     []
   );
@@ -178,7 +195,11 @@ export function ScoreReport({
         </div>
         {isPartial && (
           <p className="text-sm text-[#6B6B6B] mt-3 animate-pulse">
-            Finishing signup test&hellip;
+            {report.progress?.signup_test_state === "running"
+              ? "Finishing signup test\u2026"
+              : report.progress?.openclaw_test_state === "running"
+                ? "Finishing agent experience test\u2026"
+                : "Calculating final scores\u2026"}
           </p>
         )}
         <div className="mt-4 flex justify-center">
@@ -202,6 +223,11 @@ export function ScoreReport({
             </button>
           )}
         </div>
+        {isPartial && (
+          <div className="mt-6 max-w-md mx-auto">
+            <EmailSubscribe reportId={report.id} />
+          </div>
+        )}
       </div>
 
       {/* Section 2: Category tab row */}
@@ -209,7 +235,7 @@ export function ScoreReport({
         <div className="flex flex-wrap justify-center items-stretch gap-3 sm:gap-4">
           {visibleCategories.map((category) => {
             const score = getCategoryScore(report, category);
-            const categoryLoading = isPartial && score === null;
+            const categoryLoading = isCategoryLoading(category, score);
             const color = categoryLoading ? "#FF6E00" : getScoreColor(score);
             const isActive = category === activeCategory;
             const unscored = isUnscoredCategory(report, category);

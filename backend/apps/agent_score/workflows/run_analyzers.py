@@ -238,20 +238,17 @@ async def analyze_and_score_workflow(
 
         scores = calculate_overall_score(checks)
 
-        # Check if optional layers are still pending — determines partial vs full mode
-        signup_pending = (
-            report.signup_test_enabled and not report.signup_test_data
-        )
-        openclaw_pending = (
-            report.openclaw_test_enabled and not report.openclaw_data
-        )
+        # Check if other layers are still pending — determines partial vs full mode
+        signup_pending = not report.signup_test_data
+        openclaw_pending = not report.openclaw_data
         optional_pending = signup_pending or openclaw_pending
 
         # Merge with any directly-written scores (e.g. openclaw) to avoid overwriting
         merged_categories = {**(report.category_scores or {}), **scores["categories"]}
         report.category_scores = merged_categories
-        report.content_score = scores["categories"].get("content")
-        report.interaction_score = scores["categories"].get("interaction")
+        # Legacy per-category columns (rules replaces content+interaction)
+        report.content_score = scores["categories"].get("rules")
+        report.interaction_score = scores["categories"].get("rules")
         report.webmcp_score = scores["categories"].get("webmcp")
 
         if optional_pending:
@@ -324,6 +321,14 @@ async def analyze_and_score_workflow(
                 f"Scoring complete: {scores['overall']}/100",
                 {"overall_score": scores["overall"], "category_scores": scores["categories"]},
             )
+
+            # Send score report email if subscribed.
+            # Re-fetch to pick up email subscriptions that arrived while scoring.
+            fresh_report = await AgentScoreReport.objects.aget(id=report_id)
+            if fresh_report.email:
+                from apps.agent_score.services.email_service import send_score_report_email
+
+                await sync_to_async(send_score_report_email)(fresh_report)
 
             return {
                 "status": "success",

@@ -100,6 +100,8 @@ def score_signup_outcome(outcome: dict) -> list[CheckResult]:
     # Partial credit for getting far but being blocked
     if submitted:
         submit_score = 100
+    elif outcome_type == "bot_blocked":
+        submit_score = 0  # Site blocked agent entirely — no access at all
     elif outcome_type in ("captcha_blocked", "payment_required"):
         submit_score = 20  # Got to the form but couldn't submit
     elif outcome_type == "form_error":
@@ -153,6 +155,12 @@ def score_signup_outcome(outcome: dict) -> list[CheckResult]:
 def _submission_recommendation(outcome_type: str) -> str:
     """Return a specific recommendation based on what blocked submission."""
     recommendations = {
+        "bot_blocked": (
+            "The site blocked the AI agent entirely — via bot detection, a WAF, "
+            "Cloudflare challenge, or access-denied response. Agents running from "
+            "cloud data centers will face the same block. Consider allowlisting "
+            "known AI agent user-agents or providing an API registration path."
+        ),
         "captcha_blocked": (
             "A CAPTCHA prevented form submission. AI agents cannot solve CAPTCHAs. "
             "Consider risk-based challenges or an API registration path."

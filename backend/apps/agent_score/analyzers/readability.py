@@ -64,7 +64,7 @@ def _check_markdown_content_negotiation(report: AgentScoreReport, dq: DataQualit
     if not dq.probe_usable("markdown_negotiation"):
         blocked = dq.probe_site_blocked("markdown_negotiation")
         return CheckResult(
-            category="content", check_name="markdown_content_negotiation",
+            category="rules", check_name="markdown_content_negotiation",
             check_label="Markdown content negotiation",
             passed=False, score=0, weight=12,
             status="evaluated" if blocked else "dnf",
@@ -106,7 +106,7 @@ def _check_markdown_content_negotiation(report: AgentScoreReport, dq: DataQualit
         )
 
     return CheckResult(
-        category="content",
+        category="rules",
         check_name="markdown_content_negotiation",
         check_label="Markdown content negotiation",
         passed=supports,
@@ -145,7 +145,7 @@ def _check_token_efficiency(html: str, report: AgentScoreReport, dq: DataQuality
     if not dq.html_usable:
         blocked = dq.html_site_blocked()
         return CheckResult(
-            category="content", check_name="token_efficiency",
+            category="rules", check_name="token_efficiency",
             check_label="Token efficiency",
             passed=False, score=0, weight=10,
             status="evaluated" if blocked else "dnf",
@@ -154,7 +154,7 @@ def _check_token_efficiency(html: str, report: AgentScoreReport, dq: DataQuality
         )
     if not html:
         return CheckResult(
-            category="content",
+            category="rules",
             check_name="token_efficiency",
             check_label="Token efficiency",
             passed=False, score=0, weight=10,
@@ -214,7 +214,7 @@ def _check_token_efficiency(html: str, report: AgentScoreReport, dq: DataQuality
         )
 
     return CheckResult(
-        category="content",
+        category="rules",
         check_name="token_efficiency",
         check_label="Token efficiency",
         passed=passed,
@@ -236,7 +236,7 @@ def _check_markdown_available(report: AgentScoreReport, dq: DataQuality) -> Chec
     if not dq.probe_usable("llms_txt"):
         blocked = dq.probe_site_blocked("llms_txt")
         return CheckResult(
-            category="content", check_name="markdown_available",
+            category="rules", check_name="markdown_available",
             check_label="Markdown version (/llms.txt)",
             passed=False, score=0, weight=5,
             status="evaluated" if blocked else "dnf",
@@ -259,7 +259,7 @@ def _check_markdown_available(report: AgentScoreReport, dq: DataQuality) -> Chec
         score = 0
 
     return CheckResult(
-        category="content",
+        category="rules",
         check_name="markdown_available",
         check_label="Markdown version (/llms.txt)",
         passed=llms_exists,
@@ -282,7 +282,7 @@ def _check_content_extraction(html: str, dq: DataQuality) -> CheckResult:
     if not dq.html_usable:
         blocked = dq.html_site_blocked()
         return CheckResult(
-            category="content", check_name="content_extraction",
+            category="rules", check_name="content_extraction",
             check_label="Content extraction quality",
             passed=False, score=0, weight=7,
             status="evaluated" if blocked else "dnf",
@@ -291,7 +291,7 @@ def _check_content_extraction(html: str, dq: DataQuality) -> CheckResult:
         )
     if not html:
         return CheckResult(
-            category="content",
+            category="rules",
             check_name="content_extraction",
             check_label="Content extraction quality",
             passed=False, score=0, weight=7,
@@ -327,7 +327,7 @@ def _check_content_extraction(html: str, dq: DataQuality) -> CheckResult:
         score = 10
 
     return CheckResult(
-        category="content",
+        category="rules",
         check_name="content_extraction",
         check_label="Content extraction quality",
         passed=has_main_area and md_length > 100,
@@ -350,7 +350,7 @@ def _check_semantic_html(html: str, dq: DataQuality) -> CheckResult:
     if not dq.html_usable:
         blocked = dq.html_site_blocked()
         return CheckResult(
-            category="content", check_name="semantic_html",
+            category="rules", check_name="semantic_html",
             check_label="Semantic HTML elements",
             passed=False, score=0, weight=7,
             status="evaluated" if blocked else "dnf",
@@ -359,7 +359,7 @@ def _check_semantic_html(html: str, dq: DataQuality) -> CheckResult:
         )
     if not html:
         return CheckResult(
-            category="content",
+            category="rules",
             check_name="semantic_html",
             check_label="Semantic HTML elements",
             passed=False, score=0, weight=7,
@@ -386,7 +386,7 @@ def _check_semantic_html(html: str, dq: DataQuality) -> CheckResult:
         score = 0
 
     return CheckResult(
-        category="content",
+        category="rules",
         check_name="semantic_html",
         check_label="Semantic HTML elements",
         passed=semantic_count >= 3,
@@ -417,7 +417,7 @@ def _check_low_token_bloat(html: str, report: AgentScoreReport, dq: DataQuality)
     if not dq.html_usable:
         blocked = dq.html_site_blocked()
         return CheckResult(
-            category="content", check_name="low_token_bloat",
+            category="rules", check_name="low_token_bloat",
             check_label="Token footprint",
             passed=False, score=0, weight=5,
             status="evaluated" if blocked else "dnf",
@@ -429,7 +429,7 @@ def _check_low_token_bloat(html: str, report: AgentScoreReport, dq: DataQuality)
 
     if html_tokens == 0:
         return CheckResult(
-            category="content",
+            category="rules",
             check_name="low_token_bloat",
             check_label="Token footprint",
             passed=False, score=0, weight=5,
@@ -496,7 +496,7 @@ def _check_low_token_bloat(html: str, report: AgentScoreReport, dq: DataQuality)
             )
 
     return CheckResult(
-        category="content",
+        category="rules",
         check_name="low_token_bloat",
         check_label="Token footprint",
         passed=score >= 50,

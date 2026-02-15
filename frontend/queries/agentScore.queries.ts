@@ -66,14 +66,20 @@ export const scanUrlMutation = () => ({
   mutationFn: ({
     url,
     email,
-    testSignup = true,
-    testOpenclaw = false,
     forceRescan = false,
   }: {
     url: string;
     email?: string;
-    testSignup?: boolean;
-    testOpenclaw?: boolean;
     forceRescan?: boolean;
-  }) => agentScoreAPI.scan(url, email, testSignup, testOpenclaw, forceRescan),
+  }) => agentScoreAPI.scan(url, email, forceRescan),
+});
+
+export const subscribeEmailMutation = () => ({
+  mutationFn: ({
+    reportId,
+    email,
+  }: {
+    reportId: string;
+    email: string;
+  }) => agentScoreAPI.subscribe(reportId, email),
 });
