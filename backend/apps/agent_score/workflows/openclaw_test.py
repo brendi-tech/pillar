@@ -184,27 +184,27 @@ def _write_openclaw_config(port: int) -> str:
     import os
     from pathlib import Path
 
+    # Config schema follows OpenClaw 2026.2.x — validated locally via:
+    #   docker run --rm -v config.json:/root/.openclaw/openclaw.json node:22-slim \
+    #     sh -c "npm i -g openclaw@latest && openclaw gateway --port 18500"
     config = {
         "$schema": "https://openclaw.ai/schema/config.json",
-        "name": "pillar-agent-score",
-        "description": "Pillar Agent Score — ephemeral gateway for eval",
-        "model": {
-            "provider": "openrouter",
-            "model_name": "google/gemini-2.5-flash",
-        },
-        "providers": {
-            "openrouter": {
-                "api_key_env": "OPENROUTER_API_KEY",
+        "agents": {
+            "defaults": {
+                "model": {
+                    "primary": "openrouter/google/gemini-2.5-flash",
+                },
+                "heartbeat": {
+                    "every": "0m",  # disable periodic heartbeats
+                },
             },
+        },
+        "env": {
+            "OPENROUTER_API_KEY": "${OPENROUTER_API_KEY}",
         },
         "gateway": {
             "mode": "local",
-            "http": {
-                "endpoints": {
-                    "responses": {"enabled": True},
-                    "chatCompletions": {"enabled": False},
-                },
-            },
+            "port": port,
             "auth": {
                 "mode": "token",
                 "token": _OPENCLAW_GW_TOKEN,
@@ -213,14 +213,12 @@ def _write_openclaw_config(port: int) -> str:
         "browser": {
             "enabled": True,
             "headless": True,
-            "defaultProfile": "openclaw",
-            "noSandbox": True,
         },
         "skills": {
-            "directory": "/etc/openclaw/skills",
+            "load": {
+                "extraDirs": ["/etc/openclaw/skills"],
+            },
         },
-        "heartbeat": {"enabled": False},
-        "messaging": {"enabled": False},
     }
 
     # Write to OpenClaw's default config location

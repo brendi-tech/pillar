@@ -1,48 +1,31 @@
 {
   "$schema": "https://openclaw.ai/schema/config.json",
-  "name": "pillar-agent-score",
-  "description": "Pillar Agent Score testing instance — evaluates websites for AI agent readiness",
-
-  "model": {
-    "provider": "openrouter",
-    "model_name": "google/gemini-2.5-flash"
-  },
-
-  "providers": {
-    "openrouter": {
-      "api_key_env": "OPENROUTER_API_KEY"
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "openrouter/google/gemini-2.5-flash"
+      },
+      "heartbeat": {
+        "every": "0m"
+      }
     }
   },
-
+  "env": {
+    "OPENROUTER_API_KEY": "${OPENROUTER_API_KEY}"
+  },
   "gateway": {
     "mode": "local",
-    "http": {
-      "endpoints": {
-        "responses": { "enabled": true },
-        "chatCompletions": { "enabled": false }
-      }
-    },
     "auth": {
       "mode": "none"
     }
   },
-
   "browser": {
     "enabled": true,
-    "headless": true,
-    "defaultProfile": "openclaw",
-    "noSandbox": true
+    "headless": true
   },
-
   "skills": {
-    "directory": "skills"
-  },
-
-  "heartbeat": {
-    "enabled": false
-  },
-
-  "messaging": {
-    "enabled": false
+    "load": {
+      "extraDirs": ["skills"]
+    }
   }
 }
