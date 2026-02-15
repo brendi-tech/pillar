@@ -43,11 +43,16 @@ def extract_domain(url: str) -> str:
     """
     Extract the domain (host without port) from a URL.
 
-    Example: "https://www.example.com:443/page" → "www.example.com"
+    Example: "https://www.example.com:443/page" → "example.com"
     """
     parsed = urlparse(url)
     hostname = parsed.hostname or ""
-    return hostname.lower()
+    hostname = hostname.lower()
+    # Normalize away the common "www." prefix so lookups and caching
+    # behave consistently for www vs apex domains.
+    if hostname.startswith("www."):
+        hostname = hostname[4:]
+    return hostname
 
 
 def validate_url(url: str) -> tuple[bool, str]:

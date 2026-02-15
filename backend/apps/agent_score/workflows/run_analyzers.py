@@ -238,9 +238,10 @@ async def analyze_and_score_workflow(
 
         scores = calculate_overall_score(checks)
 
-        # Check if other layers are still pending — determines partial vs full mode
-        signup_pending = not report.signup_test_data
-        openclaw_pending = not report.openclaw_data
+        # Check if other layers are still pending — determines partial vs full mode.
+        # Optional layers only count as pending if they were enabled for this report.
+        signup_pending = report.signup_test_enabled and not report.signup_test_data
+        openclaw_pending = report.openclaw_test_enabled and not report.openclaw_data
         optional_pending = signup_pending or openclaw_pending
 
         # Merge with any directly-written scores (e.g. openclaw) to avoid overwriting

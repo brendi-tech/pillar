@@ -60,6 +60,45 @@ class TestScanEndpoint:
         assert "agent-score-signup-test" in task_names
         assert "agent-score-openclaw-test" in task_names
 
+    def test_can_disable_signup_test(self, client, mock_task_router):
+        """Disabling signup should skip the signup workflow task."""
+        client.post(
+            self.URL,
+            {"url": "https://example.com/", "test_signup": False},
+            format="json",
+        )
+        task_names = [call[0][0] for call in mock_task_router.call_args_list]
+        assert "agent-score-signup-test" not in task_names
+        assert "agent-score-http-probes" in task_names
+        assert "agent-score-browser-analysis" in task_names
+        assert "agent-score-openclaw-test" in task_names
+
+    def test_can_disable_openclaw_test(self, client, mock_task_router):
+        """Disabling openclaw should skip the openclaw workflow task."""
+        client.post(
+            self.URL,
+            {"url": "https://example.com/", "test_openclaw": False},
+            format="json",
+        )
+        task_names = [call[0][0] for call in mock_task_router.call_args_list]
+        assert "agent-score-openclaw-test" not in task_names
+        assert "agent-score-http-probes" in task_names
+        assert "agent-score-browser-analysis" in task_names
+        assert "agent-score-signup-test" in task_names
+
+    def test_can_disable_both_optional_layers(self, client, mock_task_router):
+        """Disabling signup + openclaw should only run the base layer tasks."""
+        client.post(
+            self.URL,
+            {"url": "https://example.com/", "test_signup": False, "test_openclaw": False},
+            format="json",
+        )
+        task_names = [call[0][0] for call in mock_task_router.call_args_list]
+        assert task_names.count("agent-score-http-probes") == 1
+        assert task_names.count("agent-score-browser-analysis") == 1
+        assert "agent-score-signup-test" not in task_names
+        assert "agent-score-openclaw-test" not in task_names
+
     def test_invalid_url_rejected(self, client, mock_task_router):
         response = client.post(self.URL, {"url": "not-a-url"}, format="json")
         assert response.status_code == status.HTTP_400_BAD_REQUEST

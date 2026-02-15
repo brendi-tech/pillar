@@ -68,9 +68,14 @@ class AgentScoreViewSet(viewsets.GenericViewSet):
         """Apply scan-specific throttles to the scan action."""
         if self.action == "scan":
             throttles = [AgentScoreScanThrottle()]
-            # Signup test always runs and creates real accounts on the
-            # target site, so apply the stricter throttle.
-            throttles.append(AgentScoreSignupThrottle())
+            # Only apply the stricter throttle when the request opts into
+            # the signup test (it can create real accounts on the target site).
+            try:
+                test_signup = bool(self.request.data.get("test_signup", True))
+            except Exception:
+                test_signup = True
+            if test_signup:
+                throttles.append(AgentScoreSignupThrottle())
             return throttles
         return []
 
@@ -79,14 +84,17 @@ class AgentScoreViewSet(viewsets.GenericViewSet):
         """
         Submit a URL for agent-readiness scanning.
 
-        If a completed report for the same domain exists within the last hour,
-        returns it immediately instead of starting a new scan.
+        If a completed report for the same domain exists within the last hour
+        (with the same optional layer settings), returns it immediately instead
+        of starting a new scan.
         """
         serializer = ScanRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         url: str = serializer.validated_data["url"]
         email: str = serializer.validated_data.get("email", "")
+        test_signup: bool = serializer.validated_data.get("test_signup", True)
+        test_openclaw: bool = serializer.validated_data.get("test_openclaw", True)
         force_rescan: bool = serializer.validated_data.get("force_rescan", False)
 
         # Validate URL safety
@@ -105,8 +113,8 @@ class AgentScoreViewSet(viewsets.GenericViewSet):
             recent_report = AgentScoreReport.objects.filter(
                 domain=domain,
                 status="complete",
-                signup_test_enabled=True,
-                openclaw_test_enabled=True,
+                signup_test_enabled=test_signup,
+                openclaw_test_enabled=test_openclaw,
                 created_at__gte=one_hour_ago,
             ).first()
 
@@ -120,13 +128,13 @@ class AgentScoreViewSet(viewsets.GenericViewSet):
                 }).data
                 return Response(response_data, status=status.HTTP_200_OK)
 
-        # Create new report — both tests always run
+        # Create new report
         report = AgentScoreReport.objects.create(
             url=url,
             domain=domain,
             email=email,
-            signup_test_enabled=True,
-            openclaw_test_enabled=True,
+            signup_test_enabled=test_signup,
+            openclaw_test_enabled=test_openclaw,
             status="running",
         )
 
@@ -144,14 +152,16 @@ class AgentScoreViewSet(viewsets.GenericViewSet):
             "agent-score-browser-analysis",
             report_id=report_id,
         )
-        TaskRouter.execute(
-            "agent-score-signup-test",
-            report_id=report_id,
-        )
-        TaskRouter.execute(
-            "agent-score-openclaw-test",
-            report_id=report_id,
-        )
+        if test_signup:
+            TaskRouter.execute(
+                "agent-score-signup-test",
+                report_id=report_id,
+            )
+        if test_openclaw:
+            TaskRouter.execute(
+                "agent-score-openclaw-test",
+                report_id=report_id,
+            )
 
         response_data = ScanResponseSerializer({
             "report_id": report.id,
@@ -180,6 +190,10 @@ class AgentScoreViewSet(viewsets.GenericViewSet):
         # Strip protocol and trailing slashes if someone passes a full URL
         if "://" in domain:
             domain = extract_domain(domain)
+        else:
+            # Normalize "www." prefix for plain domain strings too.
+            if domain.startswith("www."):
+                domain = domain[4:]
 
         # Check Redis cache first
         cache_key = CacheKeys.agent_score_domain_report(domain)
@@ -187,10 +201,15 @@ class AgentScoreViewSet(viewsets.GenericViewSet):
         if cached is not None:
             return Response(json.loads(cached))
 
-        # Single query with prefetch (was previously 2 separate queries)
+        # Single query with prefetch. Backward compat: also consider legacy
+        # reports stored with "www." domain values.
+        candidates = [domain]
+        if not domain.startswith("www."):
+            candidates.append(f"www.{domain}")
+
         report = (
             self.get_queryset()
-            .filter(domain=domain, status="complete")
+            .filter(domain__in=candidates, status="complete")
             .order_by("-created_at")
             .first()
         )

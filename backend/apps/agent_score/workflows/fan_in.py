@@ -77,8 +77,8 @@ async def complete_layer(report_id: str) -> bool:
         return False
 
     base_ready = _base_layers_ready(report)
-    signup_ready = bool(report.signup_test_data)
-    openclaw_ready = bool(report.openclaw_data)
+    signup_ready = (not report.signup_test_enabled) or bool(report.signup_test_data)
+    openclaw_ready = (not report.openclaw_test_enabled) or bool(report.openclaw_data)
     all_layers_ready = signup_ready and openclaw_ready
     checks_exist = await sync_to_async(report.checks.exists)()
 

@@ -13,6 +13,22 @@ class ScanRequestSerializer(serializers.Serializer):
         max_length=2048,
         help_text="The URL to scan for agent readiness",
     )
+    test_signup = serializers.BooleanField(
+        required=False,
+        default=True,
+        help_text=(
+            "When true, runs the signup test (may create a real account on the target site). "
+            "Default: true."
+        ),
+    )
+    test_openclaw = serializers.BooleanField(
+        required=False,
+        default=True,
+        help_text=(
+            "When true, runs the OpenClaw agent experience test. "
+            "Default: true."
+        ),
+    )
     email = serializers.EmailField(
         required=False,
         allow_blank=True,
@@ -160,17 +176,24 @@ class ReportSerializer(serializers.ModelSerializer):
         # "summary" is the result key for openclaw (empty on error).
         # "outcome" is the result key for signup (None on infra error,
         # present for both success and site-attributable errors).
-        signup_state = self._layer_state(obj.signup_test_data, "outcome")
-        openclaw_state = self._layer_state(obj.openclaw_data, "summary")
+        if not obj.signup_test_enabled:
+            signup_state = "disabled"
+        else:
+            signup_state = self._layer_state(obj.signup_test_data, "outcome")
+
+        if not obj.openclaw_test_enabled:
+            openclaw_state = "disabled"
+        else:
+            openclaw_state = self._layer_state(obj.openclaw_data, "summary")
 
         return {
             "http_probes_done": bool(obj.probe_results),
             "browser_analysis_done": browser_done,
             "analyzers_done": obj.checks.exists(),
-            "signup_test_done": signup_state in ("success", "error"),
+            "signup_test_done": signup_state in ("success", "error", "disabled"),
             "signup_test_state": signup_state,
             "signup_test_status": obj.signup_test_status or "",
-            "openclaw_test_done": openclaw_state in ("success", "error"),
+            "openclaw_test_done": openclaw_state in ("success", "error", "disabled"),
             "openclaw_test_state": openclaw_state,
             "openclaw_test_status": obj.openclaw_test_status or "",
             "scoring_done": obj.status == "complete",
