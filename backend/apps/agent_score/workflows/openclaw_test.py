@@ -271,15 +271,25 @@ async def _start_openclaw_gateway(port: int) -> asyncio.subprocess.Process:
         stderr=asyncio.subprocess.PIPE,
     )
 
-    # Wait for the gateway to be ready (poll /health or just wait a few seconds)
-    for attempt in range(15):
+    # Wait for the gateway HTTP server to be ready.
+    # OpenClaw 2026.2.x takes ~15s locally and can take 30-45s on
+    # resource-constrained Cloud Run instances (cold Node.js startup,
+    # plugin loading, browser service init).  Poll for up to 60s.
+    import time as _time
+
+    start = _time.monotonic()
+    for attempt in range(30):
         await asyncio.sleep(2)
         try:
             async with httpx.AsyncClient(timeout=3.0) as client:
                 resp = await client.get(f"http://127.0.0.1:{port}/health")
                 if resp.status_code == 200:
+                    elapsed = _time.monotonic() - start
                     logger.info(
-                        f"[AGENT SCORE] OpenClaw gateway ready on port {port}"
+                        "[AGENT SCORE] OpenClaw gateway ready on port %d "
+                        "(%.1fs startup)",
+                        port,
+                        elapsed,
                     )
                     return proc
         except (httpx.ConnectError, httpx.TimeoutException):
@@ -287,17 +297,34 @@ async def _start_openclaw_gateway(port: int) -> asyncio.subprocess.Process:
         # Check if process died
         if proc.returncode is not None:
             stderr = await proc.stderr.read()
+            stdout = await proc.stdout.read()
             raise RuntimeError(
                 f"OpenClaw gateway exited with code {proc.returncode}: "
                 f"{stderr.decode()[:500]}"
             )
 
-    # If we got here, gateway never became ready — try the request anyway
-    logger.warning(
-        f"[AGENT SCORE] OpenClaw gateway health check timed out on port {port}, "
-        "proceeding anyway"
+    # If we got here, gateway never became ready — log diagnostics and fail
+    elapsed = _time.monotonic() - start
+    logger.error(
+        "[AGENT SCORE] OpenClaw gateway did not become healthy after %.0fs "
+        "on port %d",
+        elapsed,
+        port,
     )
-    return proc
+    # Try to capture any output for diagnosis
+    proc.terminate()
+    try:
+        await asyncio.wait_for(proc.wait(), timeout=5)
+    except asyncio.TimeoutError:
+        proc.kill()
+        await proc.wait()
+    stderr = await proc.stderr.read()
+    stdout = await proc.stdout.read()
+    raise RuntimeError(
+        f"OpenClaw gateway health check timed out after {elapsed:.0f}s. "
+        f"stdout: {stdout.decode()[:300]} | "
+        f"stderr: {stderr.decode()[:300]}"
+    )
 
 
 async def _stop_openclaw_gateway(proc: asyncio.subprocess.Process) -> None:
