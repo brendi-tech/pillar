@@ -117,7 +117,7 @@ class TestCheckSemanticActions:
 
 
 class TestCheckApiDocumentation:
-    """Tests for _check_api_documentation."""
+    """Tests for _check_api_documentation (MCP or API docs)."""
 
     def test_openapi_in_main_page_body_passes(self):
         """Main page body mentions openapi/swagger passes."""
@@ -131,12 +131,12 @@ class TestCheckApiDocumentation:
         assert result.score == 100
 
     def test_neither_fails(self):
-        """No OpenAPI mention fails."""
+        """No MCP or API doc mention fails."""
         probes = FULL_PROBE_RESULTS
         result = _check_api_documentation(probes, DQ_ALL_OK)
         assert result.passed is False
         assert result.score == 0
-        assert "OpenAPI" in result.recommendation or "Swagger" in result.recommendation
+        assert "MCP" in result.recommendation or "OpenAPI" in result.recommendation
 
     def test_graphql_in_body_passes(self):
         """Main page body mentions graphql passes."""
@@ -147,6 +147,27 @@ class TestCheckApiDocumentation:
         result = _check_api_documentation(probes, DQ_ALL_OK)
         assert result.passed is True
         assert result.details["has_api_link_in_page"] is True
+
+    def test_mcp_json_endpoint_passes(self):
+        """/.well-known/mcp.json returns 200 passes."""
+        probes = {
+            **FULL_PROBE_RESULTS,
+            "mcp_json": {"status_code": 200, "ok": True, "body": "{}"},
+        }
+        result = _check_api_documentation(probes, DQ_ALL_OK)
+        assert result.passed is True
+        assert result.details["has_mcp_endpoint"] is True
+        assert result.score == 100
+
+    def test_mcp_link_in_page_passes(self):
+        """Page mentioning MCP server or .well-known/mcp passes."""
+        probes = {
+            **FULL_PROBE_RESULTS,
+            "main_page": {"ok": True, "body": "Connect via our MCP server at /.well-known/mcp"},
+        }
+        result = _check_api_documentation(probes, DQ_ALL_OK)
+        assert result.passed is True
+        assert result.details["has_mcp_link_in_page"] is True
 
 
 # ─── run() integration ──────────────────────────────────────────────────────

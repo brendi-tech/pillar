@@ -56,7 +56,7 @@ class AgentScoreViewSet(viewsets.GenericViewSet):
     def get_queryset(self):
         return (
             AgentScoreReport.objects.all()
-            .prefetch_related("checks")
+            .prefetch_related("checks", "log_entries")
             .defer(*self._deferred_fields)
         )
 
@@ -92,6 +92,7 @@ class AgentScoreViewSet(viewsets.GenericViewSet):
         url: str = serializer.validated_data["url"]
         email: str = serializer.validated_data.get("email", "")
         test_signup: bool = serializer.validated_data.get("test_signup", True)
+        test_openclaw: bool = serializer.validated_data.get("test_openclaw", False)
         force_rescan: bool = serializer.validated_data.get("force_rescan", False)
 
         # Validate URL safety
@@ -112,6 +113,7 @@ class AgentScoreViewSet(viewsets.GenericViewSet):
                 domain=domain,
                 status="complete",
                 signup_test_enabled=test_signup,
+                openclaw_test_enabled=test_openclaw,
                 created_at__gte=one_hour_ago,
             ).first()
 
@@ -131,6 +133,7 @@ class AgentScoreViewSet(viewsets.GenericViewSet):
             domain=domain,
             email=email,
             signup_test_enabled=test_signup,
+            openclaw_test_enabled=test_openclaw,
             status="running",
         )
 
@@ -151,6 +154,11 @@ class AgentScoreViewSet(viewsets.GenericViewSet):
         if test_signup:
             TaskRouter.execute(
                 "agent-score-signup-test",
+                report_id=report_id,
+            )
+        if test_openclaw:
+            TaskRouter.execute(
+                "agent-score-openclaw-test",
                 report_id=report_id,
             )
 

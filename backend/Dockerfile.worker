@@ -8,7 +8,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # Set work directory
 WORKDIR /app
 
-# Install system dependencies and uv
+# Install system dependencies, uv, and Node.js 22 (for OpenClaw)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     postgresql-client \
     gcc \
@@ -17,8 +17,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     procps \
     ca-certificates \
+    gnupg \
+    git \
+    && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
     && curl -LsSf https://astral.sh/uv/install.sh | sh \
     && rm -rf /var/lib/apt/lists/*
+
+# Install OpenClaw globally for agent experience testing.
+RUN npm install -g openclaw@latest
 
 # Add uv to PATH
 ENV PATH="/root/.local/bin:$PATH"
@@ -36,11 +43,23 @@ ENV PATH="/app/.venv/bin:$PATH"
 # `--with-deps` uses Playwright's own dependency list, which is kept in sync
 # with each Chromium revision and avoids missing-library errors like
 # "libXcomposite.so.1: cannot open shared object file".
+#
+# PLAYWRIGHT_BROWSERS_PATH must be set BEFORE any install so both
+# Python Playwright (used by our code) and Node.js Playwright (used by
+# OpenClaw) share the same browser binaries directory.
 ENV PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright
-RUN playwright install --with-deps chromium
+RUN playwright install --with-deps chromium \
+    && npx playwright install chromium
 
 # Copy project files
 COPY . .
+
+# Copy OpenClaw config and skill for the agent experience test.
+# The Hatchet workflow starts a temporary OpenClaw gateway subprocess
+# on localhost — no separate service needed.
+COPY openclaw_config/openclaw.json /etc/openclaw/openclaw.json
+COPY openclaw_config/skills/ /etc/openclaw/skills/
+RUN chmod -R a+r /etc/openclaw
 
 # Create necessary directories
 RUN mkdir -p /app/static /app/media
@@ -48,11 +67,16 @@ RUN mkdir -p /app/static /app/media
 # Make health check script executable
 RUN chmod +x /app/hatchet-worker-healthcheck.py
 
-# Create non-root user for running hatchet worker
+# Create non-root user for running hatchet worker.
+# - /home/hatchet/.openclaw: writable dir for OpenClaw's browser profile data
+# - /opt/ms-playwright: shared Playwright browser binaries (read+execute)
+# - /usr/lib/node_modules: global npm packages including openclaw (read+execute)
 RUN groupadd hatchet && \
     useradd -g hatchet -u 1000 hatchet -m && \
-    chown -R hatchet:hatchet /app && \
-    chmod -R o+rx /opt/ms-playwright
+    mkdir -p /home/hatchet/.openclaw && \
+    chown -R hatchet:hatchet /app /home/hatchet/.openclaw && \
+    chmod -R o+rx /opt/ms-playwright && \
+    chmod -R o+rx /usr/lib/node_modules
 
 # Switch to non-root user
 USER hatchet

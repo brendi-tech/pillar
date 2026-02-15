@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 interface ScanInputProps {
-  onScan: (url: string, testSignup: boolean) => void;
+  onScan: (url: string, testSignup: boolean, testOpenclaw: boolean) => void;
   isScanning: boolean;
   error?: string;
   /** Pre-fill the URL field (e.g. when re-syncing an existing report). */
@@ -37,6 +37,7 @@ function isValidUrl(url: string): boolean {
 export function ScanInput({ onScan, isScanning, error, initialUrl = "" }: ScanInputProps) {
   const [inputValue, setInputValue] = useState(initialUrl);
   const [testSignup, setTestSignup] = useState(true);
+  const [testOpenclaw, setTestOpenclaw] = useState(true);
   const [localError, setLocalError] = useState<string | null>(null);
 
   // Sync input value when initialUrl prop changes (e.g. domain lookup prefill)
@@ -63,7 +64,7 @@ export function ScanInput({ onScan, isScanning, error, initialUrl = "" }: ScanIn
       return;
     }
 
-    onScan(normalized, testSignup);
+    onScan(normalized, testSignup, testOpenclaw);
   };
 
   return (
@@ -125,7 +126,37 @@ export function ScanInput({ onScan, isScanning, error, initialUrl = "" }: ScanIn
           disabled={isScanning}
         />
         <span className="text-sm text-[#6B6B6B] leading-snug">
-          Test agent signup — we&apos;ll attempt to create a test account on your site
+          Automated browser test — an AI agent uses a real browser to try signup, login, and other key flows
+        </span>
+      </label>
+      <label className="flex items-center gap-3 mt-3 cursor-pointer select-none group">
+        <span
+          className={`
+            flex items-center justify-center shrink-0
+            h-[18px] w-[18px] rounded border-2 transition-colors
+            ${testOpenclaw
+              ? "bg-[#FF6E00] border-[#FF6E00]"
+              : "bg-white border-[#C4C4C4] group-hover:border-[#999]"
+            }
+            ${isScanning ? "opacity-60 cursor-not-allowed" : ""}
+          `}
+          aria-hidden="true"
+        >
+          {testOpenclaw && (
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M2.5 6L5 8.5L9.5 3.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          )}
+        </span>
+        <input
+          type="checkbox"
+          className="sr-only"
+          checked={testOpenclaw}
+          onChange={(e) => setTestOpenclaw(e.target.checked)}
+          disabled={isScanning}
+        />
+        <span className="text-sm text-[#6B6B6B] leading-snug">
+          OpenClaw test — an autonomous AI agent explores your site and reports what worked and what didn&apos;t
         </span>
       </label>
       {displayError && (

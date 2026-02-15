@@ -62,6 +62,9 @@ FULL_PROBE_RESULTS = {
         "status_code": 200, "ok": True, "content_type": "text/plain",
         "body": "# Example\nThis is an LLMs.txt file.\n",
     },
+    "mcp_json": {
+        "status_code": 404, "ok": False, "body": "",
+    },
     "markdown_negotiation": {
         "status_code": 200, "ok": True,
         "content_type": "text/markdown; charset=utf-8",
@@ -77,6 +80,7 @@ EMPTY_PROBE_RESULTS = {
     "robots_txt": {"status_code": 404, "ok": False, "body": ""},
     "sitemap": {"status_code": 404, "ok": False, "body": ""},
     "llms_txt": {"status_code": 404, "ok": False, "body": ""},
+    "mcp_json": {"status_code": 404, "ok": False, "body": ""},
     "markdown_negotiation": {
         "status_code": 200, "ok": True,
         "content_type": "text/html; charset=utf-8",

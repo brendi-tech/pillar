@@ -866,3 +866,13 @@
 .marquee-track {
   animation: marquee-scroll var(--marquee-duration) linear infinite;
 }
+
+/* Score gauge spinning arc for loading state */
+@keyframes gauge-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

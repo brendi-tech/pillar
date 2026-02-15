@@ -7,7 +7,7 @@ import pytest
 from asgiref.sync import sync_to_async
 
 from apps.agent_score.models import AgentScoreReport
-from apps.agent_score.workflows.fan_in import BASE_LAYERS, complete_layer
+from apps.agent_score.workflows.fan_in import complete_layer
 
 
 @pytest.mark.django_db(transaction=True)
@@ -39,10 +39,14 @@ class TestCompleteLayer:
 
     @pytest.mark.asyncio
     async def test_second_layer_triggers_analyzer(self, report):
-        """Second task to finish should trigger analyze-and-score."""
-        # Simulate first layer already done
+        """When base layers are ready, should trigger analyze-and-score."""
+        # Simulate both base layers done: probe_results + screenshot_url
         await sync_to_async(
-            lambda: AgentScoreReport.objects.filter(id=report.id).update(completed_layers=1)
+            lambda: AgentScoreReport.objects.filter(id=report.id).update(
+                completed_layers=1,
+                probe_results={"status": 200},
+                screenshot_url="https://example.com/screenshot.png",
+            )
         )()
 
         with patch("common.task_router.TaskRouter.execute") as mock_execute:
@@ -54,9 +58,9 @@ class TestCompleteLayer:
             report_id=str(report.id),
         )
 
-        # Counter should be 2
+        # Counter should be incremented
         await report.arefresh_from_db()
-        assert report.completed_layers == BASE_LAYERS
+        assert report.completed_layers == 2
 
     @pytest.mark.asyncio
     async def test_failed_report_does_not_trigger(self, report):

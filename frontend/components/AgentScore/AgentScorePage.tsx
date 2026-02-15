@@ -6,10 +6,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Globe, FileSearch, Monitor, Blocks } from "lucide-react";
 import { agentScoreReportQuery, agentScoreDomainLookupQuery, scanUrlMutation } from "@/queries/agentScore.queries";
 import { ScoreGauge } from "@/components/AgentScore/ScoreGauge";
-import { ALL_CATEGORIES, SCORED_CATEGORIES, CATEGORY_LABELS, CATEGORY_DESCRIPTIONS } from "./AgentScore.types";
-
-const isUnscoredCategory = (category: string) =>
-  !SCORED_CATEGORIES.includes(category as never);
+import { DEFAULT_CATEGORY_CONFIG } from "./AgentScore.types";
 import { ScanInput } from "./ScanInput";
 import { ScanProgress } from "./ScanProgress";
 import { ScoreReport } from "./ScoreReport";
@@ -152,7 +149,11 @@ export function AgentScorePage() {
       return;
     }
 
-    // Scanning phase: poll until complete or failed
+    // Scanning phase: show report as soon as partial results are available
+    if (phase === "scanning" && report.progress?.analyzers_done) {
+      setPhase("report");
+    }
+    // Also handle full completion
     if (phase === "scanning" && report.status === "complete") {
       setPhase("report");
     }
@@ -176,7 +177,7 @@ export function AgentScorePage() {
 
   // Handle scan submit
   const handleScan = useCallback(
-    (url: string, testSignup: boolean = true, forceRescan: boolean = false) => {
+    (url: string, testSignup: boolean = true, testOpenclaw: boolean = false, forceRescan: boolean = false) => {
       setScanError(undefined);
       setScanUrl(url);
       if (forceRescan) {
@@ -184,7 +185,7 @@ export function AgentScorePage() {
         setPhase("scanning");
         setScanStartedAt(Date.now());
       }
-      scan.mutate({ url, testSignup, forceRescan });
+      scan.mutate({ url, testSignup, testOpenclaw, forceRescan });
     },
     [scan]
   );
@@ -199,18 +200,20 @@ export function AgentScorePage() {
             : "text-center mb-10"
         }
       >
-        {phase === "report" && report && report.status === "complete" ? (
+        {phase === "report" && report ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_auto_1fr] sm:items-start">
             <div className="hidden sm:block" />
             <h1 className="font-editorial text-center text-[28px] sm:text-[40px] text-[#1A1A1A] leading-tight">
               Agent Readiness Score
             </h1>
             <div className="sm:justify-self-end">
-              <ReportHeaderActions
-                report={report}
-                onResync={(url, testSignup) => handleScan(url, testSignup, true)}
-                isResyncing={scan.isPending}
-              />
+              {report.status === "complete" && (
+                <ReportHeaderActions
+                  report={report}
+                  onResync={(url, testSignup) => handleScan(url, testSignup, false, true)}
+                  isResyncing={scan.isPending}
+                />
+              )}
             </div>
           </div>
         ) : (
@@ -241,7 +244,7 @@ export function AgentScorePage() {
         <div className="relative max-w-2xl mx-auto">
           <div className="bg-white rounded-2xl border border-[#E8E4DC] shadow-[0_2px_24px_rgba(0,0,0,0.06)] p-6 sm:p-8">
             <ScanInput
-              onScan={(url, testSignup) => handleScan(url, testSignup)}
+              onScan={(url, testSignup, testOpenclaw) => handleScan(url, testSignup, testOpenclaw)}
               isScanning={phase === "scanning" || scan.isPending}
               error={scanError}
               initialUrl={scanUrl}
@@ -261,8 +264,10 @@ export function AgentScorePage() {
           {/* Greyed-out category gauges */}
           <div className="relative bg-gradient-to-b from-[#FAFAF8] to-white rounded-2xl border border-[#EDEBE6] px-6 py-8 sm:px-10 sm:py-10">
             <div className="flex flex-wrap justify-center items-stretch gap-8 sm:gap-12">
-              {ALL_CATEGORIES.map((category) => {
-                const unscored = isUnscoredCategory(category);
+              {Object.entries(DEFAULT_CATEGORY_CONFIG)
+                .sort(([, a], [, b]) => a.sort_order - b.sort_order)
+                .map(([category, cfg]) => {
+                const unscored = !cfg.scored;
                 return (
                   <div key={category} className="flex items-stretch gap-8 sm:gap-12">
                     {/* Thin vertical divider before unscored categories */}
@@ -275,11 +280,11 @@ export function AgentScorePage() {
                       <ScoreGauge
                         score={0}
                         size="sm"
-                        label={`${CATEGORY_LABELS[category]}${unscored ? " *" : ""}`}
+                        label={`${cfg.label}${unscored ? " *" : ""}`}
                         animated={false}
                       />
                       <p className="text-[10px] text-[#888] mt-1.5 max-w-[100px] text-center leading-tight">
-                        {CATEGORY_DESCRIPTIONS[category]}
+                        {cfg.description}
                       </p>
                     </div>
                   </div>
@@ -358,8 +363,8 @@ export function AgentScorePage() {
       {/* Scanning progress */}
       {phase === "scanning" && <ScanProgress startedAt={scanStartedAt} report={report} />}
 
-      {/* Report */}
-      {phase === "report" && report && report.status === "complete" && (
+      {/* Report (shown for both partial and complete states) */}
+      {phase === "report" && report && (
         <ScoreReport
           report={report}
           onScanAnother={handleScanAnother}

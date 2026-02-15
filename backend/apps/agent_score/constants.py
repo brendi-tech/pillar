@@ -1,16 +1,59 @@
 """
-Constants for Agent Score — category weights, check definitions, AI crawler list.
+Constants for Agent Score — category registry, check definitions, AI crawler list.
+
+CATEGORY_REGISTRY is the single source of truth for every scoring category.
+Adding a new category here is all the backend needs (besides the analyzer itself)
+— the API exposes this registry to the frontend so it renders automatically.
 """
 
-# Category weights for the overall score (must sum to 1.0).
-# WebMCP is scored separately but excluded from the overall score
-# because very few sites support it today — including it would unfairly
-# penalize most sites.  When signup_test is disabled, its weight is
-# redistributed proportionally across the remaining categories.
+# ──────────────────────────────────────────────
+# Category registry — single source of truth
+# ──────────────────────────────────────────────
+# weight: float  → contributes to overall score with this weight
+# weight: None   → scored independently, excluded from overall score
+# optional: True → only runs when the user opts in (e.g. signup_test)
+
+CATEGORY_REGISTRY: dict[str, dict] = {
+    "content": {
+        "label": "Content",
+        "description": "Can agents find, read, and access your content?",
+        "weight": 0.30,
+        "sort_order": 1,
+    },
+    "interaction": {
+        "label": "Interaction",
+        "description": "Can agents take actions and navigate your site?",
+        "weight": 0.30,
+        "sort_order": 2,
+    },
+    "signup_test": {
+        "label": "Signup Test",
+        "description": "Can an AI agent create an account on your site?",
+        "weight": 0.10,
+        "sort_order": 3,
+        "optional": True,
+    },
+    "webmcp": {
+        "label": "WebMCP (Beta)",
+        "description": "Does your site expose tools for AI agents?",
+        "weight": None,  # excluded from overall score
+        "sort_order": 4,
+    },
+    "openclaw": {
+        "label": "Agent Experience",
+        "description": "What happened when a real AI agent tried to use your site?",
+        "weight": 0.30,
+        "sort_order": 5,
+        "optional": True,
+    },
+}
+
+# Derived from the registry — kept for backward compatibility with code that
+# imports CATEGORY_WEIGHTS directly (scoring.py, etc.).
+# When signup_test is disabled at scan time its weight is redistributed
+# proportionally across the remaining categories.
 CATEGORY_WEIGHTS: dict[str, float] = {
-    "content": 0.40,
-    "interaction": 0.40,
-    "signup_test": 0.20,
+    k: v["weight"] for k, v in CATEGORY_REGISTRY.items() if v["weight"] is not None
 }
 
 # Score color thresholds (Lighthouse-style)
@@ -199,7 +242,7 @@ CHECK_DEFINITIONS: list[dict] = [
     {
         "category": "interaction",
         "check_name": "api_documentation",
-        "check_label": "API documentation available",
+        "check_label": "MCP or API documentation exposed",
         "weight": 5,
     },
     # === WebMCP (15%) ===

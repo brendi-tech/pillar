@@ -17,9 +17,16 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-_DNF_RECOMMENDATION = (
-    "This check could not run because our servers were blocked "
-    "from fetching this page."
+_BLOCKED_RECOMMENDATION = (
+    "Your site blocked this request from a cloud server. AI agents "
+    "typically run from cloud data centers and will face the same block. "
+    "Consider allowlisting known AI agent user-agents or providing "
+    "an API-accessible path for programmatic access."
+)
+
+_INFRA_RECOMMENDATION = (
+    "This check could not run due to a temporary issue on our end. "
+    "Try rescanning to get a complete score."
 )
 
 
@@ -119,12 +126,14 @@ def _parse_robots_txt(body: str) -> dict:
 def _check_robots_txt_ai(probes: dict, dq: DataQuality) -> CheckResult:
     """Fetch robots.txt, check if AI crawlers are allowed."""
     if not dq.probe_usable("robots_txt"):
+        blocked = dq.probe_site_blocked("robots_txt")
         return CheckResult(
             category="content", check_name="robots_txt_ai",
             check_label="AI crawlers in robots.txt",
-            passed=False, score=0, weight=10, status="dnf",
+            passed=False, score=0, weight=10,
+            status="evaluated" if blocked else "dnf",
             details={"reason": dq.probes.get("robots_txt", "unknown")},
-            recommendation=_DNF_RECOMMENDATION,
+            recommendation=_BLOCKED_RECOMMENDATION if blocked else _INFRA_RECOMMENDATION,
         )
     probe = probes.get("robots_txt", {})
     exists = probe.get("ok", False)
@@ -201,12 +210,14 @@ def _check_content_signal_header(report: AgentScoreReport, dq: DataQuality) -> C
       - ai-input: Content can be used as AI input (agentic use)
     """
     if not dq.probe_usable("markdown_negotiation"):
+        blocked = dq.probe_site_blocked("markdown_negotiation")
         return CheckResult(
             category="content", check_name="content_signal_header",
             check_label="Content-Signal header",
-            passed=False, score=0, weight=8, status="dnf",
+            passed=False, score=0, weight=8,
+            status="evaluated" if blocked else "dnf",
             details={"reason": dq.probes.get("markdown_negotiation", "unknown")},
-            recommendation=_DNF_RECOMMENDATION,
+            recommendation=_BLOCKED_RECOMMENDATION if blocked else _INFRA_RECOMMENDATION,
         )
 
     content_signal = report.content_signal or ""

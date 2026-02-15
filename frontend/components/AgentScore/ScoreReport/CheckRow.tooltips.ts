@@ -112,7 +112,7 @@ export const CHECK_TOOLTIPS: Record<string, CheckTooltip> = {
 
   api_documentation: {
     description:
-      "Exposed API docs (OpenAPI, Swagger, GraphQL) let agents interact with your service programmatically instead of navigating a UI. This is the most reliable path for agent automation.",
+      "An MCP server or API docs (OpenAPI, Swagger, GraphQL) let agents interact with your service programmatically instead of navigating a UI. This is the most reliable path for agent automation.",
   },
 
   // ── Interaction: Accessibility ───────────────────────────────────────

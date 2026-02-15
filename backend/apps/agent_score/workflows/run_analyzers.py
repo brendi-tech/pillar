@@ -1,10 +1,11 @@
 """
-Analyze and Score — runs all analyzers, datacenter check, and calculates final scores.
+Analyze and Score — runs all analyzers, datacenter check, and calculates scores.
 
-This is the fan-in target: triggered once all parallel layers (http_probes,
-browser_analysis, and optionally signup_test) have completed. It runs the
-static analyzers, merges any existing signup test checks, calculates scores,
-and finalizes the report.
+Triggered by the fan-in when the base layers (http_probes + browser_analysis)
+are ready. If signup_test is still running, it saves partial category scores
+(overall_score = null, status stays "running") so the frontend can display
+progressive results. When signup_test is already done (or not enabled), it
+calculates the full scores and sets status = "complete" in one pass.
 """
 import logging
 from datetime import timedelta
@@ -89,12 +90,12 @@ async def analyze_and_score_workflow(
     workflow_input: AnalyzeAndScoreInput, context: Context
 ):
     """
-    Run all 6 analyzers, datacenter check, calculate weighted scores,
-    and finalize the report.
+    Run all 6 analyzers, datacenter check, and calculate scores.
 
-    Triggered by the fan-in after all parallel layers complete (http_probes,
-    browser_analysis, and optionally signup_test). Signup test checks are
-    already in the DB by the time this runs.
+    Triggered by the fan-in when base layers are ready. Signup test checks
+    may or may not be in the DB yet — if they are, we produce a full score
+    and mark the report complete; if not, we save partial category scores
+    so the frontend can show progressive results.
     """
     from asgiref.sync import sync_to_async
 
@@ -110,8 +111,11 @@ async def analyze_and_score_workflow(
     from apps.agent_score.analyzers.scoring import calculate_overall_score
     from apps.agent_score.models import AgentScoreCheck, AgentScoreReport
 
+    from apps.agent_score.workflows.activity_log import log_activity
+
     report_id = workflow_input.report_id
     logger.info(f"[AGENT SCORE] Running analyze-and-score for report {report_id}")
+    await log_activity(report_id, "analyze_and_score", "info", "Running analyzers")
 
     # Close stale DB connections — Hatchet workers hold long-lived connections
     # that the DB server may have closed (idle timeout, restart, etc.)
@@ -162,22 +166,49 @@ async def analyze_and_score_workflow(
             lambda: AgentScoreCheck.objects.bulk_create(check_objects)
         )()
 
-        # Auto-append scan note when >50% of checks are DNF
+        # Auto-append scan notes based on failure patterns
         dnf_count = sum(1 for cr in all_check_results if cr.status == "dnf")
+        blocked_count = sum(
+            1 for cr in all_check_results
+            if cr.status == "evaluated" and cr.score == 0
+            and cr.details.get("reason") in (
+                "cloudflare_challenge", "blocked", "from_challenge", "error"
+            )
+        )
         total_count = len(all_check_results)
-        if total_count > 0 and dnf_count / total_count > 0.5:
-            existing_notes = report.scan_notes or []
+        existing_notes = report.scan_notes or []
+        notes_changed = False
+
+        # Note for site-blocked checks (now scored as 0, not DNF)
+        if total_count > 0 and blocked_count / total_count > 0.5:
             existing_notes.append({
                 "type": "warning",
                 "category": None,
-                "title": "Limited scan results",
+                "title": "Your site blocks cloud servers",
                 "detail": (
-                    f"{dnf_count} of {total_count} checks could not run "
-                    "because our servers were blocked from accessing this "
-                    "site. The score shown is based on the checks that "
-                    "completed successfully."
+                    f"{blocked_count} of {total_count} checks scored 0 "
+                    "because your site blocked requests from our cloud "
+                    "servers. AI agents typically run from cloud data "
+                    "centers and will face the same block."
                 ),
             })
+            notes_changed = True
+
+        # Note for infra DNF checks (our fault, not the site's)
+        if total_count > 0 and dnf_count / total_count > 0.3:
+            existing_notes.append({
+                "type": "warning",
+                "category": None,
+                "title": "Some checks could not run",
+                "detail": (
+                    f"{dnf_count} of {total_count} checks could not run "
+                    "due to a temporary issue on our end. Try rescanning "
+                    "for a more complete score."
+                ),
+            })
+            notes_changed = True
+
+        if notes_changed:
             report.scan_notes = existing_notes
             await report.asave(update_fields=["scan_notes"])
 
@@ -189,59 +220,123 @@ async def analyze_and_score_workflow(
             f"[AGENT SCORE] Created {len(check_objects)} checks, "
             f"{len(datacenter_issues)} datacenter issues for report {report_id}"
         )
+        await log_activity(
+            report_id, "analyze_and_score", "info",
+            f"Created {len(check_objects)} checks, {len(datacenter_issues)} datacenter issues",
+            {"check_count": len(check_objects), "datacenter_issues": len(datacenter_issues)},
+        )
 
         # ── Phase 2: Calculate scores ───────────────────────────────────────
-        # All checks are in the DB now — including signup_test checks if that
-        # layer ran in parallel. Read them all for the final score.
+        # Read all checks in DB — signup_test checks may or may not exist yet.
         checks = await sync_to_async(
             lambda: list(
                 report.checks.values(
-                    "category", "check_name", "score", "weight", "passed"
+                    "category", "check_name", "score", "weight", "passed", "status"
                 )
             )
         )()
 
         scores = calculate_overall_score(checks)
 
-        report.overall_score = scores["overall"]
-        report.content_score = scores["categories"].get("content", 0)
-        report.interaction_score = scores["categories"].get("interaction", 0)
-        report.webmcp_score = scores["categories"].get("webmcp", 0)
-        report.status = "complete"
-
-        update_fields = [
-            "overall_score",
-            "content_score",
-            "interaction_score",
-            "webmcp_score",
-            "status",
-        ]
-
-        # Include signup_test_score if that layer ran
-        signup_score = scores["categories"].get("signup_test")
-        if report.signup_test_enabled and signup_score is not None:
-            report.signup_test_score = signup_score
-            update_fields.append("signup_test_score")
-
-        await report.asave(update_fields=update_fields)
-
-        logger.info(
-            f"[AGENT SCORE] Report {report_id} complete — "
-            f"overall={scores['overall']}/100"
-            + (f", signup={signup_score}/100" if signup_score is not None else "")
+        # Check if optional layers are still pending — determines partial vs full mode
+        signup_pending = (
+            report.signup_test_enabled and not report.signup_test_data
         )
+        openclaw_pending = (
+            report.openclaw_test_enabled and not report.openclaw_data
+        )
+        optional_pending = signup_pending or openclaw_pending
 
-        return {
-            "status": "success",
-            "report_id": report_id,
-            "check_count": len(check_objects),
-            "overall_score": scores["overall"],
-        }
+        # Merge with any directly-written scores (e.g. openclaw) to avoid overwriting
+        merged_categories = {**(report.category_scores or {}), **scores["categories"]}
+        report.category_scores = merged_categories
+        report.content_score = scores["categories"].get("content")
+        report.interaction_score = scores["categories"].get("interaction")
+        report.webmcp_score = scores["categories"].get("webmcp")
+
+        if optional_pending:
+            # ── Partial mode: optional layers still running ─────────────────
+            # Save category scores so the frontend can show progressive
+            # results, but leave overall_score null and status as "running".
+            report.overall_score = None
+
+            await report.asave(update_fields=[
+                "category_scores",
+                "overall_score",
+                "content_score",
+                "interaction_score",
+                "webmcp_score",
+            ])
+
+            pending_names = []
+            if signup_pending:
+                pending_names.append("signup")
+            if openclaw_pending:
+                pending_names.append("openclaw")
+            logger.info(
+                f"[AGENT SCORE] Partial scores saved for report {report_id} "
+                f"— {', '.join(pending_names)} still pending"
+            )
+            await log_activity(
+                report_id, "analyze_and_score", "success",
+                f"Partial scores saved ({', '.join(pending_names)} still pending)",
+                {"category_scores": scores["categories"]},
+            )
+
+            return {
+                "status": "partial",
+                "report_id": report_id,
+                "check_count": len(check_objects),
+            }
+        else:
+            # ── Full mode: everything ready ─────────────────────────────────
+            report.overall_score = scores["overall"]
+            report.status = "complete"
+
+            update_fields = [
+                "overall_score",
+                "category_scores",
+                "content_score",
+                "interaction_score",
+                "webmcp_score",
+                "status",
+            ]
+
+            # Include signup_test_score if that layer ran
+            signup_score = scores["categories"].get("signup_test")
+            if report.signup_test_enabled and signup_score is not None:
+                report.signup_test_score = signup_score
+                update_fields.append("signup_test_score")
+
+            await report.asave(update_fields=update_fields)
+
+            logger.info(
+                f"[AGENT SCORE] Report {report_id} complete — "
+                f"overall={scores['overall']}/100"
+                + (f", signup={signup_score}/100" if signup_score is not None else "")
+            )
+            await log_activity(
+                report_id, "analyze_and_score", "success",
+                f"Scoring complete: {scores['overall']}/100",
+                {"overall_score": scores["overall"], "category_scores": scores["categories"]},
+            )
+
+            return {
+                "status": "success",
+                "report_id": report_id,
+                "check_count": len(check_objects),
+                "overall_score": scores["overall"],
+            }
 
     except Exception as e:
         logger.error(
             f"[AGENT SCORE] Analyze-and-score failed for {report_id}: {e}",
             exc_info=True,
+        )
+        await log_activity(
+            report_id, "analyze_and_score", "error",
+            f"Analyze-and-score failed: {type(e).__name__}",
+            {"error": str(e)},
         )
         report.status = "failed"
         report.error_message = f"Analyze-and-score failed: {e}"

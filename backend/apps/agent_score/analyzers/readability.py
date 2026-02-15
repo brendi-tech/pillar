@@ -22,9 +22,16 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-_DNF_RECOMMENDATION = (
-    "This check could not run because our servers were blocked "
-    "from fetching this page."
+_BLOCKED_RECOMMENDATION = (
+    "Your site blocked this request from a cloud server. AI agents "
+    "typically run from cloud data centers and will face the same block. "
+    "Consider allowlisting known AI agent user-agents or providing "
+    "an API-accessible path for programmatic access."
+)
+
+_INFRA_RECOMMENDATION = (
+    "This check could not run due to a temporary issue on our end. "
+    "Try rescanning to get a complete score."
 )
 
 
@@ -55,12 +62,14 @@ def _check_markdown_content_negotiation(report: AgentScoreReport, dq: DataQualit
     Cloudflare's "Markdown for Agents" is the first major implementation.
     """
     if not dq.probe_usable("markdown_negotiation"):
+        blocked = dq.probe_site_blocked("markdown_negotiation")
         return CheckResult(
             category="content", check_name="markdown_content_negotiation",
             check_label="Markdown content negotiation",
-            passed=False, score=0, weight=12, status="dnf",
+            passed=False, score=0, weight=12,
+            status="evaluated" if blocked else "dnf",
             details={"reason": dq.probes.get("markdown_negotiation", "unknown")},
-            recommendation=_DNF_RECOMMENDATION,
+            recommendation=_BLOCKED_RECOMMENDATION if blocked else _INFRA_RECOMMENDATION,
         )
 
     probes = report.probe_results or {}
@@ -134,12 +143,14 @@ def _check_token_efficiency(html: str, report: AgentScoreReport, dq: DataQuality
     on the best available delivery path.
     """
     if not dq.html_usable:
+        blocked = dq.html_site_blocked()
         return CheckResult(
             category="content", check_name="token_efficiency",
             check_label="Token efficiency",
-            passed=False, score=0, weight=10, status="dnf",
+            passed=False, score=0, weight=10,
+            status="evaluated" if blocked else "dnf",
             details={"reason": dq.rendered_html or dq.raw_html},
-            recommendation=_DNF_RECOMMENDATION,
+            recommendation=_BLOCKED_RECOMMENDATION if blocked else _INFRA_RECOMMENDATION,
         )
     if not html:
         return CheckResult(
@@ -223,12 +234,14 @@ def _check_markdown_available(report: AgentScoreReport, dq: DataQuality) -> Chec
     file that provides a site-wide markdown index.
     """
     if not dq.probe_usable("llms_txt"):
+        blocked = dq.probe_site_blocked("llms_txt")
         return CheckResult(
             category="content", check_name="markdown_available",
             check_label="Markdown version (/llms.txt)",
-            passed=False, score=0, weight=5, status="dnf",
+            passed=False, score=0, weight=5,
+            status="evaluated" if blocked else "dnf",
             details={"reason": dq.probes.get("llms_txt", "unknown")},
-            recommendation=_DNF_RECOMMENDATION,
+            recommendation=_BLOCKED_RECOMMENDATION if blocked else _INFRA_RECOMMENDATION,
         )
     probes = report.probe_results or {}
     llms_probe = probes.get("llms_txt", {})
@@ -267,12 +280,14 @@ def _check_markdown_available(report: AgentScoreReport, dq: DataQuality) -> Chec
 def _check_content_extraction(html: str, dq: DataQuality) -> CheckResult:
     """Run readability-style content extraction and measure quality."""
     if not dq.html_usable:
+        blocked = dq.html_site_blocked()
         return CheckResult(
             category="content", check_name="content_extraction",
             check_label="Content extraction quality",
-            passed=False, score=0, weight=7, status="dnf",
+            passed=False, score=0, weight=7,
+            status="evaluated" if blocked else "dnf",
             details={"reason": dq.rendered_html or dq.raw_html},
-            recommendation=_DNF_RECOMMENDATION,
+            recommendation=_BLOCKED_RECOMMENDATION if blocked else _INFRA_RECOMMENDATION,
         )
     if not html:
         return CheckResult(
@@ -333,12 +348,14 @@ def _check_content_extraction(html: str, dq: DataQuality) -> CheckResult:
 def _check_semantic_html(html: str, dq: DataQuality) -> CheckResult:
     """Uses <article>, <main>, <nav>, <section> vs div soup."""
     if not dq.html_usable:
+        blocked = dq.html_site_blocked()
         return CheckResult(
             category="content", check_name="semantic_html",
             check_label="Semantic HTML elements",
-            passed=False, score=0, weight=7, status="dnf",
+            passed=False, score=0, weight=7,
+            status="evaluated" if blocked else "dnf",
             details={"reason": dq.rendered_html or dq.raw_html},
-            recommendation=_DNF_RECOMMENDATION,
+            recommendation=_BLOCKED_RECOMMENDATION if blocked else _INFRA_RECOMMENDATION,
         )
     if not html:
         return CheckResult(
@@ -398,12 +415,14 @@ def _check_low_token_bloat(html: str, report: AgentScoreReport, dq: DataQuality)
     cost (markdown tokens) rather than raw HTML.
     """
     if not dq.html_usable:
+        blocked = dq.html_site_blocked()
         return CheckResult(
             category="content", check_name="low_token_bloat",
             check_label="Token footprint",
-            passed=False, score=0, weight=5, status="dnf",
+            passed=False, score=0, weight=5,
+            status="evaluated" if blocked else "dnf",
             details={"reason": dq.rendered_html or dq.raw_html},
-            recommendation=_DNF_RECOMMENDATION,
+            recommendation=_BLOCKED_RECOMMENDATION if blocked else _INFRA_RECOMMENDATION,
         )
 
     html_tokens = report.html_token_count or count_tokens(html) if html else 0

@@ -1,13 +1,14 @@
 """
 Scoring algorithm — weighted rollup from individual checks to category and overall scores.
 
-Content, interaction, and signup_test contribute to the overall score.
-WebMCP is scored as its own category but excluded from the overall score
-because very few sites support it today — including it would unfairly
-penalize most sites.
+Content, interaction, signup_test, and openclaw (agent experience) contribute
+to the overall score.  WebMCP is scored as its own category but excluded from
+the overall score because very few sites support it today — including it would
+unfairly penalize most sites.
 
-When signup_test checks are absent (opt-out), its weight is redistributed
-proportionally across the remaining weighted categories.
+When optional categories (signup_test, openclaw) are absent (opt-out or DNF),
+their weight is redistributed proportionally across the remaining weighted
+categories.
 """
 from __future__ import annotations
 

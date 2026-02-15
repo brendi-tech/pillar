@@ -22,6 +22,7 @@ class AgentScoreCheck(BaseModel):
             ("interaction", "Interaction"),
             ("webmcp", "WebMCP"),
             ("signup_test", "Signup Test"),
+            ("openclaw", "Agent Experience"),
         ],
         help_text="Scoring category this check belongs to",
     )

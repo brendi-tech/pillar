@@ -170,6 +170,79 @@ class TestReportEndpoint:
         assert metrics["content_signal"] == "ai-train=yes, search=yes, ai-input=yes"
         assert metrics["token_reduction_percent"] == 84.0
 
+    def test_category_config_always_present(self, client, mock_task_router):
+        """Every report response should include category_config from the registry."""
+        report = AgentScoreReport.objects.create(
+            url="https://example.com/",
+            domain="example.com",
+            status="complete",
+            overall_score=75,
+        )
+        url = f"/api/public/agent-score/{report.id}/report/"
+        response = client.get(url)
+
+        assert "category_config" in response.data
+        cfg = response.data["category_config"]
+        # Must contain all registry categories
+        assert "content" in cfg
+        assert "interaction" in cfg
+        assert "webmcp" in cfg
+        assert "signup_test" in cfg
+        # Each entry must have the expected fields
+        for key, entry in cfg.items():
+            assert "label" in entry, f"category_config['{key}'] missing 'label'"
+            assert "description" in entry
+            assert "scored" in entry
+            assert "optional" in entry
+            assert "sort_order" in entry
+        # WebMCP should not be scored
+        assert cfg["webmcp"]["scored"] is False
+        # Content should be scored
+        assert cfg["content"]["scored"] is True
+
+    def test_category_scores_fallback_for_legacy_report(self, client, mock_task_router):
+        """Old reports without category_scores JSON should fall back to legacy columns."""
+        report = AgentScoreReport.objects.create(
+            url="https://legacy.com/",
+            domain="legacy.com",
+            status="complete",
+            overall_score=70,
+            content_score=80,
+            interaction_score=60,
+            webmcp_score=0,
+            signup_test_score=50,
+            # category_scores left empty (default={}) to simulate old report
+        )
+        url = f"/api/public/agent-score/{report.id}/report/"
+        response = client.get(url)
+
+        assert "category_scores" in response.data
+        scores = response.data["category_scores"]
+        assert scores["content"] == 80
+        assert scores["interaction"] == 60
+        assert scores["webmcp"] == 0
+        assert scores["signup_test"] == 50
+
+    def test_category_scores_from_json_field(self, client, mock_task_router):
+        """New reports with category_scores JSON should use it directly."""
+        report = AgentScoreReport.objects.create(
+            url="https://new.com/",
+            domain="new.com",
+            status="complete",
+            overall_score=72,
+            category_scores={"content": 85, "interaction": 60, "webmcp": 10, "signup_test": None},
+            content_score=85,
+            interaction_score=60,
+        )
+        url = f"/api/public/agent-score/{report.id}/report/"
+        response = client.get(url)
+
+        scores = response.data["category_scores"]
+        assert scores["content"] == 85
+        assert scores["interaction"] == 60
+        assert scores["webmcp"] == 10
+        assert scores["signup_test"] is None
+
     def test_pending_report(self, client, mock_task_router):
         report = AgentScoreReport.objects.create(
             url="https://example.com/",

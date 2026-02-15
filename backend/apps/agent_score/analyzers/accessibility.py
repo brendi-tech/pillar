@@ -16,9 +16,16 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-_DNF_RECOMMENDATION = (
-    "This check could not run because our servers were blocked "
-    "from loading this page in a browser."
+_BLOCKED_RECOMMENDATION = (
+    "Your site blocked this request from a cloud server. AI agents "
+    "typically run from cloud data centers and will face the same block. "
+    "Consider allowlisting known AI agent user-agents or providing "
+    "an API-accessible path for programmatic access."
+)
+
+_INFRA_RECOMMENDATION = (
+    "This check could not run due to a temporary issue on our end. "
+    "Try rescanning to get a complete score."
 )
 
 
@@ -67,12 +74,14 @@ def _count_ax_tree_roles(tree: dict, target_roles: set) -> dict[str, int]:
 def _check_aria_labels(axe_results: dict, ax_tree: dict, dq: DataQuality) -> CheckResult:
     """Interactive elements have ARIA labels (via axe-core violations)."""
     if dq.axe_results != "ok":
+        blocked = dq.source_site_blocked("axe_results")
         return CheckResult(
             category="interaction", check_name="aria_labels",
             check_label="Interactive elements have ARIA labels",
-            passed=False, score=0, weight=20, status="dnf",
+            passed=False, score=0, weight=20,
+            status="evaluated" if blocked else "dnf",
             details={"reason": dq.axe_results},
-            recommendation=_DNF_RECOMMENDATION,
+            recommendation=_BLOCKED_RECOMMENDATION if blocked else _INFRA_RECOMMENDATION,
         )
     if not axe_results:
         return CheckResult(
@@ -121,12 +130,14 @@ def _check_aria_labels(axe_results: dict, ax_tree: dict, dq: DataQuality) -> Che
 def _check_landmark_roles(ax_tree: dict, dq: DataQuality) -> CheckResult:
     """Page uses landmark roles (main, navigation, banner, etc.)."""
     if dq.accessibility_tree != "ok":
+        blocked = dq.source_site_blocked("accessibility_tree")
         return CheckResult(
             category="interaction", check_name="landmark_roles",
             check_label="Page uses landmark roles",
-            passed=False, score=0, weight=15, status="dnf",
+            passed=False, score=0, weight=15,
+            status="evaluated" if blocked else "dnf",
             details={"reason": dq.accessibility_tree},
-            recommendation=_DNF_RECOMMENDATION,
+            recommendation=_BLOCKED_RECOMMENDATION if blocked else _INFRA_RECOMMENDATION,
         )
     if not ax_tree:
         return CheckResult(
@@ -177,12 +188,14 @@ def _check_landmark_roles(ax_tree: dict, dq: DataQuality) -> CheckResult:
 def _check_keyboard_focusable(axe_results: dict, dq: DataQuality) -> CheckResult:
     """Interactive elements are keyboard-reachable (via axe-core)."""
     if dq.axe_results != "ok":
+        blocked = dq.source_site_blocked("axe_results")
         return CheckResult(
             category="interaction", check_name="keyboard_focusable",
             check_label="Interactive elements are keyboard-reachable",
-            passed=False, score=0, weight=15, status="dnf",
+            passed=False, score=0, weight=15,
+            status="evaluated" if blocked else "dnf",
             details={"reason": dq.axe_results},
-            recommendation=_DNF_RECOMMENDATION,
+            recommendation=_BLOCKED_RECOMMENDATION if blocked else _INFRA_RECOMMENDATION,
         )
     if not axe_results:
         return CheckResult(
@@ -242,12 +255,14 @@ def _check_keyboard_focusable(axe_results: dict, dq: DataQuality) -> CheckResult
 def _check_consistent_nav(ax_tree: dict, dq: DataQuality) -> CheckResult:
     """Navigation structure is consistent and parseable."""
     if dq.accessibility_tree != "ok":
+        blocked = dq.source_site_blocked("accessibility_tree")
         return CheckResult(
             category="interaction", check_name="consistent_nav",
             check_label="Navigation structure is consistent",
-            passed=False, score=0, weight=10, status="dnf",
+            passed=False, score=0, weight=10,
+            status="evaluated" if blocked else "dnf",
             details={"reason": dq.accessibility_tree},
-            recommendation=_DNF_RECOMMENDATION,
+            recommendation=_BLOCKED_RECOMMENDATION if blocked else _INFRA_RECOMMENDATION,
         )
     if not ax_tree:
         return CheckResult(

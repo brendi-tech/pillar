@@ -1,8 +1,10 @@
 """
-Calculate final scores — weighted rollup from checks to category and overall scores.
+Finalize Report — recomputes scores after optional layers complete.
 
-This is the final step in the workflow chain. Sets report status to 'complete'.
-Called after signup test completes to recalculate with all 4 categories.
+Triggered by the fan-in when all optional layers (signup_test, openclaw_test)
+have finished and partial scoring (analyze-and-score) has already run. This
+lightweight task reads all checks (including newly created ones), recomputes
+the overall score, and sets the report status to "complete".
 """
 import logging
 from datetime import timedelta
@@ -17,44 +19,48 @@ logger = logging.getLogger(__name__)
 hatchet = get_hatchet_client()
 
 
-class CalculateScoresInput(BaseModel):
-    """Input for the calculate-scores task."""
+class FinalizeReportInput(BaseModel):
+    """Input for the finalize-report task."""
     report_id: str
 
 
 @hatchet.task(
-    name="agent-score-calculate-scores",
+    name="agent-score-finalize-report",
     retries=1,
     execution_timeout=timedelta(seconds=30),
-    input_validator=CalculateScoresInput,
+    input_validator=FinalizeReportInput,
 )
-async def calculate_scores_workflow(
-    workflow_input: CalculateScoresInput, context: Context
+async def finalize_report_workflow(
+    workflow_input: FinalizeReportInput, context: Context
 ):
     """
-    Load all checks, compute weighted scores, finalize the report.
+    Recompute scores with all checks (including signup) and finalize.
+
+    This is a lightweight task — no analyzers to run, just re-read the
+    checks that are already in the DB and calculate the final scores.
     """
     from asgiref.sync import sync_to_async
 
     from apps.agent_score.analyzers.scoring import calculate_overall_score
     from apps.agent_score.models import AgentScoreReport
 
-    report_id = workflow_input.report_id
-    logger.info(f"[AGENT SCORE] Calculating scores for report {report_id}")
+    from apps.agent_score.workflows.activity_log import log_activity
 
-    # Close stale DB connections — Hatchet workers hold long-lived connections
-    # that the DB server may have closed (idle timeout, restart, etc.)
+    report_id = workflow_input.report_id
+    logger.info(f"[AGENT SCORE] Finalizing report {report_id}")
+    await log_activity(report_id, "finalize", "info", "Finalizing report scores")
+
     from django.db import close_old_connections
     close_old_connections()
 
     try:
         report = await AgentScoreReport.objects.aget(id=report_id)
     except AgentScoreReport.DoesNotExist:
-        logger.error(f"[AGENT SCORE] Report {report_id} not found")
+        logger.error(f"[AGENT SCORE] Report {report_id} not found for finalize")
         return {"status": "error", "error": "report_not_found"}
 
     try:
-        # Load all checks as dicts for the scoring function
+        # Read all checks — now includes signup_test checks
         checks = await sync_to_async(
             lambda: list(
                 report.checks.values(
@@ -65,20 +71,16 @@ async def calculate_scores_workflow(
 
         scores = calculate_overall_score(checks)
 
-        # Update report with final scores
         report.overall_score = scores["overall"]
-        report.category_scores = scores["categories"]
+        # Merge calculated scores with any directly-written scores (e.g. openclaw)
+        # so we don't lose data from layers that wrote their own score.
+        merged_categories = {**(report.category_scores or {}), **scores["categories"]}
+        report.category_scores = merged_categories
 
-        # Legacy per-category columns — kept for backward compat
+        # Legacy per-category columns
         report.content_score = scores["categories"].get("content")
         report.interaction_score = scores["categories"].get("interaction")
         report.webmcp_score = scores["categories"].get("webmcp")
-
-        # Signup test score (only if enabled and present)
-        signup_score = scores["categories"].get("signup_test")
-        if report.signup_test_enabled and signup_score is not None:
-            report.signup_test_score = signup_score
-
         report.status = "complete"
 
         update_fields = [
@@ -89,30 +91,42 @@ async def calculate_scores_workflow(
             "webmcp_score",
             "status",
         ]
+
+        signup_score = scores["categories"].get("signup_test")
         if report.signup_test_enabled and signup_score is not None:
+            report.signup_test_score = signup_score
             update_fields.append("signup_test_score")
 
         await report.asave(update_fields=update_fields)
 
         logger.info(
-            f"[AGENT SCORE] Report {report_id} complete — "
-            f"score={scores['overall']}/100"
+            f"[AGENT SCORE] Report {report_id} finalized — "
+            f"overall={scores['overall']}/100"
             + (f", signup={signup_score}/100" if signup_score is not None else "")
+        )
+        await log_activity(
+            report_id, "finalize", "success",
+            f"Report finalized: {scores['overall']}/100",
+            {"overall_score": scores["overall"], "category_scores": scores["categories"]},
         )
 
         return {
             "status": "success",
             "report_id": report_id,
             "overall_score": scores["overall"],
-            "signup_test_score": signup_score,
         }
 
     except Exception as e:
         logger.error(
-            f"[AGENT SCORE] Score calculation failed for {report_id}: {e}",
+            f"[AGENT SCORE] Finalize failed for {report_id}: {e}",
             exc_info=True,
         )
+        await log_activity(
+            report_id, "finalize", "error",
+            f"Finalize failed: {type(e).__name__}",
+            {"error": str(e)},
+        )
         report.status = "failed"
-        report.error_message = f"Score calculation failed: {e}"
+        report.error_message = f"Finalize failed: {e}"
         await report.asave(update_fields=["status", "error_message"])
         return {"status": "error", "error": str(e)}

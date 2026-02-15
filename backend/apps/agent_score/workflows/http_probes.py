@@ -148,6 +148,8 @@ async def http_probes_workflow(workflow_input: HttpProbesInput, context: Context
     from apps.agent_score.models import AgentScoreReport
     from apps.agent_score.utils import get_origin
 
+    from apps.agent_score.workflows.activity_log import log_activity
+
     report_id = workflow_input.report_id
     logger.info(f"[AGENT SCORE] Starting HTTP probes for report {report_id}")
 
@@ -161,6 +163,8 @@ async def http_probes_workflow(workflow_input: HttpProbesInput, context: Context
     except AgentScoreReport.DoesNotExist:
         logger.error(f"[AGENT SCORE] Report {report_id} not found")
         return {"status": "error", "error": "report_not_found"}
+
+    await log_activity(report_id, "http_probes", "info", f"Fetching {report.url}")
 
     try:
         async with httpx.AsyncClient(
@@ -192,6 +196,23 @@ async def http_probes_workflow(workflow_input: HttpProbesInput, context: Context
                         f"[AGENT SCORE] Homepage redirected: {report.url} -> "
                         f"{resolved_url} ({len(redirect_chain)} hops)"
                     )
+                    await log_activity(
+                        report_id, "http_probes", "info",
+                        f"Redirected to {resolved_url} ({len(redirect_chain)} hops)",
+                        {"redirect_chain": redirect_chain},
+                    )
+
+                await log_activity(
+                    report_id, "http_probes", "info",
+                    f"GET {report.url} -> {main_resp.status_code}",
+                    {"status_code": main_resp.status_code, "url": report.url},
+                )
+            else:
+                await log_activity(
+                    report_id, "http_probes", "warning",
+                    f"Homepage fetch failed: {main_resp}",
+                    {"error": str(main_resp)},
+                )
 
             report.resolved_url = resolved_url
             report.redirect_chain = redirect_chain
@@ -204,6 +225,7 @@ async def http_probes_workflow(workflow_input: HttpProbesInput, context: Context
                 client.get(f"{resolved_origin}/robots.txt"),
                 client.get(f"{resolved_origin}/sitemap.xml"),
                 client.get(f"{resolved_origin}/llms.txt"),
+                client.get(f"{resolved_origin}/.well-known/mcp.json"),
                 client.get(
                     resolved_url,
                     headers={"Accept": "text/markdown, text/html"},
@@ -226,13 +248,26 @@ async def http_probes_workflow(workflow_input: HttpProbesInput, context: Context
         probe_results: dict = {}
         probe_results["main_page"] = _serialize_response(main_resp, "main_page")
 
-        well_known_labels = ["robots_txt", "sitemap", "llms_txt"]
-        for label, resp in zip(well_known_labels, probe_results_raw[:3], strict=True):
+        well_known_labels = ["robots_txt", "sitemap", "llms_txt", "mcp_json"]
+        well_known_paths = ["/robots.txt", "/sitemap.xml", "/llms.txt", "/.well-known/mcp.json"]
+        for label, path, resp in zip(
+            well_known_labels, well_known_paths, probe_results_raw[:4], strict=True
+        ):
             probe_results[label] = _serialize_response(resp, label)
+            status = (
+                resp.status_code
+                if isinstance(resp, httpx.Response)
+                else str(resp)
+            )
+            await log_activity(
+                report_id, "http_probes", "info",
+                f"GET {path} -> {status}",
+                {"path": path, "status": status},
+            )
 
         # Handle markdown content negotiation probe separately
         probe_results["markdown_negotiation"] = _serialize_markdown_response(
-            probe_results_raw[3]
+            probe_results_raw[4]
         )
 
         report.probe_results = probe_results
@@ -269,6 +304,7 @@ async def http_probes_workflow(workflow_input: HttpProbesInput, context: Context
         ])
 
         logger.info(f"[AGENT SCORE] HTTP probes complete for report {report_id}")
+        await log_activity(report_id, "http_probes", "success", "HTTP probes complete")
 
         # Fan-in: increment counter, trigger analyzers if we're the last layer
         from apps.agent_score.workflows.fan_in import complete_layer
@@ -280,6 +316,11 @@ async def http_probes_workflow(workflow_input: HttpProbesInput, context: Context
         logger.error(
             f"[AGENT SCORE] HTTP probes failed for {report_id}: {e}",
             exc_info=True,
+        )
+        await log_activity(
+            report_id, "http_probes", "error",
+            f"HTTP probes failed: {e}",
+            {"error": str(e)},
         )
         # Don't fail the whole scan — store a warning and let other layers proceed
         existing_notes = report.scan_notes or []

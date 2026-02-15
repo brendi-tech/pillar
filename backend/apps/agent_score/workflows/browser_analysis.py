@@ -239,6 +239,8 @@ async def browser_analysis_workflow(
     from apps.agent_score.models import AgentScoreReport
     from apps.agent_score.utils import count_tokens
 
+    from apps.agent_score.workflows.activity_log import log_activity
+
     report_id = workflow_input.report_id
     logger.info(f"[AGENT SCORE] Starting browser analysis for report {report_id}")
 
@@ -252,6 +254,8 @@ async def browser_analysis_workflow(
     except AgentScoreReport.DoesNotExist:
         logger.error(f"[AGENT SCORE] Report {report_id} not found")
         return {"status": "error", "error": "report_not_found"}
+
+    await log_activity(report_id, "browser_analysis", "info", "Launching headless browser")
 
     scan_notes: list[dict] = []
 
@@ -337,10 +341,19 @@ async def browser_analysis_workflow(
 
                 # Log browser resolved URL for redirect visibility
                 browser_resolved_url = page.url
+                await log_activity(
+                    report_id, "browser_analysis", "info",
+                    f"Navigated to {report.url}",
+                    {"url": report.url, "resolved_url": browser_resolved_url},
+                )
                 if browser_resolved_url != report.url:
                     logger.info(
                         f"[AGENT SCORE] Browser redirected: {report.url} -> "
                         f"{browser_resolved_url}"
+                    )
+                    await log_activity(
+                        report_id, "browser_analysis", "info",
+                        f"Browser redirected to {browser_resolved_url}",
                     )
 
                 # 1. Accessibility Tree snapshot via CDP
@@ -470,6 +483,32 @@ async def browser_analysis_workflow(
                 f"[AGENT SCORE] Browser analysis complete for report {report_id}"
             )
 
+            items_collected = []
+            if ax_tree:
+                items_collected.append("accessibility tree")
+            if axe_results:
+                items_collected.append("axe audit")
+            if webmcp_data.get("api_exists"):
+                items_collected.append("WebMCP tools")
+            if forms_data:
+                items_collected.append(f"{len(forms_data)} forms")
+            if screenshot_url:
+                items_collected.append("screenshot")
+
+            await log_activity(
+                report_id, "browser_analysis", "success",
+                f"Browser analysis complete ({', '.join(items_collected) or 'no data'})",
+                {
+                    "has_ax_tree": bool(ax_tree),
+                    "has_axe_results": bool(axe_results),
+                    "webmcp_detected": webmcp_data.get("api_exists", False),
+                    "webmcp_tools": len(webmcp_data.get("tools", [])),
+                    "forms_count": len(forms_data),
+                    "captcha_detected": captcha_data.get("detected", False),
+                    "has_screenshot": bool(screenshot_url),
+                },
+            )
+
             # Fan-in: increment counter, trigger analyzers if we're the last layer
             from apps.agent_score.workflows.fan_in import complete_layer
             await complete_layer(report_id)
@@ -480,6 +519,11 @@ async def browser_analysis_workflow(
             logger.error(
                 f"[AGENT SCORE] Browser analysis failed for {report_id}: {e}",
                 exc_info=True,
+            )
+            await log_activity(
+                report_id, "browser_analysis", "error",
+                f"Browser analysis failed: {type(e).__name__}",
+                {"error": str(e)},
             )
             # Don't fail the whole scan — store a warning and let other layers proceed
             existing_notes = report.scan_notes or []

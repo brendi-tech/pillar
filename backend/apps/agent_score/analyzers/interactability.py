@@ -17,9 +17,16 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-_DNF_RECOMMENDATION = (
-    "This check could not run because our servers were blocked "
-    "from loading this page."
+_BLOCKED_RECOMMENDATION = (
+    "Your site blocked this request from a cloud server. AI agents "
+    "typically run from cloud data centers and will face the same block. "
+    "Consider allowlisting known AI agent user-agents or providing "
+    "an API-accessible path for programmatic access."
+)
+
+_INFRA_RECOMMENDATION = (
+    "This check could not run due to a temporary issue on our end. "
+    "Try rescanning to get a complete score."
 )
 
 
@@ -41,12 +48,14 @@ def run(report: AgentScoreReport, dq: DataQuality) -> list[CheckResult]:
 def _check_labeled_forms(forms_data: list | dict, dq: DataQuality) -> CheckResult:
     """All form inputs have associated labels or aria-label."""
     if dq.forms_data != "ok":
+        blocked = dq.source_site_blocked("forms_data")
         return CheckResult(
             category="interaction", check_name="labeled_forms",
             check_label="All form inputs labeled",
-            passed=False, score=0, weight=20, status="dnf",
+            passed=False, score=0, weight=20,
+            status="evaluated" if blocked else "dnf",
             details={"reason": dq.forms_data},
-            recommendation=_DNF_RECOMMENDATION,
+            recommendation=_BLOCKED_RECOMMENDATION if blocked else _INFRA_RECOMMENDATION,
         )
     if not forms_data or not isinstance(forms_data, list):
         # No forms on page — that's not a failure
@@ -127,12 +136,14 @@ def _check_labeled_forms(forms_data: list | dict, dq: DataQuality) -> CheckResul
 def _check_semantic_actions(ax_tree: dict, dq: DataQuality) -> CheckResult:
     """Buttons/links have descriptive text, not 'Click here'."""
     if dq.accessibility_tree != "ok":
+        blocked = dq.source_site_blocked("accessibility_tree")
         return CheckResult(
             category="interaction", check_name="semantic_actions",
             check_label="Buttons and links have descriptive text",
-            passed=False, score=0, weight=15, status="dnf",
+            passed=False, score=0, weight=15,
+            status="evaluated" if blocked else "dnf",
             details={"reason": dq.accessibility_tree},
-            recommendation=_DNF_RECOMMENDATION,
+            recommendation=_BLOCKED_RECOMMENDATION if blocked else _INFRA_RECOMMENDATION,
         )
     if not ax_tree:
         return CheckResult(
@@ -206,40 +217,54 @@ def _check_semantic_actions(ax_tree: dict, dq: DataQuality) -> CheckResult:
 
 
 def _check_api_documentation(probes: dict, dq: DataQuality) -> CheckResult:
-    """Check for OpenAPI/Swagger/GraphQL mentions in page HTML."""
+    """Check for MCP server or API documentation (OpenAPI/Swagger/GraphQL)."""
     if not dq.probe_usable("main_page"):
+        blocked = dq.probe_site_blocked("main_page")
         return CheckResult(
             category="interaction", check_name="api_documentation",
-            check_label="API documentation available",
-            passed=False, score=0, weight=5, status="dnf",
+            check_label="MCP or API documentation exposed",
+            passed=False, score=0, weight=5,
+            status="evaluated" if blocked else "dnf",
             details={"reason": dq.probes.get("main_page", "unknown")},
-            recommendation=_DNF_RECOMMENDATION,
+            recommendation=_BLOCKED_RECOMMENDATION if blocked else _INFRA_RECOMMENDATION,
         )
+
+    # Check for /.well-known/mcp.json probe
+    mcp_probe = probes.get("mcp_json", {})
+    has_mcp_endpoint = mcp_probe.get("ok", False)
+
+    # Check main page HTML for API doc or MCP keywords
     main_body = probes.get("main_page", {}).get("body", "")
+    body_lower = main_body.lower()
     has_api_link = any(
-        keyword in main_body.lower()
+        keyword in body_lower
         for keyword in ["openapi", "swagger", "/api/docs", "/api/schema", "graphql"]
     )
+    has_mcp_link = any(
+        keyword in body_lower
+        for keyword in [
+            "/.well-known/mcp", "mcp-server", "model context protocol",
+            "mcp.json",
+        ]
+    )
 
-    if has_api_link:
-        score = 100
-        passed = True
-    else:
-        score = 0
-        passed = False
+    found = has_mcp_endpoint or has_api_link or has_mcp_link
 
     return CheckResult(
         category="interaction",
         check_name="api_documentation",
-        check_label="API documentation available",
-        passed=passed,
-        score=score,
+        check_label="MCP or API documentation exposed",
+        passed=found,
+        score=100 if found else 0,
         weight=5,
         details={
+            "has_mcp_endpoint": has_mcp_endpoint,
             "has_api_link_in_page": has_api_link,
+            "has_mcp_link_in_page": has_mcp_link,
         },
-        recommendation="" if passed else (
-            "Expose API documentation (OpenAPI/Swagger/GraphQL) so AI agents can "
-            "discover your site's programmatic capabilities."
+        recommendation="" if found else (
+            "Expose an MCP server (/.well-known/mcp.json) or API documentation "
+            "(OpenAPI/Swagger/GraphQL) so AI agents can discover your site's "
+            "programmatic capabilities."
         ),
     )

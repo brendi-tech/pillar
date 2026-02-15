@@ -2,26 +2,25 @@
 
 import { useState, useMemo, useCallback } from "react";
 import Link from "next/link";
-import { ArrowRight, UserPlus, Link2, Check, Info, AlertTriangle } from "lucide-react";
+import { ArrowRight, UserPlus, Link2, Check, Info, AlertTriangle, Loader2, Bot, CheckCircle2, XCircle, ExternalLink } from "lucide-react";
 import { SessionReplay } from "@/components/AgentScore/SessionReplay";
 import { cn } from "@/lib/utils";
 import { ScoreGauge } from "@/components/AgentScore/ScoreGauge";
+import { ActivityLog } from "./ActivityLog";
 import { CheckRow } from "./CheckRow";
 import { ReportCTA } from "./ReportCTA";
 import type {
   AgentScoreReport,
-  CheckCategory,
   ScanNote,
+  OpenclawData,
 } from "@/components/AgentScore/AgentScore.types";
 import {
-  ALL_CATEGORIES,
-  SCORED_CATEGORIES,
-  CATEGORY_LABELS,
+  getVisibleCategories,
+  getScoredCategories,
   getCategoryScore,
+  getCategoryLabel,
+  isUnscoredCategory,
 } from "@/components/AgentScore/AgentScore.types";
-
-const isUnscoredCategory = (category: CheckCategory) =>
-  !SCORED_CATEGORIES.includes(category);
 
 function getScoreColor(score: number | null): string {
   if (score === null) return "#9A9A9A";
@@ -41,24 +40,24 @@ export function ScoreReport({
 }: ScoreReportProps) {
   const [copied, setCopied] = useState(false);
 
-  // Filter categories: only show signup_test tab when enabled
-  const visibleCategories = useMemo(() => {
-    return ALL_CATEGORIES.filter((cat) => {
-      if (cat === "signup_test") return report.signup_test_enabled;
-      return true;
-    });
-  }, [report.signup_test_enabled]);
+  // Partial state: report has some scores but signup/overall still pending
+  const isPartial = report.status !== "complete";
+
+  // Derive visible categories from the report's category_config
+  const visibleCategories = useMemo(
+    () => getVisibleCategories(report),
+    [report]
+  );
 
   // Find the lowest-scoring *scored* category to select by default.
-  // WebMCP is excluded — most sites score 0 there, so it's not a useful default.
-  // null scores (all-DNF categories) are treated as Infinity so they don't
-  // "win" lowest unless everything is null.
+  // Unscored categories (e.g. WebMCP) are excluded — most sites score 0
+  // there, so it's not a useful default.  null scores (all-DNF categories)
+  // are treated as Infinity so they don't "win" lowest unless everything is null.
   const lowestCategory = useMemo(() => {
-    const scoredVisible = visibleCategories.filter((c) =>
-      SCORED_CATEGORIES.includes(c)
-    );
+    const scored = getScoredCategories(report);
+    const scoredVisible = visibleCategories.filter((c) => scored.includes(c));
     const candidates = scoredVisible.length > 0 ? scoredVisible : visibleCategories;
-    let lowest: CheckCategory = candidates[0];
+    let lowest: string = candidates[0];
     let lowestScore = getCategoryScore(report, lowest) ?? Infinity;
     for (const cat of candidates) {
       const s = getCategoryScore(report, cat) ?? Infinity;
@@ -71,7 +70,7 @@ export function ScoreReport({
   }, [report, visibleCategories]);
 
   const [activeCategory, setActiveCategory] =
-    useState<CheckCategory>(lowestCategory);
+    useState<string>(lowestCategory);
 
   const activeScore = getCategoryScore(report, activeCategory);
 
@@ -109,6 +108,11 @@ export function ScoreReport({
   const signupOutcomeDetail = signupOutcome?.detail as string | undefined;
   const hasSessionRecording = !!report.signup_test_data?.session_id;
 
+  // OpenClaw narrative
+  const showOpenclawNarrative = activeCategory === "openclaw";
+  const openclawData = report.openclaw_data as OpenclawData | undefined;
+  const openclawHasData = !!openclawData?.summary;
+
   // Scan notes relevant to the active category (or general notes)
   const activeNotes = useMemo(() => {
     const notes = report.scan_notes ?? [];
@@ -145,26 +149,34 @@ export function ScoreReport({
             score={report.overall_score}
             size="lg"
             label="Agent Readiness Score"
+            loading={isPartial}
           />
         </div>
+        {isPartial && (
+          <p className="text-sm text-[#6B6B6B] mt-3 animate-pulse">
+            Finishing signup test&hellip;
+          </p>
+        )}
         <div className="mt-4 flex justify-center">
-          <button
-            onClick={handleShare}
-            className="inline-flex items-center justify-center gap-1.5 px-3.5 h-8 bg-white border border-[#D8D8D8] text-[#3A3A3A] text-xs font-medium rounded-full hover:bg-[#F8F8F8] transition-colors"
-            type="button"
-          >
-            {copied ? (
-              <>
-                <Check className="w-3.5 h-3.5" />
-                Link copied!
-              </>
-            ) : (
-              <>
-                <Link2 className="w-3.5 h-3.5" />
-                Share this report
-              </>
-            )}
-          </button>
+          {!isPartial && (
+            <button
+              onClick={handleShare}
+              className="inline-flex items-center justify-center gap-1.5 px-3.5 h-8 bg-white border border-[#D8D8D8] text-[#3A3A3A] text-xs font-medium rounded-full hover:bg-[#F8F8F8] transition-colors"
+              type="button"
+            >
+              {copied ? (
+                <>
+                  <Check className="w-3.5 h-3.5" />
+                  Link copied!
+                </>
+              ) : (
+                <>
+                  <Link2 className="w-3.5 h-3.5" />
+                  Share this report
+                </>
+              )}
+            </button>
+          )}
         </div>
       </div>
 
@@ -173,9 +185,10 @@ export function ScoreReport({
         <div className="flex flex-wrap justify-center items-stretch gap-3 sm:gap-4">
           {visibleCategories.map((category) => {
             const score = getCategoryScore(report, category);
-            const color = getScoreColor(score);
+            const categoryLoading = isPartial && score === null;
+            const color = categoryLoading ? "#FF6E00" : getScoreColor(score);
             const isActive = category === activeCategory;
-            const unscored = isUnscoredCategory(category);
+            const unscored = isUnscoredCategory(report, category);
 
             return (
               <div key={category} className="flex items-stretch gap-3 sm:gap-4">
@@ -192,7 +205,7 @@ export function ScoreReport({
                     isActive
                       ? "bg-white shadow-md"
                       : "bg-transparent border-transparent hover:bg-white/60",
-                    unscored && "opacity-60"
+                    unscored && !categoryLoading && "opacity-60"
                   )}
                   style={{
                     borderColor: isActive ? color : "transparent",
@@ -203,6 +216,7 @@ export function ScoreReport({
                     score={score}
                     size="sm"
                     animated={false}
+                    loading={categoryLoading}
                   />
                   <span
                     className={cn(
@@ -210,7 +224,7 @@ export function ScoreReport({
                       isActive ? "text-[#1A1A1A]" : "text-[#6B6B6B]"
                     )}
                   >
-                    {CATEGORY_LABELS[category]}{unscored && " *"}
+                    {getCategoryLabel(report, category)}{unscored && !categoryLoading && " *"}
                   </span>
                 </button>
               </div>
@@ -237,9 +251,11 @@ export function ScoreReport({
             Could not evaluate
           </span>
         </div>
-        <p className="text-center text-[11px] text-[#999] mt-2">
-          * Not included in overall score &mdash; when WebMCP ships, we&rsquo;ll add it.
-        </p>
+        {visibleCategories.some((c) => isUnscoredCategory(report, c)) && (
+          <p className="text-center text-[11px] text-[#999] mt-2">
+            * Not included in overall score
+          </p>
+        )}
       </div>
 
       {/* Section 3: Detail panel for active category */}
@@ -249,9 +265,17 @@ export function ScoreReport({
           <ScoreGauge
             score={activeScore}
             size="md"
-            label={CATEGORY_LABELS[activeCategory]}
+            label={getCategoryLabel(report, activeCategory)}
+            loading={isPartial && activeScore === null}
           />
         </div>
+
+        {/* OpenClaw self-score note */}
+        {showOpenclawNarrative && openclawHasData && (
+          <p className="text-center text-xs text-[#999] mt-2">
+            Score reflects the agent&apos;s overall experience, not individual check results
+          </p>
+        )}
 
         {/* WebMCP CTA banner */}
         {showWebMCPCta && (
@@ -292,8 +316,32 @@ export function ScoreReport({
           </div>
         )}
 
-        {/* Signup test narrative */}
-        {showSignupNarrative && (
+        {/* Signup test narrative — live activity log while running */}
+        {showSignupNarrative && isPartial && !signupOutcome && (
+          <>
+            <div className="mt-6 rounded-lg bg-[#FFF8F0] border border-[#FFD6A5] p-5">
+              <div className="flex items-center gap-3">
+                <Loader2 className="h-5 w-5 text-[#FF6E00] animate-spin shrink-0" />
+                <div>
+                  <p className="text-sm font-semibold text-[#1A1A1A]">
+                    Still testing signup&hellip;
+                  </p>
+                  <p className="text-sm text-[#6B6B6B] mt-1 leading-relaxed">
+                    An AI agent is attempting to create an account on your site. This takes 30&ndash;60 seconds.
+                  </p>
+                </div>
+              </div>
+            </div>
+            {report.activity_log?.length > 0 && (
+              <ActivityLog
+                entries={report.activity_log}
+                filterWorkflow="signup_test"
+                isLive
+              />
+            )}
+          </>
+        )}
+        {showSignupNarrative && signupOutcome && (
           <div className="mt-6 rounded-lg bg-[#F9F7F3] border border-[#E8E4DC] p-5">
             <div className="flex items-center gap-2 mb-2">
               <UserPlus className="h-4 w-4 text-[#6B6B6B]" />
@@ -314,8 +362,10 @@ export function ScoreReport({
                 (signupOutcomeDetail || "The form was submitted but returned an error.")}
               {signupOutcomeType === "redirect_unknown" &&
                 (signupOutcomeDetail || "The agent was redirected but the outcome was unclear.")}
+              {signupOutcomeType === "timeout" &&
+                "The AI agent ran out of time before completing the signup flow. Your site may be slow to load or have a complex multi-step signup process."}
               {signupOutcomeType === "error" &&
-                "The signup test encountered a technical error and could not complete."}
+                (signupOutcomeDetail || "The signup test encountered a technical error and could not complete.")}
               {signupOutcomeType === "unknown" &&
                 "The AI agent completed the signup flow but the outcome couldn't be clearly classified."}
               {!signupOutcomeType &&
@@ -325,6 +375,107 @@ export function ScoreReport({
               <SessionReplay
                 reportId={report.id}
                 instruction={report.signup_test_data?.instruction as string | undefined}
+              />
+            )}
+          </div>
+        )}
+        {showSignupNarrative && signupOutcome && report.activity_log?.length > 0 && (
+          <ActivityLog
+            entries={report.activity_log}
+            filterWorkflow="signup_test"
+            defaultCollapsed
+          />
+        )}
+
+        {/* OpenClaw narrative */}
+        {showOpenclawNarrative && !openclawHasData && report.openclaw_test_enabled && (
+          <>
+            <div className="mt-6 rounded-lg bg-[#FFF8F0] border border-[#FFD6A5] p-5">
+              <div className="flex items-center gap-3">
+                <Loader2 className="h-5 w-5 text-[#FF6E00] animate-spin shrink-0" />
+                <div>
+                  <p className="text-sm font-semibold text-[#1A1A1A]">
+                    OpenClaw is testing your site&hellip;
+                  </p>
+                  <p className="text-sm text-[#6B6B6B] mt-1 leading-relaxed">
+                    A real AI agent is browsing your site, trying to navigate, sign up, and complete tasks. This takes 1&ndash;3 minutes.
+                  </p>
+                </div>
+              </div>
+            </div>
+            {report.activity_log?.length > 0 && (
+              <ActivityLog
+                entries={report.activity_log}
+                filterWorkflow="openclaw_test"
+                isLive
+              />
+            )}
+          </>
+        )}
+        {showOpenclawNarrative && openclawHasData && openclawData && (
+          <div className="mt-6 space-y-4">
+            {/* Summary */}
+            <div className="rounded-lg bg-[#F9F7F3] border border-[#E8E4DC] p-5">
+              <div className="flex items-center gap-2 mb-2">
+                <Bot className="h-4 w-4 text-[#6B6B6B]" />
+                <span className="text-sm font-semibold text-[#1A1A1A]">Agent&apos;s experience</span>
+              </div>
+              <p className="text-sm text-[#6B6B6B] leading-relaxed">
+                {openclawData.summary}
+              </p>
+            </div>
+
+            {/* What worked / What didn't — two columns */}
+            {(openclawData.what_worked.length > 0 || openclawData.what_didnt.length > 0) && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {openclawData.what_worked.length > 0 && (
+                  <div className="rounded-lg bg-[#F0FFF4] border border-[#C6F6D5] p-4">
+                    <p className="text-xs font-semibold text-[#22543D] uppercase tracking-wide mb-2">What worked</p>
+                    <ul className="space-y-1.5">
+                      {openclawData.what_worked.map((item, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm text-[#6B6B6B]">
+                          <CheckCircle2 className="h-3.5 w-3.5 text-[#0CCE6B] mt-0.5 shrink-0" />
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {openclawData.what_didnt.length > 0 && (
+                  <div className="rounded-lg bg-[#FFF5F5] border border-[#FED7D7] p-4">
+                    <p className="text-xs font-semibold text-[#742A2A] uppercase tracking-wide mb-2">What didn&apos;t work</p>
+                    <ul className="space-y-1.5">
+                      {openclawData.what_didnt.map((item, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm text-[#6B6B6B]">
+                          <XCircle className="h-3.5 w-3.5 text-[#FF4E42] mt-0.5 shrink-0" />
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Attribution */}
+            <p className="text-center text-[11px] text-[#999]">
+              Tested by{" "}
+              <a
+                href="https://openclaw.ai"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline underline-offset-2 hover:text-[#6B6B6B] transition-colors inline-flex items-center gap-0.5"
+              >
+                OpenClaw
+                <ExternalLink className="h-2.5 w-2.5" />
+              </a>
+            </p>
+
+            {report.activity_log?.length > 0 && (
+              <ActivityLog
+                entries={report.activity_log}
+                filterWorkflow="openclaw_test"
+                defaultCollapsed
               />
             )}
           </div>
@@ -370,24 +521,44 @@ export function ScoreReport({
           </div>
         )}
 
+        {/* Full activity log (shown for non-narrative categories or as fallback) */}
+        {!showSignupNarrative && !showOpenclawNarrative && report.activity_log?.length > 0 && (
+          <ActivityLog
+            entries={report.activity_log}
+            isLive={isPartial}
+            defaultCollapsed
+          />
+        )}
+
         {/* Checks heading */}
         <div className="mt-8 mb-3">
-          <h3 className="text-sm font-semibold text-[#1A1A1A] uppercase tracking-wide">Checks</h3>
+          <h3 className="text-sm font-semibold text-[#1A1A1A] uppercase tracking-wide">
+            {showOpenclawNarrative ? "Details" : "Checks"}
+          </h3>
         </div>
 
-        {/* 2-column check list */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 lg:gap-x-10">
-          <div className="divide-y divide-[#F0EDE8]">
-            {leftChecks.map((check, i) => (
-              <CheckRow key={check.check_name} check={check} index={i} />
-            ))}
+        {/* 2-column check list or loading placeholder */}
+        {activeChecks.length > 0 ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 lg:gap-x-10">
+            <div className="divide-y divide-[#F0EDE8]">
+              {leftChecks.map((check, i) => (
+                <CheckRow key={check.check_name} check={check} index={i} neutralDots={showOpenclawNarrative} />
+              ))}
+            </div>
+            <div className="divide-y divide-[#F0EDE8] border-t border-[#F0EDE8] lg:border-t-0">
+              {rightChecks.map((check, i) => (
+                <CheckRow key={check.check_name} check={check} index={midpoint + i} neutralDots={showOpenclawNarrative} />
+              ))}
+            </div>
           </div>
-          <div className="divide-y divide-[#F0EDE8] border-t border-[#F0EDE8] lg:border-t-0">
-            {rightChecks.map((check, i) => (
-              <CheckRow key={check.check_name} check={check} index={midpoint + i} />
-            ))}
+        ) : isPartial ? (
+          <div className="flex items-center justify-center gap-2 py-8 text-sm text-[#6B6B6B]">
+            <Loader2 className="h-4 w-4 animate-spin text-[#FF6E00]" />
+            <span>Running checks&hellip;</span>
           </div>
-        </div>
+        ) : (
+          <p className="text-sm text-[#6B6B6B] py-4">No checks available for this category.</p>
+        )}
       </div>
 
       {/* Footer CTA */}

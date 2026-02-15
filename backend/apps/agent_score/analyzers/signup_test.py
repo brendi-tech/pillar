@@ -106,6 +106,8 @@ def score_signup_outcome(outcome: dict) -> list[CheckResult]:
         submit_score = 40  # Submitted but got an error
     elif outcome_type == "form_filled_not_submitted":
         submit_score = 25  # Filled form but agent couldn't/didn't click submit
+    elif outcome_type == "timeout":
+        submit_score = 10  # Agent ran out of time — site too slow or complex
     elif form_found:
         submit_score = 30  # Found form but couldn't submit
     else:
@@ -171,6 +173,11 @@ def _submission_recommendation(outcome_type: str) -> str:
             "The AI agent filled out the form but could not click the submit button. "
             "Ensure the submit button is a standard <button> or <input type='submit'> "
             "element, clearly visible and not obscured by overlays."
+        ),
+        "timeout": (
+            "The AI agent ran out of time before completing signup. Your site may "
+            "be slow to load or have a complex multi-step signup process. Simplify "
+            "the signup flow and optimize page load times for programmatic access."
         ),
     }
     return recommendations.get(outcome_type, (

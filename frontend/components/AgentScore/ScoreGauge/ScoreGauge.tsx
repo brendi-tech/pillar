@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ScoreGaugeProps {
@@ -8,6 +9,8 @@ interface ScoreGaugeProps {
   size: "lg" | "md" | "sm";
   label?: string;
   animated?: boolean;
+  /** Show a spinning loading state instead of a score. */
+  loading?: boolean;
 }
 
 function getScoreColor(score: number): string {
@@ -19,8 +22,11 @@ function getScoreColor(score: number): string {
 /**
  * Lighthouse-style circular score gauge.
  * Uses SVG stroke-dasharray for the arc fill and rAF for number animation.
+ *
+ * When `loading` is true, a partial arc spins continuously in the brand
+ * orange color with a subtle spinner icon in the center.
  */
-export function ScoreGauge({ score, size, label, animated = true }: ScoreGaugeProps) {
+export function ScoreGauge({ score, size, label, animated = true, loading = false }: ScoreGaugeProps) {
   const isNull = score === null;
   const effectiveScore = score ?? 0;
   const [displayScore, setDisplayScore] = useState<number | null>(animated ? 0 : effectiveScore);
@@ -41,6 +47,9 @@ export function ScoreGauge({ score, size, label, animated = true }: ScoreGaugePr
   const animatedFill = animated && !mounted ? 0 : filledArc;
   const color = isNull ? "#9A9A9A" : getScoreColor(effectiveScore);
 
+  // Loading state: ~30% of the arc, brand orange
+  const loadingArcLength = arcLength * 0.3;
+
   // Animate mount
   useEffect(() => {
     if (!animated) return;
@@ -51,7 +60,7 @@ export function ScoreGauge({ score, size, label, animated = true }: ScoreGaugePr
 
   // Animate number count-up
   useEffect(() => {
-    if (isNull) {
+    if (loading || isNull) {
       setDisplayScore(null);
       return;
     }
@@ -81,7 +90,9 @@ export function ScoreGauge({ score, size, label, animated = true }: ScoreGaugePr
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [effectiveScore, isNull, animated, mounted]);
+  }, [effectiveScore, isNull, animated, mounted, loading]);
+
+  const loaderIconSize = size === "lg" ? "h-10 w-10" : size === "md" ? "h-7 w-7" : "h-4 w-4";
 
   return (
     <div className="flex flex-col items-center gap-1">
@@ -104,33 +115,55 @@ export function ScoreGauge({ score, size, label, animated = true }: ScoreGaugePr
             strokeDasharray={`${arcLength} ${circumference - arcLength}`}
             transform={`rotate(${rotation} ${svgSize / 2} ${svgSize / 2})`}
           />
-          {/* Score arc — fill from start by varying dash length */}
-          <circle
-            cx={svgSize / 2}
-            cy={svgSize / 2}
-            r={radius}
-            fill="none"
-            stroke={color}
-            strokeWidth={strokeWidth}
-            strokeLinecap="round"
-            strokeDasharray={`${animatedFill} ${circumference}`}
-            transform={`rotate(${rotation} ${svgSize / 2} ${svgSize / 2})`}
-            style={{
-              transition: animated ? "stroke-dasharray 1.2s ease-out" : "none",
-            }}
-          />
+
+          {loading ? (
+            /* Spinning arc for loading state */
+            <circle
+              cx={svgSize / 2}
+              cy={svgSize / 2}
+              r={radius}
+              fill="none"
+              stroke="#FF6E00"
+              strokeWidth={strokeWidth}
+              strokeLinecap="round"
+              strokeDasharray={`${loadingArcLength} ${circumference - loadingArcLength}`}
+              className="animate-[gauge-spin_1.4s_linear_infinite]"
+              style={{ transformOrigin: "center" }}
+            />
+          ) : (
+            /* Score arc — fill from start by varying dash length */
+            <circle
+              cx={svgSize / 2}
+              cy={svgSize / 2}
+              r={radius}
+              fill="none"
+              stroke={color}
+              strokeWidth={strokeWidth}
+              strokeLinecap="round"
+              strokeDasharray={`${animatedFill} ${circumference}`}
+              transform={`rotate(${rotation} ${svgSize / 2} ${svgSize / 2})`}
+              style={{
+                transition: animated ? "stroke-dasharray 1.2s ease-out" : "none",
+              }}
+            />
+          )}
         </svg>
-        {/* Score number centered */}
+
+        {/* Center content */}
         <div className="absolute inset-0 flex items-center justify-center">
-          <span
-            className={cn(
-              "font-mono font-bold tabular-nums",
-              size === "lg" ? "text-5xl" : size === "md" ? "text-3xl" : "text-xl"
-            )}
-            style={{ color }}
-          >
-            {displayScore === null ? "—" : displayScore}
-          </span>
+          {loading ? (
+            <Loader2 className={cn(loaderIconSize, "text-[#FF6E00] animate-spin")} />
+          ) : (
+            <span
+              className={cn(
+                "font-mono font-bold tabular-nums",
+                size === "lg" ? "text-5xl" : size === "md" ? "text-3xl" : "text-xl"
+              )}
+              style={{ color }}
+            >
+              {displayScore === null ? "—" : displayScore}
+            </span>
+          )}
         </div>
       </div>
       {label && (

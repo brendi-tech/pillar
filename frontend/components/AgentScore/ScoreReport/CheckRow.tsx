@@ -18,6 +18,8 @@ import { CHECK_TOOLTIPS } from "./CheckRow.tooltips";
 interface CheckRowProps {
   check: AgentScoreCheck;
   index: number;
+  /** When true, use neutral styling (no red/green) — the score isn't derived from these checks. */
+  neutralDots?: boolean;
 }
 
 /**
@@ -26,7 +28,7 @@ interface CheckRowProps {
  * the verbose generic fallback.
  */
 function formatDetails(check: AgentScoreCheck): string | null {
-  if (check.status === "dnf") return "Could not evaluate";
+  if (check.status === "dnf") return "Could not run";
 
   const d = check.details;
   if (!d || Object.keys(d).length === 0) return null;
@@ -204,8 +206,14 @@ function formatDetails(check: AgentScoreCheck): string | null {
       return null;
     }
 
-    case "api_documentation":
-      return d.has_api_link_in_page ? "Found" : "Not found";
+    case "api_documentation": {
+      const hasMcp = d.has_mcp_endpoint || d.has_mcp_link_in_page;
+      const hasApi = d.has_api_link_in_page;
+      if (hasMcp && hasApi) return "MCP + API docs found";
+      if (hasMcp) return "MCP found";
+      if (hasApi) return "API docs found";
+      return "Not found";
+    }
 
     // ── WebMCP ───────────────────────────────────────────────────────────
 
@@ -241,10 +249,35 @@ function formatDetails(check: AgentScoreCheck): string | null {
     case "context_provided":
       return d.context_provided ? "Active" : "Not used";
 
-    // ── Fallback ─────────────────────────────────────────────────────────
+    // ── Signup Test ─────────────────────────────────────────────────────
+
+    case "signup_page_discoverable":
+      return d.found ? "Found" : "Not found";
+
+    case "signup_form_parseable":
+      return d.form_found ? "Parseable" : "Not found";
+
+    case "signup_fields_labeled":
+      return d.fields_identifiable ? "All identifiable" : "Issues found";
+
+    case "signup_no_captcha":
+      return d.captcha_detected ? "CAPTCHA detected" : "No CAPTCHA";
+
+    case "signup_submission_succeeds":
+      return d.submitted ? "Succeeded" : (d.outcome_type as string) ?? "Failed";
+
+    case "signup_clear_outcome":
+      return d.outcome_clear ? "Clear" : "Unclear";
+
+    // ── Fallback (handles checks added after this code was written) ─────
 
     default: {
-      // Show at most one concise value to avoid truncation
+      // Common patterns: exists/found checks
+      if (d.exists !== undefined) return d.exists ? "Found" : "Not found";
+      // Count-based checks
+      const count = d.count ?? d.total;
+      if (count !== undefined) return `${count}`;
+      // Single scalar value
       const vals = Object.entries(d)
         .filter(([, v]) => typeof v === "string" || typeof v === "number" || typeof v === "boolean")
         .map(([, v]) => String(v));
@@ -271,7 +304,7 @@ function getDotColor(check: AgentScoreCheck): string {
   return "#FF4E42";
 }
 
-export function CheckRow({ check, index }: CheckRowProps) {
+export function CheckRow({ check, index, neutralDots }: CheckRowProps) {
   const details = formatDetails(check);
   const isDnf = check.status === "dnf";
   const isExpandable = (!check.passed || isDnf) && !!check.recommendation;
@@ -293,7 +326,7 @@ export function CheckRow({ check, index }: CheckRowProps) {
       {/* Colored dot */}
       <span
         className="w-2 h-2 rounded-full shrink-0"
-        style={{ backgroundColor: getDotColor(check) }}
+        style={{ backgroundColor: neutralDots ? (check.passed ? "#A0AEC0" : "#CBD5E0") : getDotColor(check) }}
       />
 
       {/* Label + info tooltip */}
@@ -338,11 +371,13 @@ export function CheckRow({ check, index }: CheckRowProps) {
       <span
         className={cn(
           "text-xs tabular-nums shrink-0 text-right truncate max-w-[45%]",
-          isDnf
-            ? "text-[#9A9A9A]"
-            : check.passed
-              ? "text-[#6B6B6B]"
-              : "text-[#FF4E42]"
+          neutralDots
+            ? "text-[#6B6B6B]"
+            : isDnf
+              ? "text-[#9A9A9A]"
+              : check.passed
+                ? "text-[#6B6B6B]"
+                : "text-[#FF4E42]"
         )}
         title={rightValue}
       >
@@ -373,7 +408,10 @@ export function CheckRow({ check, index }: CheckRowProps) {
         {rowInner}
       </CollapsibleTrigger>
       <CollapsibleContent>
-        <p className="text-sm text-[#FF6E00] leading-relaxed pl-5 pb-2">
+        <p className={cn(
+          "text-sm leading-relaxed pl-5 pb-2",
+          isDnf ? "text-[#9A9A9A]" : "text-[#FF6E00]"
+        )}>
           {check.recommendation}
         </p>
       </CollapsibleContent>

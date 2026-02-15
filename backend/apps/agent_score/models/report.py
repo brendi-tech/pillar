@@ -33,11 +33,46 @@ class AgentScoreReport(BaseModel):
         help_text="Current processing status",
     )
 
-    # ── Scores (weighted from 4 categories) ──
+    # ── Scores ──
     overall_score = models.IntegerField(null=True, blank=True)
+    category_scores = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text=(
+            'Category score map, e.g. {"content": 85, "interaction": 72, "webmcp": null}. '
+            "New reports write here; the legacy per-category columns below are kept "
+            "for backward compatibility with old reports."
+        ),
+    )
+
+    # Legacy per-category score columns — kept for old reports that predate
+    # the category_scores JSON field.  New reports write both.
     content_score = models.IntegerField(null=True, blank=True)
     interaction_score = models.IntegerField(null=True, blank=True)
     webmcp_score = models.IntegerField(null=True, blank=True)
+
+    # ── OpenClaw Agent Experience Test (opt-in) ──
+    openclaw_test_enabled = models.BooleanField(
+        default=False,
+        help_text="Whether the OpenClaw agent experience test was requested for this scan",
+    )
+    openclaw_data = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text=(
+            "Full results from the OpenClaw agent test: score, summary, "
+            "what_worked, what_didnt, tasks_tried, mcp_found, etc."
+        ),
+    )
+    openclaw_test_status = models.CharField(
+        max_length=100,
+        blank=True,
+        default="",
+        help_text=(
+            "Short status message for the OpenClaw test progress UI. "
+            "Updated at each phase: starting, browsing, testing, scoring."
+        ),
+    )
 
     # ── Agent Signup Test (opt-in, shown separately) ──
     signup_test_enabled = models.BooleanField(

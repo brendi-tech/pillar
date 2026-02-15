@@ -11,12 +11,11 @@ import { CheckRow } from "./CheckRow";
 import { ScoreGauge } from "@/components/AgentScore/ScoreGauge";
 import type {
   AgentScoreReport,
-  CheckCategory,
 } from "@/components/AgentScore/AgentScore.types";
 import {
-  ALL_CATEGORIES,
-  CATEGORY_LABELS,
+  getVisibleCategories,
   getCategoryScore,
+  getCategoryLabel,
 } from "@/components/AgentScore/AgentScore.types";
 
 interface CategoryChecksProps {
@@ -39,18 +38,15 @@ export function CategoryChecks({
 }: CategoryChecksProps) {
   const isDesktop = useIsDesktop();
 
-  // Only show categories that have checks (signup_test may be absent)
-  const visibleCategories = ALL_CATEGORIES.filter((cat) => {
-    if (cat === "signup_test") return report.signup_test_enabled;
-    return true;
-  });
+  // Only show categories that have checks in this report
+  const visibleCategories = getVisibleCategories(report);
 
   const checksByCategory = visibleCategories.reduce(
     (acc, cat) => {
       acc[cat] = report.checks.filter((c) => c.category === cat);
       return acc;
     },
-    {} as Record<CheckCategory, typeof report.checks>
+    {} as Record<string, typeof report.checks>
   );
 
   // On desktop, expand all categories. On mobile, start collapsed.
@@ -95,7 +91,7 @@ export function CategoryChecks({
                 </div>
                 <div className="flex-1 text-left">
                   <span className="text-base font-semibold text-[#1A1A1A]">
-                    {CATEGORY_LABELS[category]}
+                    {getCategoryLabel(report, category)}
                   </span>
                 </div>
                 <span className="text-sm text-[#6B6B6B] shrink-0">

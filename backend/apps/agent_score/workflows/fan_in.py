@@ -1,58 +1,84 @@
 """
 Fan-in coordination for parallel Hatchet tasks.
 
-http_probes, browser_analysis (and optionally signup_test) each call
-complete_layer() when done.  The last one to finish triggers
-analyze-and-score.
+http_probes, browser_analysis (and optionally signup_test and/or
+openclaw_test) each call complete_layer() when done.
+
+Two-phase triggering for progressive results:
+  Phase 1 — base layers (http_probes + browser_analysis) ready →
+             trigger analyze-and-score immediately so the user sees
+             content / interaction / webmcp scores within ~7 s.
+  Phase 2 — all optional layers (signup_test, openclaw_test) finish
+             after partial scoring → trigger finalize-report to
+             recompute overall score.
+
+When optional layers finish before (or at the same time as) the base
+layers, everything fires in a single pass — no finalize needed.
 """
 import logging
 
+from asgiref.sync import sync_to_async
 from django.db.models import F
 
 logger = logging.getLogger(__name__)
 
-# 2 base layers (http_probes + browser_analysis), +1 if signup_test enabled
-BASE_LAYERS = 2
+# Sentinel names used in scan_notes when browser_analysis fails gracefully
+_BROWSER_FAIL_TITLES = {
+    "Browser analysis unavailable",
+    "Could not load page in browser",
+}
 
 
-def _required_layers(report) -> int:
-    """Return the number of layers that must complete before scoring."""
-    return BASE_LAYERS + (1 if report.signup_test_enabled else 0)
+def _base_layers_ready(report) -> bool:
+    """Check if http_probes and browser_analysis have both finished."""
+    has_probes = bool(report.probe_results)
+    has_browser = bool(report.screenshot_url) or any(
+        note.get("title") in _BROWSER_FAIL_TITLES
+        for note in (report.scan_notes or [])
+    )
+    return has_probes and has_browser
 
 
 async def complete_layer(report_id: str) -> bool:
     """
-    Atomically increment completed_layers on the report.
-    If all layers are done, trigger the analyze-and-score task.
+    Atomically increment completed_layers on the report, then decide
+    which downstream task (if any) to trigger.
 
     Uses Django's F() expression for a race-condition-free increment.
 
-    Returns True if this call triggered the next step.
+    Returns True if this call triggered a downstream task.
     """
     from apps.agent_score.models import AgentScoreReport
     from common.task_router import TaskRouter
 
-    # Atomic increment — translates to: UPDATE SET completed_layers = completed_layers + 1
+    # Atomic increment — UPDATE SET completed_layers = completed_layers + 1
     await AgentScoreReport.objects.filter(id=report_id).aupdate(
         completed_layers=F("completed_layers") + 1
     )
 
-    # Re-read to check the new value
+    # Re-read to check the new value and data state
     report = await AgentScoreReport.objects.aget(id=report_id)
-    required = _required_layers(report)
 
     # Don't trigger if the report has already failed (the other task errored)
     if report.status == "failed":
         logger.warning(
             f"[AGENT SCORE] Report {report_id} already failed, "
-            f"skipping analyze-and-score"
+            f"skipping downstream tasks"
         )
         return False
 
-    if report.completed_layers >= required:
+    base_ready = _base_layers_ready(report)
+    signup_ready = not report.signup_test_enabled or bool(report.signup_test_data)
+    openclaw_ready = not report.openclaw_test_enabled or bool(report.openclaw_data)
+    optional_ready = signup_ready and openclaw_ready
+    checks_exist = await sync_to_async(report.checks.exists)()
+
+    # Phase 1: base layers done, no checks yet → run analyzers
+    # (may produce partial or full results depending on optional layer status)
+    if base_ready and not checks_exist:
         logger.info(
-            f"[AGENT SCORE] All {required} layers complete for "
-            f"report {report_id} — triggering analyze-and-score"
+            f"[AGENT SCORE] Base layers ready for report {report_id} "
+            f"— triggering analyze-and-score"
         )
         TaskRouter.execute(
             "agent-score-analyze-and-score",
@@ -60,8 +86,20 @@ async def complete_layer(report_id: str) -> bool:
         )
         return True
 
+    # Phase 2: all optional layers finished after partial scoring → finalize
+    if checks_exist and optional_ready and report.status != "complete":
+        logger.info(
+            f"[AGENT SCORE] All optional layers complete for report {report_id} "
+            f"— triggering finalize-report"
+        )
+        TaskRouter.execute(
+            "agent-score-finalize-report",
+            report_id=report_id,
+        )
+        return True
+
     logger.info(
         f"[AGENT SCORE] Layer complete for report {report_id} "
-        f"({report.completed_layers}/{required})"
+        f"({report.completed_layers} layers done)"
     )
     return False

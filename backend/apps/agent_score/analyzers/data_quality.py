@@ -3,10 +3,16 @@ Data quality assessment — determines which data sources are usable
 before analyzers run.
 
 When HTTP probes or browser analysis are blocked (e.g., Cloudflare challenge),
-the raw data stored on the report is garbage.  Running analyzers against
-garbage produces misleading zero scores.  This module inspects the report's
-raw data and flags which sources are compromised so analyzers can return
-``status="dnf"`` instead of a bogus failure.
+the raw data stored on the report is garbage.  This module inspects the
+report's raw data, classifies each source, and lets analyzers distinguish
+between two failure modes:
+
+- **Site-attributable** (``cloudflare_challenge``, ``blocked``, ``error``,
+  ``from_challenge``): the site actively blocked our request.  Agents
+  running from cloud servers would hit the same wall, so this IS the
+  score — checks return ``status="evaluated", score=0``.
+- **Infrastructure** (``"empty"``): our infra never collected the data.
+  Checks return ``status="dnf"`` — the site shouldn't be penalized.
 """
 from __future__ import annotations
 
@@ -21,6 +27,16 @@ logger = logging.getLogger(__name__)
 
 # Strings that indicate a Cloudflare challenge page rather than real content.
 _CF_MARKERS = ("Just a moment", "challenge-platform")
+
+# Statuses that mean the SITE actively blocked our request — agents running
+# from cloud data centers would face the same block.  "empty" is excluded
+# because it means our infrastructure never collected the data (our fault).
+SITE_BLOCKED_STATUSES = frozenset({
+    "cloudflare_challenge",
+    "blocked",
+    "from_challenge",
+    "error",
+})
 
 
 def _is_cloudflare_challenge(html: str) -> bool:
@@ -66,6 +82,35 @@ class DataQuality:
     def browser_data_usable(self) -> bool:
         """True if the accessibility tree was collected."""
         return self.accessibility_tree == "ok"
+
+    # ── Site-blocked helpers ──────────────────────────────────────────────
+    # These distinguish "the site blocked us" from "our infra didn't run".
+    # Analyzers use these to decide: score 0 (site's fault) vs DNF (ours).
+
+    def html_site_blocked(self) -> bool:
+        """True if HTML is missing because the site blocked our request."""
+        return (
+            self.raw_html in SITE_BLOCKED_STATUSES
+            and self.rendered_html in SITE_BLOCKED_STATUSES
+        )
+
+    def probe_site_blocked(self, name: str) -> bool:
+        """True if the named probe failed because the site blocked it."""
+        return self.probes.get(name) in SITE_BLOCKED_STATUSES
+
+    def source_site_blocked(self, source: str) -> bool:
+        """True if a specific data source was blocked by the site."""
+        value = getattr(self, source, None)
+        if value is None:
+            return False
+        return value in SITE_BLOCKED_STATUSES
+
+    def browser_site_blocked(self) -> bool:
+        """True if browser data is missing because the site blocked it."""
+        return (
+            self.accessibility_tree in SITE_BLOCKED_STATUSES
+            or self.axe_results in SITE_BLOCKED_STATUSES
+        )
 
 
 def assess_data_quality(report: AgentScoreReport) -> DataQuality:

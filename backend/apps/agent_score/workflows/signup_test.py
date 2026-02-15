@@ -70,6 +70,8 @@ async def signup_test_workflow(workflow_input: SignupTestInput, context: Context
     from apps.agent_score.models import AgentScoreCheck, AgentScoreReport
     from apps.agent_score.workflows.fan_in import complete_layer
 
+    from apps.agent_score.workflows.activity_log import log_activity
+
     report_id = workflow_input.report_id
     logger.info(f"[AGENT SCORE] Starting signup test for report {report_id}")
 
@@ -97,9 +99,15 @@ async def signup_test_workflow(workflow_input: SignupTestInput, context: Context
         report.signup_test_status = status
         await report.asave(update_fields=["signup_test_status"])
 
+    await log_activity(
+        report_id, "signup_test", "info",
+        "Starting signup test",
+        {"url": report.url, "email": identity["email"]},
+    )
+
     try:
         outcome = await _run_stagehand_signup(
-            report.url, identity, test_data, _update_status
+            report.url, identity, test_data, _update_status, report_id,
         )
         test_data["outcome"] = outcome
     except Exception as e:
@@ -107,17 +115,57 @@ async def signup_test_workflow(workflow_input: SignupTestInput, context: Context
             f"[AGENT SCORE] Stagehand signup test failed for {report_id}: {e}",
             exc_info=True,
         )
-        test_data["error"] = str(e)
-        outcome = {
-            "signup_page_found": False,
-            "form_found": False,
-            "fields_identifiable": False,
-            "captcha_detected": False,
-            "submission_succeeded": False,
-            "outcome_clear": False,
-            "outcome_type": "error",
-            "detail": str(e),
-        }
+        raw_error = str(e)
+        test_data["error"] = raw_error
+        error_type = _classify_error_type(raw_error, exc=e)
+
+        await log_activity(
+            report_id, "signup_test", "error",
+            f"Signup test failed: {type(e).__name__}",
+            {"error": raw_error, "error_type": error_type},
+        )
+
+        if error_type == "site":
+            # Site-attributable error — build a real outcome and score it.
+            # This IS the score: the site blocked the agent.
+            outcome = _build_site_error_outcome(raw_error)
+            test_data["outcome"] = outcome
+        else:
+            # Infrastructure error — create DNF checks so the site isn't
+            # penalized for our Browserbase/infra issues.
+            human_detail = _describe_infra_error(raw_error)
+            dnf_checks = _build_dnf_signup_checks(report)
+            await sync_to_async(
+                lambda: AgentScoreCheck.objects.bulk_create(dnf_checks)
+            )()
+
+            scan_notes: list[dict] = [{
+                "type": "warning",
+                "category": "signup_test",
+                "title": "Signup test could not run",
+                "detail": (
+                    "The signup test hit a temporary infrastructure issue "
+                    "and could not complete. This does not reflect your "
+                    "site's signup experience. Try rescanning for a "
+                    "complete score."
+                    + (f" ({human_detail})" if human_detail else "")
+                ),
+            }]
+
+            report.signup_test_data = test_data
+            existing_notes = report.scan_notes or []
+            report.scan_notes = existing_notes + scan_notes
+            await report.asave(update_fields=["signup_test_data", "scan_notes"])
+
+            logger.info(
+                f"[AGENT SCORE] Signup test infra error for {report_id}: {human_detail}"
+            )
+            await complete_layer(report_id)
+            return {
+                "status": "infra_error",
+                "report_id": report_id,
+                "error": human_detail,
+            }
 
     # Score the outcome into check results
     check_results = score_signup_outcome(outcome)
@@ -134,6 +182,7 @@ async def signup_test_workflow(workflow_input: SignupTestInput, context: Context
             weight=cr.weight,
             details=cr.details,
             recommendation=cr.recommendation,
+            status=cr.status,
         )
         for cr in check_results
     ]
@@ -171,16 +220,16 @@ async def signup_test_workflow(workflow_input: SignupTestInput, context: Context
                 "or the agent ran out of steps before submitting."
             ),
         })
-    elif outcome_type == "error":
+    elif outcome_type == "timeout":
         scan_notes.append({
-            "type": "warning",
+            "type": "info",
             "category": "signup_test",
-            "title": "Signup test encountered a technical error",
+            "title": "Signup test timed out",
             "detail": (
-                "The browser-based signup test hit a technical error "
-                "before it could complete. This doesn't reflect your "
-                "site's actual signup experience — it's a limitation "
-                "of the automated test."
+                "The AI agent ran out of time before completing the "
+                "signup flow. The site may be slow to load, have a "
+                "complex multi-step signup process, or require "
+                "interactions the agent couldn't complete quickly enough."
             ),
         })
 
@@ -190,9 +239,19 @@ async def signup_test_workflow(workflow_input: SignupTestInput, context: Context
     report.scan_notes = existing_notes + scan_notes
     await report.asave(update_fields=["signup_test_data", "scan_notes"])
 
+    outcome_type = outcome.get("outcome_type", "unknown")
+    outcome_level = "success" if outcome_type in ("success", "verify_email") else (
+        "warning" if outcome_type in ("captcha_blocked", "timeout", "form_filled_not_submitted") else "info"
+    )
+    await log_activity(
+        report_id, "signup_test", outcome_level,
+        f"Signup test complete: {outcome_type}",
+        {"outcome_type": outcome_type, "detail": outcome.get("detail", "")},
+    )
+
     logger.info(
         f"[AGENT SCORE] Signup test complete for {report_id}: "
-        f"outcome={outcome.get('outcome_type', 'unknown')}"
+        f"outcome={outcome_type}"
     )
 
     # Join the fan-in — analyze-and-score fires when all layers are done
@@ -205,11 +264,156 @@ async def signup_test_workflow(workflow_input: SignupTestInput, context: Context
     }
 
 
+def _classify_error_type(raw_error: str, exc: Exception | None = None) -> str:
+    """
+    Classify an exception as site-attributable or infrastructure.
+
+    Returns ``"site"`` for errors the target site caused (CAPTCHA, etc.)
+    and ``"infra"`` for errors from our own infrastructure (Browserbase
+    outages, rate limits, connection failures, API timeouts).
+
+    All exceptions raised by client.sessions.execute() are API-level
+    failures — timeouts included (httpx.ReadTimeout / APITimeoutError).
+    Site-attributable timeouts are reported within the successful response
+    data, not as exceptions.
+    """
+    # If we have the exception object, check Stagehand/httpx types first.
+    # Any Stagehand SDK exception or httpx transport error is infra.
+    if exc is not None:
+        exc_type = type(exc).__name__
+        exc_module = type(exc).__module__ or ""
+        if "stagehand" in exc_module or exc_type in (
+            "APITimeoutError", "InternalServerError", "APIConnectionError",
+            "APIStatusError", "ReadTimeout", "ConnectTimeout",
+        ):
+            return "infra"
+
+    err_lower = raw_error.lower()
+
+    # Stagehand API-level timeouts are infra, not site.
+    # "Request timed out." is the message from stagehand.APITimeoutError.
+    if "request timed out" in err_lower:
+        return "infra"
+
+    # httpx / httpcore transport timeouts are infra.
+    if "readtimeout" in err_lower or "connecttimeout" in err_lower:
+        return "infra"
+
+    # Site-attributable: CAPTCHA is something the site itself blocks on.
+    if "captcha" in err_lower:
+        return "site"
+
+    # Infrastructure: Browserbase / our services are down
+    return "infra"
+
+
+def _build_site_error_outcome(raw_error: str) -> dict:
+    """
+    Build a structured outcome for site-attributable errors.
+
+    Timeouts and CAPTCHAs are things agents would also hit, so they
+    produce real scored outcomes rather than DNF.
+    """
+    err_lower = raw_error.lower()
+
+    if "captcha" in err_lower:
+        return {
+            "signup_page_found": True,
+            "form_found": True,
+            "fields_identifiable": False,
+            "captcha_detected": True,
+            "submission_succeeded": False,
+            "outcome_clear": True,
+            "outcome_type": "captcha_blocked",
+            "detail": "A CAPTCHA blocked the signup attempt before the agent could proceed.",
+        }
+
+    # Default site error: timeout
+    return {
+        "signup_page_found": True,
+        "form_found": False,
+        "fields_identifiable": False,
+        "captcha_detected": False,
+        "submission_succeeded": False,
+        "outcome_clear": True,
+        "outcome_type": "timeout",
+        "detail": (
+            "The browser session timed out before the signup flow completed. "
+            "The site may be slow to load or the signup process is unusually long."
+        ),
+    }
+
+
+def _describe_infra_error(raw_error: str) -> str:
+    """
+    Return a short human-readable description for infrastructure errors.
+
+    These are problems with our browser testing service, not the target site.
+    """
+    err_lower = raw_error.lower()
+
+    if "503" in raw_error or "service unavailable" in err_lower:
+        return "Cloud browser service temporarily unavailable"
+    if "502" in raw_error or "bad gateway" in err_lower:
+        return "Cloud browser service returned bad gateway"
+    if "rate limit" in err_lower or "429" in raw_error:
+        return "Browser testing service rate limited"
+    if "connection" in err_lower and ("refused" in err_lower or "reset" in err_lower):
+        return "Could not connect to browser testing service"
+    if "timed out" in err_lower or "timeout" in err_lower:
+        return "Cloud browser service request timed out"
+
+    # Truncate for logging readability
+    snippet = raw_error[:120] + ("…" if len(raw_error) > 120 else "")
+    return f"Unexpected error: {snippet}"
+
+
+def _build_dnf_signup_checks(report) -> list:
+    """
+    Create DNF check records for all signup test checks.
+
+    Used when an infrastructure error means we couldn't run the test at all.
+    The site shouldn't be penalized — these checks are excluded from scoring.
+    """
+    from apps.agent_score.models import AgentScoreCheck
+
+    dnf_recommendation = (
+        "This check could not run due to a temporary issue on our end. "
+        "Try rescanning to get a complete score."
+    )
+
+    checks_spec = [
+        ("signup_page_discoverable", "Signup page discoverable by agent", 15),
+        ("signup_form_parseable", "Signup form parseable by agent", 20),
+        ("signup_fields_labeled", "Signup form fields identifiable", 15),
+        ("signup_no_captcha", "Signup form free of CAPTCHA", 20),
+        ("signup_submission_succeeds", "Signup form submission succeeds", 20),
+        ("signup_clear_outcome", "Clear outcome after signup attempt", 10),
+    ]
+
+    return [
+        AgentScoreCheck(
+            report=report,
+            category="signup_test",
+            check_name=name,
+            check_label=label,
+            passed=False,
+            score=0,
+            weight=weight,
+            details={"reason": "infra_error"},
+            recommendation=dnf_recommendation,
+            status="dnf",
+        )
+        for name, label, weight in checks_spec
+    ]
+
+
 async def _run_stagehand_signup(
     url: str,
     identity: dict,
     test_data: dict,
     update_status: callable,
+    report_id: str = "",
 ) -> dict:
     """
     Run the actual Stagehand agent session to attempt signup.
@@ -217,6 +421,7 @@ async def _run_stagehand_signup(
     Uses the Stagehand v3 server-side SDK (sessions API).
     Returns a structured outcome dict used for scoring.
     """
+    from apps.agent_score.workflows.activity_log import log_activity
     from stagehand import AsyncStagehand
 
     await update_status("Starting browser session...")
@@ -228,7 +433,7 @@ async def _run_stagehand_signup(
     )
 
     session = await client.sessions.start(
-        model_name="google/gemini-2.5-flash",
+        model_name="google/gemini-3-flash-preview",
         system_prompt=(
             "You are testing whether an AI agent can create an account on this website. "
             "Your goal is to find the signup/registration page, fill out the form, "
@@ -242,11 +447,22 @@ async def _run_stagehand_signup(
     test_data["session_id"] = session_id
     test_data["recording_url"] = f"https://browserbase.com/sessions/{session_id}"
 
+    await log_activity(
+        report_id, "signup_test", "info",
+        "Stagehand session created",
+        {"session_id": session_id, "recording_url": test_data["recording_url"]},
+    )
+
     try:
         # Navigate to the target URL
         await update_status("Navigating to site...")
-        await client.sessions.navigate(session_id, url=url)
+        await client.sessions.navigate(session_id, url=url, timeout=15.0)
         test_data["steps"].append({"step": "navigate", "url": url})
+        await log_activity(
+            report_id, "signup_test", "info",
+            f"Navigated to {url}",
+            {"url": url},
+        )
 
         # Build the instruction for the agent
         instruction = (
@@ -285,11 +501,16 @@ async def _run_stagehand_signup(
 
         # Use agent execute mode to handle the entire signup flow
         await update_status("Finding signup page & filling form...")
+        await log_activity(
+            report_id, "signup_test", "info",
+            "Agent executing signup flow...",
+            {"max_steps": 15, "timeout": 50.0},
+        )
         execute_result = await client.sessions.execute(
             session_id,
             agent_config={
                 "provider": "google",
-                "model": {"model_name": "google/gemini-2.0-flash"},
+                "model": {"model_name": "google/gemini-3-flash-preview"},
                 "system_prompt": (
                     "You are testing whether an AI agent can create an account on this website. "
                     "Your goal is to find the signup/registration page and fill out the form. "
@@ -298,7 +519,7 @@ async def _run_stagehand_signup(
             },
             execute_options={
                 "instruction": instruction,
-                "max_steps": 25,
+                "max_steps": 15,
             },
             timeout=50.0,
         )
@@ -331,8 +552,24 @@ async def _run_stagehand_signup(
             "action_count": action_count,
         })
 
+        execute_level = "success" if completed else "warning"
+        await log_activity(
+            report_id, "signup_test", execute_level,
+            f"Agent {'completed' if completed else 'did not complete'} "
+            f"({action_count} actions taken)",
+            {
+                "completed": completed,
+                "action_count": action_count,
+                "final_url": final_url,
+                "message_preview": agent_message[:300] if agent_message else "",
+            },
+        )
+
         # Classify outcome using LLM with all available signals
         await update_status("Classifying signup result...")
+        await log_activity(
+            report_id, "signup_test", "info", "Classifying signup result with LLM",
+        )
         outcome = await _classify_outcome_with_llm(
             agent_message=agent_message,
             final_url=final_url,
@@ -346,7 +583,13 @@ async def _run_stagehand_signup(
 
     finally:
         try:
-            await client.sessions.end(session_id)
+            # Fire-and-forget — session cleanup doesn't need to block the result
+            import asyncio
+            asyncio.create_task(client.sessions.end(session_id))
+            await log_activity(
+                report_id, "signup_test", "info", "Stagehand session ended",
+                {"session_id": session_id},
+            )
         except Exception:
             pass
 

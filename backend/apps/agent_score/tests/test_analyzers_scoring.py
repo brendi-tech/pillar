@@ -1,10 +1,10 @@
 """
-Tests for the scoring analyzer — calculate_overall_score with 4 categories.
+Tests for the scoring analyzer — calculate_overall_score with 5 categories.
 
 WebMCP is scored as its own category but excluded from the overall score.
-Only content, interaction, and signup_test contribute to the overall number.
-When signup_test checks are absent (opt-out), its weight is redistributed
-proportionally across content and interaction.
+Content, interaction, signup_test, and openclaw contribute to the overall number.
+When optional categories (signup_test, openclaw) are absent, their weight is
+redistributed proportionally across the remaining weighted categories.
 """
 
 from apps.agent_score.analyzers.base import CheckResult
@@ -53,13 +53,14 @@ class TestGetField:
 class TestCalculateOverallScore:
     """Tests for calculate_overall_score — webmcp excluded from overall."""
 
-    def test_all_4_categories_100_scores_100(self):
-        """All checks score 100 across all 4 categories → overall 100."""
+    def test_all_5_categories_100_scores_100(self):
+        """All checks score 100 across all 5 categories → overall 100."""
         checks = [
             _check("content", 100, 1.0),
             _check("interaction", 100, 1.0),
             _check("webmcp", 100, 1.0),
             _check("signup_test", 100, 1.0),
+            _check("openclaw", 100, 1.0),
         ]
         result = calculate_overall_score(checks)
         assert result["overall"] == 100
@@ -75,6 +76,7 @@ class TestCalculateOverallScore:
             _check("interaction", 0, 1.0),
             _check("webmcp", 0, 1.0),
             _check("signup_test", 0, 1.0),
+            _check("openclaw", 0, 1.0),
         ]
         result = calculate_overall_score(checks)
         assert result["overall"] == 0
@@ -89,6 +91,7 @@ class TestCalculateOverallScore:
             _check("interaction", 80, 1.0),
             _check("webmcp", 60, 1.0),
             _check("signup_test", 40, 1.0),
+            _check("openclaw", 70, 1.0),
         ]
         result = calculate_overall_score(checks)
         assert "overall" in result
@@ -98,9 +101,11 @@ class TestCalculateOverallScore:
         assert result["categories"]["interaction"] == 80
         assert result["categories"]["webmcp"] == 60
         assert result["categories"]["signup_test"] == 40
+        assert result["categories"]["openclaw"] == 70
 
-        # Expected (webmcp excluded): 50*0.40 + 80*0.40 + 40*0.20 = 20 + 32 + 8 = 60
-        assert result["overall"] == 60
+        # Expected (webmcp excluded):
+        # 50*0.30 + 80*0.30 + 40*0.10 + 70*0.30 = 15 + 24 + 4 + 21 = 64
+        assert result["overall"] == 64
 
     def test_empty_checks_scores_0(self):
         """Empty checks list yields None (no data to score)."""
@@ -167,28 +172,30 @@ class TestSignupTestWeightRedistribution:
         assert result["categories"]["webmcp"] == 100
 
     def test_redistribution_changes_effective_weights(self):
-        """Without signup_test, content and interaction share the weight."""
-        # Content=100, Interaction=0, WebMCP=0 with signup test
+        """Without signup_test, remaining categories share its weight."""
+        # Content=100, Interaction=0, WebMCP=0, Signup=0, Openclaw=0
         checks_with_signup = [
             _check("content", 100, 1.0),
             _check("interaction", 0, 1.0),
             _check("webmcp", 0, 1.0),
             _check("signup_test", 0, 1.0),
+            _check("openclaw", 0, 1.0),
         ]
         result_with = calculate_overall_score(checks_with_signup)
 
-        # Content=100, Interaction=0, WebMCP=0 without signup test
+        # Content=100, Interaction=0, WebMCP=0, Openclaw=0 (no signup_test)
         checks_without_signup = [
             _check("content", 100, 1.0),
             _check("interaction", 0, 1.0),
             _check("webmcp", 0, 1.0),
+            _check("openclaw", 0, 1.0),
         ]
         result_without = calculate_overall_score(checks_without_signup)
 
-        # With signup: 100*0.40 + 0*0.40 + 0*0.20 = 40
-        assert result_with["overall"] == 40
-        # Without signup: content=0.40/(0.40+0.40)=0.50 → 100*0.50 = 50
-        assert result_without["overall"] == 50
+        # With signup: 100*0.30 + 0*0.30 + 0*0.10 + 0*0.30 = 30
+        assert result_with["overall"] == 30
+        # Without signup: content=0.30/(0.30+0.30+0.30)=0.333 → 100*0.333 ≈ 33
+        assert result_without["overall"] == 33
 
     def test_only_content_scores_correct_proportion(self):
         """With only content checks, it should get 100% of the weight."""
@@ -208,6 +215,7 @@ class TestSignupTestWeightRedistribution:
             _check("interaction", 100, 1.0),
             _check("webmcp", 100, 1.0),
             _check("signup_test", 0, 1.0),
+            _check("openclaw", 100, 1.0),
         ]
         result_present = calculate_overall_score(checks_present)
 
@@ -216,10 +224,11 @@ class TestSignupTestWeightRedistribution:
             _check("content", 100, 1.0),
             _check("interaction", 100, 1.0),
             _check("webmcp", 100, 1.0),
+            _check("openclaw", 100, 1.0),
         ]
         result_absent = calculate_overall_score(checks_absent)
 
-        # Present but 0: 100*0.40 + 100*0.40 + 0*0.20 = 80
-        assert result_present["overall"] == 80
-        # Absent: content+interaction both 100 → 100
+        # Present but 0: 100*0.30 + 100*0.30 + 0*0.10 + 100*0.30 = 90
+        assert result_present["overall"] == 90
+        # Absent: content+interaction+openclaw all 100 → 100
         assert result_absent["overall"] == 100

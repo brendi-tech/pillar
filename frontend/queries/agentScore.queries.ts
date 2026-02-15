@@ -67,11 +67,13 @@ export const scanUrlMutation = () => ({
     url,
     email,
     testSignup = true,
+    testOpenclaw = false,
     forceRescan = false,
   }: {
     url: string;
     email?: string;
     testSignup?: boolean;
+    testOpenclaw?: boolean;
     forceRescan?: boolean;
-  }) => agentScoreAPI.scan(url, email, testSignup, forceRescan),
+  }) => agentScoreAPI.scan(url, email, testSignup, testOpenclaw, forceRescan),
 });

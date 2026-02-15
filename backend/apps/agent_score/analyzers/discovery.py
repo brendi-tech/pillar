@@ -21,9 +21,16 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-_DNF_RECOMMENDATION = (
-    "This check could not run because our servers were blocked "
-    "from fetching this page."
+_BLOCKED_RECOMMENDATION = (
+    "Your site blocked this request from a cloud server. AI agents "
+    "typically run from cloud data centers and will face the same block. "
+    "Consider allowlisting known AI agent user-agents or providing "
+    "an API-accessible path for programmatic access."
+)
+
+_INFRA_RECOMMENDATION = (
+    "This check could not run due to a temporary issue on our end. "
+    "Try rescanning to get a complete score."
 )
 
 
@@ -49,12 +56,14 @@ def run(report: AgentScoreReport, dq: DataQuality) -> list[CheckResult]:
 def _check_llms_txt(probes: dict, dq: DataQuality) -> CheckResult:
     """Fetch /llms.txt — exists, valid markdown, reasonable size."""
     if not dq.probe_usable("llms_txt"):
+        blocked = dq.probe_site_blocked("llms_txt")
         return CheckResult(
             category="content", check_name="llms_txt_present",
             check_label="Has /llms.txt",
-            passed=False, score=0, weight=8, status="dnf",
+            passed=False, score=0, weight=8,
+            status="evaluated" if blocked else "dnf",
             details={"reason": dq.probes.get("llms_txt", "unknown")},
-            recommendation=_DNF_RECOMMENDATION,
+            recommendation=_BLOCKED_RECOMMENDATION if blocked else _INFRA_RECOMMENDATION,
         )
     probe = probes.get("llms_txt", {})
     exists = probe.get("ok", False)
@@ -87,12 +96,14 @@ def _check_llms_txt(probes: dict, dq: DataQuality) -> CheckResult:
 def _check_structured_data(html: str, metadata: dict, dq: DataQuality) -> CheckResult:
     """Parse HTML for JSON-LD / Schema.org markup."""
     if dq.page_metadata != "ok" and dq.raw_html != "ok":
+        blocked = dq.html_site_blocked() or dq.source_site_blocked("page_metadata")
         return CheckResult(
             category="content", check_name="structured_data",
             check_label="Structured data (JSON-LD)",
-            passed=False, score=0, weight=9, status="dnf",
+            passed=False, score=0, weight=9,
+            status="evaluated" if blocked else "dnf",
             details={"reason": dq.raw_html},
-            recommendation=_DNF_RECOMMENDATION,
+            recommendation=_BLOCKED_RECOMMENDATION if blocked else _INFRA_RECOMMENDATION,
         )
     json_ld_raw = metadata.get("json_ld_raw", [])
     count = len(json_ld_raw)
@@ -155,12 +166,14 @@ def _check_structured_data(html: str, metadata: dict, dq: DataQuality) -> CheckR
 def _check_sitemap(probes: dict, dq: DataQuality) -> CheckResult:
     """Fetch /sitemap.xml — does it exist?"""
     if not dq.probe_usable("sitemap"):
+        blocked = dq.probe_site_blocked("sitemap")
         return CheckResult(
             category="content", check_name="sitemap_present",
             check_label="Has /sitemap.xml",
-            passed=False, score=0, weight=5, status="dnf",
+            passed=False, score=0, weight=5,
+            status="evaluated" if blocked else "dnf",
             details={"reason": dq.probes.get("sitemap", "unknown")},
-            recommendation=_DNF_RECOMMENDATION,
+            recommendation=_BLOCKED_RECOMMENDATION if blocked else _INFRA_RECOMMENDATION,
         )
     probe = probes.get("sitemap", {})
     exists = probe.get("ok", False)
@@ -192,12 +205,14 @@ def _check_sitemap(probes: dict, dq: DataQuality) -> CheckResult:
 def _check_meta_description(metadata: dict, dq: DataQuality) -> CheckResult:
     """Check for <meta name="description"> and OpenGraph tags."""
     if dq.page_metadata != "ok":
+        blocked = dq.source_site_blocked("page_metadata")
         return CheckResult(
             category="content", check_name="meta_description",
             check_label="Meta & OpenGraph tags",
-            passed=False, score=0, weight=5, status="dnf",
+            passed=False, score=0, weight=5,
+            status="evaluated" if blocked else "dnf",
             details={"reason": dq.page_metadata},
-            recommendation=_DNF_RECOMMENDATION,
+            recommendation=_BLOCKED_RECOMMENDATION if blocked else _INFRA_RECOMMENDATION,
         )
     desc = metadata.get("meta_description", "")
     og_tags = metadata.get("og_tags", {})
@@ -236,12 +251,14 @@ def _check_meta_description(metadata: dict, dq: DataQuality) -> CheckResult:
 def _check_semantic_headings(html: str, dq: DataQuality) -> CheckResult:
     """Proper h1-h6 hierarchy — no skipped levels, single h1."""
     if dq.raw_html != "ok":
+        blocked = dq.raw_html in ("cloudflare_challenge", "blocked", "error")
         return CheckResult(
             category="content", check_name="semantic_headings",
             check_label="Heading hierarchy (h1–h6)",
-            passed=False, score=0, weight=6, status="dnf",
+            passed=False, score=0, weight=6,
+            status="evaluated" if blocked else "dnf",
             details={"reason": dq.raw_html},
-            recommendation=_DNF_RECOMMENDATION,
+            recommendation=_BLOCKED_RECOMMENDATION if blocked else _INFRA_RECOMMENDATION,
         )
     if not html:
         return CheckResult(
@@ -310,12 +327,14 @@ def _check_semantic_headings(html: str, dq: DataQuality) -> CheckResult:
 def _check_canonical_url(metadata: dict, dq: DataQuality) -> CheckResult:
     """Has <link rel="canonical">."""
     if dq.page_metadata != "ok":
+        blocked = dq.source_site_blocked("page_metadata")
         return CheckResult(
             category="content", check_name="canonical_url",
             check_label="Has canonical URL",
-            passed=False, score=0, weight=3, status="dnf",
+            passed=False, score=0, weight=3,
+            status="evaluated" if blocked else "dnf",
             details={"reason": dq.page_metadata},
-            recommendation=_DNF_RECOMMENDATION,
+            recommendation=_BLOCKED_RECOMMENDATION if blocked else _INFRA_RECOMMENDATION,
         )
     canonical = metadata.get("canonical_url", "")
     has_canonical = bool(canonical)

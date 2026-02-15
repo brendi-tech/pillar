@@ -42,6 +42,8 @@ def get_all_workflows():
         browser_analysis_workflow,
         analyze_and_score_workflow,
         signup_test_workflow,
+        finalize_report_workflow,
+        openclaw_test_workflow,
     )
     
     return [
@@ -66,4 +68,6 @@ def get_all_workflows():
         browser_analysis_workflow,
         analyze_and_score_workflow,
         signup_test_workflow,
+        finalize_report_workflow,
+        openclaw_test_workflow,
     ]

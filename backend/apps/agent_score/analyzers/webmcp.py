@@ -18,9 +18,16 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-_DNF_RECOMMENDATION = (
-    "This check could not run because our servers were blocked "
-    "from loading this page."
+_BLOCKED_RECOMMENDATION = (
+    "Your site blocked this request from a cloud server. AI agents "
+    "typically run from cloud data centers and will face the same block. "
+    "Consider allowlisting known AI agent user-agents or providing "
+    "an API-accessible path for programmatic access."
+)
+
+_INFRA_RECOMMENDATION = (
+    "This check could not run due to a temporary issue on our end. "
+    "Try rescanning to get a complete score."
 )
 
 
@@ -46,12 +53,14 @@ def run(report: AgentScoreReport, dq: DataQuality) -> list[CheckResult]:
 def _check_meta_tag(html: str, dq: DataQuality) -> CheckResult:
     """Page declares WebMCP support via meta tag."""
     if not dq.html_usable:
+        blocked = dq.html_site_blocked()
         return CheckResult(
             category="webmcp", check_name="webmcp_meta_tag",
             check_label="Page declares WebMCP support",
-            passed=False, score=0, weight=15, status="dnf",
+            passed=False, score=0, weight=15,
+            status="evaluated" if blocked else "dnf",
             details={"reason": dq.rendered_html or dq.raw_html},
-            recommendation=_DNF_RECOMMENDATION,
+            recommendation=_BLOCKED_RECOMMENDATION if blocked else _INFRA_RECOMMENDATION,
         )
     # Look for <meta name="webmcp" ...> or similar declarations
     has_meta = bool(
@@ -86,12 +95,14 @@ def _check_meta_tag(html: str, dq: DataQuality) -> CheckResult:
 def _check_script_detected(html: str, dq: DataQuality) -> CheckResult:
     """navigator.modelContext referenced in page scripts."""
     if not dq.html_usable:
+        blocked = dq.html_site_blocked()
         return CheckResult(
             category="webmcp", check_name="webmcp_script_detected",
             check_label="WebMCP API referenced in scripts",
-            passed=False, score=0, weight=20, status="dnf",
+            passed=False, score=0, weight=20,
+            status="evaluated" if blocked else "dnf",
             details={"reason": dq.rendered_html or dq.raw_html},
-            recommendation=_DNF_RECOMMENDATION,
+            recommendation=_BLOCKED_RECOMMENDATION if blocked else _INFRA_RECOMMENDATION,
         )
     if not html:
         return CheckResult(
@@ -150,12 +161,14 @@ def _check_script_detected(html: str, dq: DataQuality) -> CheckResult:
 def _check_tools_registered(webmcp: dict, dq: DataQuality) -> CheckResult:
     """Tools actually registered (requires JS execution)."""
     if dq.webmcp_data != "ok":
+        blocked = dq.source_site_blocked("webmcp_data")
         return CheckResult(
             category="webmcp", check_name="tools_registered",
             check_label="WebMCP tools registered",
-            passed=False, score=0, weight=25, status="dnf",
+            passed=False, score=0, weight=25,
+            status="evaluated" if blocked else "dnf",
             details={"reason": dq.webmcp_data},
-            recommendation=_DNF_RECOMMENDATION,
+            recommendation=_BLOCKED_RECOMMENDATION if blocked else _INFRA_RECOMMENDATION,
         )
     api_exists = webmcp.get("api_exists", False)
     tools = webmcp.get("tools", [])
@@ -190,12 +203,14 @@ def _check_tools_registered(webmcp: dict, dq: DataQuality) -> CheckResult:
 def _check_tool_descriptions_quality(webmcp: dict, dq: DataQuality) -> CheckResult:
     """Tools have clear names, descriptions, and typed schemas."""
     if dq.webmcp_data != "ok":
+        blocked = dq.source_site_blocked("webmcp_data")
         return CheckResult(
             category="webmcp", check_name="tool_descriptions_quality",
             check_label="Tool descriptions and schemas quality",
-            passed=False, score=0, weight=20, status="dnf",
+            passed=False, score=0, weight=20,
+            status="evaluated" if blocked else "dnf",
             details={"reason": dq.webmcp_data},
-            recommendation=_DNF_RECOMMENDATION,
+            recommendation=_BLOCKED_RECOMMENDATION if blocked else _INFRA_RECOMMENDATION,
         )
     tools = webmcp.get("tools", [])
 
@@ -250,12 +265,14 @@ def _check_tool_descriptions_quality(webmcp: dict, dq: DataQuality) -> CheckResu
 def _check_tool_count(webmcp: dict, dq: DataQuality) -> CheckResult:
     """Number of tools exposed."""
     if dq.webmcp_data != "ok":
+        blocked = dq.source_site_blocked("webmcp_data")
         return CheckResult(
             category="webmcp", check_name="tool_count",
             check_label="Number of WebMCP tools exposed",
-            passed=False, score=0, weight=10, status="dnf",
+            passed=False, score=0, weight=10,
+            status="evaluated" if blocked else "dnf",
             details={"reason": dq.webmcp_data},
-            recommendation=_DNF_RECOMMENDATION,
+            recommendation=_BLOCKED_RECOMMENDATION if blocked else _INFRA_RECOMMENDATION,
         )
     tools = webmcp.get("tools", [])
     count = len(tools)
@@ -286,12 +303,14 @@ def _check_tool_count(webmcp: dict, dq: DataQuality) -> CheckResult:
 def _check_context_provided(webmcp: dict, dq: DataQuality) -> CheckResult:
     """Uses provideContext() to give agents page state."""
     if dq.webmcp_data != "ok":
+        blocked = dq.source_site_blocked("webmcp_data")
         return CheckResult(
             category="webmcp", check_name="context_provided",
             check_label="Uses provideContext() for page state",
-            passed=False, score=0, weight=10, status="dnf",
+            passed=False, score=0, weight=10,
+            status="evaluated" if blocked else "dnf",
             details={"reason": dq.webmcp_data},
-            recommendation=_DNF_RECOMMENDATION,
+            recommendation=_BLOCKED_RECOMMENDATION if blocked else _INFRA_RECOMMENDATION,
         )
     context_provided = webmcp.get("context_provided", False)
 

@@ -24,11 +24,12 @@ export const agentScoreAPI = {
     url: string,
     email?: string,
     testSignup: boolean = true,
+    testOpenclaw: boolean = false,
     forceRescan: boolean = false,
   ): Promise<ScanResponse> => {
     const { data } = await publicClient.post<ScanResponse>(
       "/api/public/agent-score/scan/",
-      { url, email, test_signup: testSignup, force_rescan: forceRescan }
+      { url, email, test_signup: testSignup, test_openclaw: testOpenclaw, force_rescan: forceRescan }
     );
     return data;
   },

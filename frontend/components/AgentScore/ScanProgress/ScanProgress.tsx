@@ -32,6 +32,8 @@ interface ProgressStep {
   minActiveSecs: number;
   /** If true, this step can be hidden (e.g. signup test when not enabled). */
   hideable?: boolean;
+  /** Identifies which feature gate controls visibility: "signup" or "openclaw". */
+  hideKey?: "signup" | "openclaw";
   /** If true, this step starts "active" immediately (runs in parallel with
    *  the other layers, not sequentially after previous steps). */
   parallel?: boolean;
@@ -41,7 +43,8 @@ const STEPS: ProgressStep[] = [
   { label: "Fetching page...", progressKey: "http_probes_done", minActiveSecs: 1.5 },
   { label: "Checking robots.txt, sitemap, llms.txt...", progressKey: "http_probes_done", minActiveSecs: 3 },
   { label: "Running browser analysis...", progressKey: "browser_analysis_done", minActiveSecs: 1.5 },
-  { label: "Testing agent signup...", progressKey: "signup_test_done", minActiveSecs: 1.5, hideable: true, parallel: true },
+  { label: "Testing agent signup...", progressKey: "signup_test_done", minActiveSecs: 1.5, hideable: true, parallel: true, hideKey: "signup" },
+  { label: "Testing with OpenClaw agent...", progressKey: "openclaw_test_done", minActiveSecs: 1.5, hideable: true, parallel: true, hideKey: "openclaw" },
   { label: "Analyzing & scoring...", progressKey: "scoring_done", minActiveSecs: 1.5 },
 ];
 
@@ -143,9 +146,11 @@ export function ScanProgress({ startedAt, report }: ScanProgressProps) {
     return () => clearInterval(interval);
   }, []);
 
-  // Filter out hidden steps (e.g. signup test when not enabled)
+  // Filter out hidden steps (e.g. signup/openclaw test when not enabled)
   const visibleSteps = STEPS.filter((step) => {
-    if (step.hideable && report?.signup_test_enabled === false) return false;
+    if (!step.hideable) return true;
+    if (step.hideKey === "signup") return report?.signup_test_enabled !== false;
+    if (step.hideKey === "openclaw") return report?.openclaw_test_enabled === true;
     return true;
   });
 
@@ -172,11 +177,13 @@ export function ScanProgress({ startedAt, report }: ScanProgressProps) {
       <div className="space-y-4">
         {visibleSteps.map((step, i) => {
           const status = statuses[i];
-          // Show granular status for the signup test step while it's running
-          const signupStatus =
-            step.progressKey === "signup_test_done" && status === "active"
-              ? progress?.signup_test_status
-              : undefined;
+          // Show granular status for signup/openclaw test steps while running
+          let substatus: string | undefined;
+          if (step.progressKey === "signup_test_done" && status === "active") {
+            substatus = progress?.signup_test_status;
+          } else if (step.progressKey === "openclaw_test_done" && status === "active") {
+            substatus = progress?.openclaw_test_status;
+          }
 
           return (
             <div
@@ -198,9 +205,9 @@ export function ScanProgress({ startedAt, report }: ScanProgressProps) {
                 >
                   {step.label}
                 </span>
-                {signupStatus && (
+                {substatus && (
                   <p className="text-xs text-[#6B6B6B] mt-0.5 animate-in fade-in duration-300">
-                    {signupStatus}
+                    {substatus}
                   </p>
                 )}
               </div>
