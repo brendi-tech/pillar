@@ -234,15 +234,19 @@ def _find_playwright_chromium() -> str | None:
             chrome_bin = entry / "chrome-linux" / "chrome"
             hs_bin = entry / "chrome-linux" / "headless_shell"
 
+            # List everything inside this directory for debugging
+            try:
+                dir_contents = [p.name for p in entry.iterdir()]
+            except (PermissionError, OSError) as e:
+                dir_contents = [f"error: {e}"]
+
             logger.info(
                 "[AGENT SCORE] Checking %s: chrome=%s headless=%s "
-                "(contents=%s)",
+                "(dir_contents=%s)",
                 entry.name,
                 chrome_bin.exists(),
                 hs_bin.exists(),
-                [p.name for p in (entry / "chrome-linux").iterdir()]
-                if (entry / "chrome-linux").is_dir()
-                else "no chrome-linux dir",
+                dir_contents,
             )
 
             if chrome_bin.is_file():
