@@ -660,7 +660,7 @@ async def _stream_openclaw_response(
 
 @hatchet.task(
     name="agent-score-openclaw-test",
-    retries=1,
+    retries=2,
     execution_timeout=timedelta(minutes=8),
     input_validator=OpenclawTestInput,
     concurrency=ConcurrencyExpression(
