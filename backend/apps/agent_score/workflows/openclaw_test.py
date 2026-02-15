@@ -168,6 +168,51 @@ def _build_checks_from_result(result: dict) -> list[dict]:
 _OPENCLAW_GW_TOKEN = "pillar-agent-score-local-token"
 
 
+def _find_playwright_chromium() -> str | None:
+    """
+    Discover the Playwright-installed Chromium binary path.
+
+    OpenClaw's managed browser auto-detects system Chrome/Brave/Edge/Chromium
+    but does NOT find Playwright's bundled Chromium.  We need to set
+    ``browser.executablePath`` explicitly in the config.
+
+    Search order:
+    1. ``PLAYWRIGHT_BROWSERS_PATH`` env var (set in the worker Dockerfile
+       to ``/opt/ms-playwright``)
+    2. ``~/.cache/ms-playwright`` (default Playwright cache location)
+
+    Returns the path to the ``chrome`` binary, or None if not found.
+    """
+    import os
+    from pathlib import Path
+
+    search_dirs = []
+
+    # Check env var first (worker Dockerfile sets this to /opt/ms-playwright)
+    env_path = os.environ.get("PLAYWRIGHT_BROWSERS_PATH")
+    if env_path:
+        search_dirs.append(Path(env_path))
+
+    # Default Playwright cache locations
+    home = os.path.expanduser("~")
+    search_dirs.append(Path(home) / ".cache" / "ms-playwright")
+
+    for base_dir in search_dirs:
+        if not base_dir.exists():
+            continue
+        # Look for chromium-*/chrome-linux/chrome
+        for chromium_dir in sorted(base_dir.glob("chromium-*"), reverse=True):
+            chrome_bin = chromium_dir / "chrome-linux" / "chrome"
+            if chrome_bin.exists() and chrome_bin.is_file():
+                logger.info(
+                    "[AGENT SCORE] Found Playwright Chromium at %s", chrome_bin
+                )
+                return str(chrome_bin)
+
+    logger.warning("[AGENT SCORE] Playwright Chromium binary not found")
+    return None
+
+
 def _write_openclaw_config(port: int) -> str:
     """
     Write a complete OpenClaw config to the home directory and return the path.
@@ -228,6 +273,13 @@ def _write_openclaw_config(port: int) -> str:
         },
     }
 
+    # Discover the Playwright Chromium binary and set executablePath so
+    # OpenClaw's managed browser can find it (it doesn't auto-detect
+    # Playwright-installed Chromium, only system Chrome/Brave/Edge).
+    chrome_path = _find_playwright_chromium()
+    if chrome_path:
+        config["browser"]["executablePath"] = chrome_path
+
     # Write to OpenClaw's default config location
     home = os.path.expanduser("~")
     config_dir = Path(home) / ".openclaw"
@@ -236,7 +288,8 @@ def _write_openclaw_config(port: int) -> str:
     config_path.write_text(json_mod.dumps(config, indent=2))
 
     logger.info(
-        "[AGENT SCORE] Wrote OpenClaw config to %s (port=%d)", config_path, port
+        "[AGENT SCORE] Wrote OpenClaw config to %s (port=%d, chrome=%s)",
+        config_path, port, chrome_path or "auto-detect",
     )
     return str(config_path)
 

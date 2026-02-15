@@ -47,9 +47,13 @@ ENV PATH="/app/.venv/bin:$PATH"
 # PLAYWRIGHT_BROWSERS_PATH must be set BEFORE any install so both
 # Python Playwright (used by our code) and Node.js Playwright (used by
 # OpenClaw) share the same browser binaries directory.
+#
+# For OpenClaw's Node.js Playwright, the docs recommend using the bundled
+# CLI (not `npx playwright`) to avoid npm override conflicts in Docker.
+# See: https://docs.openclaw.ai/tools/browser#docker-playwright-install
 ENV PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright
 RUN playwright install --with-deps chromium \
-    && npx playwright install chromium
+    && node /usr/lib/node_modules/openclaw/node_modules/playwright-core/cli.js install chromium
 
 # Copy project files
 COPY . .
