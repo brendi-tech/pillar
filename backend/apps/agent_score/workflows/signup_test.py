@@ -222,12 +222,15 @@ async def signup_test_workflow(workflow_input: SignupTestInput, context: Context
         "instruction": test_data.get("instruction"),
     }
 
-    category_scores = report.category_scores or {}
+    # Re-read from DB to avoid clobbering scores written by analyze-and-score
+    # (our in-memory report was loaded before that workflow ran).
+    fresh = await AgentScoreReport.objects.aget(id=report_id)
+    category_scores = fresh.category_scores or {}
     category_scores["signup_test"] = score
 
     report.signup_test_data = signup_data
     report.category_scores = category_scores
-    existing_notes = report.scan_notes or []
+    existing_notes = fresh.scan_notes or []
     report.scan_notes = existing_notes
     await report.asave(
         update_fields=["signup_test_data", "category_scores", "scan_notes"]

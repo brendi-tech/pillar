@@ -936,8 +936,11 @@ async def _run_openclaw_test(report, report_id, _update_status, workflow_input):
             "tasks_tried": result.get("tasks_tried", []),
         }
 
-        # Write the openclaw score into category_scores alongside existing scores
-        category_scores = report.category_scores or {}
+        # Write the openclaw score into category_scores alongside existing scores.
+        # Re-read from DB to avoid clobbering scores written by analyze-and-score
+        # (our in-memory report was loaded before that workflow ran).
+        fresh = await AgentScoreReport.objects.aget(id=report_id)
+        category_scores = fresh.category_scores or {}
         category_scores["openclaw"] = score
 
         report.openclaw_data = openclaw_data

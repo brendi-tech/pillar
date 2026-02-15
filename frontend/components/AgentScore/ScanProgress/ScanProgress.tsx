@@ -225,7 +225,7 @@ export function ScanProgress({ startedAt, report }: ScanProgressProps) {
         })}
       </div>
       <p className="text-sm text-[#6B6B6B] mt-6 text-center">
-        Estimated time: ~1 minute
+        Our tests can take up to 5 minutes.
       </p>
       {report?.id && (
         <div className="mt-6">

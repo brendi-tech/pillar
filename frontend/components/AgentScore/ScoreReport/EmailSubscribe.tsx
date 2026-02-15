@@ -50,27 +50,20 @@ export function EmailSubscribe({ reportId }: EmailSubscribeProps) {
 
   if (submitted) {
     return (
-      <div className="flex items-center gap-2.5 px-5 py-3.5 rounded-xl bg-[#F0FFF4] border border-[#C6F6D5]">
-        <Check className="h-4 w-4 text-[#0CCE6B] shrink-0" />
-        <p className="text-sm text-[#22543D]">
-          We&apos;ll email your full report to <strong>{email.trim()}</strong> when it&apos;s ready.
+      <div className="flex items-center gap-2">
+        <Check className="h-3.5 w-3.5 text-[#0CCE6B] shrink-0" />
+        <p className="text-sm text-[#6B6B6B]">
+          We&apos;ll email your report to <strong className="text-[#1A1A1A]">{email.trim()}</strong>
         </p>
       </div>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="rounded-xl bg-[#FAFAF8] border border-[#E8E4DC] px-5 py-4">
-      <div className="flex items-center gap-2 mb-2.5">
-        <Mail className="h-4 w-4 text-[#FF6E00] shrink-0" />
-        <p className="text-sm font-medium text-[#1A1A1A]">
-          Get your scores by email
-        </p>
-      </div>
-      <p className="text-[13px] text-[#6B6B6B] mb-3 leading-relaxed">
-        Leave your email and we&apos;ll send you the full report when it&apos;s complete.
-      </p>
-      <div className="flex gap-2">
+    <form onSubmit={handleSubmit}>
+      <div className="flex items-center gap-2.5">
+        <Mail className="h-3.5 w-3.5 text-[#6B6B6B] shrink-0" />
+        <span className="text-sm text-[#6B6B6B] shrink-0">Notify me by email</span>
         <Input
           type="email"
           placeholder="you@company.com"
@@ -80,22 +73,22 @@ export function EmailSubscribe({ reportId }: EmailSubscribeProps) {
             setError(null);
           }}
           disabled={subscribe.isPending}
-          className="h-10 text-sm bg-white border-[#D4D4D4] placeholder:text-[#999] focus-visible:ring-[#FF6E00]/30 focus-visible:border-[#FF6E00]"
+          className="h-8 text-sm bg-white border-[#D4D4D4] placeholder:text-[#999] focus-visible:ring-[#FF6E00]/30 focus-visible:border-[#FF6E00] max-w-[220px]"
         />
         <Button
           type="submit"
           disabled={subscribe.isPending}
-          className="h-10 px-5 text-sm font-medium bg-[#FF6E00] hover:bg-[#E06200] text-white shrink-0"
+          className="h-8 px-3.5 text-sm font-medium bg-[#FF6E00] hover:bg-[#E06200] text-white shrink-0"
         >
           {subscribe.isPending ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
           ) : (
-            "Notify me"
+            "Send"
           )}
         </Button>
       </div>
       {error && (
-        <p className="mt-2 text-xs text-[#FF4E42] font-medium">{error}</p>
+        <p className="mt-1.5 text-xs text-[#FF4E42] font-medium pl-6">{error}</p>
       )}
     </form>
   );
