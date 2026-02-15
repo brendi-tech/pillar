@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Link2, Check, Info, AlertTriangle, Loader2, Bot, CheckCircle2, XCircle, ExternalLink } from "lucide-react";
+import { ArrowRight, Link2, Check, Info, AlertTriangle, Loader2, CheckCircle2, XCircle, ExternalLink } from "lucide-react";
 import { SessionReplay } from "@/components/AgentScore/SessionReplay";
 import { cn } from "@/lib/utils";
 import { ScoreGauge } from "@/components/AgentScore/ScoreGauge";
@@ -14,6 +14,7 @@ import type {
   AgentScoreReport,
   ScanNote,
   OpenclawData,
+  LayerState,
 } from "@/components/AgentScore/AgentScore.types";
 import {
   getVisibleCategories,
@@ -100,6 +101,10 @@ export function ScoreReport({
   const showWebMCPCta =
     activeCategory === "webmcp" && (report.webmcp_score === null || report.webmcp_score < 90);
 
+  // Per-layer state enums from the serializer — single source of truth
+  const signupState: LayerState = report.progress?.signup_test_state ?? "disabled";
+  const openclawState: LayerState = report.progress?.openclaw_test_state ?? "disabled";
+
   // Signup test narrative
   const showSignupNarrative = activeCategory === "signup_test";
   const signupOutcome = report.signup_test_data?.outcome as
@@ -109,10 +114,15 @@ export function ScoreReport({
   const signupOutcomeDetail = signupOutcome?.detail as string | undefined;
   const hasSessionRecording = !!report.signup_test_data?.session_id;
 
-  // OpenClaw narrative
+  // OpenClaw narrative data (only needed when state is "success")
   const showOpenclawNarrative = activeCategory === "openclaw";
   const openclawData = report.openclaw_data as OpenclawData | undefined;
-  const openclawHasData = !!openclawData?.summary;
+
+  // Is the active category still loading? Used for gauge spinner + checks placeholder.
+  const activeCategoryLoading =
+    showOpenclawNarrative ? openclawState === "running" :
+    showSignupNarrative ? signupState === "running" :
+    (isPartial && activeScore === null);
 
   // Map each category to the workflows whose activity log entries are relevant
   const CATEGORY_WORKFLOWS: Record<string, string[]> = useMemo(
@@ -280,12 +290,12 @@ export function ScoreReport({
             score={activeScore}
             size="md"
             label={getCategoryLabel(report, activeCategory)}
-            loading={isPartial && activeScore === null}
+            loading={activeCategoryLoading}
           />
         </div>
 
         {/* OpenClaw self-score note */}
-        {showOpenclawNarrative && openclawHasData && (
+        {showOpenclawNarrative && openclawState === "success" && (
           <p className="text-center text-xs text-[#999] mt-2">
             Score reflects the agent&apos;s overall experience, not individual check results
           </p>
@@ -331,7 +341,7 @@ export function ScoreReport({
         )}
 
         {/* Signup test narrative — live activity log while running */}
-        {showSignupNarrative && isPartial && !signupOutcome && (
+        {showSignupNarrative && signupState === "running" && (
           <>
             <div className="mt-6 rounded-lg bg-[#FFF8F0] border border-[#FFD6A5] p-5">
               <div className="flex items-center gap-3">
@@ -402,7 +412,7 @@ export function ScoreReport({
         )}
 
         {/* OpenClaw narrative — still running */}
-        {showOpenclawNarrative && !openclawHasData && report.openclaw_test_enabled && isPartial && (
+        {showOpenclawNarrative && openclawState === "running" && (
           <>
             <div className="mt-6 rounded-lg bg-[#FFF8F0] border border-[#FFD6A5] p-5">
               <div className="flex items-center gap-3">
@@ -426,18 +436,22 @@ export function ScoreReport({
             )}
           </>
         )}
-        {/* OpenClaw narrative — finished but no usable data */}
-        {showOpenclawNarrative && !openclawHasData && report.openclaw_test_enabled && !isPartial && (
+        {/* OpenClaw narrative — finished but errored or no usable data */}
+        {showOpenclawNarrative && openclawState === "error" && (
           <>
             <div className="mt-6 rounded-lg bg-[#F9F7F3] border border-[#E8E4DC] p-5">
               <div className="flex items-center gap-3">
                 <AlertTriangle className="h-5 w-5 text-[#999] shrink-0" />
                 <div>
                   <p className="text-sm font-semibold text-[#1A1A1A]">
-                    Could not evaluate agent experience
+                    {openclawData?.error
+                      ? "Agent experience test failed"
+                      : "Could not evaluate agent experience"}
                   </p>
                   <p className="text-sm text-[#6B6B6B] mt-1 leading-relaxed">
-                    The AI agent browsed your site but wasn&apos;t able to produce a structured evaluation. This can happen when the site is complex or the agent encounters unexpected behavior.
+                    {openclawData?.error
+                      ? "The agent experience test encountered an error before it could browse your site. This is an issue on our end, not with your site."
+                      : "The AI agent browsed your site but wasn\u0027t able to produce a structured evaluation. This can happen when the site is complex or the agent encounters unexpected behavior."}
                   </p>
                 </div>
               </div>
@@ -451,12 +465,12 @@ export function ScoreReport({
             )}
           </>
         )}
-        {showOpenclawNarrative && openclawHasData && openclawData && (
+        {showOpenclawNarrative && openclawState === "success" && openclawData && (
           <div className="mt-6 space-y-4">
             {/* Summary */}
             <div className="rounded-lg bg-[#F9F7F3] border border-[#E8E4DC] p-5">
               <div className="flex items-center gap-2 mb-2">
-                <Bot className="h-4 w-4 text-[#6B6B6B]" />
+                <Image src="/openclaw-logo.svg" alt="OpenClaw" width={16} height={16} className="shrink-0" />
                 <span className="text-sm font-semibold text-[#1A1A1A]">Agent&apos;s experience</span>
               </div>
               <p className="text-sm text-[#6B6B6B] leading-relaxed">
@@ -591,7 +605,7 @@ export function ScoreReport({
               ))}
             </div>
           </div>
-        ) : isPartial ? (
+        ) : activeCategoryLoading ? (
           <div className="flex items-center justify-center gap-2 py-8 text-sm text-[#6B6B6B]">
             <Loader2 className="h-4 w-4 animate-spin text-[#FF6E00]" />
             <span>Running checks&hellip;</span>

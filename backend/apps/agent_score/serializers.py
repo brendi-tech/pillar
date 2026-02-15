@@ -129,6 +129,24 @@ class ReportSerializer(serializers.ModelSerializer):
             "created_at",
         ]
 
+    @staticmethod
+    def _layer_state(enabled: bool, data: dict, result_key: str) -> str:
+        """
+        Derive a layer's state from its enabled flag and data dict.
+
+        Returns one of: "disabled", "running", "success", "error".
+        - "success" means the test produced a meaningful result (result_key is truthy).
+        - "error" means it ran but failed (has data, but result is empty/missing).
+        - "running" means no data has been written yet.
+        """
+        if not enabled:
+            return "disabled"
+        if not data:
+            return "running"
+        if data.get(result_key):
+            return "success"
+        return "error"
+
     def get_progress(self, obj: AgentScoreReport) -> dict:
         """Compute step completion from model state for the progress UI."""
         # Browser analysis is "done" if we got a screenshot (success) OR
@@ -146,19 +164,27 @@ class ReportSerializer(serializers.ModelSerializer):
                 for note in (obj.scan_notes or [])
             )
         )
+
+        # Per-layer state enums — single source of truth for the frontend.
+        # "summary" is the result key for openclaw (empty on error).
+        # "outcome" is the result key for signup (None on infra error,
+        # present for both success and site-attributable errors).
+        signup_state = self._layer_state(
+            obj.signup_test_enabled, obj.signup_test_data, "outcome",
+        )
+        openclaw_state = self._layer_state(
+            obj.openclaw_test_enabled, obj.openclaw_data, "summary",
+        )
+
         return {
             "http_probes_done": bool(obj.probe_results),
             "browser_analysis_done": browser_done,
             "analyzers_done": obj.checks.exists(),
-            "signup_test_done": (
-                not obj.signup_test_enabled
-                or bool(obj.signup_test_data)
-            ),
+            "signup_test_done": signup_state in ("disabled", "success", "error"),
+            "signup_test_state": signup_state,
             "signup_test_status": obj.signup_test_status or "",
-            "openclaw_test_done": (
-                not obj.openclaw_test_enabled
-                or bool(obj.openclaw_data)
-            ),
+            "openclaw_test_done": openclaw_state in ("disabled", "success", "error"),
+            "openclaw_test_state": openclaw_state,
             "openclaw_test_status": obj.openclaw_test_status or "",
             "scoring_done": obj.status == "complete",
         }

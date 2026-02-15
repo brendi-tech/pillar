@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Check, Loader2, Circle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { AgentScoreReport, ScanProgress as ScanProgressData } from "../AgentScore.types";
+import type { AgentScoreReport, ScanProgress as ScanProgressData, LayerState } from "../AgentScore.types";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -177,13 +177,21 @@ export function ScanProgress({ startedAt, report }: ScanProgressProps) {
       <div className="space-y-4">
         {visibleSteps.map((step, i) => {
           const status = statuses[i];
-          // Show granular status for signup/openclaw test steps while running
+
+          // Resolve the layer state enum for parallel (optional) steps
+          let layerState: LayerState | undefined;
+          if (step.progressKey === "signup_test_done") layerState = progress?.signup_test_state;
+          else if (step.progressKey === "openclaw_test_done") layerState = progress?.openclaw_test_state;
+
+          // Show granular substatus for signup/openclaw while running
           let substatus: string | undefined;
-          if (step.progressKey === "signup_test_done" && status === "active") {
-            substatus = progress?.signup_test_status;
-          } else if (step.progressKey === "openclaw_test_done" && status === "active") {
-            substatus = progress?.openclaw_test_status;
+          if (layerState === "running") {
+            if (step.progressKey === "signup_test_done") substatus = progress?.signup_test_status;
+            else if (step.progressKey === "openclaw_test_done") substatus = progress?.openclaw_test_status;
           }
+
+          // A parallel step that errored is visually "done" but should say "Failed"
+          const stepErrored = status === "done" && layerState === "error";
 
           return (
             <div
@@ -193,7 +201,7 @@ export function ScanProgress({ startedAt, report }: ScanProgressProps) {
                 status === "waiting" && "opacity-40"
               )}
             >
-              <StepIcon status={status} />
+              <StepIcon status={stepErrored ? "done" : status} />
               <div className="flex-1 min-w-0">
                 <span
                   className={cn(
@@ -212,7 +220,7 @@ export function ScanProgress({ startedAt, report }: ScanProgressProps) {
                 )}
               </div>
               <span className="ml-auto text-xs text-[#6B6B6B] shrink-0 pt-0.5">
-                {status === "done" && "Done"}
+                {status === "done" && (stepErrored ? "Failed" : "Done")}
                 {status === "active" && "Running"}
                 {status === "waiting" && "Waiting"}
               </span>

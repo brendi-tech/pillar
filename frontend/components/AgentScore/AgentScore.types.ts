@@ -97,14 +97,18 @@ export interface ActivityLogEntry {
 
 // ── Scan progress ───────────────────────────────────────────────────────
 
+/** Per-layer state computed by the serializer — single source of truth. */
+export type LayerState = "disabled" | "running" | "success" | "error";
 
 export interface ScanProgress {
   http_probes_done: boolean;
   browser_analysis_done: boolean;
   analyzers_done: boolean;
   signup_test_done: boolean;
+  signup_test_state: LayerState;
   signup_test_status: string;
   openclaw_test_done: boolean;
+  openclaw_test_state: LayerState;
   openclaw_test_status: string;
   scoring_done: boolean;
 }

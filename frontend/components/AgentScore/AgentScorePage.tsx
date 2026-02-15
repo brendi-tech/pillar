@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Globe, FileSearch, Monitor, Blocks } from "lucide-react";
+import { Globe, FileSearch, Monitor, Blocks, Terminal, ExternalLink } from "lucide-react";
 import { agentScoreReportQuery, agentScoreDomainLookupQuery, scanUrlMutation } from "@/queries/agentScore.queries";
 import { ScoreGauge } from "@/components/AgentScore/ScoreGauge";
 import { DEFAULT_CATEGORY_CONFIG } from "./AgentScore.types";
@@ -344,6 +344,58 @@ export function AgentScorePage() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+
+          {/* Run it yourself CTA */}
+          <div className="mt-16">
+            <div className="flex items-center gap-4 mb-8">
+              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#E8E4DC] to-transparent" />
+              <h2 className="text-lg font-semibold text-[#1A1A1A] shrink-0">
+                Run it yourself
+              </h2>
+              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#E8E4DC] to-transparent" />
+            </div>
+            <div className="bg-white border border-[#E8E4DC] rounded-xl p-6 sm:p-8 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+              <div className="flex items-start gap-5">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/openclaw-logo.svg"
+                  alt="OpenClaw"
+                  className="hidden sm:block w-12 h-12 shrink-0 mt-0.5"
+                />
+                <div className="min-w-0">
+                  <p className="text-sm text-[#6B6B6B] leading-relaxed">
+                    The agent test that powers this score is an open-source{" "}
+                    <a
+                      href="https://openclaw.ai"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#FF6E00] hover:text-[#E06200] font-medium"
+                    >
+                      OpenClaw
+                    </a>{" "}
+                    skill. Install it and run it locally against any site — no account needed.
+                  </p>
+                  <div className="mt-4 bg-[#1A1A1A] rounded-lg px-4 py-3 font-mono text-sm text-[#E8E4DC] flex items-center gap-3 overflow-x-auto">
+                    <Terminal className="h-4 w-4 text-[#666] shrink-0" />
+                    <code className="whitespace-nowrap">openclaw skill install pillarhq/openclaw-agent-score</code>
+                  </div>
+                  <p className="text-xs text-[#999] mt-3">
+                    Then ask your agent:{" "}
+                    <span className="text-[#6B6B6B] font-medium">&quot;Run agent-score on https://your-site.com&quot;</span>
+                  </p>
+                  <a
+                    href="https://github.com/pillarhq/openclaw-agent-score"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-sm text-[#FF6E00] hover:text-[#E06200] font-medium mt-4"
+                  >
+                    View on GitHub
+                    <ExternalLink className="h-3.5 w-3.5" />
+                  </a>
+                </div>
+              </div>
             </div>
           </div>
 
