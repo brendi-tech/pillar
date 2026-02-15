@@ -266,41 +266,36 @@ CHECK_DEFINITIONS: list[dict] = [
         "check_label": "Uses provideContext() for page state",
         "weight": 10,
     },
-    # === Signup Test (15%) ===
+    # === Signup Test (25%) ===
+    # NOTE: Signup test checks are DYNAMIC — generated at runtime from the
+    # agent's self-scored result (tasks_tried + boolean flags), following the
+    # same pattern as OpenClaw. The category score comes from the agent's
+    # self-assessment (0-100), not from check aggregation.
+    # These reference entries document the boolean-level checks that are
+    # always created; additional task-level checks (signup_task_*) are
+    # generated dynamically from the agent's tasks_tried array.
     {
         "category": "signup_test",
-        "check_name": "signup_page_discoverable",
-        "check_label": "Signup page discoverable by agent",
-        "weight": 15,
+        "check_name": "signup_signup_page_found",
+        "check_label": "Signup page found by agent",
+        "weight": 1,
     },
     {
         "category": "signup_test",
-        "check_name": "signup_form_parseable",
-        "check_label": "Signup form parseable by agent",
-        "weight": 20,
+        "check_name": "signup_form_found",
+        "check_label": "Signup form detected",
+        "weight": 1,
     },
     {
         "category": "signup_test",
-        "check_name": "signup_fields_labeled",
-        "check_label": "Signup form fields identifiable",
-        "weight": 15,
+        "check_name": "signup_captcha_detected",
+        "check_label": "CAPTCHA blocked signup",
+        "weight": 1,
     },
     {
         "category": "signup_test",
-        "check_name": "signup_no_captcha",
-        "check_label": "Signup form free of CAPTCHA",
-        "weight": 20,
-    },
-    {
-        "category": "signup_test",
-        "check_name": "signup_submission_succeeds",
-        "check_label": "Signup form submission succeeds",
-        "weight": 20,
-    },
-    {
-        "category": "signup_test",
-        "check_name": "signup_clear_outcome",
-        "check_label": "Clear outcome after signup attempt",
-        "weight": 10,
+        "check_name": "signup_submission_succeeded",
+        "check_label": "Form submission succeeded",
+        "weight": 1,
     },
 ]

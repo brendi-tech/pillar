@@ -249,7 +249,21 @@ function formatDetails(check: AgentScoreCheck): string | null {
     case "context_provided":
       return d.context_provided ? "Active" : "Not used";
 
-    // ── Signup Test ─────────────────────────────────────────────────────
+    // ── Signup Test (new self-scoring checks) ─────────────────────────────
+
+    case "signup_signup_page_found":
+      return check.passed ? "Found" : "Not found";
+
+    case "signup_form_found":
+      return check.passed ? "Found" : "Not found";
+
+    case "signup_captcha_detected":
+      return check.passed ? "No CAPTCHA" : "CAPTCHA detected";
+
+    case "signup_submission_succeeded":
+      return check.passed ? "Succeeded" : "Failed";
+
+    // ── Signup Test (legacy checks — kept for old reports) ────────────────
 
     case "signup_page_discoverable":
       return d.found ? "Found" : "Not found";

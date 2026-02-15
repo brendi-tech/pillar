@@ -34,7 +34,7 @@ async def log_activity(
             report_id=report_id,
             workflow=workflow,
             level=level,
-            message=message,
+            message=message[:500],
             detail=detail or {},
         )
     except Exception:

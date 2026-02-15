@@ -11,10 +11,16 @@ import { ActivityLog } from "./ActivityLog";
 import { CheckRow } from "./CheckRow";
 import { EmailSubscribe } from "./EmailSubscribe";
 import { ReportCTA } from "./ReportCTA";
+import {
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import type {
   AgentScoreReport,
   ScanNote,
   OpenclawData,
+  SignupTestData,
   LayerState,
 } from "@/components/AgentScore/AgentScore.types";
 import {
@@ -106,14 +112,20 @@ export function ScoreReport({
   const signupState: LayerState = report.progress?.signup_test_state ?? "disabled";
   const openclawState: LayerState = report.progress?.openclaw_test_state ?? "disabled";
 
-  // Signup test narrative
+  // Signup test narrative — supports both new (self-scoring) and legacy shapes
   const showSignupNarrative = activeCategory === "signup_test";
-  const signupOutcome = report.signup_test_data?.outcome as
-    | Record<string, unknown>
-    | undefined;
-  const signupOutcomeType = signupOutcome?.outcome_type as string | undefined;
-  const signupOutcomeDetail = signupOutcome?.detail as string | undefined;
-  const hasSessionRecording = !!report.signup_test_data?.session_id;
+  const rawSignupData = report.signup_test_data;
+  // New shape has `summary`; legacy shape has `outcome.outcome_type`
+  const isNewSignupShape = rawSignupData && "summary" in rawSignupData;
+  const signupData = isNewSignupShape ? (rawSignupData as SignupTestData) : null;
+  // Legacy fallback
+  const legacyOutcome = !isNewSignupShape
+    ? (rawSignupData?.outcome as Record<string, unknown> | undefined)
+    : null;
+  const legacyOutcomeType = legacyOutcome?.outcome_type as string | undefined;
+  const legacyOutcomeDetail = legacyOutcome?.detail as string | undefined;
+  const hasSignupData = !!signupData?.summary || !!legacyOutcome;
+  const hasSessionRecording = !!(signupData?.session_id ?? rawSignupData?.session_id);
 
   // OpenClaw narrative data (only needed when state is "success")
   const showOpenclawNarrative = activeCategory === "openclaw";
@@ -320,10 +332,15 @@ export function ScoreReport({
           />
         </div>
 
-        {/* OpenClaw self-score note */}
+        {/* Self-score note (OpenClaw + Signup Test) */}
         {showOpenclawNarrative && openclawState === "success" && (
           <p className="text-center text-xs text-[#999] mt-2">
             Score reflects the agent&apos;s overall experience, not individual check results
+          </p>
+        )}
+        {showSignupNarrative && signupData && signupState === "success" && (
+          <p className="text-center text-xs text-[#999] mt-2">
+            Score reflects the agent&apos;s signup experience, not individual check results
           </p>
         )}
 
@@ -391,45 +408,163 @@ export function ScoreReport({
             )}
           </>
         )}
-        {showSignupNarrative && signupOutcome && (
+
+        {/* New self-scoring signup narrative (OpenClaw-style) */}
+        {showSignupNarrative && signupData && (
+          <div className="mt-6 space-y-4">
+            {/* Summary */}
+            <div className="rounded-lg bg-[#F9F7F3] border border-[#E8E4DC] p-5">
+              <div className="flex items-center gap-2 mb-2">
+                <Image src="/browserbase-logo.svg" alt="BrowserBase" width={16} height={16} className="shrink-0" />
+                <span className="text-sm font-semibold text-[#1A1A1A]">What happened</span>
+              </div>
+              <p className="text-sm text-[#6B6B6B] leading-relaxed">
+                {signupData.summary || "The signup test completed but no summary was provided."}
+              </p>
+              {hasSessionRecording && (
+                <SessionReplay
+                  reportId={report.id}
+                  instruction={signupData.instruction ?? undefined}
+                />
+              )}
+            </div>
+
+            {/* What worked / What didn't — two columns */}
+            {((signupData.what_worked?.length ?? 0) > 0 || (signupData.what_didnt?.length ?? 0) > 0) && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {(signupData.what_worked?.length ?? 0) > 0 && (
+                  <div className="rounded-lg bg-[#F0FFF4] border border-[#C6F6D5] p-4">
+                    <p className="text-xs font-semibold text-[#22543D] uppercase tracking-wide mb-2">What worked</p>
+                    <ul className="space-y-1.5">
+                      {signupData.what_worked.map((item, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm text-[#6B6B6B]">
+                          <CheckCircle2 className="h-3.5 w-3.5 text-[#0CCE6B] mt-0.5 shrink-0" />
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {(signupData.what_didnt?.length ?? 0) > 0 && (
+                  <div className="rounded-lg bg-[#FFF5F5] border border-[#FED7D7] p-4">
+                    <p className="text-xs font-semibold text-[#742A2A] uppercase tracking-wide mb-2">What didn&apos;t work</p>
+                    <ul className="space-y-1.5">
+                      {signupData.what_didnt.map((item, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm text-[#6B6B6B]">
+                          <XCircle className="h-3.5 w-3.5 text-[#FF4E42] mt-0.5 shrink-0" />
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Screenshot of final page state */}
+            {signupData.screenshot_url && (
+              <Dialog>
+                <DialogTrigger asChild>
+                  <button
+                    type="button"
+                    className="rounded-lg border border-[#E8E4DC] overflow-hidden hover:border-[#999] transition-colors cursor-pointer"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={signupData.screenshot_url}
+                      alt="Final page state after signup attempt"
+                      className="w-full max-w-sm h-auto"
+                    />
+                    <p className="text-xs text-[#999] p-2 text-center">Final page state (click to expand)</p>
+                  </button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={signupData.screenshot_url}
+                    alt="Final page state after signup attempt"
+                    className="w-full h-auto"
+                  />
+                </DialogContent>
+              </Dialog>
+            )}
+
+            {/* Independent page verification */}
+            {signupData.verification && (
+              <div className="rounded-lg bg-[#F0F7FF] border border-[#BEE3F8] p-3">
+                <p className="text-xs font-semibold text-[#2A4365] uppercase tracking-wide mb-1">
+                  Independent page verification
+                </p>
+                <p className="text-sm text-[#6B6B6B]">
+                  {signupData.verification.description}
+                </p>
+              </div>
+            )}
+
+            {/* Attribution */}
+            <p className="text-center text-[11px] text-[#999]">
+              Tested by{" "}
+              <a
+                href="https://www.browserbase.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline underline-offset-2 hover:text-[#6B6B6B] transition-colors inline-flex items-center gap-0.5"
+              >
+                Browserbase + Stagehand
+                <ExternalLink className="h-2.5 w-2.5" />
+              </a>
+            </p>
+
+            {report.activity_log?.length > 0 && (
+              <ActivityLog
+                entries={report.activity_log}
+                filterWorkflow="signup_test"
+                defaultCollapsed
+              />
+            )}
+          </div>
+        )}
+
+        {/* Legacy signup narrative (old reports without self-scoring) */}
+        {showSignupNarrative && !signupData && legacyOutcome && (
           <div className="mt-6 rounded-lg bg-[#F9F7F3] border border-[#E8E4DC] p-5">
             <div className="flex items-center gap-2 mb-2">
               <Image src="/browserbase-logo.svg" alt="BrowserBase" width={16} height={16} className="shrink-0" />
               <span className="text-sm font-semibold text-[#1A1A1A]">What happened</span>
             </div>
             <p className="text-sm text-[#6B6B6B] leading-relaxed">
-              {signupOutcomeType === "success" &&
+              {legacyOutcomeType === "success" &&
                 "An AI agent found your signup page and created a test account successfully."}
-              {signupOutcomeType === "verify_email" &&
+              {legacyOutcomeType === "verify_email" &&
                 "An AI agent signed up and your site asked for email verification — that's a clear, agent-friendly outcome."}
-              {signupOutcomeType === "captcha_blocked" &&
+              {legacyOutcomeType === "captcha_blocked" &&
                 "The agent found your signup form but was blocked by a CAPTCHA. AI agents can't solve CAPTCHAs."}
-              {signupOutcomeType === "payment_required" &&
+              {legacyOutcomeType === "payment_required" &&
                 "Signup requires payment information. Agents can't provide payment details."}
-              {signupOutcomeType === "no_signup_found" &&
+              {legacyOutcomeType === "no_signup_found" &&
                 "No signup or registration page was found on your site."}
-              {signupOutcomeType === "form_error" &&
-                (signupOutcomeDetail || "The form was submitted but returned an error.")}
-              {signupOutcomeType === "redirect_unknown" &&
-                (signupOutcomeDetail || "The agent was redirected but the outcome was unclear.")}
-              {signupOutcomeType === "timeout" &&
+              {legacyOutcomeType === "form_error" &&
+                (legacyOutcomeDetail || "The form was submitted but returned an error.")}
+              {legacyOutcomeType === "redirect_unknown" &&
+                (legacyOutcomeDetail || "The agent was redirected but the outcome was unclear.")}
+              {legacyOutcomeType === "timeout" &&
                 "The AI agent ran out of time before completing the signup flow. Your site may be slow to load or have a complex multi-step signup process."}
-              {signupOutcomeType === "error" &&
-                (signupOutcomeDetail || "The signup test encountered a technical error and could not complete.")}
-              {signupOutcomeType === "unknown" &&
+              {legacyOutcomeType === "error" &&
+                (legacyOutcomeDetail || "The signup test encountered a technical error and could not complete.")}
+              {legacyOutcomeType === "unknown" &&
                 "The AI agent completed the signup flow but the outcome couldn't be clearly classified."}
-              {!signupOutcomeType &&
+              {!legacyOutcomeType &&
                 "The signup test could not determine what happened."}
             </p>
             {hasSessionRecording && (
               <SessionReplay
                 reportId={report.id}
-                instruction={report.signup_test_data?.instruction as string | undefined}
+                instruction={rawSignupData?.instruction as string | undefined}
               />
             )}
           </div>
         )}
-        {showSignupNarrative && signupOutcome && report.activity_log?.length > 0 && (
+        {showSignupNarrative && !signupData && legacyOutcome && report.activity_log?.length > 0 && (
           <ActivityLog
             entries={report.activity_log}
             filterWorkflow="signup_test"
@@ -613,7 +748,7 @@ export function ScoreReport({
         {/* Checks heading */}
         <div className="mt-8 mb-3">
           <h3 className="text-sm font-semibold text-[#1A1A1A] uppercase tracking-wide">
-            {showOpenclawNarrative ? "Details" : "Checks"}
+            {(showOpenclawNarrative || (showSignupNarrative && signupData)) ? "Details" : "Checks"}
           </h3>
         </div>
 
@@ -622,12 +757,12 @@ export function ScoreReport({
           <div className="grid grid-cols-1 lg:grid-cols-2 lg:gap-x-10">
             <div className="divide-y divide-[#F0EDE8]">
               {leftChecks.map((check, i) => (
-                <CheckRow key={check.check_name} check={check} index={i} neutralDots={showOpenclawNarrative} />
+                <CheckRow key={check.check_name} check={check} index={i} neutralDots={showOpenclawNarrative || (showSignupNarrative && !!signupData)} />
               ))}
             </div>
             <div className="divide-y divide-[#F0EDE8] border-t border-[#F0EDE8] lg:border-t-0">
               {rightChecks.map((check, i) => (
-                <CheckRow key={check.check_name} check={check} index={midpoint + i} neutralDots={showOpenclawNarrative} />
+                <CheckRow key={check.check_name} check={check} index={midpoint + i} neutralDots={showOpenclawNarrative || (showSignupNarrative && !!signupData)} />
               ))}
             </div>
           </div>

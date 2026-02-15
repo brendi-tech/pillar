@@ -171,7 +171,29 @@ export const CHECK_TOOLTIPS: Record<string, CheckTooltip> = {
       "provideContext() shares your page's current state (selected filters, user info, cart contents) with agents. Without it, agents must infer state from the DOM, which is error-prone.",
   },
 
-  // ── Signup Test ──────────────────────────────────────────────────────
+  // ── Signup Test (new self-scoring checks) ──────────────────────────────
+
+  signup_signup_page_found: {
+    description:
+      "If an AI agent can't find your signup page from the homepage, it can't onboard users on your behalf. Clear 'Sign up' links in navigation or hero sections are essential.",
+  },
+
+  signup_form_found: {
+    description:
+      "Standard HTML form elements (<form>, <input>, <label>) are what agents know how to interact with. Custom JavaScript widgets or non-standard inputs can block agent form parsing.",
+  },
+
+  signup_captcha_detected: {
+    description:
+      "AI agents cannot solve CAPTCHAs. If your signup form requires one, agents are completely blocked. Consider risk-based challenges that only trigger for suspicious behavior.",
+  },
+
+  signup_submission_succeeded: {
+    description:
+      "This tests whether an AI agent can complete your signup flow end-to-end. Failures here mean agents cannot create accounts, which blocks any downstream automation.",
+  },
+
+  // ── Signup Test (legacy checks — kept for old reports) ────────────────
 
   signup_page_discoverable: {
     description:

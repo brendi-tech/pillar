@@ -406,6 +406,7 @@ ACTION_RERANK_ENABLED = os.environ.get('ACTION_RERANK_ENABLED', 'true').lower() 
 # ==============================================================================
 BROWSERBASE_API_KEY = os.environ.get('BROWSERBASE_API_KEY', '')
 BROWSERBASE_PROJECT_ID = os.environ.get('BROWSERBASE_PROJECT_ID', '')
+STAGEHAND_AGENT_MODEL = os.environ.get('STAGEHAND_AGENT_MODEL', 'google/gemini-3-flash-preview')
 
 # ==============================================================================
 # FIRECRAWL CONFIGURATION (Web scraping)

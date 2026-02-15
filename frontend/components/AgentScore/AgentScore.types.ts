@@ -83,6 +83,43 @@ export interface OpenclawData {
   error?: string;
 }
 
+// ── Signup test data ─────────────────────────────────────────────────────
+
+export interface SignupTaskTried {
+  task: string;
+  succeeded: boolean;
+  detail: string;
+}
+
+export interface SignupVerification {
+  page_state: string;
+  description: string;
+  visible_text_evidence: string;
+}
+
+/**
+ * New shape for signup_test_data — matches OpenClaw's self-scoring pattern.
+ * Old reports may still have the legacy shape (outcome dict with outcome_type).
+ * Check for `summary` field to distinguish new vs old.
+ */
+export interface SignupTestData {
+  score: number | null;
+  summary: string;
+  what_worked: string[];
+  what_didnt: string[];
+  signup_page_found: boolean;
+  form_found: boolean;
+  captcha_detected: boolean;
+  submission_succeeded: boolean;
+  tasks_tried: SignupTaskTried[];
+  screenshot_url: string | null;
+  verification: SignupVerification | null;
+  session_id: string | null;
+  recording_url: string | null;
+  instruction: string | null;
+  error?: string;
+}
+
 // ── Activity log ────────────────────────────────────────────────────────
 
 export type ActivityLogLevel = "info" | "warning" | "error" | "success";
@@ -133,7 +170,7 @@ export interface AgentScoreReport {
   webmcp_score: number | null;
   signup_test_enabled: boolean;
   signup_test_score: number | null;
-  signup_test_data: Record<string, unknown>;
+  signup_test_data: SignupTestData | Record<string, unknown>;
   openclaw_test_enabled: boolean;
   openclaw_data: OpenclawData;
   token_metrics: TokenMetrics;
