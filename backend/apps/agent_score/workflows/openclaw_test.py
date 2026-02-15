@@ -27,7 +27,7 @@ from datetime import timedelta
 from typing import Callable, Awaitable
 
 import httpx
-from hatchet_sdk import Context
+from hatchet_sdk import ConcurrencyExpression, ConcurrencyLimitStrategy, Context
 from pydantic import BaseModel
 
 from common.hatchet_client import get_hatchet_client
@@ -663,6 +663,15 @@ async def _stream_openclaw_response(
     retries=1,
     execution_timeout=timedelta(minutes=8),
     input_validator=OpenclawTestInput,
+    concurrency=ConcurrencyExpression(
+        # OpenClaw uses a global process lock — only ONE gateway can run
+        # per worker container at a time.  Static key groups all runs
+        # together; max_runs=1 serialises them; ROUND_ROBIN drains the
+        # queue fairly instead of cancelling.
+        expression="'openclaw-singleton'",
+        max_runs=1,
+        limit_strategy=ConcurrencyLimitStrategy.GROUP_ROUND_ROBIN,
+    ),
 )
 async def openclaw_test_workflow(
     workflow_input: OpenclawTestInput, context: Context
