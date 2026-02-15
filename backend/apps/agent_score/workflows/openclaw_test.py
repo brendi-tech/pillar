@@ -200,7 +200,6 @@ def _write_openclaw_config(port: int) -> str:
         "gateway": {
             "mode": "local",
             "http": {
-                "port": port,
                 "endpoints": {
                     "responses": {"enabled": True},
                     "chatCompletions": {"enabled": False},
