@@ -67,11 +67,7 @@ Pillar understands the intent, builds a multi-step plan, and executes it using y
 
 ### Cloud (Fastest)
 
-> **⚠️ Beta Onboarding:** Cloud access is currently manual while we learn from early teams. Join the waitlist at [trypillar.com](https://trypillar.com), and we will reach out to onboard you.
->
-> By default, you'll get an engineer from Pillar to help with setup. If you prefer onboarding without engineering support, include that in your waitlist request and we will support that too.
-
-Once your product is onboarded and you have your **Product Key**, install the SDK:
+Sign up at [trypillar.com](https://trypillar.com) to get your **Product Key**, then install the SDK:
 
 ```bash
 npm install @pillar-ai/react
