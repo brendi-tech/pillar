@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 # Help Center Frontend Dockerfile - Next.js SSR
 # Build context is frontend/. SDK packages are installed from npm.
 FROM node:20-alpine AS base
@@ -10,7 +11,10 @@ COPY package.json package-lock.json* ./
 
 # Replace local file: references with npm versions so we install from the registry.
 # Delete the lockfile since its resolutions point to the old file: paths.
-RUN sed -i 's|"file:../packages/sdk-react"|"*"|g; s|"file:../packages/sdk"|"*"|g' package.json \
+# BuildKit cache mount keeps npm's cache across builds so repeated installs
+# reuse downloaded packages (~30-60s instead of ~2-3 min).
+RUN --mount=type=cache,target=/root/.npm \
+    sed -i 's|"file:../packages/sdk-react"|"*"|g; s|"file:../packages/sdk"|"*"|g' package.json \
     && rm -f package-lock.json \
     && npm install
 

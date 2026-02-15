@@ -1,41 +1,22 @@
-# Help Center Backend Dockerfile
-FROM python:3.12-slim
+# Help Center Backend — Deploy Image
+#
+# Thin image that extends the pre-built base (Dockerfile.backend-base).
+# Only copies application code and runs collectstatic — all heavy
+# dependencies (system packages, uv, Python packages) live in the base
+# image, making deploys fast (~1-2 min).
+#
+# Pass --build-arg BASE_REGISTRY=gcr.io/<project> to select the
+# correct base image for each environment (dev vs prod).
 
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    UV_SYSTEM_PYTHON=1
+ARG BASE_REGISTRY=gcr.io/pillar-production
+FROM ${BASE_REGISTRY}/pillar-backend-base:latest
 
-# Set work directory
 WORKDIR /app
-
-# Install system dependencies and uv
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    postgresql-client \
-    gcc \
-    python3-dev \
-    libpq-dev \
-    curl \
-    ca-certificates \
-    && curl -LsSf https://astral.sh/uv/install.sh | sh \
-    && rm -rf /var/lib/apt/lists/*
-
-# Add uv to PATH
-ENV PATH="/root/.local/bin:$PATH"
-
-# Copy project files
-COPY pyproject.toml uv.lock* ./
-
-# Install Python dependencies
-RUN uv sync --frozen --no-dev
-
-# Add .venv to PATH so installed packages are available
-ENV PATH="/app/.venv/bin:$PATH"
 
 # Copy project
 COPY . .
 
-# Create necessary directories
+# Create necessary directories (may already exist from base, but ensure)
 RUN mkdir -p /app/static /app/media
 
 # Expose port
