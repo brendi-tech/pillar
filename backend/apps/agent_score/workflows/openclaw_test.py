@@ -360,8 +360,11 @@ async def _start_openclaw_gateway(port: int) -> asyncio.subprocess.Process:
             "OpenClaw CLI not found. Install it with: npm install -g openclaw"
         )
 
-    # Kill any stale gateway from a previous run that wasn't cleaned up
-    # (e.g. if the worker was killed without shutting down the gateway).
+    # Aggressively kill any stale gateway from a previous run.
+    # OpenClaw uses a PID-based lock, so we need to:
+    # 1. Try the graceful `gateway stop` command
+    # 2. Find and kill any openclaw/node gateway processes directly
+    # 3. Remove the lock file to clear the way
     stop_proc = await asyncio.create_subprocess_exec(
         openclaw_bin, "gateway", "stop",
         stdout=asyncio.subprocess.PIPE,
@@ -370,7 +373,28 @@ async def _start_openclaw_gateway(port: int) -> asyncio.subprocess.Process:
     try:
         await asyncio.wait_for(stop_proc.wait(), timeout=10)
     except asyncio.TimeoutError:
-        pass
+        stop_proc.kill()
+        await stop_proc.wait()
+
+    # Belt-and-suspenders: kill any openclaw gateway processes by name
+    kill_proc = await asyncio.create_subprocess_shell(
+        "pkill -f 'openclaw.*gateway' 2>/dev/null; "
+        "pkill -f 'node.*openclaw.*gateway' 2>/dev/null; "
+        "sleep 1; "
+        # Remove the lock file so the new gateway can start fresh
+        "rm -f ~/.openclaw/gateway.lock ~/.openclaw/.gateway.lock "
+        "~/.openclaw/openclaw.lock 2>/dev/null; "
+        "true",
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    try:
+        await asyncio.wait_for(kill_proc.wait(), timeout=10)
+    except asyncio.TimeoutError:
+        kill_proc.kill()
+        await kill_proc.wait()
+
+    await asyncio.sleep(1)  # Let processes fully exit
 
     # Write a complete config file to ~/.openclaw/openclaw.json.
     # This replaces the old _ensure_openclaw_config() which ran 7 slow
