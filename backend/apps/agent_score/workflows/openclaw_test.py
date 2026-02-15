@@ -27,7 +27,7 @@ from datetime import timedelta
 from typing import Callable, Awaitable
 
 import httpx
-from hatchet_sdk import ConcurrencyExpression, ConcurrencyLimitStrategy, Context
+from hatchet_sdk import Context
 from pydantic import BaseModel
 
 from common.hatchet_client import get_hatchet_client
@@ -732,20 +732,20 @@ async def _stream_openclaw_response(
                 pass
 
 
+# Per-process lock to serialize OpenClaw gateway access within a single
+# Cloud Run container.  Each container is isolated (separate PID namespace,
+# filesystem, ports), so two containers CAN run gateways in parallel.
+# We removed the Hatchet ConcurrencyExpression because it serialized across
+# ALL containers, causing the dispatch queue to stall when a worker died
+# mid-task (the concurrency slot stayed "occupied" until execution_timeout).
+_OPENCLAW_LOCK = asyncio.Lock()
+
+
 @hatchet.task(
     name="agent-score-openclaw-test",
     retries=1,
     execution_timeout=timedelta(minutes=5),
     input_validator=OpenclawTestInput,
-    concurrency=ConcurrencyExpression(
-        # OpenClaw uses a global process lock — only ONE gateway can run
-        # per worker container at a time.  Static key groups all runs
-        # together; max_runs=1 serialises them; ROUND_ROBIN drains the
-        # queue fairly instead of cancelling.
-        expression="'openclaw-singleton'",
-        max_runs=1,
-        limit_strategy=ConcurrencyLimitStrategy.GROUP_ROUND_ROBIN,
-    ),
 )
 async def openclaw_test_workflow(
     workflow_input: OpenclawTestInput, context: Context
@@ -757,13 +757,7 @@ async def openclaw_test_workflow(
     the eval prompt, parses the self-scored JSON result, creates check
     records, and stores the narrative data on the report.
     """
-    from asgiref.sync import sync_to_async
-
-    from apps.agent_score.models import AgentScoreCheck, AgentScoreReport
-    from apps.agent_score.workflows.fan_in import complete_layer
-    from common.utils.json_parser import parse_json_from_llm
-
-    from apps.agent_score.workflows.activity_log import log_activity
+    from apps.agent_score.models import AgentScoreReport
 
     report_id = workflow_input.report_id
     logger.info(f"[AGENT SCORE] Starting OpenClaw test for report {report_id}")
@@ -782,6 +776,26 @@ async def openclaw_test_workflow(
     async def _update_status(status_text: str) -> None:
         report.openclaw_test_status = status_text
         await report.asave(update_fields=["openclaw_test_status"])
+
+    # Acquire the per-process lock to serialize gateway access within this
+    # container.  Other containers can run their own gateways in parallel.
+    logger.info(
+        "[AGENT SCORE] Waiting for OpenClaw lock for report %s", report_id
+    )
+    async with _OPENCLAW_LOCK:
+        return await _run_openclaw_test(
+            report, report_id, _update_status, workflow_input,
+        )
+
+
+async def _run_openclaw_test(report, report_id, _update_status, workflow_input):
+    """Inner implementation — runs under the _OPENCLAW_LOCK."""
+    from asgiref.sync import sync_to_async
+
+    from apps.agent_score.models import AgentScoreCheck, AgentScoreReport
+    from apps.agent_score.workflows.fan_in import complete_layer
+    from common.utils.json_parser import parse_json_from_llm
+    from apps.agent_score.workflows.activity_log import log_activity
 
     gateway_proc = None
     port = random.randint(18000, 19000)
