@@ -181,7 +181,11 @@ def _find_playwright_chromium() -> str | None:
        to ``/opt/ms-playwright``)
     2. ``~/.cache/ms-playwright`` (default Playwright cache location)
 
-    Returns the path to the ``chrome`` binary, or None if not found.
+    Within each directory, we look for:
+    - Full Chromium: ``chromium-*/chrome-linux/chrome``
+    - Headless shell (fallback): ``chromium_headless_shell-*/chrome-linux/headless_shell``
+
+    Returns the path to the binary, or None if not found.
     """
     import os
     from pathlib import Path
@@ -199,15 +203,48 @@ def _find_playwright_chromium() -> str | None:
 
     for base_dir in search_dirs:
         if not base_dir.exists():
+            logger.info(
+                "[AGENT SCORE] Playwright dir %s does not exist", base_dir
+            )
             continue
-        # Look for chromium-*/chrome-linux/chrome
+
+        # Log what we see for debugging
+        try:
+            contents = list(base_dir.iterdir())
+            logger.info(
+                "[AGENT SCORE] Playwright dir %s contains: %s",
+                base_dir,
+                [p.name for p in contents],
+            )
+        except PermissionError:
+            logger.warning(
+                "[AGENT SCORE] Cannot list %s (permission denied)", base_dir
+            )
+            continue
+
+        # First pass: look for full Chromium (chromium-*/chrome-linux/chrome)
         for chromium_dir in sorted(base_dir.glob("chromium-*"), reverse=True):
+            if "headless_shell" in chromium_dir.name:
+                continue  # Skip headless shell dirs in first pass
             chrome_bin = chromium_dir / "chrome-linux" / "chrome"
             if chrome_bin.exists() and chrome_bin.is_file():
                 logger.info(
                     "[AGENT SCORE] Found Playwright Chromium at %s", chrome_bin
                 )
                 return str(chrome_bin)
+
+        # Second pass: fall back to headless shell
+        for hs_dir in sorted(
+            base_dir.glob("chromium_headless_shell-*"), reverse=True,
+        ):
+            hs_bin = hs_dir / "chrome-linux" / "headless_shell"
+            if hs_bin.exists() and hs_bin.is_file():
+                logger.info(
+                    "[AGENT SCORE] Found Playwright headless shell at %s "
+                    "(full Chromium not available)",
+                    hs_bin,
+                )
+                return str(hs_bin)
 
     logger.warning("[AGENT SCORE] Playwright Chromium binary not found")
     return None
