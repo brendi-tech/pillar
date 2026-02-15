@@ -12,6 +12,11 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
+import {
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import type { ActivityLogEntry, ActivityLogLevel } from "../AgentScore.types";
 
 // ── Workflow display config ────────────────────────────────────────────
@@ -46,6 +51,53 @@ function LevelIcon({ level }: { level: ActivityLogLevel }) {
   }
 }
 
+// ── Image URL detection ─────────────────────────────────────────────────
+
+const IMAGE_EXTENSIONS = /\.(png|jpe?g|webp|gif)(\?.*)?$/i;
+
+function isImageUrl(key: string, value: unknown): value is string {
+  if (typeof value !== "string") return false;
+  if (!key.toLowerCase().includes("screenshot")) return false;
+  try {
+    const url = new URL(value);
+    return (
+      (url.protocol === "https:" || url.protocol === "http:") &&
+      IMAGE_EXTENSIONS.test(url.pathname)
+    );
+  } catch {
+    return false;
+  }
+}
+
+// ── Screenshot thumbnail with expand dialog ─────────────────────────────
+
+function ScreenshotThumbnail({ url, label }: { url: string; label: string }) {
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <button
+          type="button"
+          className="mt-1.5 rounded-md border border-[#E8E4DC] overflow-hidden hover:border-[#999] transition-colors cursor-pointer"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={url}
+            alt={label}
+            className="w-full max-w-[240px] h-auto"
+          />
+          <p className="text-[10px] text-[#999] px-2 py-1 text-center">
+            Click to expand
+          </p>
+        </button>
+      </DialogTrigger>
+      <DialogContent className="max-w-4xl">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={url} alt={label} className="w-full h-auto" />
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ── Detail renderer ────────────────────────────────────────────────────
 
 function DetailView({ detail }: { detail: Record<string, unknown> }) {
@@ -56,16 +108,23 @@ function DetailView({ detail }: { detail: Record<string, unknown> }) {
 
   return (
     <div className="mt-2 ml-5.5 pl-3 border-l-2 border-[#E8E4DC] text-xs text-[#6B6B6B] space-y-1">
-      {entries.map(([key, value]) => (
-        <div key={key} className="flex gap-2">
-          <span className="text-[#999] font-mono shrink-0">{key}:</span>
-          <span className="font-mono break-all">
-            {typeof value === "object"
-              ? JSON.stringify(value)
-              : String(value)}
-          </span>
-        </div>
-      ))}
+      {entries.map(([key, value]) =>
+        isImageUrl(key, value) ? (
+          <div key={key}>
+            <span className="text-[#999] font-mono">{key}:</span>
+            <ScreenshotThumbnail url={value} label={key.replace(/_/g, " ")} />
+          </div>
+        ) : (
+          <div key={key} className="flex gap-2">
+            <span className="text-[#999] font-mono shrink-0">{key}:</span>
+            <span className="font-mono break-all">
+              {typeof value === "object"
+                ? JSON.stringify(value)
+                : String(value)}
+            </span>
+          </div>
+        )
+      )}
     </div>
   );
 }
