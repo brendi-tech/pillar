@@ -207,7 +207,11 @@ export function getVisibleCategories(report: AgentScoreReport): string[] {
       // Hide optional categories that weren't enabled for this scan
       if (cfg.optional && key === "signup_test") return report.signup_test_enabled;
       if (cfg.optional && key === "openclaw") return report.openclaw_test_enabled;
-      // Hide categories with no checks in this report (e.g. new category on old report)
+      // While the report is still running, show all non-optional categories
+      // as loading placeholders even before analyze-and-score populates them.
+      // Only hide categories with no data on *completed* reports (e.g. new
+      // category on old report).
+      if (report.status !== "complete" && report.status !== "failed") return true;
       const hasChecks = report.checks.some((c) => c.category === key);
       const hasScore = getCategoryScore(report, key) !== null;
       if (!cfg.optional && !hasChecks && !hasScore) return false;

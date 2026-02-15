@@ -168,6 +168,8 @@ interface ActivityLogProps {
   entries: ActivityLogEntry[];
   /** Filter to a specific workflow. If undefined, shows all. */
   filterWorkflow?: string;
+  /** Filter to multiple workflows. Takes precedence over filterWorkflow. */
+  filterWorkflows?: string[];
   /** Whether the scan is still running (shows spinners). */
   isLive?: boolean;
   /** Default collapsed state. */
@@ -177,6 +179,7 @@ interface ActivityLogProps {
 export function ActivityLog({
   entries,
   filterWorkflow,
+  filterWorkflows,
   isLive = false,
   defaultCollapsed = false,
 }: ActivityLogProps) {
@@ -187,10 +190,12 @@ export function ActivityLog({
   // Filter entries if a workflow filter is provided
   const filteredEntries = useMemo(
     () =>
-      filterWorkflow
-        ? entries.filter((e) => e.workflow === filterWorkflow)
-        : entries,
-    [entries, filterWorkflow]
+      filterWorkflows
+        ? entries.filter((e) => filterWorkflows.includes(e.workflow))
+        : filterWorkflow
+          ? entries.filter((e) => e.workflow === filterWorkflow)
+          : entries,
+    [entries, filterWorkflow, filterWorkflows]
   );
 
   // Group entries by workflow (preserving order of first appearance)

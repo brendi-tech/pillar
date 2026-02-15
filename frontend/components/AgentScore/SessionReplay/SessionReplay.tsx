@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Play, Loader2, ChevronDown, ChevronRight } from "lucide-react";
+import { Play, Loader2, ChevronDown, ChevronRight, AlertCircle } from "lucide-react";
+import axios from "axios";
 import {
   Dialog,
   DialogContent,
@@ -58,8 +59,12 @@ export function SessionReplay({ reportId, instruction }: SessionReplayProps) {
         },
       });
     } catch (e) {
-      const message =
-        e instanceof Error ? e.message : "Failed to load recording.";
+      let message = "Failed to load recording.";
+      if (axios.isAxiosError(e) && e.response?.data?.error) {
+        message = e.response.data.error;
+      } else if (e instanceof Error) {
+        message = e.message;
+      }
       setError(message);
     } finally {
       setLoading(false);
@@ -132,8 +137,16 @@ export function SessionReplay({ reportId, instruction }: SessionReplayProps) {
           )}
 
           {error && (
-            <div className="flex items-center justify-center h-[560px]">
-              <p className="text-sm text-[#FF4E42]">{error}</p>
+            <div className="flex flex-col items-center justify-center h-[560px] gap-3">
+              <AlertCircle className="h-8 w-8 text-[#D4D4D4]" />
+              <p className="text-sm text-[#6B6B6B] text-center max-w-md">{error}</p>
+              <button
+                type="button"
+                onClick={initPlayer}
+                className="mt-1 text-xs font-medium text-[#FF6E00] hover:text-[#E06200] transition-colors cursor-pointer"
+              >
+                Try again
+              </button>
             </div>
           )}
 

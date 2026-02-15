@@ -241,10 +241,18 @@ class AgentScoreViewSet(viewsets.GenericViewSet):
                 )
                 bb_response.raise_for_status()
         except httpx.HTTPStatusError as e:
+            bb_status = e.response.status_code
             logger.error(
                 f"[AGENT SCORE] Browserbase recording fetch failed for "
-                f"session {session_id}: {e.response.status_code}"
+                f"session {session_id}: {bb_status} - {e.response.text[:500]}"
             )
+            # Differentiate: 404 means recording doesn't exist or isn't
+            # processed yet; other codes are upstream failures.
+            if bb_status == 404:
+                return Response(
+                    {"error": "Recording not available yet. Browserbase may still be processing it, or the session was not recorded."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
             return Response(
                 {"error": "Recording not available from Browserbase."},
                 status=status.HTTP_502_BAD_GATEWAY,

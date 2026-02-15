@@ -114,6 +114,19 @@ export function ScoreReport({
   const openclawData = report.openclaw_data as OpenclawData | undefined;
   const openclawHasData = !!openclawData?.summary;
 
+  // Map each category to the workflows whose activity log entries are relevant
+  const CATEGORY_WORKFLOWS: Record<string, string[]> = useMemo(
+    () => ({
+      content: ["http_probes", "browser_analysis", "analyze_and_score"],
+      interaction: ["browser_analysis", "analyze_and_score"],
+      webmcp: ["browser_analysis", "analyze_and_score"],
+      signup_test: ["signup_test"],
+      openclaw: ["openclaw_test"],
+    }),
+    []
+  );
+  const activeCategoryWorkflows = CATEGORY_WORKFLOWS[activeCategory];
+
   // Scan notes relevant to the active category (or general notes)
   const activeNotes = useMemo(() => {
     const notes = report.scan_notes ?? [];
@@ -388,8 +401,8 @@ export function ScoreReport({
           />
         )}
 
-        {/* OpenClaw narrative */}
-        {showOpenclawNarrative && !openclawHasData && report.openclaw_test_enabled && (
+        {/* OpenClaw narrative — still running */}
+        {showOpenclawNarrative && !openclawHasData && report.openclaw_test_enabled && isPartial && (
           <>
             <div className="mt-6 rounded-lg bg-[#FFF8F0] border border-[#FFD6A5] p-5">
               <div className="flex items-center gap-3">
@@ -409,6 +422,31 @@ export function ScoreReport({
                 entries={report.activity_log}
                 filterWorkflow="openclaw_test"
                 isLive
+              />
+            )}
+          </>
+        )}
+        {/* OpenClaw narrative — finished but no usable data */}
+        {showOpenclawNarrative && !openclawHasData && report.openclaw_test_enabled && !isPartial && (
+          <>
+            <div className="mt-6 rounded-lg bg-[#F9F7F3] border border-[#E8E4DC] p-5">
+              <div className="flex items-center gap-3">
+                <AlertTriangle className="h-5 w-5 text-[#999] shrink-0" />
+                <div>
+                  <p className="text-sm font-semibold text-[#1A1A1A]">
+                    Could not evaluate agent experience
+                  </p>
+                  <p className="text-sm text-[#6B6B6B] mt-1 leading-relaxed">
+                    The AI agent browsed your site but wasn&apos;t able to produce a structured evaluation. This can happen when the site is complex or the agent encounters unexpected behavior.
+                  </p>
+                </div>
+              </div>
+            </div>
+            {report.activity_log?.length > 0 && (
+              <ActivityLog
+                entries={report.activity_log}
+                filterWorkflow="openclaw_test"
+                defaultCollapsed
               />
             )}
           </>
@@ -526,6 +564,7 @@ export function ScoreReport({
         {!showSignupNarrative && !showOpenclawNarrative && report.activity_log?.length > 0 && (
           <ActivityLog
             entries={report.activity_log}
+            filterWorkflows={activeCategoryWorkflows}
             isLive={isPartial}
             defaultCollapsed
           />

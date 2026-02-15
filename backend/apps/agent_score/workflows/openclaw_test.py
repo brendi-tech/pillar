@@ -36,11 +36,6 @@ logger = logging.getLogger(__name__)
 
 hatchet = get_hatchet_client()
 
-# Path to the OpenClaw config baked into the worker image.
-# In local dev, falls back to the repo copy.
-OPENCLAW_CONFIG_PATH = "/etc/openclaw/openclaw.json"
-OPENCLAW_CONFIG_DEV_PATH = "openclaw_config/openclaw.json"
-
 
 class OpenclawTestInput(BaseModel):
     """Input for the openclaw-test task."""
@@ -173,72 +168,73 @@ def _build_checks_from_result(result: dict) -> list[dict]:
 _OPENCLAW_GW_TOKEN = "pillar-agent-score-local-token"
 
 
-async def _ensure_openclaw_config(openclaw_bin: str) -> None:
+def _write_openclaw_config(port: int) -> str:
     """
-    Ensure the OpenClaw gateway has the /v1/responses endpoint enabled,
-    a known auth token, and browser automation configured.
+    Write a complete OpenClaw config to the home directory and return the path.
 
-    OPENCLAW_CONFIG env var only supplements ~/.openclaw/openclaw.json — it
-    doesn't replace it.  `openclaw config set` writes to the active config
-    so the gateway picks up the values on next start.
+    Instead of running 7+ slow `openclaw config set` subprocess calls (~8s
+    each due to Node cold start), we write the JSON config directly.  This
+    is faster (instant vs ~56s) and avoids the config-file-conflict bug where
+    `config set` writes to ~/.openclaw/openclaw.json but OPENCLAW_CONFIG
+    points the gateway at a different file.
+
+    The skills directory is at /etc/openclaw/skills/ (baked into the Docker
+    image) so we use an absolute path.
     """
-    # Verify openclaw binary is working before config calls.
-    # First invocation may be slow (JIT compilation, npm postinstall, etc.)
-    logger.info("[AGENT SCORE] Verifying openclaw binary: %s", openclaw_bin)
-    ver_proc = await asyncio.create_subprocess_exec(
-        openclaw_bin, "--version",
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
+    import os
+    from pathlib import Path
+
+    config = {
+        "$schema": "https://openclaw.ai/schema/config.json",
+        "name": "pillar-agent-score",
+        "description": "Pillar Agent Score — ephemeral gateway for eval",
+        "model": {
+            "provider": "openrouter",
+            "model_name": "google/gemini-2.5-flash",
+        },
+        "providers": {
+            "openrouter": {
+                "api_key_env": "OPENROUTER_API_KEY",
+            },
+        },
+        "gateway": {
+            "mode": "local",
+            "http": {
+                "port": port,
+                "endpoints": {
+                    "responses": {"enabled": True},
+                    "chatCompletions": {"enabled": False},
+                },
+            },
+            "auth": {
+                "mode": "token",
+                "token": _OPENCLAW_GW_TOKEN,
+            },
+        },
+        "browser": {
+            "enabled": True,
+            "headless": True,
+            "defaultProfile": "openclaw",
+            "noSandbox": True,
+        },
+        "skills": {
+            "directory": "/etc/openclaw/skills",
+        },
+        "heartbeat": {"enabled": False},
+        "messaging": {"enabled": False},
+    }
+
+    # Write to OpenClaw's default config location
+    home = os.path.expanduser("~")
+    config_dir = Path(home) / ".openclaw"
+    config_dir.mkdir(parents=True, exist_ok=True)
+    config_path = config_dir / "openclaw.json"
+    config_path.write_text(json_mod.dumps(config, indent=2))
+
+    logger.info(
+        "[AGENT SCORE] Wrote OpenClaw config to %s (port=%d)", config_path, port
     )
-    try:
-        await asyncio.wait_for(ver_proc.wait(), timeout=30)
-        ver_stdout = (await ver_proc.stdout.read()).decode().strip()
-        logger.info("[AGENT SCORE] openclaw version: %s (exit=%s)", ver_stdout, ver_proc.returncode)
-    except asyncio.TimeoutError:
-        logger.error("[AGENT SCORE] openclaw --version timed out after 30s")
-        # Kill the hung process and continue — config set may still work
-        ver_proc.kill()
-        await ver_proc.wait()
-
-    settings = [
-        # Gateway mode — required since openclaw 2026.2.x; must be set
-        # before starting the gateway or it will refuse to start.
-        ("gateway.mode", "local"),
-        # Gateway settings
-        ("gateway.http.endpoints.responses.enabled", "true"),
-        ("gateway.auth.mode", "token"),
-        ("gateway.auth.token", _OPENCLAW_GW_TOKEN),
-        # Browser settings — required for OpenClaw to actually navigate
-        # pages, fill forms, check navigator.modelContext, etc.
-        # "defaultProfile: openclaw" uses a managed Chromium instance
-        # (headless, isolated) instead of the Chrome extension relay.
-        ("browser.enabled", "true"),
-        ("browser.headless", "true"),
-        ("browser.defaultProfile", "openclaw"),
-    ]
-    for key, value in settings:
-        logger.info("[AGENT SCORE] openclaw config set %s %s", key, value)
-        proc = await asyncio.create_subprocess_exec(
-            openclaw_bin, "config", "set", key, value,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
-        try:
-            await asyncio.wait_for(proc.wait(), timeout=30)
-        except asyncio.TimeoutError:
-            logger.error(
-                "[AGENT SCORE] openclaw config set %s timed out after 30s",
-                key,
-            )
-            proc.kill()
-            await proc.wait()
-            raise
-        if proc.returncode != 0:
-            stderr = await proc.stderr.read()
-            logger.warning(
-                "[AGENT SCORE] openclaw config set %s failed (code %s): %s",
-                key, proc.returncode, stderr.decode()[:300],
-            )
+    return str(config_path)
 
 
 async def _start_openclaw_gateway(port: int) -> asyncio.subprocess.Process:
@@ -247,9 +243,6 @@ async def _start_openclaw_gateway(port: int) -> asyncio.subprocess.Process:
 
     Returns the subprocess. Caller is responsible for terminating it.
     """
-    import os
-    from pathlib import Path
-
     openclaw_bin = shutil.which("openclaw")
     if not openclaw_bin:
         raise RuntimeError(
@@ -268,28 +261,17 @@ async def _start_openclaw_gateway(port: int) -> asyncio.subprocess.Process:
     except asyncio.TimeoutError:
         pass
 
-    # Ensure the responses endpoint is enabled in the active config.
-    # OPENCLAW_CONFIG merges with (not replaces) ~/.openclaw/openclaw.json,
-    # so we must set this in the active config directly.
-    await _ensure_openclaw_config(openclaw_bin)
-
-    # Build env for the gateway subprocess.
-    # Set OPENCLAW_CONFIG so our config (with browser settings) is merged in.
-    env = os.environ.copy()
-    config_path = Path(OPENCLAW_CONFIG_PATH)
-    if not config_path.exists():
-        config_path = Path(OPENCLAW_CONFIG_DEV_PATH)
-    if config_path.exists():
-        env["OPENCLAW_CONFIG"] = str(config_path.resolve())
-        logger.info(
-            f"[AGENT SCORE] Using OpenClaw config: {config_path.resolve()}"
-        )
+    # Write a complete config file to ~/.openclaw/openclaw.json.
+    # This replaces the old _ensure_openclaw_config() which ran 7 slow
+    # `openclaw config set` subprocess calls (~56s total) and had a bug
+    # where OPENCLAW_CONFIG env var pointed the gateway at a different
+    # config file than the one `config set` wrote to.
+    _write_openclaw_config(port)
 
     proc = await asyncio.create_subprocess_exec(
         openclaw_bin, "gateway", "--port", str(port),
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
-        env=env,
     )
 
     # Wait for the gateway to be ready (poll /health or just wait a few seconds)

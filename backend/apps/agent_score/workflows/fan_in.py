@@ -32,9 +32,18 @@ _BROWSER_FAIL_TITLES = {
 def _base_layers_ready(report) -> bool:
     """Check if http_probes and browser_analysis have both finished."""
     has_probes = bool(report.probe_results)
-    has_browser = bool(report.screenshot_url) or any(
-        note.get("title") in _BROWSER_FAIL_TITLES
-        for note in (report.scan_notes or [])
+    # Browser analysis is done when we have any of its outputs:
+    # screenshot, accessibility tree, or rendered HTML.
+    # Screenshot upload can fail (e.g. GCS 403) while the rest succeeds,
+    # so we can't rely on screenshot_url alone.
+    has_browser = (
+        bool(report.screenshot_url)
+        or bool(report.accessibility_tree)
+        or bool(report.rendered_html)
+        or any(
+            note.get("title") in _BROWSER_FAIL_TITLES
+            for note in (report.scan_notes or [])
+        )
     )
     return has_probes and has_browser
 
