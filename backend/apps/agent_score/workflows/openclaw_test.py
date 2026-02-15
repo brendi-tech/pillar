@@ -441,12 +441,12 @@ async def _start_openclaw_gateway(port: int) -> asyncio.subprocess.Process:
     # Wait for the gateway HTTP server to be ready.
     # OpenClaw 2026.2.x takes ~15s locally and can take 30-45s on
     # resource-constrained Cloud Run instances (cold Node.js startup,
-    # plugin loading, browser service init).  Poll for up to 60s.
+    # plugin loading, browser service init).  Poll for up to 90s.
     import time as _time
 
     start = _time.monotonic()
     for attempt in range(30):
-        await asyncio.sleep(2)
+        await asyncio.sleep(3)
         try:
             async with httpx.AsyncClient(timeout=3.0) as client:
                 resp = await client.get(f"http://127.0.0.1:{port}/health")
@@ -734,8 +734,8 @@ async def _stream_openclaw_response(
 
 @hatchet.task(
     name="agent-score-openclaw-test",
-    retries=2,
-    execution_timeout=timedelta(minutes=8),
+    retries=1,
+    execution_timeout=timedelta(minutes=5),
     input_validator=OpenclawTestInput,
     concurrency=ConcurrencyExpression(
         # OpenClaw uses a global process lock — only ONE gateway can run
