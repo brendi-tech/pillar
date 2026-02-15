@@ -209,6 +209,11 @@ def _write_openclaw_config(port: int) -> str:
                 "mode": "token",
                 "token": _OPENCLAW_GW_TOKEN,
             },
+            "http": {
+                "endpoints": {
+                    "responses": {"enabled": True},
+                },
+            },
         },
         "browser": {
             "enabled": True,
