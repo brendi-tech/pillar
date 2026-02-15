@@ -218,6 +218,8 @@ def _write_openclaw_config(port: int) -> str:
         "browser": {
             "enabled": True,
             "headless": True,
+            "defaultProfile": "openclaw",
+            "noSandbox": True,
         },
         "skills": {
             "load": {
@@ -630,6 +632,19 @@ async def openclaw_test_workflow(
         # 3. Parse the self-scored JSON from OpenClaw's response
         await _update_status("Processing results...")
         raw_message = _extract_message(response_data)
+
+        # Log the raw response for debugging (truncated to avoid huge logs)
+        logger.info(
+            "[AGENT SCORE] OpenClaw raw response for %s (first 1000 chars): %s",
+            report_id,
+            raw_message[:1000],
+        )
+        await log_activity(
+            report_id, "openclaw_test", "info",
+            f"Raw response length: {len(raw_message)} chars",
+            {"preview": raw_message[:500]},
+        )
+
         result = parse_json_from_llm(raw_message, expected_type="object")
 
         # Validate and clamp score

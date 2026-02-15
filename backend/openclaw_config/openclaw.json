@@ -26,7 +26,9 @@
   },
   "browser": {
     "enabled": true,
-    "headless": true
+    "headless": true,
+    "defaultProfile": "openclaw",
+    "noSandbox": true
   },
   "skills": {
     "load": {
