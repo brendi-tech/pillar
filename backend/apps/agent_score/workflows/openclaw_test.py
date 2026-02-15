@@ -222,41 +222,38 @@ def _find_playwright_chromium() -> str | None:
             )
             continue
 
-        # Search every chromium-like directory for a usable binary.
-        # Full Chromium preferred; headless shell as fallback.
+        # Search for the Chromium binary.  Playwright uses different
+        # directory names depending on the platform and version:
+        # - chrome-linux/chrome (older Playwright, ARM)
+        # - chrome-linux64/chrome (newer Playwright on amd64)
+        # Also look for headless_shell as a fallback.
         headless_fallback: str | None = None
 
         for entry in sorted(contents, key=lambda p: p.name, reverse=True):
             if not entry.is_dir():
                 continue
 
-            # Check for full Chromium binary
-            chrome_bin = entry / "chrome-linux" / "chrome"
-            hs_bin = entry / "chrome-linux" / "headless_shell"
+            # Skip non-chromium directories
+            if not entry.name.startswith("chromium"):
+                continue
 
-            # List everything inside this directory for debugging
-            try:
-                dir_contents = [p.name for p in entry.iterdir()]
-            except (PermissionError, OSError) as e:
-                dir_contents = [f"error: {e}"]
+            # Search all subdirectories for a "chrome" binary
+            for sub in entry.iterdir():
+                if not sub.is_dir():
+                    continue
 
-            logger.info(
-                "[AGENT SCORE] Checking %s: chrome=%s headless=%s "
-                "(dir_contents=%s)",
-                entry.name,
-                chrome_bin.exists(),
-                hs_bin.exists(),
-                dir_contents,
-            )
+                chrome_bin = sub / "chrome"
+                hs_bin = sub / "headless_shell"
 
-            if chrome_bin.is_file():
-                logger.info(
-                    "[AGENT SCORE] Found Playwright Chromium at %s", chrome_bin
-                )
-                return str(chrome_bin)
+                if chrome_bin.is_file() and "headless" not in entry.name:
+                    logger.info(
+                        "[AGENT SCORE] Found Playwright Chromium at %s",
+                        chrome_bin,
+                    )
+                    return str(chrome_bin)
 
-            if hs_bin.is_file() and headless_fallback is None:
-                headless_fallback = str(hs_bin)
+                if hs_bin.is_file() and headless_fallback is None:
+                    headless_fallback = str(hs_bin)
 
         if headless_fallback:
             logger.info(
