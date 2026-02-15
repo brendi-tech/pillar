@@ -310,6 +310,10 @@ async def analyze_and_score_workflow(
 
             await report.asave(update_fields=update_fields)
 
+            # Invalidate the lookup-by-domain cache for this domain
+            from common.cache_keys import CacheKeys
+            await sync_to_async(CacheKeys.clear_agent_score_domain_report)(report.domain)
+
             logger.info(
                 f"[AGENT SCORE] Report {report_id} complete — "
                 f"overall={scores['overall']}/100"

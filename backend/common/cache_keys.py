@@ -222,6 +222,37 @@ class CacheKeys:
         url_hash = hashlib.md5(image_url.encode()).hexdigest()
         return f"image_summary:{url_hash}"
 
+    # ==================== Agent Score ====================
+
+    @staticmethod
+    def agent_score_domain_report(domain: str) -> str:
+        """
+        Cache key for the latest completed Agent Score report for a domain.
+
+        Used by the lookup-by-domain endpoint to avoid hitting the DB
+        on every request. The cached value is the full serialized report JSON.
+
+        Args:
+            domain: Normalized domain (e.g. "clerk.com")
+
+        Returns:
+            Cache key string
+        """
+        return f"agent_score:domain:{domain}"
+
+    @staticmethod
+    def clear_agent_score_domain_report(domain: str) -> None:
+        """
+        Clear the cached report for a domain.
+
+        Should be called when:
+        - A new report for this domain is marked "complete"
+
+        Args:
+            domain: Normalized domain (e.g. "clerk.com")
+        """
+        cache.delete(CacheKeys.agent_score_domain_report(domain))
+
     # ==================== Migration Utilities ====================
 
     @staticmethod

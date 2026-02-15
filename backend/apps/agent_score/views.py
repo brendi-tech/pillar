@@ -1,11 +1,13 @@
 """
 Views for Agent Score — public endpoints, no authentication required.
 """
+import json
 import logging
 from datetime import timedelta
 
 import httpx
 from django.conf import settings
+from django.core.cache import cache
 from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -21,6 +23,7 @@ from apps.agent_score.serializers import (
 )
 from apps.agent_score.throttles import AgentScoreScanThrottle, AgentScoreSignupThrottle
 from apps.agent_score.utils import extract_domain, validate_url
+from common.cache_keys import CacheKeys
 from common.task_router import TaskRouter
 
 logger = logging.getLogger(__name__)
@@ -175,6 +178,9 @@ class AgentScoreViewSet(viewsets.GenericViewSet):
 
         GET /lookup-by-domain/?domain=gusto.com
         Returns the report if a completed one exists, otherwise 404.
+
+        Results are cached in Redis for 24 hours and invalidated when
+        a new report for the same domain completes.
         """
         domain = request.query_params.get("domain", "").strip().lower()
         if not domain:
@@ -187,11 +193,16 @@ class AgentScoreViewSet(viewsets.GenericViewSet):
         if "://" in domain:
             domain = extract_domain(domain)
 
+        # Check Redis cache first
+        cache_key = CacheKeys.agent_score_domain_report(domain)
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(json.loads(cached))
+
+        # Single query with prefetch (was previously 2 separate queries)
         report = (
-            AgentScoreReport.objects.filter(
-                domain=domain,
-                status="complete",
-            )
+            self.get_queryset()
+            .filter(domain=domain, status="complete")
             .order_by("-created_at")
             .first()
         )
@@ -202,10 +213,13 @@ class AgentScoreViewSet(viewsets.GenericViewSet):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        serializer = ReportSerializer(
-            self.get_queryset().get(pk=report.pk)
-        )
-        return Response(serializer.data)
+        serializer = ReportSerializer(report)
+        data = serializer.data
+
+        # Cache for 24 hours — invalidated when a new report completes
+        cache.set(cache_key, json.dumps(data, default=str), timeout=60 * 60 * 24)
+
+        return Response(data)
 
     @action(detail=True, methods=["get"], url_path="report")
     def report(self, request: Request, pk=None) -> Response:
