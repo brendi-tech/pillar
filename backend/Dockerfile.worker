@@ -59,11 +59,25 @@ ENV PATH="/app/.venv/bin:$PATH"
 # browser auto-detection finds it (it looks for system Chrome/Chromium).
 ENV PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright
 RUN playwright install --with-deps chromium \
-    && CHROME=$(find /opt/ms-playwright -path "*/chromium-*/chrome-linux/chrome" -type f 2>/dev/null | head -1) \
-    && echo "Playwright Chromium binary: ${CHROME:-NOT FOUND}" \
+    && echo "=== /opt/ms-playwright contents ===" \
+    && ls -la /opt/ms-playwright/ \
+    && echo "=== chromium-1208 contents ===" \
+    && ls -laR /opt/ms-playwright/chromium-1208/ 2>/dev/null | head -30 || echo "chromium-1208 not found" \
+    && echo "=== headless_shell contents ===" \
+    && ls -la /opt/ms-playwright/chromium_headless_shell-1208/chrome-linux/ 2>/dev/null | head -10 || echo "headless_shell not found" \
+    && echo "=== Finding any chrome binary ===" \
+    && find /opt/ms-playwright -type f -name "chrome" -o -name "chromium" -o -name "headless_shell" 2>/dev/null \
+    && echo "=== Creating symlink ===" \
+    && CHROME=$(find /opt/ms-playwright -type f -name "chrome" 2>/dev/null | head -1) \
+    && if [ -z "$CHROME" ]; then \
+         CHROME=$(find /opt/ms-playwright -type f -name "headless_shell" 2>/dev/null | head -1); \
+       fi \
+    && echo "Using: ${CHROME:-NONE}" \
     && if [ -n "$CHROME" ]; then \
          ln -sf "$CHROME" /usr/bin/chromium; \
          echo "Created /usr/bin/chromium -> $CHROME"; \
+       else \
+         echo "WARNING: No Chromium binary found!"; \
        fi
 
 # Copy project files
