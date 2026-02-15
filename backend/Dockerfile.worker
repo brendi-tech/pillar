@@ -48,27 +48,22 @@ ENV PATH="/app/.venv/bin:$PATH"
 # Python Playwright (used by our code) and Node.js Playwright (used by
 # OpenClaw) share the same browser binaries directory.
 #
-# For OpenClaw's Node.js Playwright, the docs recommend using the bundled
-# CLI (not `npx playwright`) to avoid npm override conflicts in Docker.
-# See: https://docs.openclaw.ai/tools/browser#docker-playwright-install
+# IMPORTANT: Only run Python Playwright's install — NOT the Node.js
+# playwright-core CLI.  OpenClaw bundles playwright-core (not full
+# playwright), and `playwright-core install chromium` overwrites the
+# full Chrome binary with just a headless shell, breaking the browser.
+# Python's `playwright install` downloads the full Chrome for Testing
+# AND the headless shell; OpenClaw's Playwright can use either.
+#
+# After installing, create a /usr/bin/chromium symlink so OpenClaw's
+# browser auto-detection finds it (it looks for system Chrome/Chromium).
 ENV PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright
 RUN playwright install --with-deps chromium \
-    && node /usr/lib/node_modules/openclaw/node_modules/playwright-core/cli.js install chromium \
-    && echo "=== Playwright Chromium directory ===" \
-    && ls -la /opt/ms-playwright/chromium-*/chrome-linux/chrome 2>/dev/null || true \
-    && CHROME=$(find /opt/ms-playwright -path "*/chrome-linux/chrome" -type f 2>/dev/null | head -1) \
+    && CHROME=$(find /opt/ms-playwright -path "*/chromium-*/chrome-linux/chrome" -type f 2>/dev/null | head -1) \
+    && echo "Playwright Chromium binary: ${CHROME:-NOT FOUND}" \
     && if [ -n "$CHROME" ]; then \
-         echo "Creating /usr/bin/chromium symlink -> $CHROME"; \
          ln -sf "$CHROME" /usr/bin/chromium; \
-       else \
-         echo "WARNING: Full Chromium not found, trying headless_shell"; \
-         HS=$(find /opt/ms-playwright -name "headless_shell" -type f 2>/dev/null | head -1); \
-         if [ -n "$HS" ]; then \
-           echo "Creating /usr/bin/chromium symlink -> $HS"; \
-           ln -sf "$HS" /usr/bin/chromium; \
-         else \
-           echo "ERROR: No Chromium binary found in /opt/ms-playwright"; \
-         fi; \
+         echo "Created /usr/bin/chromium -> $CHROME"; \
        fi
 
 # Copy project files
