@@ -348,13 +348,15 @@ def _write_openclaw_config(port: int) -> str:
     return str(config_path)
 
 
-async def _nuke_openclaw_gateway() -> None:
+async def _nuke_openclaw_gateway(port: int = 0) -> None:
     """
-    Forcefully kill ALL OpenClaw gateway processes and remove lock files.
+    Forcefully kill ALL OpenClaw gateway processes and free ports.
 
-    Uses SIGKILL (-9) because SIGTERM can be caught/ignored by the gateway
-    or its child Node.js processes.  OpenClaw's gateway may fork, so we
-    must kill by process name, not just a subprocess handle.
+    OpenClaw's gateway lock is primarily a **port bind** (EADDRINUSE).
+    The secondary lock is a PID-based guard file.  We attack both:
+    1. Kill processes by name (SIGKILL)
+    2. Kill processes holding our target port (fuser)
+    3. Remove lock/PID files
     """
     # Step 1: Try the graceful stop command (best-effort, short timeout)
     openclaw_bin = shutil.which("openclaw")
@@ -370,21 +372,29 @@ async def _nuke_openclaw_gateway() -> None:
             stop_proc.kill()
             await stop_proc.wait()
 
-    # Step 2: SIGKILL all gateway-related processes (catches forked children)
+    # Step 2: SIGKILL all gateway-related processes by name
+    # Also use fuser to kill anything holding our target port (primary lock).
+    # Fallback: use lsof if fuser is unavailable.
+    port_kill = ""
+    if port:
+        port_kill = (
+            f"fuser -k -9 {port}/tcp 2>/dev/null || "
+            f"  kill -9 $(lsof -ti tcp:{port}) 2>/dev/null; "
+        )
+
     kill_proc = await asyncio.create_subprocess_shell(
-        # First SIGTERM to give a brief chance, then SIGKILL
-        "pkill -f 'openclaw.*gateway' 2>/dev/null; "
-        "pkill -f 'node.*openclaw' 2>/dev/null; "
-        "pkill -f 'node.*gateway' 2>/dev/null; "
-        "sleep 1; "
-        # Now SIGKILL anything that survived SIGTERM
+        # SIGKILL gateway processes immediately (don't bother with SIGTERM first)
         "pkill -9 -f 'openclaw.*gateway' 2>/dev/null; "
         "pkill -9 -f 'node.*openclaw' 2>/dev/null; "
-        "pkill -9 -f 'node.*gateway' 2>/dev/null; "
+        # Kill anything on our target port
+        + port_kill +
+        # Also kill any gateway on the default OpenClaw port
+        "fuser -k -9 18789/tcp 2>/dev/null || "
+        "  kill -9 $(lsof -ti tcp:18789) 2>/dev/null; "
         "sleep 1; "
-        # Step 3: Remove ALL possible lock file locations
+        # Remove ALL possible lock/PID files
         "rm -f ~/.openclaw/gateway.lock ~/.openclaw/.gateway.lock "
-        "~/.openclaw/openclaw.lock ~/.openclaw/*.lock "
+        "~/.openclaw/openclaw.lock ~/.openclaw/*.lock ~/.openclaw/*.pid "
         "/tmp/openclaw*.lock /tmp/.openclaw*.lock 2>/dev/null; "
         "true",
         stdout=asyncio.subprocess.PIPE,
@@ -396,7 +406,7 @@ async def _nuke_openclaw_gateway() -> None:
         kill_proc.kill()
         await kill_proc.wait()
 
-    # Step 4: Wait for processes to fully exit and OS to release resources
+    # Step 3: Wait for processes to fully exit and OS to release ports
     await asyncio.sleep(2)
 
 
@@ -412,8 +422,8 @@ async def _start_openclaw_gateway(port: int) -> asyncio.subprocess.Process:
             "OpenClaw CLI not found. Install it with: npm install -g openclaw"
         )
 
-    # Nuke any stale gateway from a previous run
-    await _nuke_openclaw_gateway()
+    # Nuke any stale gateway from a previous run (pass our target port)
+    await _nuke_openclaw_gateway(port)
 
     # Write a complete config file to ~/.openclaw/openclaw.json.
     # This replaces the old _ensure_openclaw_config() which ran 7 slow
@@ -462,7 +472,7 @@ async def _start_openclaw_gateway(port: int) -> asyncio.subprocess.Process:
                     "nuking and retrying...",
                     attempt,
                 )
-                await _nuke_openclaw_gateway()
+                await _nuke_openclaw_gateway(port)
                 proc = await asyncio.create_subprocess_exec(
                     openclaw_bin, "gateway", "--port", str(port),
                     stdout=asyncio.subprocess.PIPE,
@@ -498,7 +508,9 @@ async def _start_openclaw_gateway(port: int) -> asyncio.subprocess.Process:
     )
 
 
-async def _stop_openclaw_gateway(proc: asyncio.subprocess.Process) -> None:
+async def _stop_openclaw_gateway(
+    proc: asyncio.subprocess.Process, port: int = 0
+) -> None:
     """Terminate the OpenClaw gateway subprocess and all child processes."""
     # First, try graceful termination of our subprocess handle
     if proc.returncode is None:
@@ -511,8 +523,9 @@ async def _stop_openclaw_gateway(proc: asyncio.subprocess.Process) -> None:
             await proc.wait()
 
     # Then nuke everything — the gateway may have forked child processes
-    # (Node.js children, browser processes, etc.) that survive the parent
-    await _nuke_openclaw_gateway()
+    # (Node.js children, browser processes, etc.) that survive the parent.
+    # Pass the port so fuser can kill anything still holding it.
+    await _nuke_openclaw_gateway(port)
 
 
 # ---------------------------------------------------------------------------
@@ -914,7 +927,7 @@ async def openclaw_test_workflow(
     finally:
         # Always shut down the gateway subprocess
         if gateway_proc:
-            await _stop_openclaw_gateway(gateway_proc)
+            await _stop_openclaw_gateway(gateway_proc, port)
 
     # Update status to done
     await _update_status("Complete")
