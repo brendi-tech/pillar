@@ -10,8 +10,15 @@ Usage:
 
 The worker will register all automation workflows and listen for tasks
 from the Hatchet server.
+
+Graceful shutdown:
+    On SIGTERM (sent by Cloud Run during deploys), the worker logs the
+    signal and converts it to KeyboardInterrupt so the Hatchet SDK can
+    finish its internal cleanup. Cloud Run waits up to the configured
+    termination grace period before sending SIGKILL.
 """
 import os
+import signal
 import sys
 import logging
 import django
@@ -32,9 +39,39 @@ from worker_config import get_all_workflows
 
 logger = logging.getLogger(__name__)
 
+_shutting_down = False
+
+
+def _handle_sigterm(signum: int, frame) -> None:
+    """
+    Handle SIGTERM from Cloud Run during deploys.
+
+    Instead of letting the process die immediately (losing in-flight
+    tasks), we log the signal and raise KeyboardInterrupt so the
+    Hatchet SDK can run its internal shutdown procedure (drain the
+    action listener, let running tasks finish).
+    """
+    global _shutting_down
+    if _shutting_down:
+        logger.warning("Received second termination signal — forcing exit")
+        sys.exit(1)
+
+    _shutting_down = True
+    sig_name = signal.Signals(signum).name
+    logger.info(
+        f"Received {sig_name} — initiating graceful shutdown "
+        f"(finishing in-flight tasks)..."
+    )
+    raise KeyboardInterrupt
+
 
 def main():
     """Start the Hatchet worker."""
+    # Register signal handlers before starting the worker so SIGTERM
+    # during deploys triggers a clean shutdown instead of an abrupt kill.
+    signal.signal(signal.SIGTERM, _handle_sigterm)
+    signal.signal(signal.SIGINT, _handle_sigterm)
+
     logger.info("=" * 60)
     logger.info("Starting Help Center Hatchet Worker")
     logger.info("=" * 60)
@@ -67,10 +104,12 @@ def main():
     try:
         worker.start()
     except KeyboardInterrupt:
-        logger.info("Worker stopped by user")
+        logger.info("Worker shutting down gracefully...")
     except Exception as e:
         logger.error(f"Worker error: {e}", exc_info=True)
         sys.exit(1)
+
+    logger.info("Worker stopped")
 
 
 if __name__ == "__main__":

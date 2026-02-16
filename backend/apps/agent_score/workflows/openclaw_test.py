@@ -19,6 +19,7 @@ Key properties:
 - Checks are dynamic — generated from whatever OpenClaw actually tried
 - The agent reports what worked, what didn't, and a narrative summary
 """
+import asyncio
 import json as json_mod
 import logging
 import os
@@ -210,6 +211,29 @@ _OPENCLAW_GATEWAY_TOKEN = os.environ.get(
 )
 
 
+def _is_retryable_openclaw_error(exc: Exception) -> bool:
+    """
+    Return True for transient errors that are safe to retry.
+
+    These are infrastructure failures (service down, deploy in progress,
+    network issues) — NOT application-level errors from the agent.
+    """
+    if isinstance(exc, (httpx.ReadTimeout, httpx.ConnectTimeout, httpx.ConnectError)):
+        return True
+
+    if isinstance(exc, httpx.HTTPStatusError) and exc.response.status_code >= 500:
+        return True
+
+    msg = str(exc).lower()
+    if "timed out" in msg or "connection refused" in msg:
+        return True
+
+    return False
+
+
+_OPENCLAW_RETRY_DELAYS = [10, 30, 60]  # seconds between attempts
+
+
 async def _call_openclaw_service(prompt: str) -> dict:
     """
     Send an evaluation prompt to the standalone OpenClaw Cloud Run service.
@@ -249,7 +273,7 @@ async def _call_openclaw_service(prompt: str) -> dict:
 @hatchet.task(
     name="agent-score-openclaw-test",
     retries=1,
-    execution_timeout=timedelta(minutes=5),
+    execution_timeout=timedelta(minutes=8),
     input_validator=OpenclawTestInput,
 )
 async def openclaw_test_workflow(
@@ -297,7 +321,7 @@ async def _run_openclaw_test(report, report_id, _update_status, workflow_input):
     from apps.agent_score.workflows.activity_log import log_activity
 
     try:
-        # 1. Build the eval prompt and call the service
+        # 1. Build the eval prompt and call the service (with retry)
         await _update_status("AI agent evaluating site...")
         prompt = build_openclaw_eval_prompt(report.url)
 
@@ -307,7 +331,38 @@ async def _run_openclaw_test(report, report_id, _update_status, workflow_input):
             {"service_url": _OPENCLAW_SERVICE_URL},
         )
 
-        response_data = await _call_openclaw_service(prompt)
+        max_attempts = len(_OPENCLAW_RETRY_DELAYS) + 1
+        last_exc: Exception | None = None
+
+        for attempt in range(1, max_attempts + 1):
+            try:
+                response_data = await _call_openclaw_service(prompt)
+                break  # success
+            except Exception as call_exc:
+                last_exc = call_exc
+                if attempt < max_attempts and _is_retryable_openclaw_error(call_exc):
+                    delay = _OPENCLAW_RETRY_DELAYS[attempt - 1]
+                    logger.warning(
+                        "[AGENT SCORE] OpenClaw call failed for %s "
+                        "(attempt %d/%d): %s — retrying in %ds",
+                        report_id, attempt, max_attempts,
+                        type(call_exc).__name__, delay,
+                    )
+                    await log_activity(
+                        report_id, "openclaw_test", "warning",
+                        f"Service call failed ({type(call_exc).__name__}) "
+                        f"— retrying in {delay}s (attempt {attempt}/{max_attempts})",
+                        {"error": str(call_exc), "attempt": attempt, "delay": delay},
+                    )
+                    await _update_status(
+                        f"Service unavailable — retrying in {delay}s..."
+                    )
+                    await asyncio.sleep(delay)
+                else:
+                    raise call_exc
+        else:
+            # All retries exhausted — re-raise the last exception
+            raise last_exc  # type: ignore[misc]
 
         await log_activity(
             report_id, "openclaw_test", "info",
@@ -450,7 +505,10 @@ async def _run_openclaw_test(report, report_id, _update_status, workflow_input):
             {"error": str(e)},
         )
 
-        # Store error state so the frontend can show a message
+        # Infrastructure failures (timeouts, service crashes, deployment
+        # rollouts) are NOT the site's fault.  Store the error so the
+        # frontend can show "test unavailable" and leave score as None so
+        # the category is excluded from the overall score (DNF).
         report.openclaw_data = {
             "score": None,
             "summary": "",
