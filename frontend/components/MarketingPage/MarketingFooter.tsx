@@ -12,14 +12,14 @@ export function MarketingFooter() {
     <footer className="bg-[#F3EFE8] h-[282px] flex flex-col">
       <div className="max-w-marketingSection mx-auto border-x border-marketing flex-1 flex flex-col justify-between w-full">
         {/* Top row: Logo and Links */}
-        <div className="flex justify-between items-center px-6 lg:px-8 pt-6">
+        <div className="flex justify-between sm:flex-row flex-col sm:items-center px-6 lg:px-8 pt-6">
           {/* Left: Logo */}
           <Link href="/" className="hover:opacity-90 transition-opacity">
-            <PillarLogoWithName className="h-6" />
+            <PillarLogoWithName className="h-6 w-auto" />
           </Link>
 
           {/* Right: Links */}
-          <div className="flex items-center gap-8 text-sm text-[#1A1A1A]">
+          <div className="flex sm:items-center gap-3 sm:gap-8 pt-4 sm:pt-0 text-sm text-[#1A1A1A] sm:flex-row flex-col">
             <Link
               href="/docs"
               className="hover:text-[#6B6B6B] transition-colors"

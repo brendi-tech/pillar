@@ -1,35 +1,41 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import { ArrowRight, Link2, Check, Info, AlertTriangle, Loader2, CheckCircle2, XCircle, ExternalLink } from "lucide-react";
-import { SessionReplay } from "@/components/AgentScore/SessionReplay";
-import { cn } from "@/lib/utils";
+import type {
+  AgentScoreReport,
+  LayerState,
+  OpenclawData,
+  ScanNote,
+  SignupTestData,
+} from "@/components/AgentScore/AgentScore.types";
+import {
+  getCategoryLabel,
+  getCategoryScore,
+  getScoredCategories,
+  getVisibleCategories,
+  isUnscoredCategory,
+} from "@/components/AgentScore/AgentScore.types";
 import { ScoreGauge } from "@/components/AgentScore/ScoreGauge";
+import { SessionReplay } from "@/components/AgentScore/SessionReplay";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
+import {
+  AlertTriangle,
+  ArrowRight,
+  Check,
+  CheckCircle2,
+  ExternalLink,
+  Info,
+  Link2,
+  Loader2,
+  XCircle,
+} from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { useCallback, useMemo, useState } from "react";
 import { ActivityLog } from "./ActivityLog";
 import { CheckRow } from "./CheckRow";
 import { EmailSubscribe } from "./EmailSubscribe";
 import { ReportCTA } from "./ReportCTA";
-import {
-  Dialog,
-  DialogContent,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import type {
-  AgentScoreReport,
-  ScanNote,
-  OpenclawData,
-  SignupTestData,
-  LayerState,
-} from "@/components/AgentScore/AgentScore.types";
-import {
-  getVisibleCategories,
-  getScoredCategories,
-  getCategoryScore,
-  getCategoryLabel,
-  isUnscoredCategory,
-} from "@/components/AgentScore/AgentScore.types";
 
 function getScoreColor(score: number | null): string {
   if (score === null) return "#9A9A9A";
@@ -43,10 +49,7 @@ interface ScoreReportProps {
   onScanAnother: () => void;
 }
 
-export function ScoreReport({
-  report,
-  onScanAnother,
-}: ScoreReportProps) {
+export function ScoreReport({ report, onScanAnother }: ScoreReportProps) {
   const [copied, setCopied] = useState(false);
 
   // Partial state: report has some scores but signup/overall still pending
@@ -65,7 +68,8 @@ export function ScoreReport({
   const lowestCategory = useMemo(() => {
     const scored = getScoredCategories(report);
     const scoredVisible = visibleCategories.filter((c) => scored.includes(c));
-    const candidates = scoredVisible.length > 0 ? scoredVisible : visibleCategories;
+    const candidates =
+      scoredVisible.length > 0 ? scoredVisible : visibleCategories;
     let lowest: string = candidates[0];
     let lowestScore = getCategoryScore(report, lowest) ?? Infinity;
     for (const cat of candidates) {
@@ -78,18 +82,15 @@ export function ScoreReport({
     return lowest;
   }, [report, visibleCategories]);
 
-  const [activeCategory, setActiveCategory] =
-    useState<string>(lowestCategory);
+  const [activeCategory, setActiveCategory] = useState<string>(lowestCategory);
 
   const activeScore = getCategoryScore(report, activeCategory);
 
   // Sort: failed first (red), then DNF (gray), then passed (green)
   const activeChecks = useMemo(() => {
-    const checks = report.checks.filter(
-      (c) => c.category === activeCategory
-    );
+    const checks = report.checks.filter((c) => c.category === activeCategory);
     return [...checks].sort((a, b) => {
-      const order = (c: typeof checks[number]) =>
+      const order = (c: (typeof checks)[number]) =>
         c.status === "dnf" ? 1 : c.passed ? 2 : 0;
       return order(a) - order(b);
     });
@@ -101,23 +102,27 @@ export function ScoreReport({
   const rightChecks = activeChecks.slice(midpoint);
 
   // Token metrics for rules tab (content checks live here now)
-  const showTokenMetrics =
-    activeCategory === "rules" && report.token_metrics;
+  const showTokenMetrics = activeCategory === "rules" && report.token_metrics;
 
   // WebMCP CTA for webmcp tab
   const showWebMCPCta =
-    activeCategory === "webmcp" && (report.webmcp_score === null || report.webmcp_score < 90);
+    activeCategory === "webmcp" &&
+    (report.webmcp_score === null || report.webmcp_score < 90);
 
   // Per-layer state enums from the serializer — single source of truth
-  const signupState: LayerState = report.progress?.signup_test_state ?? "disabled";
-  const openclawState: LayerState = report.progress?.openclaw_test_state ?? "disabled";
+  const signupState: LayerState =
+    report.progress?.signup_test_state ?? "disabled";
+  const openclawState: LayerState =
+    report.progress?.openclaw_test_state ?? "disabled";
 
   // Signup test narrative — supports both new (self-scoring) and legacy shapes
   const showSignupNarrative = activeCategory === "signup_test";
   const rawSignupData = report.signup_test_data;
   // New shape has `summary`; legacy shape has `outcome.outcome_type`
   const isNewSignupShape = rawSignupData && "summary" in rawSignupData;
-  const signupData = isNewSignupShape ? (rawSignupData as SignupTestData) : null;
+  const signupData = isNewSignupShape
+    ? (rawSignupData as SignupTestData)
+    : null;
   // Legacy fallback
   const legacyOutcome = !isNewSignupShape
     ? (rawSignupData?.outcome as Record<string, unknown> | undefined)
@@ -125,7 +130,9 @@ export function ScoreReport({
   const legacyOutcomeType = legacyOutcome?.outcome_type as string | undefined;
   const legacyOutcomeDetail = legacyOutcome?.detail as string | undefined;
   const hasSignupData = !!signupData?.summary || !!legacyOutcome;
-  const hasSessionRecording = !!(signupData?.session_id ?? rawSignupData?.session_id);
+  const hasSessionRecording = !!(
+    signupData?.session_id ?? rawSignupData?.session_id
+  );
 
   // OpenClaw narrative data (only needed when state is "success")
   const showOpenclawNarrative = activeCategory === "openclaw";
@@ -286,7 +293,8 @@ export function ScoreReport({
                       isActive ? "text-[#1A1A1A]" : "text-[#6B6B6B]"
                     )}
                   >
-                    {getCategoryLabel(report, category)}{unscored && !categoryLoading && " *"}
+                    {getCategoryLabel(report, category)}
+                    {unscored && !categoryLoading && " *"}
                   </span>
                 </button>
               </div>
@@ -335,12 +343,14 @@ export function ScoreReport({
         {/* Self-score note (OpenClaw + Signup Test) */}
         {showOpenclawNarrative && openclawState === "success" && (
           <p className="text-center text-xs text-[#999] mt-2">
-            Score reflects the agent&apos;s overall experience, not individual check results
+            Score reflects the agent&apos;s overall experience, not individual
+            check results
           </p>
         )}
         {showSignupNarrative && signupData && signupState === "success" && (
           <p className="text-center text-xs text-[#999] mt-2">
-            Score reflects the agent&apos;s signup experience, not individual check results
+            Score reflects the agent&apos;s signup experience, not individual
+            check results
           </p>
         )}
 
@@ -394,7 +404,8 @@ export function ScoreReport({
                     Still testing signup&hellip;
                   </p>
                   <p className="text-sm text-[#6B6B6B] mt-1 leading-relaxed">
-                    An AI agent is attempting to create an account on your site. This takes 30&ndash;60 seconds.
+                    An AI agent is attempting to create an account on your site.
+                    This takes 30&ndash;60 seconds.
                   </p>
                 </div>
               </div>
@@ -415,11 +426,20 @@ export function ScoreReport({
             {/* Summary */}
             <div className="rounded-lg bg-[#F9F7F3] border border-[#E8E4DC] p-5">
               <div className="flex items-center gap-2 mb-2">
-                <Image src="/browserbase-logo.svg" alt="BrowserBase" width={16} height={16} className="shrink-0" />
-                <span className="text-sm font-semibold text-[#1A1A1A]">What happened</span>
+                <Image
+                  src="/browserbase-logo.svg"
+                  alt="BrowserBase"
+                  width={16}
+                  height={16}
+                  className="shrink-0"
+                />
+                <span className="text-sm font-semibold text-[#1A1A1A]">
+                  What happened
+                </span>
               </div>
               <p className="text-sm text-[#6B6B6B] leading-relaxed">
-                {signupData.summary || "The signup test completed but no summary was provided."}
+                {signupData.summary ||
+                  "The signup test completed but no summary was provided."}
               </p>
               {hasSessionRecording && (
                 <SessionReplay
@@ -430,14 +450,20 @@ export function ScoreReport({
             </div>
 
             {/* What worked / What didn't — two columns */}
-            {((signupData.what_worked?.length ?? 0) > 0 || (signupData.what_didnt?.length ?? 0) > 0) && (
+            {((signupData.what_worked?.length ?? 0) > 0 ||
+              (signupData.what_didnt?.length ?? 0) > 0) && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {(signupData.what_worked?.length ?? 0) > 0 && (
                   <div className="rounded-lg bg-[#F0FFF4] border border-[#C6F6D5] p-4">
-                    <p className="text-xs font-semibold text-[#22543D] uppercase tracking-wide mb-2">What worked</p>
+                    <p className="text-xs font-semibold text-[#22543D] uppercase tracking-wide mb-2">
+                      What worked
+                    </p>
                     <ul className="space-y-1.5">
                       {signupData.what_worked.map((item, i) => (
-                        <li key={i} className="flex items-start gap-2 text-sm text-[#6B6B6B]">
+                        <li
+                          key={i}
+                          className="flex items-start gap-2 text-sm text-[#6B6B6B]"
+                        >
                           <CheckCircle2 className="h-3.5 w-3.5 text-[#0CCE6B] mt-0.5 shrink-0" />
                           {item}
                         </li>
@@ -447,10 +473,15 @@ export function ScoreReport({
                 )}
                 {(signupData.what_didnt?.length ?? 0) > 0 && (
                   <div className="rounded-lg bg-[#FFF5F5] border border-[#FED7D7] p-4">
-                    <p className="text-xs font-semibold text-[#742A2A] uppercase tracking-wide mb-2">What didn&apos;t work</p>
+                    <p className="text-xs font-semibold text-[#742A2A] uppercase tracking-wide mb-2">
+                      What didn&apos;t work
+                    </p>
                     <ul className="space-y-1.5">
                       {signupData.what_didnt.map((item, i) => (
-                        <li key={i} className="flex items-start gap-2 text-sm text-[#6B6B6B]">
+                        <li
+                          key={i}
+                          className="flex items-start gap-2 text-sm text-[#6B6B6B]"
+                        >
                           <XCircle className="h-3.5 w-3.5 text-[#FF4E42] mt-0.5 shrink-0" />
                           {item}
                         </li>
@@ -475,7 +506,9 @@ export function ScoreReport({
                       alt="Final page state after signup attempt"
                       className="w-full max-w-sm h-auto"
                     />
-                    <p className="text-xs text-[#999] p-2 text-center">Final page state (click to expand)</p>
+                    <p className="text-xs text-[#999] p-2 text-center">
+                      Final page state (click to expand)
+                    </p>
                   </button>
                 </DialogTrigger>
                 <DialogContent className="max-w-4xl">
@@ -529,8 +562,16 @@ export function ScoreReport({
         {showSignupNarrative && !signupData && legacyOutcome && (
           <div className="mt-6 rounded-lg bg-[#F9F7F3] border border-[#E8E4DC] p-5">
             <div className="flex items-center gap-2 mb-2">
-              <Image src="/browserbase-logo.svg" alt="BrowserBase" width={16} height={16} className="shrink-0" />
-              <span className="text-sm font-semibold text-[#1A1A1A]">What happened</span>
+              <Image
+                src="/browserbase-logo.svg"
+                alt="BrowserBase"
+                width={16}
+                height={16}
+                className="shrink-0"
+              />
+              <span className="text-sm font-semibold text-[#1A1A1A]">
+                What happened
+              </span>
             </div>
             <p className="text-sm text-[#6B6B6B] leading-relaxed">
               {legacyOutcomeType === "success" &&
@@ -544,13 +585,16 @@ export function ScoreReport({
               {legacyOutcomeType === "no_signup_found" &&
                 "No signup or registration page was found on your site."}
               {legacyOutcomeType === "form_error" &&
-                (legacyOutcomeDetail || "The form was submitted but returned an error.")}
+                (legacyOutcomeDetail ||
+                  "The form was submitted but returned an error.")}
               {legacyOutcomeType === "redirect_unknown" &&
-                (legacyOutcomeDetail || "The agent was redirected but the outcome was unclear.")}
+                (legacyOutcomeDetail ||
+                  "The agent was redirected but the outcome was unclear.")}
               {legacyOutcomeType === "timeout" &&
                 "The AI agent ran out of time before completing the signup flow. Your site may be slow to load or have a complex multi-step signup process."}
               {legacyOutcomeType === "error" &&
-                (legacyOutcomeDetail || "The signup test encountered a technical error and could not complete.")}
+                (legacyOutcomeDetail ||
+                  "The signup test encountered a technical error and could not complete.")}
               {legacyOutcomeType === "unknown" &&
                 "The AI agent completed the signup flow but the outcome couldn't be clearly classified."}
               {!legacyOutcomeType &&
@@ -564,13 +608,16 @@ export function ScoreReport({
             )}
           </div>
         )}
-        {showSignupNarrative && !signupData && legacyOutcome && report.activity_log?.length > 0 && (
-          <ActivityLog
-            entries={report.activity_log}
-            filterWorkflow="signup_test"
-            defaultCollapsed
-          />
-        )}
+        {showSignupNarrative &&
+          !signupData &&
+          legacyOutcome &&
+          report.activity_log?.length > 0 && (
+            <ActivityLog
+              entries={report.activity_log}
+              filterWorkflow="signup_test"
+              defaultCollapsed
+            />
+          )}
 
         {/* OpenClaw narrative — still running */}
         {showOpenclawNarrative && openclawState === "running" && (
@@ -583,7 +630,8 @@ export function ScoreReport({
                     OpenClaw is testing your site&hellip;
                   </p>
                   <p className="text-sm text-[#6B6B6B] mt-1 leading-relaxed">
-                    A real AI agent is browsing your site, trying to navigate, sign up, and complete tasks. This takes 1&ndash;3 minutes.
+                    A real AI agent is browsing your site, trying to navigate,
+                    sign up, and complete tasks. This takes 1&ndash;3 minutes.
                   </p>
                 </div>
               </div>
@@ -626,74 +674,95 @@ export function ScoreReport({
             )}
           </>
         )}
-        {showOpenclawNarrative && openclawState === "success" && openclawData && (
-          <div className="mt-6 space-y-4">
-            {/* Summary */}
-            <div className="rounded-lg bg-[#F9F7F3] border border-[#E8E4DC] p-5">
-              <div className="flex items-center gap-2 mb-2">
-                <Image src="/openclaw-logo.svg" alt="OpenClaw" width={16} height={16} className="shrink-0" />
-                <span className="text-sm font-semibold text-[#1A1A1A]">Agent&apos;s experience</span>
+        {showOpenclawNarrative &&
+          openclawState === "success" &&
+          openclawData && (
+            <div className="mt-6 space-y-4">
+              {/* Summary */}
+              <div className="rounded-lg bg-[#F9F7F3] border border-[#E8E4DC] p-5">
+                <div className="flex items-center gap-2 mb-2">
+                  <Image
+                    src="/openclaw-logo.svg"
+                    alt="OpenClaw"
+                    width={16}
+                    height={16}
+                    className="shrink-0"
+                  />
+                  <span className="text-sm font-semibold text-[#1A1A1A]">
+                    Agent&apos;s experience
+                  </span>
+                </div>
+                <p className="text-sm text-[#6B6B6B] leading-relaxed">
+                  {openclawData.summary}
+                </p>
               </div>
-              <p className="text-sm text-[#6B6B6B] leading-relaxed">
-                {openclawData.summary}
+
+              {/* What worked / What didn't — two columns */}
+              {(openclawData.what_worked.length > 0 ||
+                openclawData.what_didnt.length > 0) && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {openclawData.what_worked.length > 0 && (
+                    <div className="rounded-lg bg-[#F0FFF4] border border-[#C6F6D5] p-4">
+                      <p className="text-xs font-semibold text-[#22543D] uppercase tracking-wide mb-2">
+                        What worked
+                      </p>
+                      <ul className="space-y-1.5">
+                        {openclawData.what_worked.map((item, i) => (
+                          <li
+                            key={i}
+                            className="flex items-start gap-2 text-sm text-[#6B6B6B]"
+                          >
+                            <CheckCircle2 className="h-3.5 w-3.5 text-[#0CCE6B] mt-0.5 shrink-0" />
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {openclawData.what_didnt.length > 0 && (
+                    <div className="rounded-lg bg-[#FFF5F5] border border-[#FED7D7] p-4">
+                      <p className="text-xs font-semibold text-[#742A2A] uppercase tracking-wide mb-2">
+                        What didn&apos;t work
+                      </p>
+                      <ul className="space-y-1.5">
+                        {openclawData.what_didnt.map((item, i) => (
+                          <li
+                            key={i}
+                            className="flex items-start gap-2 text-sm text-[#6B6B6B]"
+                          >
+                            <XCircle className="h-3.5 w-3.5 text-[#FF4E42] mt-0.5 shrink-0" />
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Attribution */}
+              <p className="text-center text-[11px] text-[#999]">
+                Tested by{" "}
+                <a
+                  href="https://openclaw.ai"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline underline-offset-2 hover:text-[#6B6B6B] transition-colors inline-flex items-center gap-0.5"
+                >
+                  OpenClaw
+                  <ExternalLink className="h-2.5 w-2.5" />
+                </a>
               </p>
+
+              {report.activity_log?.length > 0 && (
+                <ActivityLog
+                  entries={report.activity_log}
+                  filterWorkflow="openclaw_test"
+                  defaultCollapsed
+                />
+              )}
             </div>
-
-            {/* What worked / What didn't — two columns */}
-            {(openclawData.what_worked.length > 0 || openclawData.what_didnt.length > 0) && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {openclawData.what_worked.length > 0 && (
-                  <div className="rounded-lg bg-[#F0FFF4] border border-[#C6F6D5] p-4">
-                    <p className="text-xs font-semibold text-[#22543D] uppercase tracking-wide mb-2">What worked</p>
-                    <ul className="space-y-1.5">
-                      {openclawData.what_worked.map((item, i) => (
-                        <li key={i} className="flex items-start gap-2 text-sm text-[#6B6B6B]">
-                          <CheckCircle2 className="h-3.5 w-3.5 text-[#0CCE6B] mt-0.5 shrink-0" />
-                          {item}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {openclawData.what_didnt.length > 0 && (
-                  <div className="rounded-lg bg-[#FFF5F5] border border-[#FED7D7] p-4">
-                    <p className="text-xs font-semibold text-[#742A2A] uppercase tracking-wide mb-2">What didn&apos;t work</p>
-                    <ul className="space-y-1.5">
-                      {openclawData.what_didnt.map((item, i) => (
-                        <li key={i} className="flex items-start gap-2 text-sm text-[#6B6B6B]">
-                          <XCircle className="h-3.5 w-3.5 text-[#FF4E42] mt-0.5 shrink-0" />
-                          {item}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Attribution */}
-            <p className="text-center text-[11px] text-[#999]">
-              Tested by{" "}
-              <a
-                href="https://openclaw.ai"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline underline-offset-2 hover:text-[#6B6B6B] transition-colors inline-flex items-center gap-0.5"
-              >
-                OpenClaw
-                <ExternalLink className="h-2.5 w-2.5" />
-              </a>
-            </p>
-
-            {report.activity_log?.length > 0 && (
-              <ActivityLog
-                entries={report.activity_log}
-                filterWorkflow="openclaw_test"
-                defaultCollapsed
-              />
-            )}
-          </div>
-        )}
+          )}
 
         {/* Scan notes for this category */}
         {activeNotes.length > 0 && (
@@ -736,19 +805,23 @@ export function ScoreReport({
         )}
 
         {/* Full activity log (shown for non-narrative categories or as fallback) */}
-        {!showSignupNarrative && !showOpenclawNarrative && report.activity_log?.length > 0 && (
-          <ActivityLog
-            entries={report.activity_log}
-            filterWorkflows={activeCategoryWorkflows}
-            isLive={isPartial}
-            defaultCollapsed
-          />
-        )}
+        {!showSignupNarrative &&
+          !showOpenclawNarrative &&
+          report.activity_log?.length > 0 && (
+            <ActivityLog
+              entries={report.activity_log}
+              filterWorkflows={activeCategoryWorkflows}
+              isLive={isPartial}
+              defaultCollapsed
+            />
+          )}
 
         {/* Checks heading */}
         <div className="mt-8 mb-3">
           <h3 className="text-sm font-semibold text-[#1A1A1A] uppercase tracking-wide">
-            {(showOpenclawNarrative || (showSignupNarrative && signupData)) ? "Details" : "Checks"}
+            {showOpenclawNarrative || (showSignupNarrative && signupData)
+              ? "Details"
+              : "Checks"}
           </h3>
         </div>
 
@@ -757,12 +830,28 @@ export function ScoreReport({
           <div className="grid grid-cols-1 lg:grid-cols-2 lg:gap-x-10">
             <div className="divide-y divide-[#F0EDE8]">
               {leftChecks.map((check, i) => (
-                <CheckRow key={check.check_name} check={check} index={i} neutralDots={showOpenclawNarrative || (showSignupNarrative && !!signupData)} />
+                <CheckRow
+                  key={check.check_name}
+                  check={check}
+                  index={i}
+                  neutralDots={
+                    showOpenclawNarrative ||
+                    (showSignupNarrative && !!signupData)
+                  }
+                />
               ))}
             </div>
             <div className="divide-y divide-[#F0EDE8] border-t border-[#F0EDE8] lg:border-t-0">
               {rightChecks.map((check, i) => (
-                <CheckRow key={check.check_name} check={check} index={midpoint + i} neutralDots={showOpenclawNarrative || (showSignupNarrative && !!signupData)} />
+                <CheckRow
+                  key={check.check_name}
+                  check={check}
+                  index={midpoint + i}
+                  neutralDots={
+                    showOpenclawNarrative ||
+                    (showSignupNarrative && !!signupData)
+                  }
+                />
               ))}
             </div>
           </div>
@@ -772,7 +861,9 @@ export function ScoreReport({
             <span>Running checks&hellip;</span>
           </div>
         ) : (
-          <p className="text-sm text-[#6B6B6B] py-4">No checks available for this category.</p>
+          <p className="text-sm text-[#6B6B6B] py-4">
+            No checks available for this category.
+          </p>
         )}
       </div>
 

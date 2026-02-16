@@ -1,6 +1,6 @@
-import type { Metadata } from "next";
-import { MarketingNavbar } from "@/components/MarketingPage/MarketingNavbar";
 import { MarketingFooter } from "@/components/MarketingPage/MarketingFooter";
+import { MarketingNavbar } from "@/components/MarketingPage/MarketingNavbar";
+import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Agent Readiness Score | Pillar",
@@ -31,9 +31,7 @@ export default function AgentScoreLayout({
       <MarketingNavbar />
 
       <main className="flex-1 max-w-marketingSection mx-auto border-x border-marketing bg-white w-full">
-        <div className="px-6 sm:px-10 lg:px-16 py-12 sm:py-16">
-          {children}
-        </div>
+        <div className="px-6 sm:px-10 lg:px-16 pb-12 sm:pb-16">{children}</div>
       </main>
 
       <MarketingFooter />

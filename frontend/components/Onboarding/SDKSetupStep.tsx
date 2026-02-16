@@ -368,11 +368,11 @@ function SecretsManager({ productId, onSecretCreated }: SecretsManagerProps) {
               disabled={createSecretMutation.isPending || !newSecretName.trim()}
             >
               {createSecretMutation.isPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin sm:mr-2" />
               ) : (
-                <Plus className="mr-2 h-4 w-4" />
+                <Plus className="h-4 w-4 sm:mr-2" />
               )}
-              Generate
+              <span className="hidden sm:inline">Generate</span>
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
@@ -418,13 +418,13 @@ function InstallStep({ subdomain }: { subdomain: string }) {
       </p>
 
       <Tabs defaultValue="react" className="w-full">
-        <TabsList className="w-full justify-start">
+        <TabsList className="w-full justify-start overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {FRAMEWORKS.map((framework) => (
             <TabsTrigger
               key={framework.id}
               value={framework.id}
               disabled={!framework.enabled}
-              className="relative"
+              className="relative shrink-0"
             >
               {framework.name}
               {!framework.enabled && (
@@ -805,6 +805,7 @@ export function SDKSetupStep({
   const handleNext = () => {
     if (currentSubStep < subSteps.length) {
       setCurrentSubStep(currentSubStep + 1);
+      setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 0);
     } else if (onComplete) {
       onComplete();
     }
@@ -816,6 +817,7 @@ export function SDKSetupStep({
   const handleBack = () => {
     if (currentSubStep > 1) {
       setCurrentSubStep(currentSubStep - 1);
+      setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 0);
     }
   };
 

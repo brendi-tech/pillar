@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { agentScoreAPI } from "@/lib/public/agent-score-api";
 import { ScoreGauge } from "@/components/AgentScore/ScoreGauge";
+import { agentScoreAPI } from "@/lib/public/agent-score-api";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 
 // ---------------------------------------------------------------------------
 // Static domain list — scores fetched dynamically via lookupByDomain
@@ -38,7 +38,11 @@ const COMPANIES: CompanyEntry[] = [
   { domain: "potterybarn.com", label: "Pottery Barn", tag: "Traditional" },
   { domain: "1800flowers.com", label: "1-800-Flowers", tag: "Traditional" },
   { domain: "papajohns.com", label: "Papa Johns", tag: "Traditional" },
-  { domain: "dickssportinggoods.com", label: "Dick's Sporting", tag: "Traditional" },
+  {
+    domain: "dickssportinggoods.com",
+    label: "Dick's Sporting",
+    tag: "Traditional",
+  },
   { domain: "jcrew.com", label: "J.Crew", tag: "Traditional" },
   { domain: "rei.com", label: "REI", tag: "Traditional" },
 ];
@@ -71,8 +75,7 @@ export function CompanyShowcase() {
       setEntries(
         COMPANIES.map((company, i) => {
           const result = results[i];
-          const report =
-            result.status === "fulfilled" ? result.value : null;
+          const report = result.status === "fulfilled" ? result.value : null;
           return {
             ...company,
             score: report?.overall_score ?? null,
@@ -154,11 +157,7 @@ export function CompanyShowcase() {
               </div>
 
               {/* Score gauge */}
-              <ScoreGauge
-                score={entry.score}
-                size="sm"
-                animated={false}
-              />
+              <ScoreGauge score={entry.score} size="sm" animated={false} />
 
               {/* Tag */}
               <span className="text-[11px] text-[#999] font-medium">

@@ -1,18 +1,29 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { Globe, FileSearch, Monitor, Blocks, Terminal, ExternalLink } from "lucide-react";
-import { agentScoreReportQuery, agentScoreDomainLookupQuery, scanUrlMutation } from "@/queries/agentScore.queries";
 import { ScoreGauge } from "@/components/AgentScore/ScoreGauge";
+import {
+  agentScoreDomainLookupQuery,
+  agentScoreReportQuery,
+  scanUrlMutation,
+} from "@/queries/agentScore.queries";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import {
+  Blocks,
+  ExternalLink,
+  FileSearch,
+  Globe,
+  Monitor,
+  Terminal,
+} from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
+import { AgentReadinessGuide } from "./AgentReadinessGuide";
 import { DEFAULT_CATEGORY_CONFIG } from "./AgentScore.types";
+import { CompanyShowcase } from "./CompanyShowcase";
 import { ScanInput } from "./ScanInput";
 import { ScanProgress } from "./ScanProgress";
 import { ScoreReport } from "./ScoreReport";
 import { ReportHeaderActions } from "./ScoreReport/ReportHeaderActions";
-import { AgentReadinessGuide } from "./AgentReadinessGuide";
-import { CompanyShowcase } from "./CompanyShowcase";
 
 type PagePhase = "input" | "loading" | "scanning" | "report";
 
@@ -21,25 +32,29 @@ const SCAN_STEPS = [
     number: 1,
     icon: Globe,
     title: "Fetch your page",
-    description: "We request your URL from our server, just like an AI agent would.",
+    description:
+      "We request your URL from our server, just like an AI agent would.",
   },
   {
     number: 2,
     icon: FileSearch,
     title: "Analyze content",
-    description: "We check llms.txt, robots.txt, structured data, token efficiency, and permissions.",
+    description:
+      "We check llms.txt, robots.txt, structured data, token efficiency, and permissions.",
   },
   {
     number: 3,
     icon: Monitor,
     title: "Test interaction & signup",
-    description: "We render your page in a browser, test forms and navigation, and attempt agent signup — all in parallel.",
+    description:
+      "We render your page in a browser, test forms and navigation, and attempt agent signup — all in parallel.",
   },
   {
     number: 4,
     icon: Blocks,
     title: "Detect WebMCP tools & score",
-    description: "We detect registered tools and schemas, then weight each check to produce your readiness score.",
+    description:
+      "We detect registered tools and schemas, then weight each check to produce your readiness score.",
   },
 ];
 
@@ -62,7 +77,10 @@ export function AgentScorePage() {
 
   // Domain lookup query — fires when ?domain= is present and no ?report=
   const { data: domainReport, isFetched: domainLookupFetched } = useQuery(
-    agentScoreDomainLookupQuery(domainParam ?? "", hasDomain && !domainLookupDone)
+    agentScoreDomainLookupQuery(
+      domainParam ?? "",
+      hasDomain && !domainLookupDone
+    )
   );
 
   // Handle domain lookup result
@@ -76,22 +94,31 @@ export function AgentScorePage() {
       setReportId(domainReport.id);
       setPhase("report");
       // Update URL to include report ID for shareability
-      router.replace(
-        `/tools/agent-score?report=${domainReport.id}`,
-        { scroll: false }
-      );
+      router.replace(`/tools/agent-score?report=${domainReport.id}`, {
+        scroll: false,
+      });
     } else {
       // No report found — prefill the input with the domain
       setScanUrl(`https://${domainParam}`);
       setPhase("input");
     }
-  }, [hasDomain, domainReport, domainLookupFetched, domainLookupDone, domainParam, router]);
+  }, [
+    hasDomain,
+    domainReport,
+    domainLookupFetched,
+    domainLookupDone,
+    domainParam,
+    router,
+  ]);
 
   // Polling query — active when we have a reportId and are scanning or viewing.
   // Skip polling when the domain lookup already supplied this exact report.
   const domainDataCoversReport = domainReport?.id === reportId;
   const { data: polledReport } = useQuery(
-    agentScoreReportQuery(reportId ?? "", phase !== "input" && !!reportId && !domainDataCoversReport)
+    agentScoreReportQuery(
+      reportId ?? "",
+      phase !== "input" && !!reportId && !domainDataCoversReport
+    )
   );
 
   // Use domain report data if it matches, otherwise use polled report
@@ -113,13 +140,19 @@ export function AgentScorePage() {
       }
 
       // Push report ID to URL for shareability
-      router.push(`/tools/agent-score?report=${data.report_id}`, { scroll: false });
+      router.push(`/tools/agent-score?report=${data.report_id}`, {
+        scroll: false,
+      });
     },
     onError: (error: unknown) => {
       const msg =
-        error instanceof Error ? error.message : "Something went wrong. Try again.";
+        error instanceof Error
+          ? error.message
+          : "Something went wrong. Try again.";
       // Try to extract DRF error detail
-      const axiosErr = error as { response?: { data?: { detail?: string; url?: string[] } } };
+      const axiosErr = error as {
+        response?: { data?: { detail?: string; url?: string[] } };
+      };
       const detail =
         axiosErr?.response?.data?.detail ||
         axiosErr?.response?.data?.url?.[0] ||
@@ -191,22 +224,20 @@ export function AgentScorePage() {
   );
 
   return (
-    <div>
+    <div className="w-full overflow-hidden">
       {/* Header */}
       <div
         className={
-          phase === "report"
-            ? "mb-10 max-w-5xl mx-auto"
-            : "text-center mb-10"
+          phase === "report" ? "mb-10 max-w-5xl mx-auto" : "text-center mb-10"
         }
       >
         {phase === "report" && report ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_auto_1fr] sm:items-start">
-            <div className="hidden sm:block" />
+          <div className="flex flex-col items-center gap-4 md:grid md:grid-cols-[1fr_auto_1fr] md:items-start pt-8">
+            <div className="hidden md:block" />
             <h1 className="font-editorial text-center text-[28px] sm:text-[40px] text-[#1A1A1A] leading-tight">
               Agent Readiness Score
             </h1>
-            <div className="sm:justify-self-end">
+            <div className="md:justify-self-end">
               {report.status === "complete" && (
                 <ReportHeaderActions
                   report={report}
@@ -217,13 +248,14 @@ export function AgentScorePage() {
             </div>
           </div>
         ) : (
-          <div className="relative">
+          <div className="relative pt-12">
             {/* Decorative radial glow behind hero */}
             {phase === "input" && (
               <div
-                className="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 w-[600px] h-[300px] opacity-[0.12]"
+                className="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 sm:w-[600px] w-[400px] h-[300px] opacity-[0.12]"
                 style={{
-                  background: "radial-gradient(ellipse at center, #FF6E00 0%, transparent 70%)",
+                  background:
+                    "radial-gradient(ellipse at center, #FF6E00 0%, transparent 70%)",
                 }}
               />
             )}
@@ -267,29 +299,34 @@ export function AgentScorePage() {
               {Object.entries(DEFAULT_CATEGORY_CONFIG)
                 .sort(([, a], [, b]) => a.sort_order - b.sort_order)
                 .map(([category, cfg]) => {
-                const unscored = !cfg.scored;
-                return (
-                  <div key={category} className="flex items-stretch gap-8 sm:gap-12">
-                    {/* Thin vertical divider before unscored categories */}
-                    {unscored && (
-                      <div className="hidden sm:flex items-center">
-                        <div className="w-px h-3/5 bg-[#D8D8D8] opacity-50" />
+                  const unscored = !cfg.scored;
+                  return (
+                    <div
+                      key={category}
+                      className="flex items-stretch gap-8 sm:gap-12"
+                    >
+                      {/* Thin vertical divider before unscored categories */}
+                      {unscored && (
+                        <div className="hidden sm:flex items-center">
+                          <div className="w-px h-3/5 bg-[#D8D8D8] opacity-50" />
+                        </div>
+                      )}
+                      <div
+                        className={`flex flex-col items-center ${unscored ? "opacity-25" : "opacity-35"}`}
+                      >
+                        <ScoreGauge
+                          score={0}
+                          size="sm"
+                          label={`${cfg.label}${unscored ? " *" : ""}`}
+                          animated={false}
+                        />
+                        <p className="text-[10px] text-[#888] mt-1.5 max-w-[100px] text-center leading-tight">
+                          {cfg.description}
+                        </p>
                       </div>
-                    )}
-                    <div className={`flex flex-col items-center ${unscored ? "opacity-25" : "opacity-35"}`}>
-                      <ScoreGauge
-                        score={0}
-                        size="sm"
-                        label={`${cfg.label}${unscored ? " *" : ""}`}
-                        animated={false}
-                      />
-                      <p className="text-[10px] text-[#888] mt-1.5 max-w-[100px] text-center leading-tight">
-                        {cfg.description}
-                      </p>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
             </div>
 
             {/* Color legend */}
@@ -366,7 +403,8 @@ export function AgentScorePage() {
                 />
                 <div className="min-w-0">
                   <p className="text-sm text-[#6B6B6B] leading-relaxed">
-                    The agent test that powers part of this score is an open-source{" "}
+                    The agent test that powers part of this score is an
+                    open-source{" "}
                     <a
                       href="https://openclaw.ai"
                       target="_blank"
@@ -375,15 +413,20 @@ export function AgentScorePage() {
                     >
                       OpenClaw
                     </a>{" "}
-                    skill. Install it and run it locally against any site — no account needed.
+                    skill. Install it and run it locally against any site — no
+                    account needed.
                   </p>
                   <div className="mt-4 bg-[#1A1A1A] rounded-lg px-4 py-3 font-mono text-sm text-[#E8E4DC] flex items-center gap-3 overflow-x-auto">
                     <Terminal className="h-4 w-4 text-[#666] shrink-0" />
-                    <code className="whitespace-nowrap">openclaw skill install pillarhq/openclaw-agent-score</code>
+                    <code className="whitespace-nowrap">
+                      openclaw skill install pillarhq/openclaw-agent-score
+                    </code>
                   </div>
                   <p className="text-xs text-[#999] mt-3">
                     Then ask your agent:{" "}
-                    <span className="text-[#6B6B6B] font-medium">&quot;Run agent-score on https://your-site.com&quot;</span>
+                    <span className="text-[#6B6B6B] font-medium">
+                      &quot;Run agent-score on https://your-site.com&quot;
+                    </span>
                   </p>
                   <a
                     href="https://github.com/pillarhq/openclaw-agent-score"
@@ -413,14 +456,13 @@ export function AgentScorePage() {
       )}
 
       {/* Scanning progress */}
-      {phase === "scanning" && <ScanProgress startedAt={scanStartedAt} report={report} />}
+      {phase === "scanning" && (
+        <ScanProgress startedAt={scanStartedAt} report={report} />
+      )}
 
       {/* Report (shown for both partial and complete states) */}
       {phase === "report" && report && (
-        <ScoreReport
-          report={report}
-          onScanAnother={handleScanAnother}
-        />
+        <ScoreReport report={report} onScanAnother={handleScanAnother} />
       )}
     </div>
   );

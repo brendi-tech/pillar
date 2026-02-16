@@ -263,11 +263,9 @@ export function WebsiteCrawlOnboarding({
 
   const createProduct = useMutation({
     ...createProductMutation(),
-    onSuccess: async (newProduct) => {
-      // Switch to the new product
+    onSuccess: (newProduct) => {
+      // Switch to the new product immediately (don't refetch here - it causes re-renders)
       setCurrentProductId(newProduct.id);
-      await refetchProducts();
-      queryClient.invalidateQueries({ queryKey: productKeys.all });
     },
   });
 
@@ -331,8 +329,6 @@ export function WebsiteCrawlOnboarding({
             website_url: url.trim(),
           },
         });
-        // Refetch help centers to get the updated subdomain
-        await refetchProducts();
       }
 
       // Create the knowledge source (uses current product from context)
@@ -361,6 +357,10 @@ export function WebsiteCrawlOnboarding({
       } else {
         router.push(redirectTo);
       }
+
+      // Refresh products AFTER navigation to avoid re-renders that reset step state
+      await refetchProducts();
+      queryClient.invalidateQueries({ queryKey: productKeys.all });
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to create source";
