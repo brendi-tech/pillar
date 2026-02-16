@@ -467,7 +467,7 @@ export function ScoreReport({
                 <DialogTrigger asChild>
                   <button
                     type="button"
-                    className="rounded-lg border border-[#E8E4DC] overflow-hidden hover:border-[#999] transition-colors cursor-pointer"
+                    className="mx-auto rounded-lg border border-[#E8E4DC] overflow-hidden hover:border-[#999] transition-colors cursor-pointer"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
