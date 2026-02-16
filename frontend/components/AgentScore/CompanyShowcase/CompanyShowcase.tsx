@@ -117,7 +117,7 @@ export function CompanyShowcase() {
 
       {/* Marquee container */}
       <div
-        className="relative overflow-hidden"
+        className="group relative overflow-hidden"
         style={{
           maskImage:
             "linear-gradient(to right, transparent, black 4%, black 96%, transparent)",
@@ -126,7 +126,7 @@ export function CompanyShowcase() {
         }}
       >
         <div
-          className="flex w-max gap-4 hover:[animation-play-state:paused] marquee-track"
+          className="flex w-max gap-4 group-hover:[animation-play-state:paused] marquee-track"
           style={
             {
               "--marquee-distance": `-${halfWidth}px`,

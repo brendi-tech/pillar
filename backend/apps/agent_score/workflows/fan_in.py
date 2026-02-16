@@ -80,11 +80,17 @@ async def complete_layer(report_id: str) -> bool:
     signup_ready = (not report.signup_test_enabled) or bool(report.signup_test_data)
     openclaw_ready = (not report.openclaw_test_enabled) or bool(report.openclaw_data)
     all_layers_ready = signup_ready and openclaw_ready
-    checks_exist = await sync_to_async(report.checks.exists)()
 
-    # Phase 1: base layers done, no checks yet → run analyzers
+    # Check specifically for analyzer-created checks (rules/webmcp), not just
+    # any checks. The openclaw_test creates its own checks directly, so a
+    # generic checks.exists() would return True before analyze-and-score runs.
+    analyzers_ran = await sync_to_async(
+        report.checks.filter(category__in=["rules", "webmcp"]).exists
+    )()
+
+    # Phase 1: base layers done, analyzers haven't run yet → run analyzers
     # (may produce partial or full results depending on optional layer status)
-    if base_ready and not checks_exist:
+    if base_ready and not analyzers_ran:
         logger.info(
             f"[AGENT SCORE] Base layers ready for report {report_id} "
             f"— triggering analyze-and-score"
@@ -95,8 +101,10 @@ async def complete_layer(report_id: str) -> bool:
         )
         return True
 
-    # Phase 2: all layers finished after partial scoring → finalize
-    if checks_exist and all_layers_ready and report.status != "complete":
+    # Phase 2: analyzers ran + all optional layers finished → finalize
+    # Requires analyzers_ran so we never finalize before rules/webmcp
+    # checks exist (prevents race when openclaw finishes before base layers).
+    if analyzers_ran and all_layers_ready and report.status != "complete":
         logger.info(
             f"[AGENT SCORE] All layers complete for report {report_id} "
             f"— triggering finalize-report"
