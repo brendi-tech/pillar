@@ -867,6 +867,10 @@
   animation: marquee-scroll var(--marquee-duration) linear infinite;
 }
 
+.group:hover .marquee-track {
+  animation-play-state: paused;
+}
+
 /* Score gauge spinning arc for loading state */
 @keyframes gauge-spin {
   from {

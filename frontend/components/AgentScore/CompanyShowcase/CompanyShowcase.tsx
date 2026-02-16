@@ -126,7 +126,7 @@ export function CompanyShowcase() {
         }}
       >
         <div
-          className="flex w-max gap-4 group-hover:[animation-play-state:paused] marquee-track"
+          className="flex w-max gap-4 marquee-track"
           style={
             {
               "--marquee-distance": `-${halfWidth}px`,
