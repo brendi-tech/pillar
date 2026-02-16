@@ -99,7 +99,7 @@ export function CompanyShowcase() {
   // Each card is 180px + 16px gap = 196px effective width
   const cardEffectiveWidth = 196;
   const halfWidth = visibleEntries.length * cardEffectiveWidth;
-  const duration = Math.max(visibleEntries.length * 1.5, 20);
+  const duration = Math.max(visibleEntries.length * 3, 40);
 
   return (
     <section className="mt-16">

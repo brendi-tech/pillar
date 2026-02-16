@@ -5,8 +5,8 @@ import {
   isAdminRequest,
   isMarketingRequest,
 } from "@/lib/api-client";
-import type { Metadata } from "next";
 import { GoogleAnalytics } from "@next/third-parties/google";
+import type { Metadata } from "next";
 import { ThemeProvider } from "next-themes";
 import { Instrument_Serif, JetBrains_Mono } from "next/font/google";
 import localFont from "next/font/local";
@@ -124,7 +124,8 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     ...baseMetadata,
     title: "Pillar - The Product Copilot",
-    description: "Turn user requests into client-side actions. Pillar navigates your UI, builds dashboards, and executes more actions to carry out tasks automatically.",
+    description:
+      "Turn user requests into client-side actions. Pillar navigates your UI, builds dashboards, and executes more actions to carry out tasks automatically.",
   };
 }
 
@@ -196,7 +197,7 @@ export default async function RootLayout({
             >
               {children}
             </ThemeProvider>
-            <Agentation />
+            {/* <Agentation /> */}
           </body>
         </html>
       );

@@ -45,14 +45,16 @@ export function EngineersSection() {
         <div
           className="h-[1px] w-full"
           style={{
-            background: "linear-gradient(90deg, rgba(212,212,212,0) 0%, #D4D4D4 30%, #D4D4D4 70%, rgba(212,212,212,0) 100%)",
+            background:
+              "linear-gradient(90deg, rgba(212,212,212,0) 0%, #D4D4D4 30%, #D4D4D4 70%, rgba(212,212,212,0) 100%)",
           }}
         />
         <div className="max-w-marketingSection mx-auto bg-white h-10 border-x border-marketing relative"></div>
         <div
           className="h-[1px] w-full"
           style={{
-            background: "linear-gradient(90deg, rgba(212,212,212,0) 0%, #D4D4D4 30%, #D4D4D4 70%, rgba(212,212,212,0) 100%)",
+            background:
+              "linear-gradient(90deg, rgba(212,212,212,0) 0%, #D4D4D4 30%, #D4D4D4 70%, rgba(212,212,212,0) 100%)",
           }}
         />
       </div>
@@ -108,7 +110,7 @@ export function EngineersSection() {
                     <div
                       key={feature.title}
                       className={cn(
-                        " p-5 relative h-[160px]",
+                        " p-5 relative min-h-[160px]",
                         isWhiteBg && "bg-white",
                         isLeftColumn && "md:border-r border-marketing",
                         // Mobile: all except last get bottom border; Desktop: only top row
@@ -153,14 +155,16 @@ export function EngineersSection() {
         <div
           className="h-[1px] w-full"
           style={{
-            background: "linear-gradient(90deg, rgba(212,212,212,0) 0%, #D4D4D4 30%, #D4D4D4 70%, rgba(212,212,212,0) 100%)",
+            background:
+              "linear-gradient(90deg, rgba(212,212,212,0) 0%, #D4D4D4 30%, #D4D4D4 70%, rgba(212,212,212,0) 100%)",
           }}
         />
         <div className="max-w-marketingSection mx-auto bg-white h-10 border-x border-marketing relative"></div>
         <div
           className="h-[1px] w-full"
           style={{
-            background: "linear-gradient(90deg, rgba(212,212,212,0) 0%, #D4D4D4 30%, #D4D4D4 70%, rgba(212,212,212,0) 100%)",
+            background:
+              "linear-gradient(90deg, rgba(212,212,212,0) 0%, #D4D4D4 30%, #D4D4D4 70%, rgba(212,212,212,0) 100%)",
           }}
         />
       </div>
