@@ -60,6 +60,63 @@ async def finalize_report_workflow(
         return {"status": "error", "error": "report_not_found"}
 
     try:
+        # Safety net: if analyze-and-score was skipped (fan-in race condition),
+        # run the analyzers now so rules/webmcp checks exist before scoring.
+        has_rules_checks = await sync_to_async(
+            report.checks.filter(category__in=["rules", "webmcp"]).exists
+        )()
+        if not has_rules_checks:
+            logger.warning(
+                f"[AGENT SCORE] No rules/webmcp checks found for {report_id} "
+                f"— running analyzers inline as safety net"
+            )
+            await log_activity(
+                report_id, "finalize", "info",
+                "Running analyzers (safety net — analyze-and-score was skipped)",
+            )
+            from apps.agent_score.analyzers import (
+                assess_data_quality,
+                run_accessibility,
+                run_discovery,
+                run_interactability,
+                run_permissions,
+                run_readability,
+                run_webmcp,
+            )
+            from apps.agent_score.models import AgentScoreCheck
+
+            dq = await sync_to_async(assess_data_quality)(report)
+            all_check_results = await sync_to_async(lambda: (
+                run_discovery(report, dq)
+                + run_readability(report, dq)
+                + run_interactability(report, dq)
+                + run_permissions(report, dq)
+                + run_accessibility(report, dq)
+                + run_webmcp(report, dq)
+            ))()
+            check_objects = [
+                AgentScoreCheck(
+                    report=report,
+                    category=cr.category,
+                    check_name=cr.check_name,
+                    check_label=cr.check_label,
+                    passed=cr.passed,
+                    score=cr.score,
+                    weight=cr.weight,
+                    details=cr.details,
+                    recommendation=cr.recommendation,
+                    status=cr.status,
+                )
+                for cr in all_check_results
+            ]
+            await sync_to_async(
+                lambda: AgentScoreCheck.objects.bulk_create(check_objects)
+            )()
+            logger.info(
+                f"[AGENT SCORE] Safety net created {len(check_objects)} checks "
+                f"for report {report_id}"
+            )
+
         # Read all checks — now includes signup_test checks
         checks = await sync_to_async(
             lambda: list(

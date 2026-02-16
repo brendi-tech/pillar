@@ -15,6 +15,7 @@ Two-phase triggering for progressive results:
 When all layers finish before (or at the same time as) the base
 layers, everything fires in a single pass — no finalize needed.
 """
+import asyncio
 import logging
 
 from asgiref.sync import sync_to_async
@@ -77,6 +78,21 @@ async def complete_layer(report_id: str) -> bool:
         return False
 
     base_ready = _base_layers_ready(report)
+
+    # Stale-read guard: the aget above may hit a different DB connection
+    # from the pool than the asave in the calling workflow, and not yet
+    # see the freshly committed data.  When the layer count says both
+    # base layers should be done but the data isn't visible, retry once
+    # after a short delay.
+    if not base_ready and report.completed_layers >= 2:
+        await asyncio.sleep(0.5)
+        report = await AgentScoreReport.objects.aget(id=report_id)
+        base_ready = _base_layers_ready(report)
+        if base_ready:
+            logger.info(
+                f"[AGENT SCORE] Stale-read resolved for report {report_id} "
+                f"after retry"
+            )
     signup_ready = (not report.signup_test_enabled) or bool(report.signup_test_data)
     openclaw_ready = (not report.openclaw_test_enabled) or bool(report.openclaw_data)
     all_layers_ready = signup_ready and openclaw_ready
