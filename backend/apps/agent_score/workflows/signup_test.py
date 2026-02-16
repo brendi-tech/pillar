@@ -12,7 +12,10 @@ Architecture (OpenClaw-style self-scoring):
 - Category score written directly (not derived from check aggregation)
 - Dynamic checks from tasks_tried for detail display
 """
+import asyncio
 import logging
+import random
+import time
 from datetime import timedelta
 
 from django.conf import settings
@@ -20,8 +23,20 @@ from hatchet_sdk import Context
 from pydantic import BaseModel
 
 from common.hatchet_client import get_hatchet_client
+from common.redis_semaphore import RedisDistributedSemaphore
 
 logger = logging.getLogger(__name__)
+
+# Fleet-wide cap on concurrent Stagehand sessions (across all Cloud Run
+# instances).  Prevents thrashing against Browserbase's 25-session hard limit
+# while leaving headroom for other consumers.
+_stagehand_semaphore = RedisDistributedSemaphore(
+    name="stagehand",
+    max_concurrent=10,
+    lease_ttl_seconds=600,       # 10 min — generous for signup tests
+    poll_interval=3.0,
+    max_wait_seconds=8 * 60,     # match the backoff budget
+)
 
 hatchet = get_hatchet_client()
 
@@ -109,9 +124,10 @@ async def signup_test_workflow(workflow_input: SignupTestInput, context: Context
     )
 
     try:
-        result = await _run_stagehand_signup(
-            report.url, identity, test_data, _update_status, report_id,
-        )
+        async with _stagehand_semaphore:
+            result = await _run_stagehand_signup(
+                report.url, identity, test_data, _update_status, report_id,
+            )
         test_data["outcome"] = result
     except Exception as e:
         logger.error(
@@ -425,6 +441,99 @@ def _build_dnf_signup_checks(report) -> list:
 # Stagehand agent execution
 # ──────────────────────────────────────────────
 
+def _is_retryable_stagehand_start_error(exc: Exception) -> bool:
+    """
+    Return True for Stagehand/Browserbase errors that are safe to retry.
+
+    Important: we only retry *session creation* here, before any site interaction,
+    so retries won't create duplicate accounts or repeat form submissions.
+    """
+    exc_module = type(exc).__module__ or ""
+    exc_type = type(exc).__name__
+    msg = str(exc).lower()
+
+    if "stagehand" in exc_module and exc_type in (
+        "RateLimitError",
+        "APITimeoutError",
+        "InternalServerError",
+        "APIConnectionError",
+        "APIStatusError",
+    ):
+        return True
+
+    # Fallback: some errors are wrapped; use message sniffing sparingly.
+    if "max concurrent sessions limit" in msg:
+        return True
+    if "error code: 429" in msg or " 429 " in msg:
+        return True
+    if "request timed out" in msg or "timed out" in msg:
+        return True
+
+    return False
+
+
+async def _start_stagehand_session_with_backoff(
+    *,
+    client,
+    model_name: str,
+    system_prompt: str,
+    update_status: callable,
+    report_id: str,
+    max_total_wait_seconds: int = 8 * 60,
+):
+    """
+    Start a Stagehand session with exponential backoff.
+
+    We specifically handle Stagehand concurrency limiting (429 max concurrent sessions)
+    by waiting and retrying, rather than hard-failing the signup test.
+    """
+    from apps.agent_score.workflows.activity_log import log_activity
+
+    start = time.monotonic()
+    attempt = 0
+
+    while True:
+        attempt += 1
+        try:
+            return await client.sessions.start(
+                model_name=model_name,
+                system_prompt=system_prompt,
+            )
+        except Exception as e:
+            if not _is_retryable_stagehand_start_error(e):
+                raise
+
+            elapsed = time.monotonic() - start
+            remaining = max_total_wait_seconds - elapsed
+            if remaining <= 0:
+                raise
+
+            # Exponential backoff with jitter, capped.
+            base = min(90.0, 5.0 * (2 ** (attempt - 1)))
+            jitter = random.uniform(0, base * 0.25)
+            delay = min(base + jitter, remaining, 120.0)
+
+            # Don't spam the activity log; record the first and then every 3rd attempt.
+            if attempt == 1 or attempt % 3 == 0:
+                await log_activity(
+                    report_id,
+                    "signup_test",
+                    "warning",
+                    "Browser session capacity limited — retrying",
+                    {
+                        "attempt": attempt,
+                        "delay_seconds": round(delay, 1),
+                        "error_type": type(e).__name__,
+                        "error": str(e),
+                    },
+                )
+
+            await update_status(
+                f"Browser capacity busy — retrying in {int(delay)}s…"
+            )
+            await asyncio.sleep(delay)
+
+
 async def _run_stagehand_signup(
     url: str,
     identity: dict,
@@ -457,13 +566,17 @@ async def _run_stagehand_signup(
         model_api_key=settings.GEMINI_API_KEY,
     )
 
-    session = await client.sessions.start(
+    session = await _start_stagehand_session_with_backoff(
+        client=client,
         model_name=model_name,
         system_prompt=(
             "You are testing whether an AI agent can create an account on this website. "
             "Your goal is to find the signup/registration page, fill out the form, "
             "and submit it. Report your progress and experience honestly at each step."
         ),
+        update_status=update_status,
+        report_id=report_id,
+        max_total_wait_seconds=8 * 60,
     )
     session_id = session.data.session_id
 
@@ -561,7 +674,7 @@ async def _run_stagehand_signup(
                 "completed": completed,
                 "action_count": action_count,
                 "final_url": final_url,
-                "message_preview": agent_message[:300] if agent_message else "",
+                "message": agent_message or "",
             },
         )
 
@@ -884,7 +997,7 @@ async def _evaluate_signup_experience(
     # Conservative fallback — used if LLM call fails entirely
     fallback_result = {
         "score": 0,
-        "summary": agent_message[:300] if agent_message else "No agent message received.",
+        "summary": agent_message or "No agent message received.",
         "what_worked": [],
         "what_didnt": ["Could not evaluate signup experience"],
         "signup_page_found": False,

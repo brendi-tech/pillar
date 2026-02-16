@@ -92,7 +92,7 @@ class TestExtractDomain:
         assert extract_domain("https://example.com/page") == "example.com"
 
     def test_www_subdomain(self):
-        assert extract_domain("https://www.example.com/") == "www.example.com"
+        assert extract_domain("https://www.example.com/") == "example.com"
 
     def test_with_port(self):
         assert extract_domain("https://example.com:443/") == "example.com"

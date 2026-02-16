@@ -194,14 +194,14 @@ export interface ScanResponse {
 
 export const DEFAULT_CATEGORY_CONFIG: CategoryConfigMap = {
   openclaw: {
-    label: "Agent Experience",
+    label: "Openclaw Experience",
     description: "What happened when a real AI agent tried to use your site?",
     scored: true,
     optional: false,
     sort_order: 1,
   },
   signup_test: {
-    label: "Signup Test",
+    label: "Browserbase Test",
     description: "Can an AI agent create an account on your site?",
     scored: true,
     optional: false,

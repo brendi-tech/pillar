@@ -27,7 +27,7 @@ interface GuideCategory {
 
 const GUIDE_CATEGORIES: GuideCategory[] = [
   {
-    heading: "Agent Experience",
+    heading: "Openclaw Experience",
     slug: "openclaw",
     intro:
       "What happens when a real AI agent tries to use your site? We release an autonomous agent — powered by OpenClaw — to browse, navigate, sign up, and complete tasks on your site, then report what worked and what didn't.",
@@ -62,7 +62,7 @@ const GUIDE_CATEGORIES: GuideCategory[] = [
     ],
   },
   {
-    heading: "Signup Test",
+    heading: "Browserbase Test",
     slug: "signup",
     intro:
       "Can an AI agent create an account on your site? We run a real browser-based agent through your signup flow — finding the form, filling fields, and clicking submit.",

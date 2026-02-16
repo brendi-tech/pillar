@@ -16,13 +16,6 @@ WORKDIR /app
 # Copy project files
 COPY . .
 
-# Copy OpenClaw config and skill for the agent experience test.
-# The Hatchet workflow starts a temporary OpenClaw gateway subprocess
-# on localhost — no separate service needed.
-COPY openclaw_config/openclaw.json /etc/openclaw/openclaw.json
-COPY openclaw_config/skills/ /etc/openclaw/skills/
-RUN chmod -R a+r /etc/openclaw
-
 # Create necessary directories (may already exist from base, but ensure)
 RUN mkdir -p /app/static /app/media
 

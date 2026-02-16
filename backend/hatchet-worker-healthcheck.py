@@ -78,7 +78,7 @@ def run_hatchet_worker():
 
     # Create worker and register workflows
     try:
-        worker = hatchet.worker("help-center-worker")
+        worker = hatchet.worker("help-center-worker", slots=100)
 
         # Register each workflow with the worker
         for workflow in workflows:

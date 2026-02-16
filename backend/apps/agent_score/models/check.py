@@ -20,8 +20,8 @@ class AgentScoreCheck(BaseModel):
         choices=[
             ("rules", "Rules"),
             ("webmcp", "WebMCP"),
-            ("signup_test", "Signup Test"),
-            ("openclaw", "Agent Experience"),
+            ("signup_test", "Browserbase Test"),
+            ("openclaw", "Openclaw Experience"),
         ],
         help_text="Scoring category this check belongs to",
     )

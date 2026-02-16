@@ -43,7 +43,7 @@ def main():
     hatchet = get_hatchet_client()
     
     # Create the worker
-    worker = hatchet.worker("help-center-worker")
+    worker = hatchet.worker("help-center-worker", slots=10)
     
     # Get all workflows from shared config
     all_workflows = get_all_workflows()

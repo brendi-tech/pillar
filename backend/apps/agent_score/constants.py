@@ -14,13 +14,13 @@ Adding a new category here is all the backend needs (besides the analyzer itself
 
 CATEGORY_REGISTRY: dict[str, dict] = {
     "openclaw": {
-        "label": "Agent Experience",
+        "label": "Openclaw Experience",
         "description": "What happened when a real AI agent tried to use your site?",
         "weight": 0.50,
         "sort_order": 1,
     },
     "signup_test": {
-        "label": "Signup Test",
+        "label": "Browserbase Test",
         "description": "Can an AI agent create an account on your site?",
         "weight": 0.25,
         "sort_order": 2,
