@@ -9,6 +9,23 @@ export const metadata: Metadata = {
   description:
     "Turn user requests into client-side actions. Pillar navigates your UI, builds dashboards, and executes more actions to carry out tasks automatically.",
   robots: "index, follow, max-snippet:-1, max-image-preview:large",
+  openGraph: {
+    siteName: "Pillar",
+    locale: "en_US",
+    type: "website",
+    images: [
+      {
+        url: "/og-card.png",
+        width: 1280,
+        height: 640,
+        alt: "Pillar - The open-source product copilot",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    images: ["/og-card.png"],
+  },
 };
 
 /**

@@ -1,5 +1,26 @@
 import { MarketingNavbar } from '@/components/MarketingPage/MarketingNavbar';
 import { MarketingFooter } from '@/components/MarketingPage/MarketingFooter';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  openGraph: {
+    siteName: "Pillar",
+    locale: "en_US",
+    type: "website",
+    images: [
+      {
+        url: "/og-card.png",
+        width: 1280,
+        height: 640,
+        alt: "Pillar - The open-source product copilot",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    images: ["/og-card.png"],
+  },
+};
 
 export default function BlogLayout({
   children,

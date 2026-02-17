@@ -9,23 +9,6 @@ export const metadata = {
     title: 'Blog | Pillar',
     description: 'Thoughts on the future of product, AI, and support.',
     url: 'https://trypillar.com/blog',
-    siteName: 'Pillar',
-    type: 'website',
-    locale: 'en_US',
-    images: [
-      {
-        url: '/og-card.png',
-        width: 1280,
-        height: 640,
-        alt: 'Pillar - The open-source product copilot',
-      },
-    ],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Blog | Pillar',
-    description: 'Thoughts on the future of product, AI, and support.',
-    images: ['/og-card.png'],
   },
 };
 

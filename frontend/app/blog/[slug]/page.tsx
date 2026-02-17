@@ -38,21 +38,20 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
       title: post.frontmatter.title,
       description,
       url,
-      siteName: 'Pillar',
       type: 'article',
       publishedTime: post.frontmatter.date,
       ...(post.frontmatter.author && { authors: [post.frontmatter.author] }),
-      images: [
-        post.frontmatter.image
-          ? { url: post.frontmatter.image }
-          : { url: '/og-card.png', width: 1280, height: 640, alt: 'Pillar - The open-source product copilot' },
-      ],
+      ...(post.frontmatter.image && {
+        images: [{ url: post.frontmatter.image }],
+      }),
     },
     twitter: {
       card: 'summary_large_image',
       title: post.frontmatter.title,
       description,
-      images: [post.frontmatter.image || '/og-card.png'],
+      ...(post.frontmatter.image && {
+        images: [post.frontmatter.image],
+      }),
     },
   };
 }
