@@ -7,8 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRedirectToReturnPath, useReturnToValue } from "@/hooks";
+import { Spinner } from "@/components/ui/spinner";
 import { useAuth } from "@/providers/AuthProvider";
-import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -33,7 +33,7 @@ export function LoginForm() {
   if (isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/30">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <Spinner size="xl" className="text-primary" />
       </div>
     );
   }
@@ -155,7 +155,7 @@ export function LoginForm() {
               >
                 {isLoading ? (
                   <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    <Spinner size="md" className="mr-2" />
                     Signing in...
                   </>
                 ) : (

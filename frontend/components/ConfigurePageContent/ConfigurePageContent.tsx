@@ -3,7 +3,8 @@
 import { Button } from "@/components/ui/button";
 import type { AIConfig, EmbedConfig } from "@/types/config";
 import type { LanguageCode } from "@/types/v2/products";
-import { Loader2, Save, Undo2 } from "lucide-react";
+import { Save, Undo2 } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { useState } from "react";
 import { ActionSyncSection } from "./ActionSyncSection";
 import { AIAssistantSection } from "./AIAssistantSection";
@@ -141,7 +142,7 @@ function ConfigureContent({
               >
                 {isSaving ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <Spinner size="sm" />
                     Saving...
                   </>
                 ) : (

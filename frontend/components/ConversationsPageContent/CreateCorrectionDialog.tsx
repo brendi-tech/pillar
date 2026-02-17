@@ -7,10 +7,10 @@ import {
   Bot,
   CheckCircle,
   FileText,
-  Loader2,
   User,
   Wand2,
 } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 import { toast } from 'sonner';
 
 import { Badge } from '@/components/ui/badge';
@@ -196,7 +196,7 @@ export function CreateCorrectionDialog({
               >
                 {isSubmitting ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Spinner size="sm" className="mr-2" />
                     Processing...
                   </>
                 ) : (

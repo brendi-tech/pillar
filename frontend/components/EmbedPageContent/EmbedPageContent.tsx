@@ -9,7 +9,8 @@ import { FloatingButtonSettings } from './FloatingButtonSettings';
 import { EmbedFeaturesSettings } from './EmbedFeaturesSettings';
 import { AllowedDomainsSettings } from './AllowedDomainsSettings';
 import { Button } from '@/components/ui/button';
-import { Save, Loader2 } from 'lucide-react';
+import { Save } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 import type { EmbedConfig } from '@/types/config';
 
 interface EmbedPageContentProps {
@@ -86,7 +87,7 @@ function EmbedContent({ onSave }: { onSave?: (config: EmbedConfig) => Promise<vo
               >
                 {isSaving ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <Spinner size="sm" />
                     Saving...
                   </>
                 ) : (

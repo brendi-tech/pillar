@@ -19,7 +19,7 @@ import {
 } from '@/queries/knowledge.queries';
 import type { KnowledgeItem } from '@/types/knowledge';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Loader2 } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -179,7 +179,7 @@ export function SnippetFormDialog({
             </Button>
             <Button type="submit" disabled={!isValid || isSubmitting}>
               {isSubmitting && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Spinner size="sm" className="mr-2" />
               )}
               {isEditing ? 'Save Changes' : 'Create Snippet'}
             </Button>

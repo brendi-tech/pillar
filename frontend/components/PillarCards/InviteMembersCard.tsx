@@ -15,7 +15,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Check, Loader2, X, Mail, UserPlus, Plus } from "lucide-react";
+import { Check, X, Mail, UserPlus, Plus } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 
 // Card component props for custom action cards
 interface CardComponentProps<T = Record<string, unknown>> {
@@ -276,7 +277,7 @@ export function InviteMembersCard({
         >
           {cardState === "loading" ? (
             <>
-              <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+              <Spinner size="xs" className="mr-1" />
               Sending...
             </>
           ) : (

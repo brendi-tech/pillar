@@ -7,7 +7,8 @@ import { useSources } from "@/providers";
 import type { KnowledgeSourceConfig } from "@/types/sources";
 import { KNOWLEDGE_SOURCE_TYPE_LABELS } from "@/types/sources";
 import { cn } from "@/lib/utils";
-import { ExternalLink, Loader2, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { ExternalLink, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import Link from "next/link";
 import { useCallback, type ComponentType } from "react";
 import { toast } from "sonner";
@@ -177,7 +178,7 @@ function SourceRow({ source, onSync, onDelete }: SourceRowProps) {
               "bg-yellow-50 text-yellow-700 border-yellow-200"
           )}
         >
-          {isSyncing && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
+          {isSyncing && <Spinner size="xs" className="mr-1" />}
           {source.status}
         </Badge>
 

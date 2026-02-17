@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Spinner } from "@/components/ui/spinner";
 
 interface ScoreGaugeProps {
   score: number | null;
@@ -92,7 +92,7 @@ export function ScoreGauge({ score, size, label, animated = true, loading = fals
     };
   }, [effectiveScore, isNull, animated, mounted, loading]);
 
-  const loaderIconSize = size === "lg" ? "h-10 w-10" : size === "md" ? "h-7 w-7" : "h-4 w-4";
+  const loaderIconSize = size === "lg" ? "xl" : size === "md" ? "lg" : "sm";
 
   return (
     <div className="flex flex-col items-center gap-1">
@@ -152,7 +152,7 @@ export function ScoreGauge({ score, size, label, animated = true, loading = fals
         {/* Center content */}
         <div className="absolute inset-0 flex items-center justify-center">
           {loading ? (
-            <Loader2 className={cn(loaderIconSize, "text-[#FF6E00] animate-spin")} />
+            <Spinner size={loaderIconSize as "sm" | "lg" | "xl"} className="text-[#FF6E00]" />
           ) : (
             <span
               className={cn(

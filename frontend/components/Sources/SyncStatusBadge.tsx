@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { Loader2 } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 import type { KnowledgeSourceStatus } from '@/types/sources';
 
 interface SyncStatusBadgeProps {
@@ -41,7 +41,7 @@ export function SyncStatusBadge({ status, className }: SyncStatusBadgeProps) {
       )}
     >
       {config.showSpinner && (
-        <Loader2 className="h-3 w-3 animate-spin" />
+        <Spinner size="xs" />
       )}
       {config.label}
     </span>

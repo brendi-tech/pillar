@@ -1,9 +1,9 @@
 "use client";
 
 import { PillarLogoWithName } from "@/components/marketing/LandingPage/PillarLogoWithName";
+import { Spinner } from "@/components/ui/spinner";
 import { useAuth } from "@/providers/AuthProvider";
 import { usePillar } from "@pillar-ai/react";
-import { Loader2 } from "lucide-react";
 import { useEffect } from "react";
 
 /**
@@ -36,7 +36,7 @@ export default function LogoutPage() {
             <PillarLogoWithName className="h-10" />
           </div>
           <div className="flex justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <Spinner size="lg" className="text-primary" />
           </div>
           <p className="text-muted-foreground">Signing out...</p>
         </div>

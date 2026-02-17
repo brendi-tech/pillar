@@ -4,7 +4,8 @@ import { useState, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Check, FileText, FileType, Loader2, Upload, X } from 'lucide-react';
+import { ArrowLeft, Check, FileText, FileType, Upload, X } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
 
 interface DocumentUploadFormProps {
@@ -219,7 +220,7 @@ export function DocumentUploadForm({ onBack, onSubmit, isSubmitting }: DocumentU
         <Button type="submit" disabled={!isValid || isSubmitting}>
           {isSubmitting ? (
             <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Spinner size="sm" className="mr-2" />
               Uploading...
             </>
           ) : (

@@ -8,8 +8,8 @@ import {
   AlertTriangle,
   AlertCircle,
   CheckCircle2,
-  Loader2,
 } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 import {
@@ -200,7 +200,7 @@ function WorkflowSection({
     <div>
       <div className="flex items-center gap-2 mb-1">
         {isRunning ? (
-          <Loader2 className="h-3 w-3 text-[#FF6E00] animate-spin shrink-0" />
+          <Spinner size="xs" className="text-[#FF6E00]" />
         ) : lastEntry?.level === "error" ? (
           <AlertCircle className="h-3 w-3 text-[#FF4E42] shrink-0" />
         ) : lastEntry?.level === "success" ? (
@@ -294,7 +294,7 @@ export function ActivityLog({
       >
         <span className="text-xs font-semibold text-[#6B6B6B] uppercase tracking-wide flex items-center gap-2">
           {isLive && (
-            <Loader2 className="h-3 w-3 text-[#FF6E00] animate-spin" />
+            <Spinner size="xs" className="text-[#FF6E00]" />
           )}
           Activity Log
           <span className="text-[10px] font-normal text-[#999] lowercase tracking-normal">

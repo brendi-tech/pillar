@@ -27,12 +27,12 @@ import {
   Cloud,
   FileText,
   Globe,
-  Loader2,
   Plus,
   RefreshCw,
   Search,
   Upload,
 } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -308,12 +308,12 @@ function CollapsibleSourceItem({
       <div className="flex items-center">
         <CollapsibleTrigger asChild>
           <button
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md "
+            className="flex h-11 w-11 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-md"
             aria-label={isExpanded ? "Collapse" : "Expand"}
           >
             <ChevronRight
               className={cn(
-                "h-4 w-4 text-muted-foreground transition-transform duration-200",
+                "h-5 w-5 sm:h-4 sm:w-4 text-muted-foreground transition-transform duration-200",
                 isExpanded && "rotate-90"
               )}
             />
@@ -323,7 +323,7 @@ function CollapsibleSourceItem({
           href={`/knowledge/${source.id}`}
           onClick={onNavigate}
           className={cn(
-            "flex flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors",
+            "flex flex-1 items-center gap-2 rounded-md px-2 py-3 sm:py-1.5 text-sm transition-colors",
             "hover:bg-muted",
             isSourceSelected && !currentItemId && "bg-muted font-medium"
           )}
@@ -370,7 +370,7 @@ function CollapsibleSourceItem({
               <div ref={sentinelRef} className="h-1" />
               {isFetchingNextPage && (
                 <div className="flex w-full items-center justify-center py-1.5">
-                  <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                  <Spinner size="xs" />
                 </div>
               )}
             </>
@@ -399,7 +399,7 @@ function ItemListItem({
       href={`/knowledge/${sourceId}/${item.id}`}
       onClick={onNavigate}
       className={cn(
-        "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors",
+        "flex items-center gap-2 rounded-md px-2 py-3 sm:py-1.5 text-sm transition-colors",
         "hover:bg-muted",
         isSelected && "bg-muted font-medium"
       )}
@@ -407,7 +407,7 @@ function ItemListItem({
       <FileText className="h-3 w-3 shrink-0 text-muted-foreground" />
       <span className="truncate flex-1">{item.title || "Untitled"}</span>
       {item.status === "processing" && (
-        <Loader2 className="h-3 w-3 animate-spin text-blue-500" />
+        <Spinner size="xs" className="text-blue-500" />
       )}
       {item.status === "indexed" && item.has_optimized_content && (
         <span className="h-2 w-2 rounded-full bg-green-500" />

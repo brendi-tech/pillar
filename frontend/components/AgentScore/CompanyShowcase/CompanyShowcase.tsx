@@ -126,7 +126,7 @@ export function CompanyShowcase() {
         }}
       >
         <div
-          className="flex w-max gap-4 marquee-track"
+          className="flex w-max gap-4 marquee-track py-2"
           style={
             {
               "--marquee-distance": `-${halfWidth}px`,

@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ArrowRight, Loader2 } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 
 interface ScanInputProps {
   onScan: (url: string) => void;
@@ -86,7 +87,7 @@ export function ScanInput({ onScan, isScanning, error, initialUrl = "" }: ScanIn
         >
           {isScanning ? (
             <>
-              <Loader2 className="h-5 w-5 animate-spin mr-2" />
+              <Spinner size="md" className="mr-2" />
               Scanning
             </>
           ) : (

@@ -11,10 +11,11 @@ import {
 } from "@/queries/organization.queries";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Loader2, Mail, X } from "lucide-react";
+import { Mail, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
+import { Spinner } from "@/components/ui/spinner";
 
 function AcceptInviteContent() {
   const router = useRouter();
@@ -105,7 +106,7 @@ function AcceptInviteContent() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
         <div className="text-center">
-          <Loader2 className="mx-auto mb-4 h-12 w-12 animate-spin text-orange-500" />
+          <Spinner size="xl" className="mx-auto mb-4 text-orange-500" />
           <p className="text-sm text-gray-500 dark:text-gray-400">
             Loading invitation...
           </p>
@@ -149,7 +150,7 @@ function AcceptInviteContent() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
         <div className="text-center">
-          <Loader2 className="mx-auto mb-4 h-12 w-12 animate-spin text-orange-500" />
+          <Spinner size="xl" className="mx-auto mb-4 text-orange-500" />
           <p className="text-sm text-gray-500 dark:text-gray-400">
             Processing invitation...
           </p>
@@ -396,7 +397,7 @@ export default function AcceptInvitePage() {
     <Suspense
       fallback={
         <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
-          <Loader2 className="h-12 w-12 animate-spin text-orange-500" />
+          <Spinner size="xl" className="text-orange-500" />
         </div>
       }
     >

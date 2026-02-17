@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Check, Loader2 } from 'lucide-react';
+import { ArrowLeft, Check } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 
 interface SnippetFormProps {
   onBack: () => void;
@@ -71,7 +72,7 @@ Our refund policy allows customers to request a full refund within 30 days of pu
         <Button type="submit" disabled={!isValid || isSubmitting}>
           {isSubmitting ? (
             <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Spinner size="sm" className="mr-2" />
               Creating...
             </>
           ) : (

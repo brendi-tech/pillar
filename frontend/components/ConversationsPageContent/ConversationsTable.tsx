@@ -5,10 +5,10 @@ import {
   AlertCircle,
   ChevronLeft,
   ChevronRight,
-  Loader2,
   MessageSquare,
   ThumbsDown,
 } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -65,7 +65,7 @@ export function ConversationsTable({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <Spinner size="lg" />
       </div>
     );
   }

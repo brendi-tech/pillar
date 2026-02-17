@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Play, Loader2, ChevronDown, ChevronRight, AlertCircle } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
+import { Play, ChevronDown, ChevronRight, AlertCircle } from "lucide-react";
 import axios from "axios";
 import {
   Dialog,
@@ -129,7 +130,7 @@ export function SessionReplay({ reportId, instruction }: SessionReplayProps) {
         <div className="px-6 pb-6">
           {loading && (
             <div className="flex items-center justify-center h-[560px]">
-              <Loader2 className="h-8 w-8 animate-spin text-[#6B6B6B]" />
+              <Spinner size="lg" className="text-[#6B6B6B]" />
               <span className="ml-3 text-sm text-[#6B6B6B]">
                 Loading recording...
               </span>

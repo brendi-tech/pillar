@@ -26,12 +26,12 @@ import {
   ExternalLink,
   Info,
   Link2,
-  Loader2,
   XCircle,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
+import { Spinner } from "@/components/ui/spinner";
 import { ActivityLog } from "./ActivityLog";
 import { CheckRow } from "./CheckRow";
 import { EmailSubscribe } from "./EmailSubscribe";
@@ -398,7 +398,7 @@ export function ScoreReport({ report, onScanAnother }: ScoreReportProps) {
           <>
             <div className="mt-6 rounded-lg bg-[#FFF8F0] border border-[#FFD6A5] p-5">
               <div className="flex items-center gap-3">
-                <Loader2 className="h-5 w-5 text-[#FF6E00] animate-spin shrink-0" />
+                <Spinner size="md" className="text-[#FF6E00]" />
                 <div>
                   <p className="text-sm font-semibold text-[#1A1A1A]">
                     Still testing signup&hellip;
@@ -624,7 +624,7 @@ export function ScoreReport({ report, onScanAnother }: ScoreReportProps) {
           <>
             <div className="mt-6 rounded-lg bg-[#FFF8F0] border border-[#FFD6A5] p-5">
               <div className="flex items-center gap-3">
-                <Loader2 className="h-5 w-5 text-[#FF6E00] animate-spin shrink-0" />
+                <Spinner size="md" className="text-[#FF6E00]" />
                 <div>
                   <p className="text-sm font-semibold text-[#1A1A1A]">
                     OpenClaw is testing your site&hellip;
@@ -857,7 +857,7 @@ export function ScoreReport({ report, onScanAnother }: ScoreReportProps) {
           </div>
         ) : activeCategoryLoading ? (
           <div className="flex items-center justify-center gap-2 py-8 text-sm text-[#6B6B6B]">
-            <Loader2 className="h-4 w-4 animate-spin text-[#FF6E00]" />
+            <Spinner size="sm" className="text-[#FF6E00]" />
             <span>Running checks&hellip;</span>
           </div>
         ) : (

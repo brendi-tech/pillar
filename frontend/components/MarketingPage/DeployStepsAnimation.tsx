@@ -2,7 +2,8 @@
 
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { Check, Loader2 } from "lucide-react";
+import { Check } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { useEffect, useRef, useState } from "react";
 import { DashedConnector, DashedPathConnector } from "./DashedConnector";
 
@@ -153,7 +154,7 @@ export const DeployStepsAnimation = () => {
                     )}
                     {state === "active" && (
                       <div className="w-9 h-6 rounded-[6px] bg-[#FF6E00]/6 flex items-center justify-center">
-                        <Loader2 className="w-4 h-4 text-[#FF6E00] animate-spin" />
+                        <Spinner size="sm" className="text-[#FF6E00]" />
                       </div>
                     )}
                   </div>

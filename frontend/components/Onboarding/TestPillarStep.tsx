@@ -1,7 +1,8 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Check, CheckCircle2, Circle, Loader2, Sparkles } from "lucide-react";
+import { ArrowLeft, Check, CheckCircle2, Circle, Sparkles } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -47,7 +48,7 @@ function StatusItem({ label, description, isComplete, isLoading }: StatusItemPro
         )}
       >
         {isLoading ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
+          <Spinner size="sm" />
         ) : isComplete ? (
           <Check className="h-4 w-4" />
         ) : (

@@ -265,7 +265,7 @@ export function ActionsSidebar({
                   open={isExpanded}
                   onOpenChange={() => toggleGroup(actionType)}
                 >
-                  <CollapsibleTrigger className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground">
+                  <CollapsibleTrigger className="flex w-full items-center gap-2 rounded-md px-3 py-3 sm:px-2 sm:py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground">
                     <ChevronRight
                       className={cn(
                         "h-4 w-4 shrink-0 transition-transform",
@@ -326,7 +326,7 @@ function ActionListItem({
       href={`/tools/${action.id}`}
       onClick={onNavigate}
       className={cn(
-        "flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-colors",
+        "flex items-center gap-2 rounded-md px-3 py-3 sm:py-1.5 text-sm transition-colors",
         "hover:bg-muted",
         isSelected && "bg-muted font-medium"
       )}

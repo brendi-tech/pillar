@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 
 /**
  * Content page - redirects to /knowledge.
@@ -20,7 +20,7 @@ export default function ContentPage() {
 
   return (
     <div className="flex min-h-[50vh] items-center justify-center">
-      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <Spinner size="lg" />
     </div>
   );
 }

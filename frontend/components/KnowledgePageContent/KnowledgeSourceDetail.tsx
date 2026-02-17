@@ -35,12 +35,12 @@ import {
   FileText,
   Globe,
   HelpCircle,
-  Loader2,
   RefreshCw,
   Trash2,
   Cloud,
   Upload,
 } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -201,7 +201,7 @@ export function KnowledgeSourceDetail({ sourceId }: KnowledgeSourceDetailProps) 
                 disabled={syncMutation.isPending}
               >
                 {syncMutation.isPending ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Spinner size="sm" className="mr-2" />
                 ) : (
                   <RefreshCw className="mr-2 h-4 w-4" />
                 )}
@@ -232,7 +232,7 @@ export function KnowledgeSourceDetail({ sourceId }: KnowledgeSourceDetailProps) 
                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                   >
                     {deleteMutation.isPending ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <Spinner size="sm" className="mr-2" />
                     ) : null}
                     Delete
                   </AlertDialogAction>
@@ -257,7 +257,7 @@ export function KnowledgeSourceDetail({ sourceId }: KnowledgeSourceDetailProps) 
               <dd className="mt-1">
                 <Badge variant={getStatusBadgeVariant(source.status)}>
                   {source.status === 'syncing' && (
-                    <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                    <Spinner size="xs" className="mr-1" />
                   )}
                   {source.status_display || source.status}
                 </Badge>

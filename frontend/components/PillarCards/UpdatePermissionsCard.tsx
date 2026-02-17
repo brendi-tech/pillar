@@ -17,7 +17,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Check, Loader2, X, Shield } from "lucide-react";
+import { Check, X, Shield } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { useState, useCallback } from "react";
 import {
   getGlobalPermissions,
@@ -210,7 +211,7 @@ export function UpdatePermissionsCard({
         >
           {cardState === "loading" ? (
             <>
-              <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+              <Spinner size="xs" className="mr-1" />
               Updating...
             </>
           ) : (

@@ -1,5 +1,5 @@
 import { PillarLogoWithName } from "@/components/marketing/LandingPage/PillarLogoWithName";
-import { Loader2 } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 
 export default function LoginLoading() {
   return (
@@ -10,7 +10,7 @@ export default function LoginLoading() {
             <PillarLogoWithName className="h-10" />
           </div>
           <div className="flex justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <Spinner size="lg" className="text-primary" />
           </div>
         </div>
       </div>

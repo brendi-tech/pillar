@@ -13,7 +13,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ArrowLeft, Check, CheckCircle, Cloud, ExternalLink, HelpCircle, Loader2, XCircle } from 'lucide-react';
+import { ArrowLeft, Check, CheckCircle, Cloud, ExternalLink, HelpCircle, XCircle } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 import type { ConnectionConfig } from '@/types/sources';
 import { testConnection } from '@/lib/admin/sources-api';
 import { toast } from 'sonner';
@@ -323,7 +324,7 @@ export function CloudStorageForm({ onBack, onSubmit, isSubmitting }: CloudStorag
             >
               {isTesting ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Spinner size="sm" className="mr-2" />
                   Testing...
                 </>
               ) : (
@@ -365,7 +366,7 @@ export function CloudStorageForm({ onBack, onSubmit, isSubmitting }: CloudStorag
         <Button type="submit" disabled={!isValid || isSubmitting}>
           {isSubmitting ? (
             <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Spinner size="sm" className="mr-2" />
               Creating...
             </>
           ) : (

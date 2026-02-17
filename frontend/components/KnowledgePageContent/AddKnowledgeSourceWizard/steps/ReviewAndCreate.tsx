@@ -14,14 +14,14 @@ import {
   Check, 
   FileText, 
   Globe, 
-  HelpCircle, 
-  Loader2,
+  HelpCircle,
   Plug,
   Cloud,
   Upload,
   BookOpen,
   FileType,
 } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 
 interface ReviewAndCreateProps {
   sourceType: KnowledgeSourceTypeOption;
@@ -247,7 +247,7 @@ export function ReviewAndCreate({
         </Button>
         <Button onClick={onCreate} disabled={isSubmitting || (isSimpleType && !isValid)}>
           {isSubmitting ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <Spinner size="sm" className="mr-2" />
           ) : (
             <Check className="mr-2 h-4 w-4" />
           )}

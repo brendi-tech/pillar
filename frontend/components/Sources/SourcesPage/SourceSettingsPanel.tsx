@@ -42,13 +42,13 @@ import {
   ExternalLink,
   FileText,
   Globe,
-  Loader2,
   Pencil,
   RefreshCw,
   Trash2,
   Upload,
   X,
 } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { SourceEditPanel } from "./SourceEditPanel";
@@ -118,7 +118,7 @@ function getSyncStatusBadge(status: string) {
           variant="outline"
           className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800"
         >
-          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+          <Spinner size="xs" className="mr-1" />
           Running
         </Badge>
       );
@@ -351,7 +351,7 @@ export function SourceSettingsPanel({
                   )}
                 >
                   {source.status === "syncing" && (
-                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                    <Spinner size="xs" className="mr-1" />
                   )}
                   {source.status}
                 </Badge>
@@ -364,7 +364,7 @@ export function SourceSettingsPanel({
                   {KNOWLEDGE_SOURCE_TYPE_LABELS[source.source_type]}
                 </Badge>
 
-                {canSync && (
+                  {canSync && (
                   <Button
                     variant="outline"
                     size="sm"
@@ -373,7 +373,7 @@ export function SourceSettingsPanel({
                     disabled={syncMutation.isPending}
                   >
                     {syncMutation.isPending ? (
-                      <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                      <Spinner size="xs" className="mr-1.5" />
                     ) : (
                       <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
                     )}

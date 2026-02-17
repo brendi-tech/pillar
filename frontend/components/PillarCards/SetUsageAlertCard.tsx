@@ -21,7 +21,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Check, Loader2, X, Bell, Mail, MessageSquare } from "lucide-react";
+import { Check, X, Bell, Mail, MessageSquare } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { useState, useCallback } from "react";
 import { getGlobalUpdateAlerts } from "@/components/BillingPageContent";
 
@@ -190,7 +191,7 @@ export function SetUsageAlertCard({
         >
           {cardState === "loading" ? (
             <>
-              <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+              <Spinner size="xs" className="mr-1" />
               Setting up...
             </>
           ) : (

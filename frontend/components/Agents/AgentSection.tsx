@@ -12,8 +12,8 @@ import {
   Play,
   Clock,
   ArrowRight,
-  Loader2
 } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AgentStatusBadge } from './AgentStatusBadge';
@@ -106,7 +106,7 @@ export function AgentSection({
                 className="gap-1.5"
               >
                 {isRunning || agent.status === 'running' ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <Spinner size="xs" />
                 ) : (
                   <Play className="h-3.5 w-3.5" />
                 )}

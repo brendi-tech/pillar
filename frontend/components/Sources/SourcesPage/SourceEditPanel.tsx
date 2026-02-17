@@ -8,7 +8,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import type { UpdateKnowledgeSourceRequest, KnowledgeSourceConfig } from "@/lib/admin/sources-api";
 import { knowledgeSourceKeys, updateKnowledgeSourceMutation } from "@/queries/sources.queries";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { AlertCircle, Loader2, Save, X } from "lucide-react";
+import { AlertCircle, Save, X } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 
@@ -105,7 +106,7 @@ export function SourceEditPanel({
               disabled={saveMutation.isPending || !canSave}
             >
               {saveMutation.isPending ? (
-                <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                <Spinner size="sm" className="mr-1.5" />
               ) : (
                 <Save className="h-4 w-4 mr-1.5" />
               )}

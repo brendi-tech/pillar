@@ -1,11 +1,11 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 
 import { OnboardingSteps } from "@/components/Onboarding";
+import { Spinner } from "@/components/ui/spinner";
 import { useProduct } from "@/providers/ProductProvider";
 import { knowledgeSourceListQuery } from "@/queries/sources.queries";
 import { productIntegrationStatusQuery } from "@/queries/v2/products.queries";
@@ -65,7 +65,7 @@ function OnboardingContent() {
   if (!isNewProduct && (isProductLoading || !productId || isPendingSources || isPendingIntegration)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/30">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Spinner size="lg" className="text-primary" />
       </div>
     );
   }
@@ -96,7 +96,7 @@ export default function OnboardingPage() {
     <Suspense
       fallback={
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/30">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <Spinner size="lg" className="text-primary" />
         </div>
       }
     >

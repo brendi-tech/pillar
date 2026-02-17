@@ -1,4 +1,4 @@
-import { Loader2 } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 
 /**
  * Root loading component - shown during route transitions.
@@ -8,7 +8,7 @@ import { Loader2 } from "lucide-react";
 export default function Loading() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/30">
-      <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      <Spinner size="xl" className="text-primary" />
     </div>
   );
 }

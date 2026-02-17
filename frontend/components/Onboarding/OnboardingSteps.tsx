@@ -1,12 +1,13 @@
 "use client";
 
-import { Check, LogOut, Sparkles } from "lucide-react";
+import { Check, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+import { PillarLogoWithName } from "../marketing";
 import { SDKSetupStep } from "./SDKSetupStep";
 import { TestPillarStep } from "./TestPillarStep";
 import { WebsiteCrawlOnboarding } from "./WebsiteCrawlOnboarding";
@@ -55,7 +56,10 @@ function StepperHeader({ currentStep, steps }: StepperHeaderProps) {
 
         {/* Steps */}
         {steps.map((step) => (
-          <div key={step.id} className="flex flex-col items-center z-10 w-[120px]">
+          <div
+            key={step.id}
+            className="flex flex-col items-center z-10 w-[120px]"
+          >
             {/* Circle */}
             <div
               className={cn(
@@ -159,9 +163,7 @@ export function OnboardingSteps({
       <div className="flex-1 flex flex-col items-center w-full max-w-5xl mx-auto pt-12">
         {/* Header */}
         <div className="text-center space-y-3 mb-6">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-2">
-            <Sparkles className="w-8 h-8 text-primary" />
-          </div>
+          <PillarLogoWithName className="mx-auto" />
           <h1 className="text-3xl font-bold tracking-tight">
             Set Up Your Product Copilot
           </h1>
@@ -176,16 +178,22 @@ export function OnboardingSteps({
         {/* Step Content */}
         <div className="w-full">
           {currentStep === 1 && (
-            <WebsiteCrawlOnboarding onComplete={handleStepComplete} isNewProduct={isNewProduct} />
+            <WebsiteCrawlOnboarding
+              onComplete={handleStepComplete}
+              isNewProduct={isNewProduct}
+            />
           )}
           {currentStep === 2 && (
-            <SDKSetupStep 
-              onComplete={handleStepComplete} 
+            <SDKSetupStep
+              onComplete={handleStepComplete}
               initialSubStep={cameBackFromTestStep ? 3 : 1}
             />
           )}
           {currentStep === 3 && (
-            <TestPillarStep onComplete={handleStepComplete} onBack={handleStepBack} />
+            <TestPillarStep
+              onComplete={handleStepComplete}
+              onBack={handleStepBack}
+            />
           )}
         </div>
 
@@ -193,7 +201,11 @@ export function OnboardingSteps({
         <Button
           variant="link"
           className="mt-4 text-muted-foreground"
-          onClick={currentStep === 1 ? handleStepComplete : () => router.push(redirectTo)}
+          onClick={
+            currentStep === 1
+              ? handleStepComplete
+              : () => router.push(redirectTo)
+          }
         >
           Skip {currentStep === 1 ? "this step" : "for now"}
         </Button>

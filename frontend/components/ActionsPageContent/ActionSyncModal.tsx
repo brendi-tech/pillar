@@ -14,8 +14,8 @@ import {
   AlertTriangle,
   Plus,
   Trash2,
-  Loader2,
 } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 
 import {
   Dialog,
@@ -302,7 +302,7 @@ function SecretsTable({ productId, onSecretCreated }: SecretsTableProps) {
               disabled={createSecretMutation.isPending || !newSecretName.trim()}
             >
               {createSecretMutation.isPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Spinner size="sm" className="mr-2" />
               ) : (
                 <Plus className="mr-2 h-4 w-4" />
               )}

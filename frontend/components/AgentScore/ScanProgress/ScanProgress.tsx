@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Check, Loader2, Circle } from "lucide-react";
+import { Check, Circle } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 import { EmailSubscribe } from "@/components/AgentScore/ScoreReport/EmailSubscribe";
 import type { AgentScoreReport, ScanProgress as ScanProgressData, LayerState } from "../AgentScore.types";
@@ -126,7 +127,7 @@ function StepIcon({ status }: { status: StepStatus }) {
     );
   }
   if (status === "active") {
-    return <Loader2 className="h-5 w-5 text-[#FF6E00] animate-spin shrink-0" />;
+    return <Spinner size="md" className="text-[#FF6E00]" />;
   }
   return <Circle className="h-5 w-5 text-[#D4D4D4] shrink-0" />;
 }

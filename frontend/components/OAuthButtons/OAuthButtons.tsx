@@ -1,8 +1,8 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { performOAuthLogin, type OAuthProvider } from "@/lib/auth/oauth";
-import { Loader2 } from "lucide-react";
 import { useState } from "react";
 
 interface OAuthButtonsProps {
@@ -52,7 +52,7 @@ export function OAuthButtons({
       >
         {isLoading === "google" ? (
           <>
-            <Loader2 className="h-5 w-5 animate-spin" />
+            <Spinner size="md" />
             <span>Connecting...</span>
           </>
         ) : (
@@ -92,7 +92,7 @@ export function OAuthButtons({
       >
         {isLoading === "github" ? (
           <>
-            <Loader2 className="h-5 w-5 animate-spin" />
+            <Spinner size="md" />
             <span>Connecting...</span>
           </>
         ) : (

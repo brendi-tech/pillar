@@ -10,7 +10,6 @@ import {
   ChevronRight,
   ExternalLink,
   FileText,
-  Loader2,
   MessageSquare,
   Plus,
   Search,
@@ -20,6 +19,7 @@ import {
   Wand2,
   X,
 } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { marked } from 'marked';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -909,7 +909,7 @@ function CorrectionPanel({
       >
         {isSubmitting ? (
           <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <Spinner size="sm" className="mr-2" />
             Creating correction...
           </>
         ) : (
@@ -1094,7 +1094,7 @@ export function ConversationDetailDrawer({
           {isPending && (
             <div className="flex items-center justify-center h-full">
               <div className="text-center space-y-3">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground mx-auto" />
+                <Spinner size="lg" className="mx-auto" />
                 <p className="text-muted-foreground">Loading conversation...</p>
               </div>
             </div>

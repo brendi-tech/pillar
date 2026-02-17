@@ -32,10 +32,10 @@ import {
   FileText,
   Globe,
   HelpCircle,
-  Loader2,
   MoreHorizontal,
   RefreshCw,
 } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 import Link from 'next/link';
 import { toast } from 'sonner';
 
@@ -147,7 +147,7 @@ export function KnowledgeSourceCard({ source }: KnowledgeSourceCardProps) {
           <div className="flex items-center gap-2">
             <Badge variant={getStatusBadgeVariant(source.status)}>
               {source.status === 'syncing' && (
-                <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                <Spinner size="xs" className="mr-1" />
               )}
               {source.status_display || source.status}
             </Badge>

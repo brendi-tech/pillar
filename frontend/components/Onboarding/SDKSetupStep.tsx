@@ -10,7 +10,6 @@ import {
   Code2,
   Copy,
   Key,
-  Loader2,
   Package,
   Play,
   Plus,
@@ -19,6 +18,7 @@ import {
   Tag,
   Trash2,
 } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { useEffect, useRef, useState } from "react";
 
 import { AIPromptBlock } from "@/components/mdx/AIPromptBlock";
@@ -235,7 +235,7 @@ function SecretsManager({ productId, onSecretCreated }: SecretsManagerProps) {
     return (
       <div className="space-y-3">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" />
+          <Spinner size="sm" />
           <span>
             {isAutoCreating ? "Generating your secret key..." : "Loading..."}
           </span>
@@ -368,7 +368,7 @@ function SecretsManager({ productId, onSecretCreated }: SecretsManagerProps) {
               disabled={createSecretMutation.isPending || !newSecretName.trim()}
             >
               {createSecretMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin sm:mr-2" />
+                <Spinner size="sm" className="sm:mr-2" />
               ) : (
                 <Plus className="h-4 w-4 sm:mr-2" />
               )}

@@ -49,10 +49,10 @@ import {
   FileSpreadsheet,
   FileText,
   FileType,
-  Loader2,
   RefreshCw,
   Trash2,
 } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -309,7 +309,7 @@ export function KnowledgeItemDetail({
           }
         >
           {item.status === "processing" && item.is_active && (
-            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+            <Spinner size="xs" className="mr-1" />
           )}
           {statusLabel}
         </Badge>
@@ -433,7 +433,7 @@ export function KnowledgeItemDetail({
                 >
                   {reprocessMutation.isPending ||
                   item.status === "processing" ? (
-                    <Loader2 className="h-4 w-4 animate-spin sm:mr-1.5" />
+                    <Spinner size="sm" className="sm:mr-1.5" />
                   ) : (
                     <RefreshCw className="h-4 w-4 sm:mr-1.5" />
                   )}
@@ -466,7 +466,7 @@ export function KnowledgeItemDetail({
                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                       >
                         {deleteMutation.isPending ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          <Spinner size="sm" className="mr-2" />
                         ) : null}
                         Delete
                       </AlertDialogAction>
@@ -533,7 +533,7 @@ export function KnowledgeItemDetail({
                   className="w-full sm:w-auto"
                 >
                   {isLoadingDownloadUrl || isDownloading ? (
-                    <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                    <Spinner size="sm" className="mr-1.5" />
                   ) : (
                     <Download className="mr-1.5 h-4 w-4" />
                   )}
@@ -632,7 +632,7 @@ export function KnowledgeItemDetail({
                     <div className="h-[60vh] min-h-[400px] max-h-[800px] w-full rounded-md border bg-muted/30">
                       {isLoadingDownloadUrl ? (
                         <div className="flex h-full items-center justify-center">
-                          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                          <Spinner size="lg" />
                         </div>
                       ) : fileViewType === "pdf" && downloadUrl ? (
                         <iframe
@@ -675,7 +675,7 @@ export function KnowledgeItemDetail({
                             className="w-full sm:w-auto"
                           >
                             {isLoadingDownloadUrl || isDownloading ? (
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              <Spinner size="sm" className="mr-2" />
                             ) : (
                               <Download className="mr-2 h-4 w-4" />
                             )}

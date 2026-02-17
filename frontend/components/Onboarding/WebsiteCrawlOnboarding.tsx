@@ -6,12 +6,12 @@ import {
   Check,
   ChevronDown,
   Globe,
-  Loader2,
   LogOut,
   Mail,
   Sparkles,
   X,
 } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -443,7 +443,7 @@ export function WebsiteCrawlOnboarding({
                 {/* Status indicator */}
                 <div className="absolute right-3 top-1/2 -translate-y-1/2">
                   {subdomainStatus === "checking" && (
-                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    <Spinner size="sm" />
                   )}
                   {subdomainStatus === "available" && (
                     <Check className="h-4 w-4 text-green-600" />
@@ -562,7 +562,7 @@ export function WebsiteCrawlOnboarding({
           >
             {isSubmitting ? (
               <>
-                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                <Spinner size="md" className="mr-2" />
                 Starting Crawl...
               </>
             ) : (

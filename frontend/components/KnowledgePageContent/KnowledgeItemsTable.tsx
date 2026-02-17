@@ -21,7 +21,8 @@ import {
 import type { KnowledgeItem } from '@/types/knowledge';
 import { KNOWLEDGE_ITEM_STATUS_COLORS } from '@/types/knowledge';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ExternalLink, Loader2, RefreshCw, Search } from 'lucide-react';
+import { ExternalLink, RefreshCw, Search } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -95,7 +96,7 @@ export function KnowledgeItemsTable({ sourceId }: KnowledgeItemsTableProps) {
   if (isPending) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <Spinner size="lg" />
       </div>
     );
   }
@@ -177,7 +178,7 @@ export function KnowledgeItemsTable({ sourceId }: KnowledgeItemsTableProps) {
                   <TableCell>
                     <Badge variant={getStatusBadgeVariant(item.status)}>
                       {item.status === 'processing' && (
-                        <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                        <Spinner size="xs" className="mr-1" />
                       )}
                       {item.status_display || item.status}
                     </Badge>

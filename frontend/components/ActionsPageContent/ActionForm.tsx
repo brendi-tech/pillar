@@ -38,7 +38,8 @@ import {
 } from "@/types/actions";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Check, ChevronDown, Loader2, Plus, RefreshCw, Save, Sparkles, Trash, X } from "lucide-react";
+import { Check, ChevronDown, Plus, RefreshCw, Save, Sparkles, Trash, X } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { useState } from "react";
 import { ActionPreviewCard } from "./ActionPreviewCard";
 import { ActionTypeSelector } from "./ActionTypeSelector";
@@ -861,7 +862,7 @@ export function ActionForm({
             disabled={isLoading || !name || description.length < 10}
           >
             {isLoading ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Spinner size="sm" className="mr-2" />
             ) : (
               <Save className="mr-2 h-4 w-4" />
             )}

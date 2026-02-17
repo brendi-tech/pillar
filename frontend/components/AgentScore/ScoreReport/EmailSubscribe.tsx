@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { subscribeEmailMutation } from "@/queries/agentScore.queries";
 import { useMutation } from "@tanstack/react-query";
-import { Check, Loader2, Mail } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
+import { Check, Mail } from "lucide-react";
 import { useState } from "react";
 
 interface EmailSubscribeProps {
@@ -84,7 +85,7 @@ export function EmailSubscribe({ reportId }: EmailSubscribeProps) {
           className="h-8 px-3.5 text-sm font-medium bg-[#FF6E00] hover:bg-[#E06200] text-white shrink-0"
         >
           {subscribe.isPending ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            <Spinner size="xs" />
           ) : (
             "Send"
           )}

@@ -8,12 +8,12 @@ import {
   ChevronRight,
   ExternalLink,
   FileText,
-  Loader2,
   ThumbsDown,
   ThumbsUp,
   User,
   Wand2,
 } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 import { useState, useEffect } from 'react';
 import { usePillarContext } from '@pillar-ai/react';
 
@@ -355,7 +355,7 @@ export function ConversationDetailModal({
           <div className="flex-1 min-h-0">
             {isPending && (
               <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                <Spinner size="lg" />
               </div>
             )}
 

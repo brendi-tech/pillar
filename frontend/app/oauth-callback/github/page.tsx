@@ -1,7 +1,8 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Github, Loader2, XCircle } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
+import { CheckCircle, Github, XCircle } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -85,7 +86,7 @@ export default function GitHubOAuthCallbackPage() {
         {status === "loading" && (
           <>
             <div className="mx-auto flex h-12 w-12 items-center justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <Spinner size="lg" className="text-primary" />
             </div>
             <h1 className="mt-4 text-xl font-semibold">
               Connecting to GitHub...

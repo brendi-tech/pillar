@@ -1,6 +1,6 @@
 'use client';
 
-import { Loader2 } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 import { useEffect, useState } from 'react';
 
 /**
@@ -41,7 +41,7 @@ export default function RootPage() {
   if (isRedirecting) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
-        <Loader2 className="h-12 w-12 animate-spin text-orange-500" />
+        <Spinner size="xl" className="text-orange-500" />
       </div>
     );
   }

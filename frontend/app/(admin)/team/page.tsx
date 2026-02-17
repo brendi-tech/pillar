@@ -1,18 +1,15 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserManagementPanel } from "@/components/UserManagementPanel";
-import { TeamPermissionsPanel } from "@/components/TeamPermissionsPanel";
 import { useOrganization } from "@/providers/OrganizationProvider";
-import { Users, Shield } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 
 export default function TeamPage() {
   const { currentOrganizationId } = useOrganization();
   const searchParams = useSearchParams();
-  
+
   // Check URL param for default tab
   const tabParam = searchParams.get("tab");
   const defaultTab = tabParam === "permissions" ? "permissions" : "members";
@@ -38,7 +35,9 @@ export default function TeamPage() {
         title="Team"
         description="Manage your team members and permissions"
       />
-      <Tabs defaultValue={defaultTab} className="w-full">
+
+      <UserManagementPanel organizationId={currentOrganizationId} />
+      {/* <Tabs defaultValue={defaultTab} className="w-full">
         <TabsList>
           <TabsTrigger value="members" className="gap-2">
             <Users className="h-4 w-4" />
@@ -55,7 +54,7 @@ export default function TeamPage() {
         <TabsContent value="permissions" className="mt-6">
           <TeamPermissionsPanel />
         </TabsContent>
-      </Tabs>
+      </Tabs> */}
     </div>
   );
 }
