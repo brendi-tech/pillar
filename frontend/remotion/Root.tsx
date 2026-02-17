@@ -10,6 +10,12 @@ import { TextSelectionStill } from "./stills/TextSelectionStill";
 import { DemoComposition } from "./videos/DemoComposition";
 import { WireframeComposition } from "./videos/WireframeComposition";
 import {
+  BankingDemoClassic,
+  LAYOUT,
+  DIMENSIONS,
+} from "./videos/components/banking-demo-classic";
+import type { BankingDemoClassicProps } from "./videos/components/banking-demo-classic";
+import {
   VIDEO_WIDTH,
   VIDEO_HEIGHT,
   VIDEO_FPS,
@@ -127,6 +133,50 @@ export const RemotionRoot: React.FC = () => {
         component={TextSelectionStill}
         width={420}
         height={100}
+      />
+
+      {/* ============================================
+          Classic Banking Demo (full Apex Bank mockup)
+          ============================================ */}
+
+      <Composition
+        id="BankingDemoClassic"
+        component={BankingDemoClassic}
+        durationInFrames={840}
+        fps={30}
+        width={DIMENSIONS.width}
+        height={DIMENSIONS.height}
+        defaultProps={
+          {
+            query: "Pay my cleaners $200",
+            responseText:
+              "All set! Your payment of $200.00 to Sarah Chen is ready. Just hit Confirm to send it.",
+            steps: [
+              {
+                text: "Looking up 'cleaner' in saved payees...",
+                techBadge: "GET /api/payees?q=cleaner",
+              },
+              {
+                text: "Found match: Sarah Chen",
+                techBadge: "payee_id: 7823",
+              },
+              {
+                text: "Opening payment screen...",
+                techBadge: "navigate → /payments/new",
+              },
+              {
+                text: "Pre-filling with recipient data...",
+                techBadge: "data: { payee, amount, account }",
+              },
+              {
+                text: "Ready for confirmation",
+                techBadge: "awaiting_user_confirm",
+              },
+            ],
+            layout: LAYOUT,
+            accentColor: "#3B82F6",
+          } satisfies BankingDemoClassicProps
+        }
       />
 
       {/* ============================================
