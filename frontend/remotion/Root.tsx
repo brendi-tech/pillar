@@ -13,10 +13,16 @@ import {
   VIDEO_WIDTH,
   VIDEO_HEIGHT,
   VIDEO_FPS,
-  TOTAL_DURATION_FRAMES,
   WIREFRAME_WIDTH,
   WIREFRAME_HEIGHT,
 } from "./videos/constants";
+import { getTotalDurationFrames } from "./videos/timing";
+import { bankingDemo } from "./videos/data/banking";
+import { crmDemo } from "./videos/data/crm";
+import { analyticsDemo } from "./videos/data/analytics";
+import { pmDemo } from "./videos/data/pm";
+import { hrDemo } from "./videos/data/hr";
+import type { DemoConfig } from "./videos/types";
 
 // Import pre-compiled Tailwind v4 CSS (for docs components)
 // Generated with: npx @tailwindcss/cli -i app/globals.css -o remotion/compiled-styles.css
@@ -25,8 +31,16 @@ import "./compiled-styles.css";
 // Import SDK styles (for SDK preview components)
 import "./sdk-styles/sdk-styles.css";
 
-/** Demo IDs for video compositions */
-const DEMO_IDS = ["banking", "crm", "analytics", "pm", "hr"] as const;
+/** Demo configs keyed by ID */
+const DEMO_CONFIGS: Record<string, DemoConfig> = {
+  banking: bankingDemo,
+  crm: crmDemo,
+  analytics: analyticsDemo,
+  pm: pmDemo,
+  hr: hrDemo,
+};
+
+const DEMO_IDS = Object.keys(DEMO_CONFIGS);
 
 /**
  * Remotion Root component - registers all still and video compositions.
@@ -124,7 +138,7 @@ export const RemotionRoot: React.FC = () => {
           key={demoId}
           id={`demo-${demoId}`}
           component={DemoComposition}
-          durationInFrames={TOTAL_DURATION_FRAMES}
+          durationInFrames={getTotalDurationFrames(DEMO_CONFIGS[demoId].steps)}
           fps={VIDEO_FPS}
           width={VIDEO_WIDTH}
           height={VIDEO_HEIGHT}
@@ -142,7 +156,7 @@ export const RemotionRoot: React.FC = () => {
           key={`wireframe-${demoId}`}
           id={`wireframe-${demoId}`}
           component={WireframeComposition}
-          durationInFrames={TOTAL_DURATION_FRAMES}
+          durationInFrames={getTotalDurationFrames(DEMO_CONFIGS[demoId].steps)}
           fps={VIDEO_FPS}
           width={WIREFRAME_WIDTH}
           height={WIREFRAME_HEIGHT}

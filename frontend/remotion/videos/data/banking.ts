@@ -9,7 +9,7 @@ export const bankingDemo: DemoConfig = {
       label: "Searches for actions & knowledge",
       description: "Finds send_payment action and payment help articles.",
       detail: "search(\"send payment\") → action: send_payment, 2 articles",
-      durationFrames: 105,
+      durationFrames: 315,
     },
     {
       actor: "app",
@@ -23,7 +23,7 @@ export const bankingDemo: DemoConfig = {
       label: "Processes result, confirms",
       description: "Receives the action result. Streams a confirmation to the user.",
       detail: "\"I've set up a $200 payment to Maria. Ready to send.\"",
-      durationFrames: 110,
+      durationFrames: 330,
     },
     {
       actor: "done",

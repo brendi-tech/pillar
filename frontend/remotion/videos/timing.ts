@@ -7,7 +7,7 @@
  */
 
 import type { DemoStep, StepState } from "./types";
-import { STEPS_START_FRAME } from "./constants";
+import { STEPS_START_FRAME, COMPLETION_HOLD_FRAMES } from "./constants";
 
 /**
  * Calculate the frame at which each step activates.
@@ -39,6 +39,15 @@ export function getActiveStepIndex(
     }
   }
   return activeIndex;
+}
+
+/**
+ * Compute the total composition duration in frames for a set of steps.
+ * Includes the prompt intro, all steps, and a hold at the end.
+ */
+export function getTotalDurationFrames(steps: DemoStep[]): number {
+  const totalStepFrames = steps.reduce((sum, s) => sum + s.durationFrames, 0);
+  return STEPS_START_FRAME + totalStepFrames + COMPLETION_HOLD_FRAMES;
 }
 
 /**
