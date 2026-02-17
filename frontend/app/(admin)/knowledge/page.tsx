@@ -27,7 +27,7 @@ export default function KnowledgePage() {
   if (isLoading || sources.length > 0) {
     return (
       <div className="h-full grid place-items-center">
-        <Spinner variant="border" size="lg" />
+        <Spinner size="lg" />
       </div>
     );
   }

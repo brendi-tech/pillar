@@ -8,7 +8,7 @@ import { Spinner } from "@/components/ui/spinner";
 export default function Loading() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/30">
-      <Spinner size="xl" className="text-primary" />
+      <Spinner size="xl" />
     </div>
   );
 }

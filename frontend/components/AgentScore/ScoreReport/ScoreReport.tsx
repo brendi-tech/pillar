@@ -398,7 +398,7 @@ export function ScoreReport({ report, onScanAnother }: ScoreReportProps) {
           <>
             <div className="mt-6 rounded-lg bg-[#FFF8F0] border border-[#FFD6A5] p-5">
               <div className="flex items-center gap-3">
-                <Spinner size="md" className="text-[#FF6E00]" />
+                <Spinner size="md" />
                 <div>
                   <p className="text-sm font-semibold text-[#1A1A1A]">
                     Still testing signup&hellip;
@@ -624,7 +624,7 @@ export function ScoreReport({ report, onScanAnother }: ScoreReportProps) {
           <>
             <div className="mt-6 rounded-lg bg-[#FFF8F0] border border-[#FFD6A5] p-5">
               <div className="flex items-center gap-3">
-                <Spinner size="md" className="text-[#FF6E00]" />
+                <Spinner size="md" />
                 <div>
                   <p className="text-sm font-semibold text-[#1A1A1A]">
                     OpenClaw is testing your site&hellip;
@@ -857,7 +857,7 @@ export function ScoreReport({ report, onScanAnother }: ScoreReportProps) {
           </div>
         ) : activeCategoryLoading ? (
           <div className="flex items-center justify-center gap-2 py-8 text-sm text-[#6B6B6B]">
-            <Spinner size="sm" className="text-[#FF6E00]" />
+            <Spinner size="sm" />
             <span>Running checks&hellip;</span>
           </div>
         ) : (

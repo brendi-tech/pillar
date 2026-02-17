@@ -127,7 +127,7 @@ function StepIcon({ status }: { status: StepStatus }) {
     );
   }
   if (status === "active") {
-    return <Spinner size="md" className="text-[#FF6E00]" />;
+    return <Spinner size="md" />;
   }
   return <Circle className="h-5 w-5 text-[#D4D4D4] shrink-0" />;
 }

@@ -407,7 +407,7 @@ function ItemListItem({
       <FileText className="h-3 w-3 shrink-0 text-muted-foreground" />
       <span className="truncate flex-1">{item.title || "Untitled"}</span>
       {item.status === "processing" && (
-        <Spinner size="xs" className="text-blue-500" />
+        <Spinner size="xs" />
       )}
       {item.status === "indexed" && item.has_optimized_content && (
         <span className="h-2 w-2 rounded-full bg-green-500" />

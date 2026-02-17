@@ -130,7 +130,7 @@ export function SessionReplay({ reportId, instruction }: SessionReplayProps) {
         <div className="px-6 pb-6">
           {loading && (
             <div className="flex items-center justify-center h-[560px]">
-              <Spinner size="lg" className="text-[#6B6B6B]" />
+              <Spinner size="lg" />
               <span className="ml-3 text-sm text-[#6B6B6B]">
                 Loading recording...
               </span>

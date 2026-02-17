@@ -37,7 +37,7 @@ export default function ActionsPage() {
   if (isLoading || actions.length > 0) {
     return (
       <div className="h-full grid place-items-center">
-        <Spinner variant="border" size="lg" />
+        <Spinner size="lg" />
       </div>
     );
   }

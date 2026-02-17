@@ -36,7 +36,7 @@ export default function LogoutPage() {
             <PillarLogoWithName className="h-10" />
           </div>
           <div className="flex justify-center">
-            <Spinner size="lg" className="text-primary" />
+            <Spinner size="lg" />
           </div>
           <p className="text-muted-foreground">Signing out...</p>
         </div>

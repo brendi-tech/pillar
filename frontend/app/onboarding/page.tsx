@@ -65,7 +65,7 @@ function OnboardingContent() {
   if (!isNewProduct && (isProductLoading || !productId || isPendingSources || isPendingIntegration)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/30">
-        <Spinner size="lg" className="text-primary" />
+        <Spinner size="lg" />
       </div>
     );
   }
@@ -96,7 +96,7 @@ export default function OnboardingPage() {
     <Suspense
       fallback={
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/30">
-          <Spinner size="lg" className="text-primary" />
+          <Spinner size="lg" />
         </div>
       }
     >

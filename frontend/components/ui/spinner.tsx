@@ -1,16 +1,12 @@
 import { cn } from "@/lib/utils";
-import { Loader2 } from "lucide-react";
 
 type SpinnerSize = "xs" | "sm" | "md" | "lg" | "xl";
-type SpinnerVariant = "icon" | "border";
 
 interface SpinnerProps {
   /** Additional classes to apply */
   className?: string;
   /** Size of the spinner */
   size?: SpinnerSize;
-  /** Visual style - icon (Loader2) or border (CSS spinner) */
-  variant?: SpinnerVariant;
 }
 
 const sizeClasses: Record<SpinnerSize, string> = {
@@ -29,29 +25,13 @@ const borderWidthClasses: Record<SpinnerSize, string> = {
   xl: "border-4",
 };
 
-export function Spinner({
-  className,
-  size = "sm",
-  variant = "icon",
-}: SpinnerProps) {
-  if (variant === "border") {
-    return (
-      <div
-        className={cn(
-          "animate-spin rounded-full border-muted border-t-primary",
-          sizeClasses[size],
-          borderWidthClasses[size],
-          className
-        )}
-      />
-    );
-  }
-
+export function Spinner({ className, size = "sm" }: SpinnerProps) {
   return (
-    <Loader2
+    <div
       className={cn(
-        "animate-spin text-muted-foreground shrink-0",
+        "animate-spin rounded-full border-muted border-t-primary shrink-0",
         sizeClasses[size],
+        borderWidthClasses[size],
         className
       )}
     />

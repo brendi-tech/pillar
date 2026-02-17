@@ -1,10 +1,10 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import type { AIConfig, EmbedConfig } from "@/types/config";
 import type { LanguageCode } from "@/types/v2/products";
 import { Save, Undo2 } from "lucide-react";
-import { Spinner } from "@/components/ui/spinner";
 import { useState } from "react";
 import { ActionSyncSection } from "./ActionSyncSection";
 import { AIAssistantSection } from "./AIAssistantSection";

@@ -152,7 +152,7 @@ export function ScoreGauge({ score, size, label, animated = true, loading = fals
         {/* Center content */}
         <div className="absolute inset-0 flex items-center justify-center">
           {loading ? (
-            <Spinner size={loaderIconSize as "sm" | "lg" | "xl"} className="text-[#FF6E00]" />
+            <Spinner size={loaderIconSize as "sm" | "lg" | "xl"} />
           ) : (
             <span
               className={cn(

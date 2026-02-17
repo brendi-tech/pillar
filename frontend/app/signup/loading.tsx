@@ -10,7 +10,7 @@ export default function SignupLoading() {
             <PillarLogoWithName className="h-10" />
           </div>
           <div className="flex justify-center">
-            <Spinner size="lg" className="text-primary" />
+            <Spinner size="lg" />
           </div>
         </div>
       </div>

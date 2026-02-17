@@ -106,7 +106,7 @@ function AcceptInviteContent() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
         <div className="text-center">
-          <Spinner size="xl" className="mx-auto mb-4 text-orange-500" />
+          <Spinner size="xl" className="mx-auto mb-4" />
           <p className="text-sm text-gray-500 dark:text-gray-400">
             Loading invitation...
           </p>
@@ -150,7 +150,7 @@ function AcceptInviteContent() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
         <div className="text-center">
-          <Spinner size="xl" className="mx-auto mb-4 text-orange-500" />
+          <Spinner size="xl" className="mx-auto mb-4" />
           <p className="text-sm text-gray-500 dark:text-gray-400">
             Processing invitation...
           </p>
@@ -397,7 +397,7 @@ export default function AcceptInvitePage() {
     <Suspense
       fallback={
         <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
-          <Spinner size="xl" className="text-orange-500" />
+          <Spinner size="xl" />
         </div>
       }
     >

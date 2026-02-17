@@ -86,7 +86,7 @@ export default function GitHubOAuthCallbackPage() {
         {status === "loading" && (
           <>
             <div className="mx-auto flex h-12 w-12 items-center justify-center">
-              <Spinner size="lg" className="text-primary" />
+              <Spinner size="lg" />
             </div>
             <h1 className="mt-4 text-xl font-semibold">
               Connecting to GitHub...

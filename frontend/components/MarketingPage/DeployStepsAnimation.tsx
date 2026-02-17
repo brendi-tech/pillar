@@ -154,7 +154,7 @@ export const DeployStepsAnimation = () => {
                     )}
                     {state === "active" && (
                       <div className="w-9 h-6 rounded-[6px] bg-[#FF6E00]/6 flex items-center justify-center">
-                        <Spinner size="sm" className="text-[#FF6E00]" />
+                        <Spinner size="sm" />
                       </div>
                     )}
                   </div>
