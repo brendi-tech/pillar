@@ -243,5 +243,89 @@ def notify_new_signup(
             return False
 
 
+def notify_agent_score_complete(
+    domain: str,
+    overall_score: int,
+    report_url: str,
+    email: str = "",
+) -> bool:
+    """
+    Send a notification when an Agent Score report finishes.
 
+    Args:
+        domain: The domain that was scanned (e.g. "gusto.com")
+        overall_score: Final score 0-100
+        report_url: Full URL to view the report
+        email: Email of the person who requested the scan (if provided)
 
+    Returns:
+        True if notification was sent successfully, False otherwise
+    """
+    try:
+        text = f"🔍 Agent Score complete: {domain} — {overall_score}/100"
+
+        fields = [
+            {
+                "type": "mrkdwn",
+                "text": f"*Domain:*\n{domain}",
+            },
+            {
+                "type": "mrkdwn",
+                "text": f"*Score:*\n{overall_score}/100",
+            },
+        ]
+
+        if email:
+            fields.append({
+                "type": "mrkdwn",
+                "text": f"*Email:*\n{email}",
+            })
+
+        blocks = [
+            {
+                "type": "header",
+                "text": {
+                    "type": "plain_text",
+                    "text": "🔍 Agent Score Complete",
+                    "emoji": True,
+                },
+            },
+            {
+                "type": "section",
+                "fields": fields,
+            },
+            {
+                "type": "actions",
+                "elements": [
+                    {
+                        "type": "button",
+                        "text": {
+                            "type": "plain_text",
+                            "text": "View Report",
+                            "emoji": True,
+                        },
+                        "url": report_url,
+                    }
+                ],
+            },
+            {
+                "type": "context",
+                "elements": [
+                    {
+                        "type": "mrkdwn",
+                        "text": datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC'),
+                    }
+                ],
+            },
+        ]
+
+        return send_message(text, blocks)
+
+    except Exception as e:
+        logger.error(f"Error building agent score notification: {e}", exc_info=True)
+        try:
+            return send_message(
+                f"Agent Score complete: {domain} — {overall_score}/100"
+            )
+        except Exception:
+            return False

@@ -171,13 +171,10 @@ async def finalize_report_workflow(
             {"overall_score": scores["overall"], "category_scores": scores["categories"]},
         )
 
-        # Send score report email if subscribed.
-        # Re-fetch to pick up email subscriptions that arrived while scoring.
-        fresh_report = await AgentScoreReport.objects.aget(id=report_id)
-        if fresh_report.email:
-            from apps.agent_score.services.email_service import send_score_report_email
+        # Email + Slack notification
+        from apps.agent_score.services.completion_hooks import on_report_complete
 
-            await sync_to_async(send_score_report_email)(fresh_report)
+        await on_report_complete(report_id)
 
         return {
             "status": "success",
