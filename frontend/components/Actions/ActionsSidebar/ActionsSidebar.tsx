@@ -226,15 +226,57 @@ export function ActionsSidebar({
 
       {/* Search */}
       <div className="flex-shrink-0 border-b p-3">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search tools..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9"
-            autoFocus={false}
-          />
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search tools..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9"
+              autoFocus={false}
+            />
+          </div>
+          {hideHeader && (
+            <div className="flex items-center gap-1 shrink-0">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={async () => {
+                  setIsRefreshing(true);
+                  try {
+                    await refetch();
+                  } finally {
+                    setIsRefreshing(false);
+                  }
+                }}
+                className="h-9 w-9"
+                title="Refresh actions"
+                disabled={isRefreshing}
+              >
+                <RefreshCw
+                  className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+                />
+              </Button>
+              <Button asChild variant="ghost" size="icon" className="h-9 w-9">
+                <Link href="/tools/deployments" onClick={onNavigate} title="View deployments">
+                  <Rocket className="h-4 w-4" />
+                </Link>
+              </Button>
+              <ActionSyncModal
+                trigger={
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9"
+                    title="Configure sync"
+                  >
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                }
+              />
+            </div>
+          )}
         </div>
       </div>
 

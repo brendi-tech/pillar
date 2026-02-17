@@ -28,7 +28,9 @@ export default function KnowledgeLayout({ children }: KnowledgeLayoutProps) {
             className="w-80 p-0 pt-8"
             onOpenAutoFocus={(e) => e.preventDefault()}
           >
-            <SheetTitle className="sr-only">Knowledge Sources Navigation</SheetTitle>
+            <SheetTitle className="sr-only">
+              Knowledge Sources Navigation
+            </SheetTitle>
             <SourcesSidebar
               onNavigate={() => setSidebarOpen(false)}
               hideHeader

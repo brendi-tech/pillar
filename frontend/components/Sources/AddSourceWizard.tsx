@@ -258,27 +258,27 @@ export function AddSourceWizard({
   // =============================================================================
 
   const renderSelectType = () => (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4">
       <div>
-        <h2 className="text-lg font-semibold">Select Source Type</h2>
-        <p className="text-sm text-muted-foreground">
+        <h2 className="text-base sm:text-lg font-semibold">Select Source Type</h2>
+        <p className="text-xs sm:text-sm text-muted-foreground">
           Choose what type of knowledge source you want to add.
         </p>
       </div>
 
-      <div className="grid gap-3">
+      <div className="grid gap-2 sm:gap-3">
         {KNOWLEDGE_SOURCE_TYPES.map((type) => (
           <button
             key={type.id}
             onClick={() => handleTypeSelect(type)}
-            className="flex items-start gap-4 p-4 rounded-lg border text-left transition-colors hover:bg-muted/50 border-border"
+            className="flex items-center sm:items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-lg border text-left transition-colors hover:bg-muted/50 border-border"
           >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted">
-              <SourceTypeIcon icon={type.icon} className="h-5 w-5" />
+            <div className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-lg bg-muted">
+              <SourceTypeIcon icon={type.icon} className="h-4 w-4 sm:h-5 sm:w-5" />
             </div>
-            <div className="flex-1">
-              <div className="font-medium">{type.name}</div>
-              <div className="text-sm text-muted-foreground">
+            <div className="flex-1 min-w-0">
+              <div className="text-sm sm:text-base font-medium">{type.name}</div>
+              <div className="text-xs sm:text-sm text-muted-foreground line-clamp-2">
                 {type.description}
               </div>
             </div>

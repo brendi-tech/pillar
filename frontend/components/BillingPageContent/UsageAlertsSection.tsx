@@ -1,16 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -18,14 +16,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { cn } from "@/lib/utils";
 import {
+  Check,
   ChevronDown,
   ChevronUp,
-  Check,
   Mail,
   MessageSquare,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import type { UsageAlert } from "./BillingPageContent";
 
@@ -125,7 +125,7 @@ export function UsageAlertsSection({
 
         <CollapsibleContent>
           <CardContent className="space-y-6 pt-0">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground pt-4">
               Get notified when your monthly spending reaches a certain
               threshold. This helps prevent unexpected charges.
             </p>

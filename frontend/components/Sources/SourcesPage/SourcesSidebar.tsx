@@ -197,15 +197,24 @@ export function SourcesSidebar({
 
       {/* Search */}
       <div className="shrink-0 border-b p-3">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search sources..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9"
-            autoFocus={false}
-          />
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search sources..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9"
+              autoFocus={false}
+            />
+          </div>
+          {hideHeader && (
+            <Button asChild size="icon" className="h-9 w-9 shrink-0">
+              <Link href="/knowledge/new" onClick={onNavigate} title="Add source">
+                <Plus className="h-4 w-4" />
+              </Link>
+            </Button>
+          )}
         </div>
       </div>
 

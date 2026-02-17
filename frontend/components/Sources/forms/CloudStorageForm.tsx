@@ -1,59 +1,74 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { ArrowLeft, Check, CheckCircle, Cloud, ExternalLink, HelpCircle, XCircle } from 'lucide-react';
-import { Spinner } from '@/components/ui/spinner';
-import type { ConnectionConfig } from '@/types/sources';
-import { testConnection } from '@/lib/admin/sources-api';
-import { toast } from 'sonner';
+} from "@/components/ui/select";
+import { Spinner } from "@/components/ui/spinner";
+import { Textarea } from "@/components/ui/textarea";
+import { testConnection } from "@/lib/admin/sources-api";
+import type { ConnectionConfig } from "@/types/sources";
+import {
+  ArrowLeft,
+  Check,
+  CheckCircle,
+  Cloud,
+  ExternalLink,
+  HelpCircle,
+  XCircle,
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 interface CloudStorageFormProps {
   onBack: () => void;
-  onSubmit: (data: { name: string; connection_config: ConnectionConfig }) => void;
+  onSubmit: (data: {
+    name: string;
+    connection_config: ConnectionConfig;
+  }) => void;
   isSubmitting?: boolean;
 }
 
 const AWS_REGIONS = [
-  { value: 'us-east-1', label: 'US East (N. Virginia)' },
-  { value: 'us-east-2', label: 'US East (Ohio)' },
-  { value: 'us-west-1', label: 'US West (N. California)' },
-  { value: 'us-west-2', label: 'US West (Oregon)' },
-  { value: 'eu-west-1', label: 'Europe (Ireland)' },
-  { value: 'eu-west-2', label: 'Europe (London)' },
-  { value: 'eu-central-1', label: 'Europe (Frankfurt)' },
-  { value: 'ap-northeast-1', label: 'Asia Pacific (Tokyo)' },
-  { value: 'ap-southeast-1', label: 'Asia Pacific (Singapore)' },
-  { value: 'ap-southeast-2', label: 'Asia Pacific (Sydney)' },
+  { value: "us-east-1", label: "US East (N. Virginia)" },
+  { value: "us-east-2", label: "US East (Ohio)" },
+  { value: "us-west-1", label: "US West (N. California)" },
+  { value: "us-west-2", label: "US West (Oregon)" },
+  { value: "eu-west-1", label: "Europe (Ireland)" },
+  { value: "eu-west-2", label: "Europe (London)" },
+  { value: "eu-central-1", label: "Europe (Frankfurt)" },
+  { value: "ap-northeast-1", label: "Asia Pacific (Tokyo)" },
+  { value: "ap-southeast-1", label: "Asia Pacific (Singapore)" },
+  { value: "ap-southeast-2", label: "Asia Pacific (Sydney)" },
 ];
 
-type CloudProvider = 's3' | 'gcs';
+type CloudProvider = "s3" | "gcs";
 
-export function CloudStorageForm({ onBack, onSubmit, isSubmitting }: CloudStorageFormProps) {
-  const [name, setName] = useState('Cloud Storage Documents');
-  const [provider, setProvider] = useState<CloudProvider>('s3');
-  const [bucket, setBucket] = useState('');
-  const [prefix, setPrefix] = useState('');
-  
+export function CloudStorageForm({
+  onBack,
+  onSubmit,
+  isSubmitting,
+}: CloudStorageFormProps) {
+  const [name, setName] = useState("Cloud Storage Documents");
+  const [provider, setProvider] = useState<CloudProvider>("s3");
+  const [bucket, setBucket] = useState("");
+  const [prefix, setPrefix] = useState("");
+
   // S3 specific
-  const [region, setRegion] = useState('us-east-1');
-  const [accessKey, setAccessKey] = useState('');
-  const [secretKey, setSecretKey] = useState('');
-  
+  const [region, setRegion] = useState("us-east-1");
+  const [accessKey, setAccessKey] = useState("");
+  const [secretKey, setSecretKey] = useState("");
+
   // GCS specific
-  const [credentialsJson, setCredentialsJson] = useState('');
-  
+  const [credentialsJson, setCredentialsJson] = useState("");
+
   // Connection test state
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState<{
@@ -67,7 +82,7 @@ export function CloudStorageForm({ onBack, onSubmit, isSubmitting }: CloudStorag
     provider,
     bucket,
     prefix: prefix || undefined,
-    ...(provider === 's3'
+    ...(provider === "s3"
       ? { region, access_key: accessKey, secret_key: secretKey }
       : { credentials_json: credentialsJson }),
   });
@@ -80,12 +95,15 @@ export function CloudStorageForm({ onBack, onSubmit, isSubmitting }: CloudStorag
       const result = await testConnection(buildConnectionConfig());
       setTestResult(result);
       if (result.valid) {
-        toast.success(`Connection successful! Found ${result.supported_files || 0} supported files.`);
+        toast.success(
+          `Connection successful! Found ${result.supported_files || 0} supported files.`
+        );
       } else {
-        toast.error(result.error || 'Connection test failed');
+        toast.error(result.error || "Connection test failed");
       }
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Connection test failed';
+      const errorMsg =
+        error instanceof Error ? error.message : "Connection test failed";
       setTestResult({ valid: false, error: errorMsg });
       toast.error(errorMsg);
     } finally {
@@ -100,47 +118,90 @@ export function CloudStorageForm({ onBack, onSubmit, isSubmitting }: CloudStorag
 
   const isS3Valid = bucket && region && accessKey && secretKey;
   const isGcsValid = bucket && credentialsJson;
-  const isValid = name.trim() !== '' && (provider === 's3' ? isS3Valid : isGcsValid);
+  const isValid =
+    name.trim() !== "" && (provider === "s3" ? isS3Valid : isGcsValid);
 
   // #region agent log
   useEffect(() => {
-    if (provider === 'gcs') {
-      const textarea = document.getElementById('credentialsJson') as HTMLTextAreaElement;
-      const form = textarea?.closest('form');
-      const scrollableDiv = form?.querySelector('.overflow-y-auto');
+    if (provider === "gcs") {
+      const textarea = document.getElementById(
+        "credentialsJson"
+      ) as HTMLTextAreaElement;
+      const form = textarea?.closest("form");
+      const scrollableDiv = form?.querySelector(".overflow-y-auto");
       const submitBtn = form?.querySelector('button[type="submit"]');
       if (textarea && form) {
         const formStyles = window.getComputedStyle(form);
-        const scrollDivStyles = scrollableDiv ? window.getComputedStyle(scrollableDiv) : null;
+        const scrollDivStyles = scrollableDiv
+          ? window.getComputedStyle(scrollableDiv)
+          : null;
         const btnRect = submitBtn?.getBoundingClientRect();
         const viewportHeight = window.innerHeight;
         // Check ancestors for overflow:hidden
-        const ancestors: {tag:string,overflow:string,height:string}[] = [];
+        const ancestors: { tag: string; overflow: string; height: string }[] =
+          [];
         let el = form.parentElement;
-        for(let i=0; i<5 && el; i++) {
+        for (let i = 0; i < 5 && el; i++) {
           const s = window.getComputedStyle(el);
-          ancestors.push({tag:el.tagName,overflow:s.overflow,height:s.height});
+          ancestors.push({
+            tag: el.tagName,
+            overflow: s.overflow,
+            height: s.height,
+          });
           el = el.parentElement;
         }
-        fetch('http://127.0.0.1:7242/ingest/7d16d444-caef-4fca-a84f-729299240caa',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CloudStorageForm.tsx:useEffect',message:'Deep layout analysis',data:{scrollableDiv:{height:scrollDivStyles?.height,maxHeight:scrollDivStyles?.maxHeight,overflowY:scrollDivStyles?.overflowY,minHeight:scrollDivStyles?.minHeight},form:{height:formStyles.height,maxHeight:formStyles.maxHeight},button:{bottom:btnRect?.bottom,top:btnRect?.top,visible:btnRect?btnRect.bottom<=viewportHeight:null},viewport:viewportHeight,ancestors},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H,I,J'})}).catch(()=>{});
+        fetch(
+          "http://127.0.0.1:7242/ingest/7d16d444-caef-4fca-a84f-729299240caa",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              location: "CloudStorageForm.tsx:useEffect",
+              message: "Deep layout analysis",
+              data: {
+                scrollableDiv: {
+                  height: scrollDivStyles?.height,
+                  maxHeight: scrollDivStyles?.maxHeight,
+                  overflowY: scrollDivStyles?.overflowY,
+                  minHeight: scrollDivStyles?.minHeight,
+                },
+                form: {
+                  height: formStyles.height,
+                  maxHeight: formStyles.maxHeight,
+                },
+                button: {
+                  bottom: btnRect?.bottom,
+                  top: btnRect?.top,
+                  visible: btnRect ? btnRect.bottom <= viewportHeight : null,
+                },
+                viewport: viewportHeight,
+                ancestors,
+              },
+              timestamp: Date.now(),
+              sessionId: "debug-session",
+              hypothesisId: "H,I,J",
+            }),
+          }
+        ).catch(() => {});
       }
     }
   }, [provider, credentialsJson]);
   // #endregion
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
       <div>
-        <h2 className="text-lg font-semibold">Cloud Storage</h2>
-        <p className="text-sm text-muted-foreground">
+        <h2 className="text-base sm:text-lg font-semibold">Cloud Storage</h2>
+        <p className="text-xs sm:text-sm text-muted-foreground">
           Connect to your S3 or Google Cloud Storage bucket to sync documents.
         </p>
-        <p className="text-xs text-muted-foreground mt-2">
-          Supported formats: PDF, Word, Excel, PowerPoint, Markdown, Text, CSV, HTML, JSON
+        <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 sm:mt-2">
+          Supported formats: PDF, Word, Excel, PowerPoint, Markdown, Text, CSV,
+          HTML, JSON
         </p>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-3 sm:space-y-4">
         <div className="space-y-2">
           <Label htmlFor="name">Name</Label>
           <Input
@@ -188,7 +249,7 @@ export function CloudStorageForm({ onBack, onSubmit, isSubmitting }: CloudStorag
               setBucket(e.target.value);
               setTestResult(null);
             }}
-            placeholder={provider === 's3' ? 'my-docs-bucket' : 'my-gcs-bucket'}
+            placeholder={provider === "s3" ? "my-docs-bucket" : "my-gcs-bucket"}
           />
         </div>
 
@@ -204,11 +265,12 @@ export function CloudStorageForm({ onBack, onSubmit, isSubmitting }: CloudStorag
             placeholder="documents/"
           />
           <p className="text-xs text-muted-foreground">
-            Only sync files under this path. Leave empty to sync the entire bucket.
+            Only sync files under this path. Leave empty to sync the entire
+            bucket.
           </p>
         </div>
 
-        {provider === 's3' ? (
+        {provider === "s3" ? (
           <>
             <div className="space-y-2">
               <Label htmlFor="region">AWS Region</Label>
@@ -276,14 +338,49 @@ export function CloudStorageForm({ onBack, onSubmit, isSubmitting }: CloudStorag
           <div className="space-y-2">
             <Label htmlFor="credentialsJson">Service Account JSON</Label>
             {/* #region agent log */}
-            {(() => { fetch('http://127.0.0.1:7242/ingest/7d16d444-caef-4fca-a84f-729299240caa',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CloudStorageForm.tsx:GCS_SECTION',message:'Rendering GCS textarea',data:{credentialsJsonLength:credentialsJson.length,appliedClassName:'font-mono text-xs max-h-[200px] overflow-y-auto resize-none'},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A,D'})}).catch(()=>{}); return null; })()}
+            {(() => {
+              fetch(
+                "http://127.0.0.1:7242/ingest/7d16d444-caef-4fca-a84f-729299240caa",
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    location: "CloudStorageForm.tsx:GCS_SECTION",
+                    message: "Rendering GCS textarea",
+                    data: {
+                      credentialsJsonLength: credentialsJson.length,
+                      appliedClassName:
+                        "font-mono text-xs max-h-[200px] overflow-y-auto resize-none",
+                    },
+                    timestamp: Date.now(),
+                    sessionId: "debug-session",
+                    hypothesisId: "A,D",
+                  }),
+                }
+              ).catch(() => {});
+              return null;
+            })()}
             {/* #endregion */}
             <Textarea
               id="credentialsJson"
               value={credentialsJson}
               onChange={(e) => {
                 // #region agent log
-                fetch('http://127.0.0.1:7242/ingest/7d16d444-caef-4fca-a84f-729299240caa',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CloudStorageForm.tsx:onChange',message:'Textarea value changed',data:{newLength:e.target.value.length},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
+                fetch(
+                  "http://127.0.0.1:7242/ingest/7d16d444-caef-4fca-a84f-729299240caa",
+                  {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      location: "CloudStorageForm.tsx:onChange",
+                      message: "Textarea value changed",
+                      data: { newLength: e.target.value.length },
+                      timestamp: Date.now(),
+                      sessionId: "debug-session",
+                      hypothesisId: "B",
+                    }),
+                  }
+                ).catch(() => {});
                 // #endregion
                 setCredentialsJson(e.target.value);
                 setTestResult(null);
@@ -293,7 +390,8 @@ export function CloudStorageForm({ onBack, onSubmit, isSubmitting }: CloudStorag
               rows={6}
             />
             <p className="text-xs text-muted-foreground">
-              Paste your service account JSON credentials. They are encrypted and stored securely.
+              Paste your service account JSON credentials. They are encrypted
+              and stored securely.
             </p>
             <a
               href="/docs/knowledge/gcs-setup"
@@ -309,11 +407,13 @@ export function CloudStorageForm({ onBack, onSubmit, isSubmitting }: CloudStorag
         )}
 
         {/* Test Connection Section */}
-        <div className="rounded-lg border bg-muted/30 p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Cloud className="h-5 w-5 text-muted-foreground" />
-              <span className="font-medium">Test Connection</span>
+        <div className="rounded-lg border bg-muted/30 p-3 sm:p-4">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <Cloud className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground shrink-0" />
+              <span className="text-sm sm:text-base font-medium truncate">
+                Test Connection
+              </span>
             </div>
             <Button
               type="button"
@@ -321,6 +421,7 @@ export function CloudStorageForm({ onBack, onSubmit, isSubmitting }: CloudStorag
               size="sm"
               onClick={handleTestConnection}
               disabled={!isValid || isTesting}
+              className="shrink-0"
             >
               {isTesting ? (
                 <>
@@ -328,29 +429,30 @@ export function CloudStorageForm({ onBack, onSubmit, isSubmitting }: CloudStorag
                   Testing...
                 </>
               ) : (
-                'Test'
+                "Test"
               )}
             </Button>
           </div>
           {testResult && (
             <div
-              className={`mt-3 flex items-center gap-2 text-sm ${
-                testResult.valid ? 'text-green-600' : 'text-red-600'
+              className={`mt-2 sm:mt-3 flex items-start gap-2 text-xs sm:text-sm ${
+                testResult.valid ? "text-green-600" : "text-red-600"
               }`}
             >
               {testResult.valid ? (
                 <>
-                  <CheckCircle className="h-4 w-4" />
+                  <CheckCircle className="h-4 w-4 shrink-0 mt-0.5" />
                   <span>
-                    Connected! Found {testResult.supported_files || 0} supported files
+                    Connected! Found {testResult.supported_files || 0} supported
+                    files
                     {testResult.objects_found !== undefined &&
                       ` (${testResult.objects_found} total objects)`}
                   </span>
                 </>
               ) : (
                 <>
-                  <XCircle className="h-4 w-4" />
-                  <span>{testResult.error || 'Connection failed'}</span>
+                  <XCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                  <span>{testResult.error || "Connection failed"}</span>
                 </>
               )}
             </div>
@@ -358,12 +460,21 @@ export function CloudStorageForm({ onBack, onSubmit, isSubmitting }: CloudStorag
         </div>
       </div>
 
-      <div className="flex justify-between pt-4">
-        <Button type="button" variant="outline" onClick={onBack}>
+      <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-between pt-2 sm:pt-4">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onBack}
+          className="w-full sm:w-auto"
+        >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back
         </Button>
-        <Button type="submit" disabled={!isValid || isSubmitting}>
+        <Button
+          type="submit"
+          disabled={!isValid || isSubmitting}
+          className="w-full sm:w-auto"
+        >
           {isSubmitting ? (
             <>
               <Spinner size="sm" className="mr-2" />
