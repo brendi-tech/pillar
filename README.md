@@ -28,8 +28,6 @@
 
 ---
 
-> **⚠️ Beta Notice:** Pillar is in active development. APIs may change, features may break, and documentation may be out of date. We're iterating fast — if you run into issues, please [open an issue](https://github.com/pillarhq/pillar/issues) or reach out on [Discord](https://discord.gg/uhVFmGMW).
-
 # Pillar
 
 **The open-source product copilot. Build AI agents into your app that execute tasks, not just answer questions.**
