@@ -75,6 +75,28 @@ export function AgentScorePage() {
   const [scanUrl, setScanUrl] = useState("");
   const [domainLookupDone, setDomainLookupDone] = useState(false);
 
+  // Sync state when URL params change (e.g. browser back/forward navigation).
+  // useState initial values only run on mount, so we need this effect to
+  // reset to input when ?report= is removed, or load a different report
+  // when ?report= changes.
+  useEffect(() => {
+    if (reportParam) {
+      // URL has a report param — if it differs from current, load it
+      if (reportParam !== reportId) {
+        setReportId(reportParam);
+        setPhase("loading");
+        setScanError(undefined);
+      }
+    } else if (!domainParam) {
+      // URL has no report and no domain — go back to input
+      if (phase !== "input" && phase !== "scanning") {
+        setPhase("input");
+        setReportId(null);
+        setScanError(undefined);
+      }
+    }
+  }, [reportParam, domainParam]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Domain lookup query — fires when ?domain= is present and no ?report=
   const { data: domainReport, isFetched: domainLookupFetched } = useQuery(
     agentScoreDomainLookupQuery(
