@@ -165,23 +165,19 @@ export const RemotionRoot: React.FC = () => {
               "All set! Your payment of $200.00 to Sarah Chen is ready. Just hit Confirm to send it.",
             steps: [
               {
-                activeText: "Looking up 'cleaner' in saved payees...",
-                completeText: "Found match: Sarah Chen",
+                text: "Found match: Sarah Chen",
                 techBadge: "GET /api/payees?q=cleaner",
               },
               {
-                activeText: "Opening payment screen...",
-                completeText: "Opened payment screen",
+                text: "Opened payment screen",
                 techBadge: "navigate → /payments/new",
               },
               {
-                activeText: "Pre-filling payment details...",
-                completeText: "Pre-filled $200 to Sarah Chen",
+                text: "Pre-filled $200 to Sarah Chen",
                 techBadge: "data: { payee, amount, account }",
               },
               {
-                activeText: "Preparing confirmation...",
-                completeText: "Ready for confirmation",
+                text: "Ready for confirmation",
                 techBadge: "awaiting_user_confirm",
               },
             ],

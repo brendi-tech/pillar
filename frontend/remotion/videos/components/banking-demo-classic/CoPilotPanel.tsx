@@ -401,7 +401,7 @@ export const CoPilotPanel = ({
                 const status = getStepStatus(index);
                 const isActive = status === "active";
                 const isComplete = status === "complete";
-                const displayText = isComplete ? step.completeText : step.activeText;
+                const displayText = step.text;
 
                 return (
                   <div
