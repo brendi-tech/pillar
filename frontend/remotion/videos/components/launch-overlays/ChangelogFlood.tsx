@@ -5,10 +5,7 @@ import {
   spring,
   interpolate,
 } from "remotion";
-
-const FONT =
-  '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-const MONO_FONT = "SF Mono, Monaco, Menlo, Consolas, monospace";
+import { FONT } from "./fonts";
 
 type ChangelogItem = {
   version: string;
@@ -42,14 +39,16 @@ const CHANGELOG_ITEMS: ChangelogItem[] = [
   { version: "2.26", date: "Jan 15", title: "Two-factor auth updates", tag: "fix" },
 ];
 
-const CARD_PADDING = 32;
-const ITEM_HEIGHT = 56;
-const ITEM_GAP = 8;
-const HEADER_HEIGHT = 72;
-const VISIBLE_AREA = 800 - CARD_PADDING * 2 - HEADER_HEIGHT - 60;
+const OUTER_PADDING = 8;
+const CARD_PADDING = 20;
+const ITEM_HEIGHT = 52;
+const ITEM_GAP = 6;
+const HEADER_HEIGHT = 60;
+const CARD_HEIGHT = 800 - OUTER_PADDING * 2;
+const VISIBLE_AREA = CARD_HEIGHT - CARD_PADDING * 2 - HEADER_HEIGHT;
 
-export const CHANGELOG_DIMENSIONS = { width: 700, height: 800 };
-export const CHANGELOG_DURATION = 165; // 5.5 seconds
+export const CHANGELOG_DIMENSIONS = { width: 580, height: 800 };
+export const CHANGELOG_DURATION = 165;
 
 const ChangelogRow = ({
   item,
@@ -68,11 +67,11 @@ const ChangelogRow = ({
       style={{
         display: "flex",
         alignItems: "center",
-        gap: 14,
-        padding: "12px 16px",
-              backgroundColor: "rgba(255, 255, 255, 0.8)",
-              borderRadius: 10,
-              border: "1px solid rgba(240, 237, 232, 0.6)",
+        gap: 12,
+        padding: "10px 14px",
+        backgroundColor: "rgba(255, 255, 255, 0.8)",
+        borderRadius: 10,
+        border: "1px solid rgba(240, 237, 232, 0.6)",
         opacity,
         transform: `translateY(${y}px)`,
         filter: blur > 0 ? `blur(${blur}px)` : "none",
@@ -83,26 +82,11 @@ const ChangelogRow = ({
     >
       <span
         style={{
-          fontFamily: MONO_FONT,
-          fontSize: 13,
-          fontWeight: 600,
-          color: "#6B7280",
-          backgroundColor: "#F3F4F6",
-          padding: "3px 8px",
-          borderRadius: 5,
-          flexShrink: 0,
-          letterSpacing: "-0.02em",
-        }}
-      >
-        v{item.version}
-      </span>
-      <span
-        style={{
           fontFamily: FONT,
-          fontSize: 14,
+          fontSize: 16,
           color: "#9CA3AF",
           flexShrink: 0,
-          width: 48,
+          width: 56,
         }}
       >
         {item.date}
@@ -110,7 +94,7 @@ const ChangelogRow = ({
       <span
         style={{
           fontFamily: FONT,
-          fontSize: 15,
+          fontSize: 19,
           color: "#1F2937",
           fontWeight: 500,
           flex: 1,
@@ -124,11 +108,11 @@ const ChangelogRow = ({
       <span
         style={{
           fontFamily: FONT,
-          fontSize: 11,
+          fontSize: 13,
           fontWeight: 600,
           color: tagColor.text,
           backgroundColor: tagColor.bg,
-          padding: "2px 8px",
+          padding: "3px 10px",
           borderRadius: 4,
           textTransform: "uppercase",
           letterSpacing: "0.04em",
@@ -145,7 +129,6 @@ export const ChangelogFlood = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  // Card entrance
   const cardEntrance = spring({
     frame,
     fps,
@@ -153,16 +136,11 @@ export const ChangelogFlood = () => {
   });
   const cardScale = interpolate(cardEntrance, [0, 1], [0.99, 1]);
 
-  // Phase 1 (frames 10-80): Items appear one by one at readable pace
-  // Phase 2 (frames 80-130): Items scroll fast, blur increases
-  // Phase 3 (frames 130-165): "+38 more" counter appears, hold
-
   const PHASE1_START = 10;
   const PHASE1_ITEM_INTERVAL = 10;
   const PHASE2_START = 80;
   const PHASE3_START = 130;
 
-  // Calculate scroll offset — starts scrolling once items exceed visible area
   const itemsTotalHeight = CHANGELOG_ITEMS.length * (ITEM_HEIGHT + ITEM_GAP);
   const maxScroll = Math.max(0, itemsTotalHeight - VISIBLE_AREA);
 
@@ -174,18 +152,8 @@ export const ChangelogFlood = () => {
       [0, 1],
       { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
     );
-    // Ease-in scroll that accelerates
     scrollOffset = maxScroll * Math.pow(scrollProgress, 1.5);
   }
-
-  // "+38 more" badge
-  const badgeEntrance = spring({
-    frame: Math.max(0, frame - PHASE3_START),
-    fps,
-    config: { damping: 14, stiffness: 180 },
-  });
-  const badgeScale = interpolate(badgeEntrance, [0, 1], [0.8, 1]);
-  const badgeOpacity = interpolate(badgeEntrance, [0, 1], [0, 1]);
 
   return (
     <AbsoluteFill
@@ -194,13 +162,13 @@ export const ChangelogFlood = () => {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        padding: 20,
+        padding: OUTER_PADDING,
       }}
     >
       <div
         style={{
-          width: 700 - 40,
-          height: 800 - 40,
+          width: 580 - OUTER_PADDING * 2,
+          height: CARD_HEIGHT,
           backgroundColor: "rgba(250, 250, 248, 0.85)",
           backdropFilter: "blur(12px)",
           borderRadius: 16,
@@ -215,7 +183,7 @@ export const ChangelogFlood = () => {
         {/* Header */}
         <div
           style={{
-            padding: `20px ${CARD_PADDING}px`,
+            padding: `14px ${CARD_PADDING}px`,
             borderBottom: "1px solid #E4E0D9",
             display: "flex",
             alignItems: "center",
@@ -225,8 +193,8 @@ export const ChangelogFlood = () => {
             flexShrink: 0,
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
               <polyline points="14 2 14 8 20 8" />
               <line x1="16" y1="13" x2="8" y2="13" />
@@ -236,31 +204,37 @@ export const ChangelogFlood = () => {
             <span
               style={{
                 fontFamily: FONT,
-                fontSize: 17,
+                fontSize: 24,
                 fontWeight: 600,
                 color: "#1F2937",
+                letterSpacing: "-0.02em",
               }}
             >
-              Changelog
+              v2.41 Changelog
             </span>
           </div>
-          <span
+          <div
             style={{
               fontFamily: FONT,
-              fontSize: 13,
-              color: "#9CA3AF",
-              fontWeight: 500,
+              fontSize: 14,
+              fontWeight: 600,
+              color: "#6B7280",
+              backgroundColor: "#F3F4F6",
+              padding: "4px 12px",
+              borderRadius: 20,
+              border: "1px solid #E5E7EB",
+              letterSpacing: "-0.01em",
             }}
           >
-            Last 30 days
-          </span>
+            52 updates
+          </div>
         </div>
 
         {/* Items list */}
         <div
           style={{
             flex: 1,
-            padding: `16px ${CARD_PADDING}px`,
+            padding: `10px ${CARD_PADDING}px`,
             overflow: "hidden",
             position: "relative",
           }}
@@ -274,10 +248,8 @@ export const ChangelogFlood = () => {
             }}
           >
             {CHANGELOG_ITEMS.map((item, i) => {
-              // Phase 1: staggered spring entrance
               const itemAppearFrame = PHASE1_START + i * PHASE1_ITEM_INTERVAL;
 
-              // Accelerate appearance in phase 2
               const effectiveAppearFrame =
                 i < 7
                   ? itemAppearFrame
@@ -321,31 +293,6 @@ export const ChangelogFlood = () => {
           />
         </div>
 
-        {/* "+38 more" footer */}
-        <div
-          style={{
-            padding: `12px ${CARD_PADDING}px 20px`,
-            display: "flex",
-            justifyContent: "center",
-            opacity: badgeOpacity,
-            transform: `scale(${badgeScale})`,
-          }}
-        >
-          <div
-            style={{
-              fontFamily: FONT,
-              fontSize: 15,
-              fontWeight: 600,
-              color: "#6B7280",
-              backgroundColor: "#F3F4F6",
-              padding: "8px 20px",
-              borderRadius: 20,
-              border: "1px solid #E5E7EB",
-            }}
-          >
-            + 38 more this month
-          </div>
-        </div>
       </div>
     </AbsoluteFill>
   );
