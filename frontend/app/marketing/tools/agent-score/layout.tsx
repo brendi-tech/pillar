@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     url: "https://trypillar.com/tools/agent-score",
     images: [
       {
-        url: "/og-card.png",
+        url: "/og-agent-score.png",
         width: 1280,
         height: 640,
         alt: "Agent Readiness Score - Free tool that scores any website's readiness for AI agents",
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    images: ["/og-card.png"],
+    images: ["/og-agent-score.png"],
   },
 };
 
