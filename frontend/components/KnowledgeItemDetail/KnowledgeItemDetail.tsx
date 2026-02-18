@@ -1,11 +1,15 @@
 "use client";
 
 import { DetailPageShell } from "@/components/shared";
+import { useWebSocketEvent } from "@/hooks/use-websocket-event";
 import {
   knowledgeItemDetailQuery,
+  knowledgeKeys,
   knowledgeSourceDetailQuery,
 } from "@/queries/knowledge.queries";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCallback } from "react";
+import { toast } from "sonner";
 import { DocumentItemDetail } from "./DocumentItemDetail";
 import { TextItemDetail } from "./TextItemDetail";
 
@@ -20,6 +24,8 @@ export function KnowledgeItemDetail({
   sourceId,
   onDeleted,
 }: KnowledgeItemDetailProps) {
+  const queryClient = useQueryClient();
+
   const {
     data: item,
     isPending,
@@ -30,6 +36,27 @@ export function KnowledgeItemDetail({
 
   // Keep source query for potential future use (breadcrumbs, navigation)
   useQuery(knowledgeSourceDetailQuery(sourceId));
+
+  const handleItemProcessed = useCallback(
+    (event: CustomEvent) => {
+      const data = event.detail;
+      if (data.status === "indexed") {
+        toast.success("Processing complete");
+      } else if (data.status === "failed") {
+        toast.error("Processing failed");
+      }
+      queryClient.invalidateQueries({
+        queryKey: knowledgeKeys.itemDetail(itemId),
+      });
+      queryClient.invalidateQueries({ queryKey: knowledgeKeys.items() });
+    },
+    [itemId, queryClient]
+  );
+
+  useWebSocketEvent(
+    `websocket:knowledge_item.${itemId}.processed`,
+    handleItemProcessed
+  );
 
   const isDocumentUpload = Boolean(item?.metadata?.file_path);
 

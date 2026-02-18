@@ -51,6 +51,22 @@ export function handleWebSocketEvent(event: WebSocketEvent): void {
       );
       break;
 
+    case 'knowledge_item.processed':
+      console.log('[WebSocket] Knowledge item processed:', event.data);
+      window.dispatchEvent(
+        new CustomEvent('websocket:knowledge_item.processed', {
+          detail: event.data,
+        })
+      );
+      if (event.data?.id) {
+        window.dispatchEvent(
+          new CustomEvent(`websocket:knowledge_item.${event.data.id}.processed`, {
+            detail: event.data,
+          })
+        );
+      }
+      break;
+
     case 'source.sync_completed':
       console.log('[WebSocket] Source sync completed:', event.data);
       window.dispatchEvent(

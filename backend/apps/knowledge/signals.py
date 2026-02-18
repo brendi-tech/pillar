@@ -3,6 +3,7 @@ Django signals for the Knowledge app.
 
 Handles WebSocket notifications for:
 - Knowledge item creation
+- Knowledge item processing completion
 - Source sync completion
 """
 import logging
@@ -53,6 +54,57 @@ def notify_knowledge_item_created(sender, instance, created, **kwargs):
     except Exception as e:
         # Don't let push failures break item creation
         logger.error(f"Failed to send WebSocket notification for item {instance.id}: {e}")
+
+
+# Track previous status for detecting processing completion
+_item_previous_status = {}
+
+
+@receiver(pre_save, sender=KnowledgeItem)
+def track_item_status_change(sender, instance, **kwargs):
+    """Track the previous status before save to detect processing completion."""
+    if instance.pk:
+        try:
+            old_instance = KnowledgeItem.objects.get(pk=instance.pk)
+            _item_previous_status[instance.pk] = old_instance.status
+        except KnowledgeItem.DoesNotExist:
+            pass
+
+
+@receiver(post_save, sender=KnowledgeItem)
+def notify_knowledge_item_processed(sender, instance, created, **kwargs):
+    """Send WebSocket notification when a KnowledgeItem finishes processing."""
+    if created:
+        return  # New items are handled by notify_knowledge_item_created
+
+    previous_status = _item_previous_status.pop(instance.pk, None)
+
+    # Check if status changed from PROCESSING to INDEXED or FAILED
+    if previous_status != KnowledgeItem.Status.PROCESSING:
+        return
+
+    if instance.status not in [KnowledgeItem.Status.INDEXED, KnowledgeItem.Status.FAILED]:
+        return
+
+    if not instance.product_id:
+        logger.debug(f"Skipping processed notification for item {instance.id}: no product_id")
+        return
+
+    try:
+        push.send(
+            help_center_config_id=str(instance.product_id),
+            event_type='knowledge_item.processed',
+            data={
+                'id': str(instance.id),
+                'status': instance.status,
+                'processing_error': instance.processing_error,
+                'has_optimized_content': bool(instance.optimized_content),
+                'updated_at': instance.updated_at.isoformat() if instance.updated_at else None,
+            }
+        )
+        logger.info(f"Sent processed notification for item {instance.id}: {instance.status}")
+    except Exception as e:
+        logger.error(f"Failed to send processed notification for item {instance.id}: {e}")
 
 
 # Track previous status for detecting sync completion
