@@ -32,10 +32,10 @@ const chatExamples = [
     label: "Banking",
     productName: "Online Banking",
     tabLabel: "Send money",
-    videoFile: "/marketing/BankingDemo.mp4",
+    videoFile: "/marketing/BankingDemoClassic.mp4",
     technicalVideoFile: "/marketing/BankingDemo-technical.mp4",
     wireframeVideoFile: "/marketing/BankingWireframe.mp4",
-    videoDuration: 18000, // 540 frames @ 30fps
+    videoDuration: 28000, // ~28s classic demo
     urlBar: "banking.example.com/payments",
     badgeColor: "#10B981",
     badgeText: "BK",
