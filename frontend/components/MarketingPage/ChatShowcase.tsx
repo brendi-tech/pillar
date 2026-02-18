@@ -46,10 +46,10 @@ const chatExamples = [
     label: "CRM",
     productName: "Salesforce",
     tabLabel: "Close deal",
-    videoFile: "/marketing/CRMDemo.mp4",
+    videoFile: "/marketing/CRMDemoClassic.mp4",
     technicalVideoFile: "/marketing/CRMDemo-technical.mp4",
     wireframeVideoFile: "/marketing/CRMWireframe.mp4",
-    videoDuration: 18000, // 544 frames @ 30fps
+    videoDuration: 18000, // ~18s classic demo
     urlBar: "acme.lightning.force.com/opportunities",
     badgeColor: "#00A1E0",
     badgeText: "SF",
@@ -60,10 +60,10 @@ const chatExamples = [
     label: "Analytics",
     productName: "Amplitude",
     tabLabel: "Add chart",
-    videoFile: "/marketing/AnalyticsDemo.mp4",
+    videoFile: "/marketing/AnalyticsDemoClassic.mp4",
     technicalVideoFile: "/marketing/AnalyticsDemo-technical.mp4",
     wireframeVideoFile: "/marketing/AnalyticsWireframe.mp4",
-    videoDuration: 18000, // 540 frames @ 30fps
+    videoDuration: 18000, // ~18s classic demo
     urlBar: "analytics.amplitude.com/dashboard",
     badgeColor: "#1E40AF",
     badgeText: "AM",
@@ -74,10 +74,10 @@ const chatExamples = [
     label: "Project Management",
     productName: "Linear",
     tabLabel: "Create bug",
-    videoFile: "/marketing/PMDemo.mp4",
+    videoFile: "/marketing/PMDemoClassic.mp4",
     technicalVideoFile: "/marketing/PMDemo-technical.mp4",
     wireframeVideoFile: "/marketing/PMWireframe.mp4",
-    videoDuration: 18000, // 540 frames @ 30fps
+    videoDuration: 18000, // ~18s classic demo
     urlBar: "linear.app/team/issues",
     badgeColor: "#5E6AD2",
     badgeText: "LN",
@@ -88,10 +88,10 @@ const chatExamples = [
     label: "HR/People",
     productName: "Rippling",
     tabLabel: "Update bank",
-    videoFile: "/marketing/HRDemo.mp4",
+    videoFile: "/marketing/HRDemoClassic.mp4",
     technicalVideoFile: "/marketing/HRDemo-technical.mp4",
     wireframeVideoFile: "/marketing/HRWireframe.mp4",
-    videoDuration: 16500, // 495 frames @ 30fps
+    videoDuration: 16500, // ~16.5s classic demo
     urlBar: "app.rippling.com/payroll",
     badgeColor: "#8B5CF6",
     badgeText: "RP",

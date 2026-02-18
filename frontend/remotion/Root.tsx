@@ -15,6 +15,18 @@ import {
   DIMENSIONS,
 } from "./videos/components/banking-demo-classic";
 import type { BankingDemoClassicProps } from "./videos/components/banking-demo-classic";
+import { CRMDemo } from "./videos/components/crm-demo-classic/CRMDemo";
+import type { CRMDemoProps } from "./videos/components/crm-demo-classic/Root";
+import { LAYOUT as CRM_LAYOUT, DIMENSIONS as CRM_DIMENSIONS } from "./videos/components/crm-demo-classic/Root";
+import { AnalyticsDemo } from "./videos/components/analytics-demo-classic/AnalyticsDemo";
+import type { AnalyticsDemoProps } from "./videos/components/analytics-demo-classic/Root";
+import { LAYOUT as ANALYTICS_LAYOUT, DIMENSIONS as ANALYTICS_DIMENSIONS } from "./videos/components/analytics-demo-classic/Root";
+import { ProjectManagementDemo } from "./videos/components/pm-demo-classic/ProjectManagementDemo";
+import type { ProjectManagementDemoProps } from "./videos/components/pm-demo-classic/Root";
+import { LAYOUT as PM_LAYOUT, DIMENSIONS as PM_DIMENSIONS } from "./videos/components/pm-demo-classic/Root";
+import { HRDemo } from "./videos/components/hr-demo-classic/HRDemo";
+import type { HRDemoProps } from "./videos/components/hr-demo-classic/Root";
+import { LAYOUT as HR_LAYOUT, DIMENSIONS as HR_DIMENSIONS } from "./videos/components/hr-demo-classic/Root";
 import {
   VIDEO_WIDTH,
   VIDEO_HEIGHT,
@@ -153,29 +165,142 @@ export const RemotionRoot: React.FC = () => {
               "All set! Your payment of $200.00 to Sarah Chen is ready. Just hit Confirm to send it.",
             steps: [
               {
-                text: "Looking up 'cleaner' in saved payees...",
+                activeText: "Looking up 'cleaner' in saved payees...",
+                completeText: "Found match: Sarah Chen",
                 techBadge: "GET /api/payees?q=cleaner",
               },
               {
-                text: "Found match: Sarah Chen",
-                techBadge: "payee_id: 7823",
-              },
-              {
-                text: "Opening payment screen...",
+                activeText: "Opening payment screen...",
+                completeText: "Opened payment screen",
                 techBadge: "navigate → /payments/new",
               },
               {
-                text: "Pre-filling with recipient data...",
+                activeText: "Pre-filling payment details...",
+                completeText: "Pre-filled $200 to Sarah Chen",
                 techBadge: "data: { payee, amount, account }",
               },
               {
-                text: "Ready for confirmation",
+                activeText: "Preparing confirmation...",
+                completeText: "Ready for confirmation",
                 techBadge: "awaiting_user_confirm",
               },
             ],
             layout: LAYOUT,
             accentColor: "#3B82F6",
           } satisfies BankingDemoClassicProps
+        }
+      />
+
+      {/* ============================================
+          Classic CRM Demo
+          ============================================ */}
+
+      <Composition
+        id="CRMDemoClassic"
+        component={CRMDemo}
+        durationInFrames={544}
+        fps={30}
+        width={CRM_DIMENSIONS.width}
+        height={CRM_DIMENSIONS.height}
+        defaultProps={
+          {
+            query: "Set the Walmart deal as won and notify implementation that it's been signed",
+            responseText:
+              "Done! Walmart deal set to Closed Won. Implementation team has been notified.",
+            steps: [
+              { activeText: "Searching for Walmart deal...", completeText: "Found: Walmart - Enterprise ($2.4M)" },
+              { activeText: "Setting stage to Closed Won...", completeText: "Deal marked as Closed Won" },
+              { activeText: "Opening implementation handoff...", completeText: "Opened handoff form" },
+              { activeText: "Notifying implementation team...", completeText: "Implementation team notified" },
+            ],
+            layout: CRM_LAYOUT,
+          } satisfies CRMDemoProps
+        }
+      />
+
+      {/* ============================================
+          Classic Analytics Demo
+          ============================================ */}
+
+      <Composition
+        id="AnalyticsDemoClassic"
+        component={AnalyticsDemo}
+        durationInFrames={540}
+        fps={30}
+        width={ANALYTICS_DIMENSIONS.width}
+        height={ANALYTICS_DIMENSIONS.height}
+        defaultProps={
+          {
+            query: "Add a weekly signups chart to my dashboard",
+            responseText:
+              "Done! I've added a weekly signups chart to your dashboard. The chart shows signup trends over the past 12 weeks.",
+            steps: [
+              { activeText: "Listing available data sets...", completeText: "Found 47 datasets" },
+              { activeText: "Writing SQL query...", completeText: "Query ready: weekly signups" },
+              { activeText: "Executing query...", completeText: "12 rows returned" },
+              { activeText: "Saving chart to dashboard...", completeText: "Chart added to dashboard" },
+            ],
+            layout: ANALYTICS_LAYOUT,
+          } satisfies AnalyticsDemoProps
+        }
+      />
+
+      {/* ============================================
+          Classic PM Demo
+          ============================================ */}
+
+      <Composition
+        id="PMDemoClassic"
+        component={ProjectManagementDemo}
+        durationInFrames={540}
+        fps={30}
+        width={PM_DIMENSIONS.width}
+        height={PM_DIMENSIONS.height}
+        defaultProps={
+          {
+            query: "Create a P1 bug for this and add it to the current sprint",
+            responseText:
+              "Done! Created P1 bug 'Checkout crash on payment confirmation' and added it to Sprint 23.",
+            issueId: "LIN-1234",
+            contextSnippet: {
+              type: "error",
+              title: "Slack: #eng-alerts",
+              content: "TypeError: Cannot read property 'id' of undefined\n  at CheckoutPage.confirmPayment (checkout.ts:142)",
+            },
+            steps: [
+              { activeText: "Opening new issue form...", completeText: "Issue form opened" },
+              { activeText: "Setting type and priority...", completeText: "Set to Bug, P1" },
+              { activeText: "Pre-filling from error context...", completeText: "Title: Checkout crash on payment confirmation" },
+              { activeText: "Adding to current cycle...", completeText: "Added to Sprint 23" },
+            ],
+            layout: PM_LAYOUT,
+          } satisfies ProjectManagementDemoProps
+        }
+      />
+
+      {/* ============================================
+          Classic HR Demo
+          ============================================ */}
+
+      <Composition
+        id="HRDemoClassic"
+        component={HRDemo}
+        durationInFrames={495}
+        fps={30}
+        width={HR_DIMENSIONS.width}
+        height={HR_DIMENSIONS.height}
+        defaultProps={
+          {
+            query: "How do I change my direct deposit?",
+            responseText:
+              "I've opened the Direct Deposit form for you. Enter your new bank details in the highlighted fields, then click Save to update your payment method.",
+            steps: [
+              { activeText: "Navigating to Payroll settings...", completeText: "Opened Payroll settings" },
+              { activeText: "Finding Direct Deposit section...", completeText: "Found Direct Deposit" },
+              { activeText: "Opening edit form...", completeText: "Ready for your new bank details" },
+            ],
+            layout: HR_LAYOUT,
+          } satisfies HRDemoProps
         }
       />
 

@@ -4,6 +4,25 @@ import { BlinkingCursor } from "./BlinkingCursor";
 import type { Step } from "./BankingDemoClassic";
 
 /**
+ * Small spinning loader for active progress steps.
+ */
+const ActiveSpinner: React.FC<{ frame: number }> = ({ frame }) => {
+  const rotation = (frame % 30) * 12;
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      style={{ flexShrink: 0, transform: `rotate(${rotation}deg)` }}
+    >
+      <circle cx="12" cy="12" r="10" stroke="#E5E7EB" strokeWidth="2.5" />
+      <path d="M12 2a10 10 0 0 1 10 10" stroke="#6B7280" strokeWidth="2.5" strokeLinecap="round" />
+    </svg>
+  );
+};
+
+/**
  * SDK-style shimmer "Thinking..." indicator.
  * Replicates the _pillar-thinking-shimmer CSS class using Remotion frame-based animation.
  */
@@ -374,13 +393,15 @@ export const CoPilotPanel = ({
                 <ThinkingShimmer frame={frame} />
               )}
 
-              {/* Grey italic step lines — matches SDK ProgressRow style */}
+              {/* Progress steps — matches SDK ProgressRow style */}
               {steps.map((step, index) => {
                 const visibility = getStepVisibility(index);
                 if (visibility <= 0) return null;
 
                 const status = getStepStatus(index);
                 const isActive = status === "active";
+                const isComplete = status === "complete";
+                const displayText = isComplete ? step.completeText : step.activeText;
 
                 return (
                   <div
@@ -388,9 +409,19 @@ export const CoPilotPanel = ({
                     style={{
                       opacity: visibility,
                       transform: `translateY(${(1 - visibility) * 6}px)`,
-                      padding: "2px 0",
+                      padding: "3px 0",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
                     }}
                   >
+                    {isActive && <ActiveSpinner frame={frame} />}
+                    {isComplete && (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
+                        <circle cx="12" cy="12" r="10" fill="#22C55E" />
+                        <polyline points="8,12 11,15 16,9" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                      </svg>
+                    )}
                     <span
                       style={{
                         fontSize: 16,
@@ -402,7 +433,7 @@ export const CoPilotPanel = ({
                         lineHeight: 1.5,
                       }}
                     >
-                      {step.text}
+                      {displayText}
                     </span>
                   </div>
                 );
