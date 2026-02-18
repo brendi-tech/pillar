@@ -174,6 +174,7 @@ export function usePillarTools() {
     {
       name: "open_knowledge",
       type: "navigate",
+      webMCP: true,
       description:
         "Navigate to the Knowledge page to view and manage all connected knowledge sources. " +
         "Use when user asks about knowledge sources, integrations, connected documentation, " +
@@ -193,6 +194,7 @@ export function usePillarTools() {
     },
     {
       name: "open_settings",
+      webMCP: true,
       type: "navigate",
       description:
         "Navigate to the Configure page to manage help center appearance, branding, " +
@@ -1544,6 +1546,7 @@ export function usePillarTools() {
     {
       name: "get_conversation_stats",
       type: "query",
+      webMCP: true,
       description:
         "Get AI conversation statistics for the past 30 days. " +
         "Returns total conversations, resolution rate, feedback, and top questions. " +
@@ -1572,6 +1575,7 @@ export function usePillarTools() {
     {
       name: "get_product_settings",
       type: "query",
+      webMCP: true,
       description:
         "Get the current product configuration. " +
         "Returns brand name, features enabled, and AI settings. " +

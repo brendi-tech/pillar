@@ -21,11 +21,6 @@ import { useTheme } from "next-themes";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 
-import {
-  InviteMembersCard,
-  SetUsageAlertCard,
-  UpdatePermissionsCard,
-} from "@/components/PillarCards";
 import { ThemeSelectorModal } from "@/components/ThemeSelectorModal";
 import { usePillarTools } from "@/hooks/usePillarTools";
 import { applyPendingHighlight } from "@/lib/highlight";
@@ -97,12 +92,6 @@ export function PillarSDKProvider({ children }: PillarSDKProviderProps) {
             outlineColor: "#EA580C",
           },
         },
-      }}
-      // Custom card renderers for inline_ui type actions
-      cards={{
-        invite_members: InviteMembersCard,
-        set_usage_alert: SetUsageAlertCard,
-        update_permissions: UpdatePermissionsCard,
       }}
     >
       {children}
