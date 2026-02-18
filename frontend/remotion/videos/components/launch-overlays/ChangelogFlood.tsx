@@ -151,8 +151,7 @@ export const ChangelogFlood = () => {
     fps,
     config: { damping: 18, stiffness: 120 },
   });
-  const cardScale = interpolate(cardEntrance, [0, 1], [0.95, 1]);
-  const cardOpacity = interpolate(cardEntrance, [0, 1], [0, 1]);
+  const cardScale = interpolate(cardEntrance, [0, 1], [0.99, 1]);
 
   // Phase 1 (frames 10-80): Items appear one by one at readable pace
   // Phase 2 (frames 80-130): Items scroll fast, blur increases
@@ -209,7 +208,6 @@ export const ChangelogFlood = () => {
           boxShadow: "0 8px 32px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04)",
           overflow: "hidden",
           transform: `scale(${cardScale})`,
-          opacity: cardOpacity,
           display: "flex",
           flexDirection: "column",
         }}

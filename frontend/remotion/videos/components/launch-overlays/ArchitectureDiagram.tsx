@@ -116,7 +116,7 @@ const ContainerBox = ({
     config: { damping: 25, stiffness: 100 },
   });
 
-  const borderOpacity = interpolate(activateProgress, [0, 1], [0, 1]);
+  const borderOpacity = interpolate(activateProgress, [0, 1], [0.12, 0.4]);
 
   return (
     <div
@@ -125,7 +125,7 @@ const ContainerBox = ({
         backgroundColor: "rgba(255, 255, 255, 0.6)",
         borderRadius: 16,
         border: `1.5px solid`,
-        borderColor: `rgba(${accentColor === ORANGE ? "255,110,0" : "52,199,89"}, ${borderOpacity * 0.35 + 0.08})`,
+        borderColor: `rgba(${accentColor === ORANGE ? "255,110,0" : "52,199,89"}, ${borderOpacity})`,
         padding: "20px 24px",
         display: "flex",
         flexDirection: "column",
@@ -244,15 +244,9 @@ export const ArchitectureDiagram = () => {
     fps,
     config: { damping: 22, stiffness: 90 },
   });
-  const entranceOpacity = interpolate(entrance, [0, 1], [0, 1]);
-  const entranceScale = interpolate(entrance, [0, 1], [0.97, 1]);
+  const entranceScale = interpolate(entrance, [0, 1], [0.99, 1]);
 
-  const flowLineOpacity = interpolate(
-    frame,
-    [ENTRANCE_END, ENTRANCE_END + 12],
-    [0, 1],
-    { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
-  );
+  const flowLineOpacity = 1;
 
   const arrowLabelEntrance = spring({
     frame: Math.max(0, frame - FLOW_START),
@@ -293,7 +287,6 @@ export const ArchitectureDiagram = () => {
           flexDirection: "column",
           alignItems: "center",
           transform: `scale(${entranceScale})`,
-          opacity: entranceOpacity,
           boxSizing: "border-box",
         }}
       >
