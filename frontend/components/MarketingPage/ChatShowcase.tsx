@@ -108,7 +108,7 @@ const chatExamples = [
  * React+video technical breakdown instead of the default screen recordings.
  */
 export function ChatShowcase() {
-  const { ref, isInView } = useInView({ threshold: 0.8, rootMargin: "0px" });
+  const { ref, isInView } = useInView({ threshold: 0.5, rootMargin: "0px" });
   const searchParams = useSearchParams();
   const isTechnical = searchParams.get("v") === "technical";
 

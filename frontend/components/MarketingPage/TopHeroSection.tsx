@@ -25,7 +25,7 @@ export function TopHeroSection() {
             The Product Copilot
           </h1>
           <p className="text-center text-base sm:text-lg md:text-[1.375rem] text-white mt-2 max-w-3xl mx-auto px-4 md:px-0">
-            Pillar is the{" "}
+            Pillar is an{" "}
             <a
               href="https://github.com/pillarhq/pillar"
               target="_blank"
@@ -34,9 +34,7 @@ export function TopHeroSection() {
             >
               Open Source
             </a>{" "}
-            SDK that adds an AI agent to your product.
-            <br className="hidden md:inline" /> Users type what they want,
-            Pillar takes action, and gets work done.
+            Copilot that executes tasks inside your product.
           </p>
         </div>
         <div className="flex flex-col items-center gap-2 pb-8 md:pb-12 px-4">
