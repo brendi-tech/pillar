@@ -368,7 +368,7 @@ export const CoPilotPanel = ({
               >
                 <p
                   style={{
-                    fontSize: 21,
+                    fontSize: 20,
                     color: "#1A1A1A",
                     margin: 0,
                     fontFamily:
@@ -424,7 +424,7 @@ export const CoPilotPanel = ({
                     )}
                     <span
                       style={{
-                        fontSize: 16,
+                        fontSize: 20,
                         fontStyle: "italic",
                         color: isActive ? "#6B7280" : "#9CA3AF",
                         fontWeight: isActive ? 500 : 400,
@@ -451,7 +451,7 @@ export const CoPilotPanel = ({
               >
                 <p
                   style={{
-                    fontSize: 18,
+                    fontSize: 20,
                     color: "#374151",
                     margin: 0,
                     lineHeight: 1.6,

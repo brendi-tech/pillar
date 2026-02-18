@@ -330,7 +330,7 @@ export const CoPilotPanel = ({
               >
                 <p
                   style={{
-                    fontSize: 21,
+                    fontSize: 20,
                     color: "#1A1A1A",
                     margin: 0,
                     fontFamily:
@@ -398,7 +398,7 @@ export const CoPilotPanel = ({
                         )}
                         <span
                           style={{
-                            fontSize: 14,
+                            fontSize: 20,
                             color: isComplete ? "#374151" : "#6B7280",
                             fontStyle: "italic",
                             fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
@@ -433,7 +433,7 @@ export const CoPilotPanel = ({
                 >
                   <p
                     style={{
-                      fontSize: 21,
+                      fontSize: 20,
                       color: "#1A1A1A",
                       margin: 0,
                       fontFamily:
