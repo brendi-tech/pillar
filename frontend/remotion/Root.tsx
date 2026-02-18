@@ -34,6 +34,14 @@ import {
   WIREFRAME_WIDTH,
   WIREFRAME_HEIGHT,
 } from "./videos/constants";
+import {
+  ChangelogFlood,
+  CHANGELOG_DIMENSIONS,
+  CHANGELOG_DURATION,
+  ArchitectureDiagram,
+  ARCHITECTURE_DIMENSIONS,
+  ARCHITECTURE_DURATION,
+} from "./videos/components/launch-overlays";
 import { getTotalDurationFrames } from "./videos/timing";
 import { bankingDemo } from "./videos/data/banking";
 import { crmDemo } from "./videos/data/crm";
@@ -298,6 +306,28 @@ export const RemotionRoot: React.FC = () => {
             layout: HR_LAYOUT,
           } satisfies HRDemoProps
         }
+      />
+
+      {/* ============================================
+          Launch Video Overlays
+          ============================================ */}
+
+      <Composition
+        id="ChangelogFlood"
+        component={ChangelogFlood}
+        durationInFrames={CHANGELOG_DURATION}
+        fps={30}
+        width={CHANGELOG_DIMENSIONS.width}
+        height={CHANGELOG_DIMENSIONS.height}
+      />
+
+      <Composition
+        id="ArchitectureDiagram"
+        component={ArchitectureDiagram}
+        durationInFrames={ARCHITECTURE_DURATION}
+        fps={30}
+        width={ARCHITECTURE_DIMENSIONS.width}
+        height={ARCHITECTURE_DIMENSIONS.height}
       />
 
       {/* ============================================

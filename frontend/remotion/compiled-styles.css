@@ -1,4 +1,4 @@
-/*! tailwindcss v4.1.18 | MIT License | https://tailwindcss.com */
+/*! tailwindcss v4.2.0 | MIT License | https://tailwindcss.com */
 @layer properties;
 @layer theme, base, components, utilities;
 @layer theme {
@@ -422,6 +422,12 @@
   .inset-y-0 {
     inset-block: calc(var(--spacing) * 0);
   }
+  .start {
+    inset-inline-start: var(--spacing);
+  }
+  .end {
+    inset-inline-end: var(--spacing);
+  }
   .-top-1\.5 {
     top: calc(var(--spacing) * -1.5);
   }
@@ -450,7 +456,7 @@
     top: calc(var(--spacing) * 1.5);
   }
   .top-1\/2 {
-    top: calc(1/2 * 100%);
+    top: calc(1 / 2 * 100%);
   }
   .top-2 {
     top: calc(var(--spacing) * 2);
@@ -561,10 +567,10 @@
     left: calc(var(--spacing) * 1);
   }
   .left-1\/2 {
-    left: calc(1/2 * 100%);
+    left: calc(1 / 2 * 100%);
   }
   .left-1\/4 {
-    left: calc(1/4 * 100%);
+    left: calc(1 / 4 * 100%);
   }
   .left-2 {
     left: calc(var(--spacing) * 2);
@@ -1065,7 +1071,7 @@
     height: calc(var(--spacing) * 3.5);
   }
   .h-3\/5 {
-    height: calc(3/5 * 100%);
+    height: calc(3 / 5 * 100%);
   }
   .h-4 {
     height: calc(var(--spacing) * 4);
@@ -1305,7 +1311,7 @@
     width: calc(var(--spacing) * 1.5);
   }
   .w-1\/2 {
-    width: calc(1/2 * 100%);
+    width: calc(1 / 2 * 100%);
   }
   .w-2 {
     width: calc(var(--spacing) * 2);
@@ -1314,7 +1320,7 @@
     width: calc(var(--spacing) * 2.5);
   }
   .w-2\/3 {
-    width: calc(2/3 * 100%);
+    width: calc(2 / 3 * 100%);
   }
   .w-3 {
     width: calc(var(--spacing) * 3);
@@ -1323,19 +1329,19 @@
     width: calc(var(--spacing) * 3.5);
   }
   .w-3\/4 {
-    width: calc(3/4 * 100%);
+    width: calc(3 / 4 * 100%);
   }
   .w-4 {
     width: calc(var(--spacing) * 4);
   }
   .w-4\/5 {
-    width: calc(4/5 * 100%);
+    width: calc(4 / 5 * 100%);
   }
   .w-5 {
     width: calc(var(--spacing) * 5);
   }
   .w-5\/6 {
-    width: calc(5/6 * 100%);
+    width: calc(5 / 6 * 100%);
   }
   .w-6 {
     width: calc(var(--spacing) * 6);
@@ -1626,7 +1632,7 @@
     transform-origin: var(--radix-tooltip-content-transform-origin);
   }
   .-translate-x-1\/2 {
-    --tw-translate-x: calc(calc(1/2 * 100%) * -1);
+    --tw-translate-x: calc(calc(1 / 2 * 100%) * -1);
     translate: var(--tw-translate-x) var(--tw-translate-y);
   }
   .-translate-x-2 {
@@ -1670,7 +1676,7 @@
     translate: var(--tw-translate-x) var(--tw-translate-y);
   }
   .-translate-y-1\/2 {
-    --tw-translate-y: calc(calc(1/2 * 100%) * -1);
+    --tw-translate-y: calc(calc(1 / 2 * 100%) * -1);
     translate: var(--tw-translate-x) var(--tw-translate-y);
   }
   .translate-y-0 {
@@ -5270,7 +5276,7 @@
   .after\:left-1\/2 {
     &::after {
       content: var(--tw-content);
-      left: calc(1/2 * 100%);
+      left: calc(1 / 2 * 100%);
     }
   }
   .after\:w-\[2px\] {
@@ -6711,7 +6717,7 @@
   }
   .data-\[state\=closed\]\:slide-out-to-left-1\/2 {
     &[data-state="closed"] {
-      --tw-exit-translate-x: calc(1/2*-100%);
+      --tw-exit-translate-x: calc(1 / 2*-100%);
     }
   }
   .data-\[state\=closed\]\:slide-out-to-right {
@@ -6809,7 +6815,7 @@
   }
   .data-\[state\=open\]\:slide-in-from-left-1\/2 {
     &[data-state="open"] {
-      --tw-enter-translate-x: calc(1/2*-100%);
+      --tw-enter-translate-x: calc(1 / 2*-100%);
     }
   }
   .data-\[state\=open\]\:slide-in-from-right {
