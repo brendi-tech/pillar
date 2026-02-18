@@ -100,6 +100,15 @@ export function handleWebSocketEvent(event: WebSocketEvent): void {
       }
       break;
 
+    case 'actions.sync_completed':
+      console.log('[WebSocket] Actions sync completed:', event.data);
+      window.dispatchEvent(
+        new CustomEvent('websocket:actions.sync_completed', {
+          detail: event.data,
+        })
+      );
+      break;
+
     case 'connection.established':
       console.log('[WebSocket] Connection established:', event.data);
       break;

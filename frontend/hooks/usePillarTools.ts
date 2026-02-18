@@ -30,7 +30,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect } from "react";
 
 import { openThemeSelectorModal } from "@/components/ThemeSelectorModal";
-import { executeAddAllowedDomain } from "./addAllowedDomain";
 import { actionsAPI } from "@/lib/admin/actions-api";
 import {
   analyticsAPI,
@@ -43,6 +42,7 @@ import { knowledgeSourcesAPI } from "@/lib/admin/sources-api";
 import { navigateAndHighlight } from "@/lib/highlight";
 import { useProduct } from "@/providers/ProductProvider";
 import { configKeys } from "@/queries/config.queries";
+import { executeAddAllowedDomain } from "./addAllowedDomain";
 
 /**
  * Extract a human-readable feature name from the current path

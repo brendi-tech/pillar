@@ -11,12 +11,13 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDebounce } from "@/hooks/use-debounce";
+import { useWebSocketEvent } from "@/hooks/use-websocket-event";
 import { cn } from "@/lib/utils";
 import { useProduct } from "@/providers";
-import { actionListQuery } from "@/queries/actions.queries";
+import { actionKeys, actionListQuery } from "@/queries/actions.queries";
 import type { Action, ActionType } from "@/types/actions";
 import { ACTION_TYPE_LABELS, deriveActionLabel } from "@/types/actions";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowRight,
   ChevronRight,
@@ -37,7 +38,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { toast } from "sonner";
 
 interface ActionsSidebarProps {
   /** Callback when navigation occurs (used to close mobile sidebar) */
@@ -124,11 +126,26 @@ export function ActionsSidebar({
   const debouncedSearch = useDebounce(searchTerm, 300);
   const pathname = usePathname();
 
+  const queryClient = useQueryClient();
+
   const { data, isLoading, refetch } = useQuery(
     actionListQuery({
       product: currentProduct?.id,
     })
   );
+
+  const handleSyncCompleted = useCallback(
+    (event: CustomEvent) => {
+      const { created, updated, deleted } = event.detail;
+      queryClient.invalidateQueries({ queryKey: actionKeys.all });
+      toast.success(
+        `Actions synced: ${created} created, ${updated} updated, ${deleted} deleted`
+      );
+    },
+    [queryClient]
+  );
+
+  useWebSocketEvent("websocket:actions.sync_completed", handleSyncCompleted);
 
   const actions = useMemo(() => data?.results ?? [], [data?.results]);
 

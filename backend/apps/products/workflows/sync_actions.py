@@ -19,6 +19,7 @@ from hatchet_sdk import Context
 from pydantic import BaseModel
 
 from common.hatchet_client import get_hatchet_client
+from common.services import push
 
 logger = logging.getLogger(__name__)
 
@@ -131,6 +132,23 @@ async def sync_actions_workflow(workflow_input: SyncActionsInput, context: Conte
         
         # Step 7 & 8: Verify and finalize (atomic)
         await finalize_job(job_id, str(deployment.id), len(actions_data))
+        
+        # Send WebSocket notification for sync completion
+        try:
+            push.send(
+                help_center_config_id=str(product_id),
+                event_type='actions.sync_completed',
+                data={
+                    'deployment_id': str(deployment.id),
+                    'created': created_count,
+                    'updated': updated_count,
+                    'deleted': deleted_count,
+                    'total': len(actions_data),
+                }
+            )
+            logger.info(f"[ActionSync] Sent sync completed notification for product {product_id}")
+        except Exception as e:
+            logger.error(f"[ActionSync] Failed to send sync notification: {e}")
         
         logger.info(
             f"[ActionSync] Workflow completed for job {job_id}: "

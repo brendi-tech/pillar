@@ -684,56 +684,75 @@ class ActionSyncView(APIView):
         ).first()
 
         if existing and not force_sync:
-            # Even if actions unchanged, update agent_guidance if provided
-            if sync_request.agent_guidance is not None:
-                product.agent_guidance = sync_request.agent_guidance
-                product.save(update_fields=['agent_guidance'])
-                logger.info(
-                    f"[ActionSync] Updated agent_guidance for {product.subdomain} "
-                    f"({len(sync_request.agent_guidance)} chars) - actions unchanged"
-                )
-
-            # Check for actions missing embeddings and backfill them.
-            # This handles the case where a previous sync succeeded but
-            # embedding generation failed silently — without this, those
-            # actions are invisible to search forever.
-            missing_embeddings = existing.actions.filter(
-                status=Action.Status.PUBLISHED,
-                description_embedding__isnull=True,
-            )
-            missing_count = missing_embeddings.count()
-            if missing_count > 0:
-                logger.warning(
-                    f"[ActionSync] {missing_count} action(s) missing embeddings "
-                    f"for {product.subdomain} — backfilling"
-                )
-                try:
-                    from common.services.embedding_service import get_embedding_service
-                    svc = get_embedding_service()
-                    backfilled = 0
-                    for act in missing_embeddings:
-                        if act.description:
-                            act.description_embedding = svc.embed_document(act.description)
-                            act.save(update_fields=['description_embedding'])
-                            backfilled += 1
-                    logger.info(
-                        f"[ActionSync] Backfilled embeddings for {backfilled}/{missing_count} actions"
-                    )
-                except Exception as e:
-                    logger.error(
-                        f"[ActionSync] Embedding backfill failed: {e}",
-                        exc_info=True,
-                    )
+            # Check if there are orphaned actions in the DB that need to be deleted.
+            # This handles the case where a newer sync added actions, then a sync
+            # with the original manifest finds an old deployment with matching hash
+            # but the DB still has extra actions from the newer sync.
+            manifest_action_names = {a.name for a in sync_request.actions}
+            current_action_count = Action.objects.filter(
+                product=product,
+                organization=product.organization,
+            ).count()
             
-            logger.info(
-                f"[ActionSync] Manifest unchanged for {product.subdomain} "
-                f"{sync_request.platform}@{sync_request.version}"
-            )
-            return Response({
-                'status': 'unchanged',
-                'deployment_id': str(existing.id),
-                'version': existing.version,
-            }, status=status.HTTP_200_OK)
+            if current_action_count != len(manifest_action_names):
+                # Action count mismatch — need to run sync to delete orphaned actions
+                logger.info(
+                    f"[ActionSync] Manifest hash matches but action count differs "
+                    f"(DB: {current_action_count}, manifest: {len(manifest_action_names)}) — "
+                    f"running sync to reconcile"
+                )
+                # Fall through to run the sync
+            else:
+                # Even if actions unchanged, update agent_guidance if provided
+                if sync_request.agent_guidance is not None:
+                    product.agent_guidance = sync_request.agent_guidance
+                    product.save(update_fields=['agent_guidance'])
+                    logger.info(
+                        f"[ActionSync] Updated agent_guidance for {product.subdomain} "
+                        f"({len(sync_request.agent_guidance)} chars) - actions unchanged"
+                    )
+
+                # Check for actions missing embeddings and backfill them.
+                # This handles the case where a previous sync succeeded but
+                # embedding generation failed silently — without this, those
+                # actions are invisible to search forever.
+                missing_embeddings = existing.actions.filter(
+                    status=Action.Status.PUBLISHED,
+                    description_embedding__isnull=True,
+                )
+                missing_count = missing_embeddings.count()
+                if missing_count > 0:
+                    logger.warning(
+                        f"[ActionSync] {missing_count} action(s) missing embeddings "
+                        f"for {product.subdomain} — backfilling"
+                    )
+                    try:
+                        from common.services.embedding_service import get_embedding_service
+                        svc = get_embedding_service()
+                        backfilled = 0
+                        for act in missing_embeddings:
+                            if act.description:
+                                act.description_embedding = svc.embed_document(act.description)
+                                act.save(update_fields=['description_embedding'])
+                                backfilled += 1
+                        logger.info(
+                            f"[ActionSync] Backfilled embeddings for {backfilled}/{missing_count} actions"
+                        )
+                    except Exception as e:
+                        logger.error(
+                            f"[ActionSync] Embedding backfill failed: {e}",
+                            exc_info=True,
+                        )
+                
+                logger.info(
+                    f"[ActionSync] Manifest unchanged for {product.subdomain} "
+                    f"{sync_request.platform}@{sync_request.version}"
+                )
+                return Response({
+                    'status': 'unchanged',
+                    'deployment_id': str(existing.id),
+                    'version': existing.version,
+                }, status=status.HTTP_200_OK)
 
         # Check if async mode is requested
         use_async = request.query_params.get('async', 'false').lower() == 'true'
