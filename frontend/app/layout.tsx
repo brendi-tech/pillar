@@ -113,9 +113,9 @@ export async function generateMetadata(): Promise<Metadata> {
   if (isMarketing) {
     return {
       ...baseMetadata,
-      title: "Pillar - The Product Copilot",
+      title: "Pillar - Your App's Copilot",
       description:
-        "Turn user requests into client-side actions. Pillar navigates your UI, builds dashboards, and executes more actions to carry out tasks automatically.",
+        "Pillar is an open source copilot that turns user requests into completed actions, right inside your app.",
       robots: "index, follow, max-snippet:-1, max-image-preview:large",
     };
   }
@@ -123,9 +123,9 @@ export async function generateMetadata(): Promise<Metadata> {
   // Default
   return {
     ...baseMetadata,
-    title: "Pillar - The Product Copilot",
+    title: "Pillar - Your App's Copilot",
     description:
-      "Turn user requests into client-side actions. Pillar navigates your UI, builds dashboards, and executes more actions to carry out tasks automatically.",
+      "Pillar is an open source copilot that turns user requests into completed actions, right inside your app.",
   };
 }
 

@@ -7,7 +7,7 @@ import { getLegalDocument } from "@/lib/legal-content";
 
 export const metadata: Metadata = {
   title: "Privacy Policy | Pillar",
-  description: "Privacy Policy for Pillar - The Product Copilot",
+  description: "Privacy Policy for Pillar - Your App's Copilot",
 };
 
 export default function PrivacyPage() {

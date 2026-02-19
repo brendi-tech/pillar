@@ -37,13 +37,13 @@ const liveDemos: LiveDemo[] = [
  */
 export function LiveDemoBar() {
   return (
-    <div className="px-4 md:px-9 pt-8 md:pt-14 pb-4 bg-white">
+    <div className="px-4 md:px-9 pt-2 md:pt-3 pb-4 bg-white">
       {/* Section heading */}
       <div className="text-center mb-8">
         <h3 className="font-editorial text-2xl md:text-3xl lg:text-4xl text-[#020202] mb-2">
-          Try it live
+          Or try it live
         </h3>
-        <p className="text-[#6B6B6B] text-sm md:text-base max-w-lg mx-auto">
+        <p className="text-[#6B6B6B] text-sm max-w-lg mx-auto">
           Explore real apps with Pillar built in. Click to open an interactive
           demo.
         </p>

@@ -49,14 +49,11 @@ export function DemoSection() {
           <div className="relative max-w-[1300px] mx-auto">
             <div className="text-center px-4 md:px-9 pb-8 md:pb-12">
 <h2 className="font-editorial text-3xl md:text-5xl lg:text-[4.75rem] lg:leading-[62px] text-[#020202]">
-                See how it could work in{" "}
+                See it{" "}
                 <span className="underline decoration-2 underline-offset-4">
-                  your app
+                  in action
                 </span>
               </h2>
-              <p className="text-[#1A1A1A] text-base md:text-lg mt-4">
-                {" "}
-              </p>
             </div>
 
             {/* Chat Showcase Demo */}

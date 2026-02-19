@@ -34,11 +34,11 @@ export function FinalCTA() {
           {/* Message Box */}
           <div className="bg-[#F3EFE8] border px-8 py-12 border-[#E5E0D8] text-center">
             <h2 className="font-editorial text-2xl md:text-4xl lg:text-[3.875rem] lg:leading-[62px] text-[#1A1A1A] mb-6">
-              A Product Copilot that{" "}
+              Your App&apos;s Copilot.{" "}
               <span className="underline decoration-3 underline-offset-4">
-                executes
-              </span>{" "}
-              not just explains.
+                Actions
+              </span>
+              , not just answers.
             </h2>
             <p className="text-[#1A1A1A] text-base sm:text-lg md:text-xl">
               Stop building chat interfaces. Start shipping actions.

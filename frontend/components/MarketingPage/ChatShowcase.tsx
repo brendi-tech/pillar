@@ -213,7 +213,7 @@ export function ChatShowcase() {
       </div>
 
       {/* Demo Content */}
-      <div className="px-4 md:px-6 lg:px-8 pb-8 md:pb-16">
+      <div className="px-4 md:px-6 lg:px-8 pb-6 md:pb-8">
         <div className="max-w-7xl mx-auto">
           {isTechnical ? (
             /* ── Technical mode: hybrid React + video layout ── */

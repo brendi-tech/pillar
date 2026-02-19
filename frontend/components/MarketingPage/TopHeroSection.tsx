@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 /**
- * TopHeroSection - Main hero with "The Product Copilot" heading
+ * TopHeroSection - Main hero with "Your App's Copilot" heading
  * and a prominent "Get Started" CTA
  */
 export function TopHeroSection() {
@@ -22,7 +22,7 @@ export function TopHeroSection() {
       <div className="relative z-10 flex flex-col h-full">
         <div className="pt-8 md:pt-[180px] pb-8 md:pb-10 px-4 md:px-6 lg:px-8">
           <h1 className="font-editorial text-3xl md:text-5xl lg:text-[5.25rem] text-center text-white tracking-tight">
-            The Product Copilot
+            Your App&apos;s Copilot
           </h1>
           <p className="text-center text-base sm:text-lg md:text-[1.375rem] text-white mt-2 max-w-3xl mx-auto px-4 md:px-0">
             Pillar is an{" "}
@@ -32,9 +32,10 @@ export function TopHeroSection() {
               rel="noopener noreferrer"
               className="underline decoration-white/40 underline-offset-2 hover:decoration-white/80 transition-all duration-200"
             >
-              Open Source
+              open source
             </a>{" "}
-            Copilot that executes tasks inside your product.
+            copilot that turns user requests into completed actions, right
+            inside your app.
           </p>
         </div>
         <div className="flex flex-col items-center gap-2 pb-8 md:pb-12 px-4">

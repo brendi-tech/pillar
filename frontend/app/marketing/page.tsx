@@ -2,16 +2,16 @@ import { MarketingPage } from "@/components/MarketingPage/MarketingPage";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Pillar - The Product Copilot",
+  title: "Pillar - Your App's Copilot",
   description:
-    "Turn user requests into client-side actions. Pillar navigates your UI, builds dashboards, and executes more actions to carry out tasks automatically.",
+    "Pillar is an open source copilot that turns user requests into completed actions, right inside your app.",
   alternates: {
     canonical: "/",
   },
   openGraph: {
-    title: "Pillar - The Product Copilot",
+    title: "Pillar - Your App's Copilot",
     description:
-      "Turn user requests into client-side actions. Pillar navigates your UI, builds dashboards, and executes more actions to carry out tasks automatically.",
+      "Pillar is an open source copilot that turns user requests into completed actions, right inside your app.",
     url: "https://trypillar.com",
   },
   robots: {

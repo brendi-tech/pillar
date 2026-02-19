@@ -7,7 +7,7 @@ import { getLegalDocument } from "@/lib/legal-content";
 
 export const metadata: Metadata = {
   title: "Terms of Service | Pillar",
-  description: "Terms of Service for Pillar - The Product Copilot",
+  description: "Terms of Service for Pillar - Your App's Copilot",
 };
 
 export default function TermsPage() {

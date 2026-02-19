@@ -4,10 +4,10 @@ import { MarketingSDKProvider } from "@/providers/MarketingSDKProvider";
 export const metadata: Metadata = {
   title: {
     template: "%s | Pillar",
-    default: "Pillar - The Product Copilot",
+    default: "Pillar - Your App's Copilot",
   },
   description:
-    "Turn user requests into client-side actions. Pillar navigates your UI, builds dashboards, and executes more actions to carry out tasks automatically.",
+    "Pillar is an open source copilot that turns user requests into completed actions, right inside your app.",
   robots: "index, follow, max-snippet:-1, max-image-preview:large",
   openGraph: {
     siteName: "Pillar",
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
         url: "/og-card.png",
         width: 1280,
         height: 640,
-        alt: "Pillar - The open-source product copilot",
+        alt: "Pillar - Your App's Copilot",
       },
     ],
   },
@@ -38,7 +38,7 @@ const jsonLd = {
   name: "Pillar",
   applicationCategory: "BusinessApplication",
   description:
-    "Turn user requests into client-side actions. Pillar navigates your UI, builds dashboards, and executes more actions to carry out tasks automatically.",
+    "Pillar is an open source copilot that turns user requests into completed actions, right inside your app.",
   url: "https://trypillar.com",
   operatingSystem: "Web",
   offers: {

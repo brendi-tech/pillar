@@ -165,10 +165,10 @@ export function OnboardingSteps({
         <div className="text-center space-y-3 mb-6">
           <PillarLogoWithName className="mx-auto" />
           <h1 className="text-3xl font-bold tracking-tight">
-            Set Up Your Product Copilot
+            Set Up Your App&apos;s Copilot
           </h1>
           <p className="text-muted-foreground text-lg">
-            Complete these steps to get your AI-powered product copilot running.
+            Complete these steps to get your AI-powered copilot running.
           </p>
         </div>
 
