@@ -584,3 +584,99 @@ class TestSanitizeSchema:
         assert "items" not in schema["properties"]["data"]
         # Result should have items added
         assert "items" in result["properties"]["data"]
+
+    def test_sanitizes_type_union_to_single_type(self):
+        """type: ['number', 'null'] should be converted to type: 'number'."""
+        schema = {
+            "type": "object",
+            "properties": {
+                "value": {
+                    "type": ["number", "null"],
+                    "description": "Threshold value",
+                },
+            },
+        }
+
+        result = _sanitize_schema(schema)
+
+        assert result["properties"]["value"]["type"] == "number"
+
+    def test_sanitizes_type_union_picks_first_non_null(self):
+        """type: ['null', 'string'] should become type: 'string'."""
+        schema = {
+            "type": "object",
+            "properties": {
+                "slug": {"type": ["null", "string"]},
+            },
+        }
+
+        result = _sanitize_schema(schema)
+
+        assert result["properties"]["slug"]["type"] == "string"
+
+    def test_sanitizes_type_union_all_null_fallback(self):
+        """type: ['null'] should fall back to type: 'string'."""
+        schema = {
+            "type": "object",
+            "properties": {
+                "val": {"type": ["null"]},
+            },
+        }
+
+        result = _sanitize_schema(schema)
+
+        assert result["properties"]["val"]["type"] == "string"
+
+    def test_strips_orphaned_required_entries(self):
+        """required entries referencing missing properties should be removed."""
+        schema = {
+            "type": "object",
+            "properties": {
+                "title": {"type": "string"},
+                "name": {"type": "string"},
+            },
+            "required": ["title", "name", "ghost_field"],
+        }
+
+        result = _sanitize_schema(schema)
+
+        assert result["required"] == ["title", "name"]
+
+    def test_removes_empty_required_after_stripping(self):
+        """required array should be deleted entirely if all entries are orphaned."""
+        schema = {
+            "type": "object",
+            "properties": {
+                "title": {"type": "string"},
+            },
+            "required": ["nonexistent"],
+        }
+
+        result = _sanitize_schema(schema)
+
+        assert "required" not in result
+
+    def test_sanitizes_nested_type_union_in_items(self):
+        """Type unions inside array items should also be sanitized."""
+        schema = {
+            "type": "object",
+            "properties": {
+                "thresholds": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "color": {"type": "string"},
+                            "value": {"type": ["number", "null"]},
+                        },
+                        "required": ["color", "value"],
+                    },
+                },
+            },
+        }
+
+        result = _sanitize_schema(schema)
+
+        items = result["properties"]["thresholds"]["items"]
+        assert items["properties"]["value"]["type"] == "number"
+        assert items["required"] == ["color", "value"]

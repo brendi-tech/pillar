@@ -254,21 +254,29 @@ def get_tool_names() -> List[str]:
 
 def _sanitize_schema(schema: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Recursively ensure all arrays have items and all objects have properties.
+    Recursively sanitize a JSON Schema for Gemini compatibility.
 
-    Gemini strictly requires every type: "array" to have an "items" field and
-    every type: "object" to have a "properties" field, even though standard
-    JSON Schema considers them optional. Without this, Gemini returns a 400
-    INVALID_ARGUMENT error rejecting the entire tool declaration.
+    Gemini is stricter than OpenAI/Anthropic about tool schemas. This function
+    fixes common issues that cause 400 INVALID_ARGUMENT rejections:
 
-    This is called on every action schema before it is sent to the LLM,
-    protecting against incomplete schemas from any product.
+    1. Arrays must have an ``items`` field.
+    2. Objects must have a ``properties`` field.
+    3. ``type`` must be a single string, not a union array like ``['string', 'null']``.
+       When Gemini can't parse a type union it treats the property as undefined,
+       which cascades into "required[N]: property is not defined" errors.
+    4. Every entry in ``required`` must exist in ``properties``.
     """
     if not isinstance(schema, dict):
         return schema
 
     schema = schema.copy()
     schema_type = schema.get("type")
+
+    # type unions like ['number', 'null'] → pick the first non-null type
+    if isinstance(schema_type, list):
+        non_null = [t for t in schema_type if t != "null"]
+        schema["type"] = non_null[0] if non_null else "string"
+        schema_type = schema["type"]
 
     if schema_type == "array":
         if "items" not in schema:
@@ -284,6 +292,13 @@ def _sanitize_schema(schema: Dict[str, Any]) -> Dict[str, Any]:
                 k: _sanitize_schema(v)
                 for k, v in schema["properties"].items()
             }
+
+        # Strip required entries that reference properties not in properties
+        if "required" in schema and schema["properties"]:
+            valid_keys = set(schema["properties"].keys())
+            schema["required"] = [r for r in schema["required"] if r in valid_keys]
+            if not schema["required"]:
+                del schema["required"]
 
     return schema
 
