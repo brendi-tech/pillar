@@ -18,7 +18,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { actionDetailQuery } from "@/queries/actions.queries";
-import type { ImplementationStatus } from "@/types/actions";
+import type { ActionExecutionLog, ImplementationStatus } from "@/types/actions";
 import {
   ACTION_TYPE_LABELS,
   IMPLEMENTATION_STATUS_LABELS,
@@ -429,6 +429,69 @@ export function ActionDetailPage({ actionId }: ActionDetailPageProps) {
                     : undefined
                 }
               />
+            </CardContent>
+          </Card>
+
+          {/* ── Execution Logs ── */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Executions</CardTitle>
+              <CardDescription>
+                Last 20 executions from MCP server and WebMCP
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {action.execution_logs && action.execution_logs.length > 0 ? (
+                <div className="space-y-2">
+                  {action.execution_logs.map((log: ActionExecutionLog) => (
+                    <div
+                      key={log.id}
+                      className="flex items-center justify-between rounded-lg border bg-muted/30 px-3 py-2"
+                    >
+                      <div className="flex items-center gap-3">
+                        {log.status === "success" ? (
+                          <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                        ) : (
+                          <XCircle className="h-4 w-4 text-red-500" />
+                        )}
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium">
+                              {log.status === "success" ? "Success" : "Failed"}
+                            </span>
+                            {log.metadata?.source && (
+                              <Badge variant="outline" className="text-xs">
+                                {log.metadata.source}
+                              </Badge>
+                            )}
+                          </div>
+                          {log.error_message && (
+                            <p className="text-xs text-muted-foreground">
+                              {log.error_message}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        {log.duration_ms !== null && (
+                          <span className="tabular-nums">
+                            {log.duration_ms}ms
+                          </span>
+                        )}
+                        <span>
+                          {formatDistanceToNow(new Date(log.created_at), {
+                            addSuffix: true,
+                          })}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  No executions recorded yet.
+                </p>
+              )}
             </CardContent>
           </Card>
         </>

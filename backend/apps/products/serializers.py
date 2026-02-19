@@ -60,6 +60,7 @@ class PlatformSerializer(serializers.ModelSerializer):
 class ActionSerializer(serializers.ModelSerializer):
     """Serializer for Action model."""
     has_embedding = serializers.SerializerMethodField()
+    execution_logs = serializers.SerializerMethodField()
     
     class Meta:
         model = Action
@@ -72,17 +73,27 @@ class ActionSerializer(serializers.ModelSerializer):
             'execution_count', 'last_executed_at',
             'confirmation_success_count', 'confirmation_failure_count',
             'last_confirmed_at', 'last_confirmation_status', 'last_confirmation_error',
+            'execution_logs',
             'created_at', 'updated_at',
         ]
         read_only_fields = [
             'id', 'execution_count', 'last_executed_at',
             'confirmation_success_count', 'confirmation_failure_count',
             'last_confirmed_at', 'last_confirmation_status', 'last_confirmation_error',
-            'has_embedding', 'created_at', 'updated_at',
+            'has_embedding', 'execution_logs', 'created_at', 'updated_at',
         ]
 
     def get_has_embedding(self, obj):
         return obj.description_embedding is not None
+    
+    def get_execution_logs(self, obj):
+        """Return recent execution logs for detail view only."""
+        request = self.context.get('request')
+        # Only include logs for detail view (retrieve action), not list view
+        if request and request.method == 'GET' and 'pk' in request.parser_context.get('kwargs', {}):
+            logs = obj.execution_logs.all()[:20]
+            return ActionExecutionLogSerializer(logs, many=True).data
+        return []
 
 
 class ActionExecutionLogSerializer(serializers.ModelSerializer):
@@ -91,11 +102,11 @@ class ActionExecutionLogSerializer(serializers.ModelSerializer):
     class Meta:
         model = ActionExecutionLog
         fields = [
-            'id', 'action', 'status', 'input_data', 'output_data',
-            'error_message', 'started_at', 'completed_at',
-            'created_at', 'updated_at'
+            'id', 'action', 'session_id', 'conversation_id',
+            'status', 'error_message', 'duration_ms', 'metadata',
+            'created_at',
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        read_only_fields = fields
 
 
 class ActionDeploymentSerializer(serializers.ModelSerializer):

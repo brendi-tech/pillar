@@ -131,6 +131,7 @@ export function ActionsSidebar({
   const { data, isLoading, refetch } = useQuery(
     actionListQuery({
       product: currentProduct?.id,
+      page_size: 100,
     })
   );
 
@@ -276,7 +277,11 @@ export function ActionsSidebar({
                 />
               </Button>
               <Button asChild variant="ghost" size="icon" className="h-9 w-9">
-                <Link href="/tools/deployments" onClick={onNavigate} title="View deployments">
+                <Link
+                  href="/tools/deployments"
+                  onClick={onNavigate}
+                  title="View deployments"
+                >
                   <Rocket className="h-4 w-4" />
                 </Link>
               </Button>

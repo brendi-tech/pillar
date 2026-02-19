@@ -4,7 +4,7 @@ URL configuration for MCP app.
 Copyright (C) 2025 Pillar Team
 """
 from django.urls import path
-from apps.mcp.views import streamable_http, health, image_upload, identify, conversation_history, session_resume, telemetry
+from apps.mcp.views import streamable_http, health, image_upload, identify, conversation_history, session_resume, telemetry, webmcp_tracking
 
 urlpatterns = [
     # Main MCP endpoint - handles both JSON-RPC and SSE streaming
@@ -33,4 +33,7 @@ urlpatterns = [
     
     # Session resumption - status check (resume now flows through the ask tool)
     path('conversations/<str:conversation_id>/status/', session_resume.get_conversation_status, name='mcp_conversation_status'),
+
+    # WebMCP execution tracking
+    path('track-webmcp-execution/', webmcp_tracking.track_webmcp_execution, name='mcp_track_webmcp_execution'),
 ]

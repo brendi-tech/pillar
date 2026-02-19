@@ -87,9 +87,35 @@ export interface Action {
   // Source
   source?: 'code' | 'ui';  // 'code' = synced from SDK manifest, 'ui' = created in dashboard
   
+  // Execution logs (only populated on detail view)
+  execution_logs?: ActionExecutionLog[];
+  
   // Timestamps
   created_at: string;
   updated_at: string;
+}
+
+// ============================================================================
+// Action Execution Log Types
+// ============================================================================
+
+/**
+ * Log entry for a single action execution.
+ * Populated from both MCP server and WebMCP tracking.
+ */
+export interface ActionExecutionLog {
+  id: string;
+  action: string;
+  session_id: string;
+  conversation_id: string | null;
+  status: 'success' | 'failure';
+  error_message: string;
+  duration_ms: number | null;
+  metadata: {
+    source?: 'mcp' | 'webmcp';
+    [key: string]: unknown;
+  };
+  created_at: string;
 }
 
 // ============================================================================

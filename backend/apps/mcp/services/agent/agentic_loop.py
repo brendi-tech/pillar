@@ -17,6 +17,7 @@ from opentelemetry import trace, context as otel_context
 from opentelemetry.trace import StatusCode
 
 from apps.mcp.services.agent.error_types import is_tool_error
+from apps.mcp.services.agent.helpers import log_action_execution
 from apps.mcp.services.agent.messages import get_fallback_message
 from apps.mcp.services.agent.session_logger import AgentSessionLogger
 from common.observability.tracing import get_tracer
@@ -1725,6 +1726,19 @@ async def run_agentic_loop(
                     "error": "Timeout",
                 })
 
+                # Log execution to ActionExecutionLog
+                await log_action_execution(
+                    action_name=action_name,
+                    product_id=str(service.help_center_config.id),
+                    organization_id=str(service.organization.id) if service.organization else "",
+                    session_id=session_id or "",
+                    conversation_id=conversation_id,
+                    status='failure',
+                    error_message='Timeout waiting for result from client',
+                    duration_ms=wait_duration_ms,
+                    metadata={'source': 'mcp'},
+                )
+
                 result_content = f"Action '{action_name}' timed out after 60s. The client may be unresponsive."
                 messages.append(format_tool_result_message_native(
                     tool_call_id=tool_call_id,
@@ -1760,6 +1774,19 @@ async def run_agentic_loop(
                         if not is_success:
                             error_msg = result.get("error", result.get("message", "Action failed"))
                         result_data = result.get("result", result)
+
+                # Log execution to ActionExecutionLog
+                await log_action_execution(
+                    action_name=action_name,
+                    product_id=str(service.help_center_config.id),
+                    organization_id=str(service.organization.id) if service.organization else "",
+                    session_id=session_id or "",
+                    conversation_id=conversation_id,
+                    status='success' if is_success else 'failure',
+                    error_message=error_msg,
+                    duration_ms=wait_duration_ms,
+                    metadata={'source': 'mcp'},
+                )
 
                 # Format result summary for UI display
                 result_summary = format_query_result_summary(result_data if is_success else result)

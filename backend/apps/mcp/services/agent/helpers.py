@@ -580,3 +580,93 @@ def cleanup_stale_results(max_age_seconds: float = None) -> int:
         logger.info(f"[QueryResult] Cleaned up {count} stale result entries")
     
     return count
+
+
+# ============================================================================
+# Action Execution Logging
+# ============================================================================
+
+async def log_action_execution(
+    action_name: str,
+    product_id: str,
+    organization_id: str,
+    session_id: str = '',
+    conversation_id: str = None,
+    status: str = 'success',
+    error_message: str = '',
+    duration_ms: int = None,
+    metadata: dict = None,
+) -> bool:
+    """
+    Log an action execution to ActionExecutionLog.
+    
+    Used by both the MCP server agentic loop and WebMCP tracking endpoint
+    to record action executions for analytics.
+    
+    Args:
+        action_name: Name of the action that was executed
+        product_id: ID of the product (as string)
+        organization_id: ID of the organization (as string)
+        session_id: SDK session ID
+        conversation_id: Conversation ID (optional)
+        status: 'success' or 'failure'
+        error_message: Error message if status is 'failure'
+        duration_ms: Execution duration in milliseconds
+        metadata: Additional metadata (e.g., source='mcp' or source='webmcp')
+        
+    Returns:
+        True if logged successfully, False otherwise
+    """
+    try:
+        from apps.products.models import Action, ActionExecutionLog
+        from django.utils import timezone
+        from django.db.models import F
+        import uuid
+        
+        # Look up the action by name and product
+        action = await Action.objects.filter(
+            product_id=product_id,
+            name=action_name
+        ).afirst()
+        
+        if not action:
+            logger.warning(
+                f"[ActionLog] Action not found: name={action_name}, product_id={product_id}"
+            )
+            return False
+        
+        # Parse conversation_id if it's a string
+        conv_id = None
+        if conversation_id:
+            try:
+                conv_id = uuid.UUID(conversation_id) if isinstance(conversation_id, str) else conversation_id
+            except (ValueError, TypeError):
+                pass
+        
+        # Create execution log
+        await ActionExecutionLog.objects.acreate(
+            organization_id=organization_id,
+            action=action,
+            session_id=session_id or '',
+            conversation_id=conv_id,
+            status=status,
+            error_message=error_message or '',
+            duration_ms=duration_ms,
+            metadata=metadata or {},
+        )
+        
+        # Also increment the execution count on the action
+        await Action.objects.filter(pk=action.pk).aupdate(
+            execution_count=F('execution_count') + 1,
+            last_executed_at=timezone.now(),
+        )
+        
+        logger.info(
+            f"[ActionLog] Recorded execution: action={action_name}, "
+            f"status={status}, source={metadata.get('source', 'unknown') if metadata else 'unknown'}"
+        )
+        return True
+        
+    except Exception as e:
+        logger.error(f"[ActionLog] Failed to log execution: {e}", exc_info=True)
+        return False
