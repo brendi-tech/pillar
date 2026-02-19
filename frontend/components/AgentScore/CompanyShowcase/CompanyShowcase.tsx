@@ -138,7 +138,7 @@ export function CompanyShowcase() {
           {[...visibleEntries, ...visibleEntries].map((entry, i) => (
             <Link
               key={`${entry.domain}-${i}`}
-              href={`/tools/agent-score?domain=${entry.domain}`}
+              href={`/resources/agent-score?domain=${entry.domain}`}
               className="flex-none w-[180px] bg-white border border-[#E8E4DC] rounded-xl p-4 flex flex-col items-center gap-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] hover:border-[#FF6E00]/20 transition-all duration-200"
             >
               {/* Favicon + domain */}

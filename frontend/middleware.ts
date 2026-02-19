@@ -268,12 +268,12 @@ export function middleware(request: NextRequest) {
   // Note: Cannot use _ prefix as Next.js treats those as private folders
   // Safe because customer subdomains have isMarketing=false, so no collision with "marketing" category
   if (isMarketing && !pathname.startsWith("/marketing")) {
-    // Marketing paths: /, /assistant, /demos/*, /tools/*
+    // Marketing paths: /, /assistant, /demos/*, /resources/*
     if (
       pathname === "/" ||
       pathname === "/assistant" ||
       pathname.startsWith("/demos") ||
-      pathname.startsWith("/tools")
+      pathname.startsWith("/resources")
     ) {
       const newUrl = request.nextUrl.clone();
       newUrl.pathname = `/marketing${pathname === "/" ? "" : pathname}`;

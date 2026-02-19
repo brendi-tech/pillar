@@ -113,7 +113,7 @@ function getMarketingTools(
         "accessibility, and more. Use when someone wants to test if their site is ready " +
         "for AI agents.",
       execute: async () => {
-        navigate("/tools/agent-score");
+        navigate("/resources/agent-score");
         return {
           content: [
             {

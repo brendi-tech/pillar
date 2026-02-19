@@ -116,7 +116,7 @@ export function AgentScorePage() {
       setReportId(domainReport.id);
       setPhase("report");
       // Update URL to include report ID for shareability
-      router.replace(`/tools/agent-score?report=${domainReport.id}`, {
+      router.replace(`/resources/agent-score?report=${domainReport.id}`, {
         scroll: false,
       });
     } else {
@@ -162,7 +162,7 @@ export function AgentScorePage() {
       }
 
       // Push report ID to URL for shareability
-      router.push(`/tools/agent-score?report=${data.report_id}`, {
+      router.push(`/resources/agent-score?report=${data.report_id}`, {
         scroll: false,
       });
     },
@@ -196,7 +196,7 @@ export function AgentScorePage() {
         setScanError(report.error_message || "Scan failed. Try again.");
         setPhase("input");
         setReportId(null);
-        router.push("/tools/agent-score", { scroll: false });
+        router.push("/resources/agent-score", { scroll: false });
       } else {
         // Still in progress — now show scanning UI
         setPhase("scanning");
@@ -216,7 +216,7 @@ export function AgentScorePage() {
       setScanError(report.error_message || "Scan failed. Try again.");
       setPhase("input");
       setReportId(null);
-      router.push("/tools/agent-score", { scroll: false });
+      router.push("/resources/agent-score", { scroll: false });
     }
   }, [report, reportId, phase, router]);
 
@@ -226,7 +226,7 @@ export function AgentScorePage() {
     setReportId(null);
     setScanError(undefined);
     setScanUrl("");
-    router.push("/tools/agent-score", { scroll: false });
+    router.push("/resources/agent-score", { scroll: false });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [router]);
 

@@ -24,11 +24,11 @@ import { PillarLogoWithName } from "../marketing/LandingPage/PillarLogoWithName"
 
 const GITHUB_URL = "https://github.com/pillarhq/pillar";
 
-const toolsDropdownItems = [
+const resourcesDropdownItems = [
   {
     name: "Agent Readiness Score",
     description: "Agents are coming.  Is your site ready?",
-    href: "/tools/agent-score",
+    href: "/resources/agent-score",
     icon: Gauge,
   },
 ];
@@ -48,7 +48,7 @@ const demosDropdownItems = [
   },
 ];
 
-type DropdownType = "tools" | "demos";
+type DropdownType = "resources" | "demos";
 
 type NavLink =
   | { name: string; href: string; dropdown?: undefined }
@@ -56,15 +56,15 @@ type NavLink =
 
 const navLinks: NavLink[] = [
   { name: "Home", href: "/" },
-  { name: "Tools", dropdown: "tools" },
+  { name: "Resources", dropdown: "resources" },
   { name: "Demos", dropdown: "demos" },
   { name: "Blog", href: "/blog" },
   { name: "Pricing", href: "/pricing" },
   { name: "Docs", href: "/docs" },
 ];
 
-const dropdownItemsMap: Record<DropdownType, typeof toolsDropdownItems> = {
-  tools: toolsDropdownItems,
+const dropdownItemsMap: Record<DropdownType, typeof resourcesDropdownItems> = {
+  resources: resourcesDropdownItems,
   demos: demosDropdownItems,
 };
 

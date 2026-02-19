@@ -142,7 +142,7 @@ export const CHECK_TOOLTIPS: Record<string, CheckTooltip> = {
   webmcp_meta_tag: {
     description:
       "A WebMCP meta tag tells visiting agents that your page exposes tools they can call. Without this signal, agents won't know to look for WebMCP capabilities.",
-    link: "https://pillar.security/tools/agent-score",
+    link: "https://pillar.security/resources/agent-score",
     linkLabel: "WebMCP overview",
   },
 
