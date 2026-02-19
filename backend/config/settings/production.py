@@ -84,6 +84,9 @@ CORS_ALLOW_HEADERS = [
     # MCP headers
     'mcp-session-id',
     'x-help-center-id',
+    # W3C Trace Context
+    'traceparent',
+    'tracestate',
 ]
 
 # Email - Override default FROM address for production
@@ -140,6 +143,10 @@ LOGGING['root']['level'] = 'INFO'
 AGENT_SESSION_LOGGING = {
     "enabled": False,
 }
+
+# OpenTelemetry tracing (controlled by ENABLE_TRACING env var)
+from common.observability.tracing import setup_tracing as _setup_tracing  # noqa: E402
+_setup_tracing(project_id=os.environ.get("GCP_PROJECT_ID"))
 
 # ASGI application (inherited from base, but explicitly set for clarity)
 ASGI_APPLICATION = 'config.asgi.application'

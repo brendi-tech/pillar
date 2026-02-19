@@ -5,7 +5,7 @@ import {
   spring,
   interpolate,
 } from "remotion";
-import { FONT } from "./fonts";
+import { FONT, MONO_FONT } from "./fonts";
 
 type ChangelogItem = {
   version: string;
@@ -39,13 +39,11 @@ const CHANGELOG_ITEMS: ChangelogItem[] = [
   { version: "2.26", date: "Jan 15", title: "Two-factor auth updates", tag: "fix" },
 ];
 
-const OUTER_PADDING = 8;
-const CARD_PADDING = 20;
-const ITEM_HEIGHT = 52;
-const ITEM_GAP = 6;
-const HEADER_HEIGHT = 60;
-const CARD_HEIGHT = 800 - OUTER_PADDING * 2;
-const VISIBLE_AREA = CARD_HEIGHT - CARD_PADDING * 2 - HEADER_HEIGHT;
+const CARD_PADDING = 48;
+const ITEM_HEIGHT = 148;
+const ITEM_GAP = 16;
+const HEADER_HEIGHT = 130;
+const VISIBLE_AREA = 800 - CARD_PADDING - HEADER_HEIGHT - 60;
 
 export const CHANGELOG_DIMENSIONS = { width: 580, height: 800 };
 export const CHANGELOG_DURATION = 165;
@@ -66,11 +64,11 @@ const ChangelogRow = ({
     <div
       style={{
         display: "flex",
-        alignItems: "center",
+        flexDirection: "column",
         gap: 12,
-        padding: "10px 14px",
+        padding: "22px 28px",
         backgroundColor: "rgba(255, 255, 255, 0.8)",
-        borderRadius: 10,
+        borderRadius: 14,
         border: "1px solid rgba(240, 237, 232, 0.6)",
         opacity,
         transform: `translateY(${y}px)`,
@@ -78,48 +76,64 @@ const ChangelogRow = ({
         height: ITEM_HEIGHT,
         boxSizing: "border-box",
         flexShrink: 0,
+        justifyContent: "center",
       }}
     >
+      {/* Line 1: version, date, tag */}
+      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+        <span
+          style={{
+            fontFamily: MONO_FONT,
+            fontSize: 24,
+            fontWeight: 600,
+            color: "#6B7280",
+            backgroundColor: "#F3F4F6",
+            padding: "4px 12px",
+            borderRadius: 8,
+            flexShrink: 0,
+            letterSpacing: "-0.02em",
+          }}
+        >
+          v{item.version}
+        </span>
+        <span
+          style={{
+            fontFamily: FONT,
+            fontSize: 24,
+            color: "#9CA3AF",
+            flexShrink: 0,
+          }}
+        >
+          {item.date}
+        </span>
+        <span
+          style={{
+            fontFamily: FONT,
+            fontSize: 20,
+            fontWeight: 600,
+            color: tagColor.text,
+            backgroundColor: tagColor.bg,
+            padding: "3px 12px",
+            borderRadius: 6,
+            textTransform: "uppercase",
+            letterSpacing: "0.04em",
+            flexShrink: 0,
+          }}
+        >
+          {item.tag}
+        </span>
+      </div>
+      {/* Line 2: full title */}
       <span
         style={{
           fontFamily: FONT,
-          fontSize: 16,
-          color: "#9CA3AF",
-          flexShrink: 0,
-          width: 56,
-        }}
-      >
-        {item.date}
-      </span>
-      <span
-        style={{
-          fontFamily: FONT,
-          fontSize: 19,
+          fontSize: 32,
           color: "#1F2937",
           fontWeight: 500,
-          flex: 1,
-          whiteSpace: "nowrap",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
+          lineHeight: 1.2,
         }}
       >
         {item.title}
-      </span>
-      <span
-        style={{
-          fontFamily: FONT,
-          fontSize: 13,
-          fontWeight: 600,
-          color: tagColor.text,
-          backgroundColor: tagColor.bg,
-          padding: "3px 10px",
-          borderRadius: 4,
-          textTransform: "uppercase",
-          letterSpacing: "0.04em",
-          flexShrink: 0,
-        }}
-      >
-        {item.tag}
       </span>
     </div>
   );
@@ -138,7 +152,7 @@ export const ChangelogFlood = () => {
 
   const PHASE1_START = 10;
   const PHASE1_ITEM_INTERVAL = 10;
-  const PHASE2_START = 80;
+  const PHASE2_START = 55;
   const PHASE3_START = 130;
 
   const itemsTotalHeight = CHANGELOG_ITEMS.length * (ITEM_HEIGHT + ITEM_GAP);
@@ -155,25 +169,27 @@ export const ChangelogFlood = () => {
     scrollOffset = maxScroll * Math.pow(scrollProgress, 1.5);
   }
 
+  const badgeEntrance = spring({
+    frame: Math.max(0, frame - PHASE3_START),
+    fps,
+    config: { damping: 14, stiffness: 180 },
+  });
+  const badgeScale = interpolate(badgeEntrance, [0, 1], [0.8, 1]);
+  const badgeOpacity = interpolate(badgeEntrance, [0, 1], [0, 1]);
+
   return (
     <AbsoluteFill
       style={{
         backgroundColor: "transparent",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: OUTER_PADDING,
       }}
     >
       <div
         style={{
-          width: 580 - OUTER_PADDING * 2,
-          height: CARD_HEIGHT,
+          width: 700,
+          height: 800,
           backgroundColor: "rgba(250, 250, 248, 0.85)",
           backdropFilter: "blur(12px)",
-          borderRadius: 16,
-          border: "1px solid rgba(228, 224, 217, 0.6)",
-          boxShadow: "0 8px 32px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04)",
+          border: "none",
           overflow: "hidden",
           transform: `scale(${cardScale})`,
           display: "flex",
@@ -183,7 +199,7 @@ export const ChangelogFlood = () => {
         {/* Header */}
         <div
           style={{
-            padding: `14px ${CARD_PADDING}px`,
+            padding: `28px ${CARD_PADDING}px`,
             borderBottom: "1px solid #E4E0D9",
             display: "flex",
             alignItems: "center",
@@ -193,8 +209,8 @@ export const ChangelogFlood = () => {
             flexShrink: 0,
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
               <polyline points="14 2 14 8 20 8" />
               <line x1="16" y1="13" x2="8" y2="13" />
@@ -204,7 +220,7 @@ export const ChangelogFlood = () => {
             <span
               style={{
                 fontFamily: FONT,
-                fontSize: 24,
+                fontSize: 36,
                 fontWeight: 600,
                 color: "#1F2937",
                 letterSpacing: "-0.02em",
@@ -216,14 +232,9 @@ export const ChangelogFlood = () => {
           <div
             style={{
               fontFamily: FONT,
-              fontSize: 14,
-              fontWeight: 600,
-              color: "#6B7280",
-              backgroundColor: "#F3F4F6",
-              padding: "4px 12px",
-              borderRadius: 20,
-              border: "1px solid #E5E7EB",
-              letterSpacing: "-0.01em",
+              fontSize: 26,
+              color: "#9CA3AF",
+              fontWeight: 500,
             }}
           >
             52 updates
@@ -251,9 +262,9 @@ export const ChangelogFlood = () => {
               const itemAppearFrame = PHASE1_START + i * PHASE1_ITEM_INTERVAL;
 
               const effectiveAppearFrame =
-                i < 7
+                i < 4
                   ? itemAppearFrame
-                  : PHASE2_START + (i - 7) * 4;
+                  : PHASE2_START + (i - 4) * 4;
 
               const itemEntrance = spring({
                 frame: Math.max(0, frame - effectiveAppearFrame),
@@ -293,6 +304,31 @@ export const ChangelogFlood = () => {
           />
         </div>
 
+        {/* "+38 more" footer */}
+        <div
+          style={{
+            padding: `12px ${CARD_PADDING}px 20px`,
+            display: "flex",
+            justifyContent: "center",
+            opacity: badgeOpacity,
+            transform: `scale(${badgeScale})`,
+          }}
+        >
+          <div
+            style={{
+              fontFamily: FONT,
+              fontSize: 30,
+              fontWeight: 600,
+              color: "#6B7280",
+              backgroundColor: "#F3F4F6",
+              padding: "14px 32px",
+              borderRadius: 24,
+              border: "1px solid #E5E7EB",
+            }}
+          >
+            + 38 more this month
+          </div>
+        </div>
       </div>
     </AbsoluteFill>
   );

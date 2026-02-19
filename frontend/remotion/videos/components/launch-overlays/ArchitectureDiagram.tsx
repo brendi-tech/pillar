@@ -10,8 +10,8 @@ import { FONT, MONO_FONT } from "./fonts";
 const ORANGE = "#FF6E00";
 const GREEN = "#34C759";
 
-export const ARCHITECTURE_DIMENSIONS = { width: 500, height: 700 };
-export const ARCHITECTURE_DURATION = 210;
+export const ARCHITECTURE_DIMENSIONS = { width: 700, height: 700 };
+export const ARCHITECTURE_DURATION = 240;
 
 const SERVER_START = 25;
 const SERVER_ITEMS_START = 38;

@@ -13,9 +13,13 @@ import uuid
 from collections.abc import AsyncGenerator
 from typing import Any
 
+from opentelemetry import trace, context as otel_context
+from opentelemetry.trace import StatusCode
+
 from apps.mcp.services.agent.error_types import is_tool_error
 from apps.mcp.services.agent.messages import get_fallback_message
 from apps.mcp.services.agent.session_logger import AgentSessionLogger
+from common.observability.tracing import get_tracer
 from apps.mcp.services.agent.streaming_events import (
     emit_search_complete,
     emit_search_start,
@@ -861,6 +865,19 @@ async def run_agentic_loop(
     all_thinking_text: str = ""  # Accumulated thinking text across all LLM turns for display
     current_assistant_message_id: str | None = assistant_message_id  # Pre-created by ask.py; enables UPDATE instead of INSERT
 
+    # OpenTelemetry: root span for the agentic loop
+    _tracer = get_tracer("pillar.agent")
+    _loop_span = _tracer.start_span(
+        "agentic_loop",
+        attributes={
+            "agent.question": question[:200],
+            "agent.session_id": session_id or "",
+            "agent.conversation_id": conversation_id or "",
+        },
+    )
+    _loop_ctx = trace.set_span_in_context(_loop_span)
+    _loop_token = otel_context.attach(_loop_ctx)
+
     # Initialize session logger for debugging
     run_id = str(uuid.uuid4())
     thread_id = session_id or str(uuid.uuid4())
@@ -991,6 +1008,7 @@ async def run_agentic_loop(
         session_logger.log_system_prompt(messages[0].get('content', ''))
 
     # Main agentic loop
+    _iter_span = None
     for iteration in range(MAX_AGENT_ITERATIONS):
         if cancel_event and cancel_event.is_set():
             # Log session cancelled
@@ -1000,7 +1018,15 @@ async def run_agentic_loop(
                 total_tokens_prompt=agent_context.token_budget.total_prompt_tokens if agent_context.token_budget else 0,
                 total_tokens_completion=agent_context.token_budget.total_completion_tokens if agent_context.token_budget else 0,
             )
+            _loop_span.set_attribute("agent.status", "CANCELLED")
             break
+
+        # OTel: span per iteration
+        _iter_span = _tracer.start_span(
+            f"agentic_loop.iteration",
+            context=_loop_ctx,
+            attributes={"agent.iteration": iteration + 1},
+        )
 
         logger.info(f"[AgenticLoop] Iteration {iteration + 1}/{MAX_AGENT_ITERATIONS}")
 
@@ -1026,6 +1052,11 @@ async def run_agentic_loop(
 
         # Build action tools from registered actions for this iteration
         action_tools = agent_context.get_action_tools()
+
+        _llm_span = _tracer.start_span(
+            "llm.tool_decision",
+            attributes={"agent.iteration": iteration + 1},
+        )
 
         async for event in agent_decide_tool_native(
             service=service,
@@ -1057,6 +1088,14 @@ async def run_agentic_loop(
                 tool_calls.append(event)
                 # Don't break - collect all tool decisions for parallel support
 
+        # End the LLM decision span
+        if tool_calls:
+            _llm_span.set_attribute("llm.tool_calls", json.dumps(
+                [{"tool": tc.get("tool"), "id": tc.get("tool_call_id", "")} for tc in tool_calls],
+                default=str,
+            ))
+        _llm_span.end()
+
         # Determine if the model responded directly (no tool calls, has content)
         final_content = ''.join(content_tokens)
         if not tool_calls and final_content:
@@ -1086,6 +1125,16 @@ async def run_agentic_loop(
                 total_tokens_prompt=agent_context.token_budget.total_prompt_tokens if agent_context.token_budget else 0,
                 total_tokens_completion=agent_context.token_budget.total_completion_tokens if agent_context.token_budget else 0,
             )
+
+            # End iteration + loop spans before returning
+            if _iter_span:
+                _iter_span.set_attribute("agent.direct_response", True)
+                _iter_span.end()
+            _loop_span.set_attribute("agent.status", "SUCCESS")
+            _loop_span.set_attribute("agent.iterations", iteration + 1)
+            _loop_span.set_attribute("agent.duration_ms", int((time.time() - start_time) * 1000))
+            _loop_span.end()
+            otel_context.detach(_loop_token)
 
             # Final state checkpoint so flush picks up everything
             yield _build_state_checkpoint(messages, turn_start_idx, display_trace, agent_context, model_name)
@@ -1253,6 +1302,11 @@ async def run_agentic_loop(
             search_id = search_event["data"]["id"]
             yield search_event
 
+            _tool_span = _tracer.start_span(
+                "tool.search",
+                attributes={"tool.query": query[:200], "tool.limit": limit},
+            )
+
             tool_start = time.time()
             results = await tool_executor.execute_search(query, limit)
             
@@ -1287,10 +1341,16 @@ async def run_agentic_loop(
                             })
                             result["citation_num"] = citation_num
 
+            _search_duration_ms = int((time.time() - tool_start) * 1000)
+            _tool_span.set_attribute("tool.duration_ms", _search_duration_ms)
+            _tool_span.set_attribute("tool.actions_count", len(actions))
+            _tool_span.set_attribute("tool.knowledge_count", len(knowledge))
+            _tool_span.end()
+
             # Log tool execution
             session_logger.log_tool_execution(
                 tool="search",
-                duration_ms=int((time.time() - tool_start) * 1000),
+                duration_ms=_search_duration_ms,
                 results=results,
                 results_count=len(actions) + len(knowledge),
             )
@@ -1371,18 +1431,28 @@ async def run_agentic_loop(
             tool_event = emit_tool_call_start("get_article", arguments)
             tool_id = tool_event["data"]["id"]
             yield tool_event
+
+            _tool_span = _tracer.start_span(
+                "tool.get_article",
+                attributes={"tool.item_id": item_id},
+            )
             
             tool_start = time.time()
             result = await tool_executor.execute_get_article(item_id)
+
+            _article_duration_ms = int((time.time() - tool_start) * 1000)
+            is_success = "error" not in result
+            _tool_span.set_attribute("tool.duration_ms", _article_duration_ms)
+            _tool_span.set_attribute("tool.success", is_success)
+            _tool_span.end()
             
             session_logger.log_tool_execution(
                 tool="get_article",
-                duration_ms=int((time.time() - tool_start) * 1000),
+                duration_ms=_article_duration_ms,
                 results=result,
-                results_count=1 if "error" not in result else 0,
+                results_count=1 if is_success else 0,
             )
             
-            is_success = "error" not in result
             if not is_success:
                 result_content = f"Error: {result['error']}"
             else:
@@ -1454,6 +1524,11 @@ async def run_agentic_loop(
             # Log action sent
             session_logger.log_query_action_sent(action_name, parameters)
 
+            _qa_span = _tracer.start_span(
+                "query_action.round_trip",
+                attributes={"query_action.name": action_name, "query_action.tool_call_id": tool_call_id or ""},
+            )
+
             # Wait for result from client
             from apps.mcp.services.agent.helpers import wait_for_query_result
 
@@ -1467,9 +1542,14 @@ async def run_agentic_loop(
             )
 
             wait_duration_ms = int((time.time() - wait_start) * 1000)
+            _qa_span.set_attribute("query_action.wait_ms", wait_duration_ms)
 
             if result is None:
                 # Timeout
+                _qa_span.set_attribute("query_action.result", "timeout")
+                _qa_span.set_status(StatusCode.ERROR, "Timeout waiting for client result")
+                _qa_span.end()
+
                 session_logger.log_query_timeout(action_name, 60.0)
                 display_name = format_tool_name_for_display(action_name)
                 display_trace.append({
@@ -1502,6 +1582,9 @@ async def run_agentic_loop(
                     yield emit_thinking_done(thinking_id)
             else:
                 # Got result
+                _qa_span.set_attribute("query_action.result", "received")
+                _qa_span.end()
+
                 session_logger.log_query_result_received(
                     wait_duration_ms=wait_duration_ms,
                     result=result,
@@ -1932,6 +2015,9 @@ async def run_agentic_loop(
                 yield emit_thinking_done(thinking_id)
 
         # End of iteration -- checkpoint state for periodic flush
+        if _iter_span:
+            _iter_span.end()
+            _iter_span = None
         yield _build_state_checkpoint(messages, turn_start_idx, display_trace, agent_context, model_name)
 
     # Max iterations reached - generate fallback response
@@ -1989,6 +2075,13 @@ async def run_agentic_loop(
         total_tokens_prompt=agent_context.token_budget.total_prompt_tokens if agent_context.token_budget else 0,
         total_tokens_completion=agent_context.token_budget.total_completion_tokens if agent_context.token_budget else 0,
     )
+
+    # End the loop span
+    _loop_span.set_attribute("agent.status", "MAX_ITERATIONS")
+    _loop_span.set_attribute("agent.iterations", MAX_AGENT_ITERATIONS)
+    _loop_span.set_attribute("agent.duration_ms", int((time.time() - start_time) * 1000))
+    _loop_span.end()
+    otel_context.detach(_loop_token)
 
     # Final state checkpoint so flush picks up everything
     yield _build_state_checkpoint(messages, turn_start_idx, display_trace, agent_context, model_name)

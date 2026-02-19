@@ -98,6 +98,17 @@ dependencies = [
     "ag-ui-protocol>=0.1.10",
     "pytest-xdist>=3.8.0",
     "uuid-utils>=0.14.0",
+    # OpenTelemetry (distributed tracing)
+    "opentelemetry-api>=1.26.0",
+    "opentelemetry-sdk>=1.26.0",
+    "opentelemetry-instrumentation-django>=0.47b0",
+    "opentelemetry-instrumentation-asgi>=0.47b0",
+    "opentelemetry-instrumentation-psycopg>=0.47b0",
+    "opentelemetry-instrumentation-redis>=0.47b0",
+    "opentelemetry-instrumentation-requests>=0.47b0",
+    "opentelemetry-exporter-gcp-trace>=1.6.0",
+    "opentelemetry-resourcedetector-gcp>=1.6.0",
+    "opentelemetry-exporter-otlp-proto-http>=1.26.0",
 ]
 
 [build-system]

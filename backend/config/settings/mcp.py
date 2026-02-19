@@ -41,6 +41,10 @@ REST_FRAMEWORK['DEFAULT_RENDERER_CLASSES'] = [
 # ASGI application
 ASGI_APPLICATION = 'config.asgi_mcp.application'
 
+# OpenTelemetry tracing (controlled by ENABLE_TRACING env var)
+from common.observability.tracing import setup_tracing as _setup_tracing  # noqa: E402
+_setup_tracing(project_id=os.environ.get("GCP_PROJECT_ID"))
+
 print(f"🔌 Running MCP server in development mode on {ROOT_URLCONF}")
 
 

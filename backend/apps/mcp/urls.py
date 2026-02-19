@@ -4,11 +4,14 @@ URL configuration for MCP app.
 Copyright (C) 2025 Pillar Team
 """
 from django.urls import path
-from apps.mcp.views import streamable_http, health, image_upload, identify, conversation_history, session_resume
+from apps.mcp.views import streamable_http, health, image_upload, identify, conversation_history, session_resume, telemetry
 
 urlpatterns = [
     # Main MCP endpoint - handles both JSON-RPC and SSE streaming
     path('', streamable_http.streamable_http, name='mcp_streamable_http'),
+
+    # OTLP trace proxy - accepts browser SDK spans and forwards to Cloud Trace
+    path('telemetry/v1/traces', telemetry.otlp_traces_proxy, name='mcp_otlp_traces'),
 
     # Health check endpoints
     path('health/', health.health, name='mcp_health'),

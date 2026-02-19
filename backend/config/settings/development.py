@@ -49,6 +49,9 @@ CORS_ALLOW_HEADERS = [
     # MCP headers
     'mcp-session-id',
     'x-help-center-id',
+    # W3C Trace Context
+    'traceparent',
+    'tracestate',
 ]
 
 # CSRF - Trust localhost origins in development

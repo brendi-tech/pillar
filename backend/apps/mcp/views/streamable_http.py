@@ -17,9 +17,17 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from asgiref.sync import sync_to_async
 
+from opentelemetry import trace, context as otel_context
+from opentelemetry.trace import StatusCode
+
 from apps.mcp.services.jsonrpc_handler import JSONRPCHandler, JSONRPCError
 from apps.mcp.services.mcp_server import MCPServer
 from apps.mcp.services.mcp_server.utils import get_effective_language
+from common.observability.tracing import (
+    get_tracer,
+    extract_context_from_request,
+    is_tracing_enabled,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -275,7 +283,7 @@ def set_session_id(response, session_id: Optional[str]):
     return response
 
 
-async def stream_event_generator(mcp_server: MCPServer, request_data: dict, session_id: Optional[str] = None, request=None):
+async def stream_event_generator(mcp_server: MCPServer, request_data: dict, session_id: Optional[str] = None, request=None, otel_ctx=None):
     """
     Generate SSE events for streaming AI responses using JSON-RPC 2.0 format.
 
@@ -290,6 +298,7 @@ async def stream_event_generator(mcp_server: MCPServer, request_data: dict, sess
         request_data: Parsed JSON-RPC request
         session_id: Optional MCP session ID for stateful interactions
         request: Django request object (ASGIRequest) for disconnect detection
+        otel_ctx: OpenTelemetry context for trace propagation into the async generator
 
     Yields:
         SSE-formatted event strings with JSON-RPC messages
@@ -398,6 +407,11 @@ async def stream_event_generator(mcp_server: MCPServer, request_data: dict, sess
                     f"[Streamable HTTP] Stream {stream_id} disconnect detected via ASGI"
                 )
             disconnect_monitor_task = asyncio.create_task(_monitor_disconnect())
+
+    # Attach OTel context so child spans created inside the generator are linked
+    _otel_token = None
+    if otel_ctx is not None:
+        _otel_token = otel_context.attach(otel_ctx)
 
     try:
         # Stream tool execution
@@ -808,6 +822,9 @@ async def stream_event_generator(mcp_server: MCPServer, request_data: dict, sess
         # Always cleanup stream from registry
         stream_registry.cleanup(stream_id)
         logger.debug(f"[Streamable HTTP] Stream {stream_id} cleaned up from registry")
+        # Detach OTel context
+        if _otel_token is not None:
+            otel_context.detach(_otel_token)
 
 
 @csrf_exempt
@@ -856,6 +873,10 @@ async def streamable_http(request):
     # Extract session ID from headers
     session_id = get_session_id(request)
 
+    # Extract W3C trace context from incoming request (links browser → server spans)
+    trace_ctx = extract_context_from_request(request)
+    tracer = get_tracer("pillar.mcp")
+
     # Parse JSON body
     try:
         request_data = json.loads(request.body)
@@ -902,9 +923,62 @@ async def streamable_http(request):
     # Check method - only tools/call supports streaming
     method = request_data.get('method')
 
+    # Build common span attributes
+    span_attrs = {
+        "rpc.system": "jsonrpc",
+        "rpc.method": method or "unknown",
+        "mcp.session_id": session_id or "",
+        "mcp.product_id": str(product.id) if product else "",
+        "mcp.streaming": wants_stream and method == "tools/call",
+    }
+
     if wants_stream and method == 'tools/call':
-        # Return SSE stream
-        logger.info(f"[Streamable HTTP] Starting SSE stream for {method} | request_id: {request_data.get('id')}")
+        with tracer.start_as_current_span(
+            "mcp.request",
+            context=trace_ctx,
+            attributes=span_attrs,
+        ) as span:
+            # Return SSE stream
+            logger.info(f"[Streamable HTTP] Starting SSE stream for {method} | request_id: {request_data.get('id')}")
+
+            tool_name = (params.get('name') or "") if isinstance(params, dict) else ""
+            span.set_attribute("mcp.tool_name", tool_name)
+
+            # Determine effective language for AI responses
+            effective_language = get_effective_language(request, product)
+
+            # Initialize MCP server with product context
+            mcp_server = MCPServer(
+                help_center_config=product,
+                organization=organization,
+                request=request,
+                language=effective_language
+            )
+
+            # Capture the span context so the async generator can create child spans
+            stream_span_ctx = otel_context.get_current()
+
+            response = StreamingHttpResponse(
+                stream_event_generator(
+                    mcp_server, request_data, session_id,
+                    request=request, otel_ctx=stream_span_ctx,
+                ),
+                content_type='text/event-stream; charset=utf-8'
+            )
+            response['Cache-Control'] = 'no-cache, no-store, must-revalidate, no-transform'
+            response['X-Accel-Buffering'] = 'no'
+            response['Connection'] = 'keep-alive'
+            response._has_been_logged = True
+            response = set_session_id(response, session_id)
+            return add_cors_headers(response, request)
+
+    # Standard JSON-RPC request
+    with tracer.start_as_current_span(
+        "mcp.request",
+        context=trace_ctx,
+        attributes=span_attrs,
+    ) as span:
+        logger.debug(f"[Streamable HTTP] Processing {method} | product: {product.id if product else 'None'}")
 
         # Determine effective language for AI responses
         effective_language = get_effective_language(request, product)
@@ -917,80 +991,55 @@ async def streamable_http(request):
             language=effective_language
         )
 
-        response = StreamingHttpResponse(
-            stream_event_generator(mcp_server, request_data, session_id, request=request),
-            content_type='text/event-stream; charset=utf-8'
-        )
-        response['Cache-Control'] = 'no-cache, no-store, must-revalidate, no-transform'
-        response['X-Accel-Buffering'] = 'no'  # Disable nginx buffering
-        response['Connection'] = 'keep-alive'
-        response._has_been_logged = True
+        # Initialize JSON-RPC handler
+        handler = JSONRPCHandler()
+
+        # Register MCP methods
+        handler.register('initialize', mcp_server.initialize)
+        handler.register('notifications/initialized', mcp_server.notifications_initialized)
+        handler.register('ping', mcp_server.ping)
+        handler.register('tools/list', mcp_server.tools_list)
+        handler.register('tools/call', mcp_server.tools_call)
+        handler.register('resources/list', mcp_server.resources_list)
+        handler.register('resources/read', mcp_server.resources_read)
+        handler.register('prompts/list', mcp_server.prompts_list)
+        handler.register('prompts/get', mcp_server.prompts_get)
+
+        # Query Action result handler (for actions with returns_data=true)
+        handler.register('action/result', handle_action_result)
+
+        # NOTE: step/result handler removed - execute_step superseded by action_request
+
+        # Stream cancellation handler (for Stop button)
+        handler.register('notifications/cancel', handle_cancel_notification)
+
+        # Client log handlers (for SDK console log forwarding)
+        handler.register('client/log', handle_client_log)
+        handler.register('client/log-batch', handle_client_log_batch)
+
+        # Handle request
+        context = {
+            'help_center_config': product,
+            'organization': organization,
+            'request': request,
+            'session_id': session_id
+        }
+
+        # Handle request (handler is now async)
+        response_data = await handler.handle_request(request_data, context)
+        logger.debug(f"[Streamable HTTP] {method} completed | size: {len(str(response_data)) if response_data else 0} bytes")
+
+        # If response_data is None, this was a notification - return 200 OK with empty response
+        if response_data is None:
+            response = JsonResponse({}, status=200)
+            response = set_session_id(response, session_id)
+            return add_cors_headers(response, request)
+
+        # Check if pretty printing is requested
+        pretty = request.GET.get('pretty', '').lower() in ('true', '1', 'yes')
+        json_dumps_params = {'indent': 2} if pretty else {}
+
+        # Convert to Django response and add headers
+        response = handler.create_django_response(response_data, json_dumps_params=json_dumps_params)
         response = set_session_id(response, session_id)
         return add_cors_headers(response, request)
-
-    # Standard JSON-RPC request
-    logger.debug(f"[Streamable HTTP] Processing {method} | product: {product.id if product else 'None'}")
-
-    # Determine effective language for AI responses
-    effective_language = get_effective_language(request, product)
-
-    # Initialize MCP server with product context
-    mcp_server = MCPServer(
-        help_center_config=product,
-        organization=organization,
-        request=request,
-        language=effective_language
-    )
-
-    # Initialize JSON-RPC handler
-    handler = JSONRPCHandler()
-
-    # Register MCP methods
-    handler.register('initialize', mcp_server.initialize)
-    handler.register('notifications/initialized', mcp_server.notifications_initialized)
-    handler.register('ping', mcp_server.ping)
-    handler.register('tools/list', mcp_server.tools_list)
-    handler.register('tools/call', mcp_server.tools_call)
-    handler.register('resources/list', mcp_server.resources_list)
-    handler.register('resources/read', mcp_server.resources_read)
-    handler.register('prompts/list', mcp_server.prompts_list)
-    handler.register('prompts/get', mcp_server.prompts_get)
-    
-    # Query Action result handler (for actions with returns_data=true)
-    handler.register('action/result', handle_action_result)
-    
-    # NOTE: step/result handler removed - execute_step superseded by action_request
-    
-    # Stream cancellation handler (for Stop button)
-    handler.register('notifications/cancel', handle_cancel_notification)
-
-    # Client log handlers (for SDK console log forwarding)
-    handler.register('client/log', handle_client_log)
-    handler.register('client/log-batch', handle_client_log_batch)
-
-    # Handle request
-    context = {
-        'help_center_config': product,
-        'organization': organization,
-        'request': request,
-        'session_id': session_id
-    }
-
-    # Handle request (handler is now async)
-    response_data = await handler.handle_request(request_data, context)
-    logger.debug(f"[Streamable HTTP] {method} completed | size: {len(str(response_data)) if response_data else 0} bytes")
-
-    # If response_data is None, this was a notification - return 200 OK with empty response
-    if response_data is None:
-        response = JsonResponse({}, status=200)
-        response = set_session_id(response, session_id)
-        return add_cors_headers(response, request)
-
-    # Check if pretty printing is requested
-    pretty = request.GET.get('pretty', '').lower() in ('true', '1', 'yes')
-    json_dumps_params = {'indent': 2} if pretty else {}
-
-    # Convert to Django response and add headers
-    response = handler.create_django_response(response_data, json_dumps_params=json_dumps_params)
-    response = set_session_id(response, session_id)
-    return add_cors_headers(response, request)
