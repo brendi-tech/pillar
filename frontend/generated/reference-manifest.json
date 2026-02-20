@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-02-11T20:09:00.619Z",
+  "generatedAt": "2026-02-20T21:16:01.420Z",
   "pages": [
     {
       "slug": "react/PillarProvider",
@@ -46,8 +46,8 @@
           "name": "domScanning",
           "type": "boolean",
           "required": false,
-          "default": "false",
-          "description": "Enable DOM scanning to send page context with messages.\nWhen enabled, interactable elements and text content are captured and sent to the LLM."
+          "description": "Enable DOM scanning to send page context with messages.",
+          "deprecated": true
         },
         {
           "name": "children",
@@ -204,7 +204,7 @@
           "name": "onConfirm",
           "type": "(modifiedData?: Record<string, unknown>) => void",
           "required": true,
-          "description": "Called when user confirms the action"
+          "description": "Called when user confirms the action.\nWARNING: Data passed here flows through the SDK pipeline (telemetry,\nagent context, logs). Never include secrets, tokens, or PII."
         },
         {
           "name": "onCancel",
@@ -219,7 +219,7 @@
           "description": "Called to report state changes (loading, success, error)"
         }
       ],
-      "typeDefinition": "interface CardComponentProps<T = Record<string, unknown>> {\n  /** Data extracted by the AI for this action */\n  data: T;\n  /** Called when user confirms the action */\n  onConfirm: (modifiedData?: Record<string, unknown>) => void;\n  /** Called when user cancels the action */\n  onCancel: () => void;\n  /** Called to report state changes (loading, success, error) */\n  onStateChange?: (\n    state: \"loading\" | \"success\" | \"error\",\n    message?: string\n  ) => void;\n}",
+      "typeDefinition": "interface CardComponentProps<T = Record<string, unknown>> {\n  /** Data extracted by the AI for this action */\n  data: T;\n  /**\n   * Called when user confirms the action.\n   * WARNING: Data passed here flows through the SDK pipeline (telemetry,\n   * agent context, logs). Never include secrets, tokens, or PII.\n   */\n  onConfirm: (modifiedData?: Record<string, unknown>) => void;\n  /** Called when user cancels the action */\n  onCancel: () => void;\n  /** Called to report state changes (loading, success, error) */\n  onStateChange?: (\n    state: \"loading\" | \"success\" | \"error\",\n    message?: string\n  ) => void;\n}",
       "relatedTypes": []
     },
     {
@@ -370,25 +370,29 @@
               "name": "enabled",
               "type": "boolean",
               "required": false,
-              "description": ""
+              "default": "true",
+              "description": "Whether the panel is enabled."
             },
             {
               "name": "position",
               "type": "PanelPosition",
               "required": false,
-              "description": ""
+              "default": "'right'",
+              "description": "Which side of the screen the panel appears on."
             },
             {
               "name": "mode",
               "type": "PanelMode",
               "required": false,
-              "description": "Panel mode: 'overlay' slides over content, 'push' shifts content aside"
+              "default": "'push'",
+              "description": "Panel mode: 'overlay' slides over content, 'push' shifts content aside."
             },
             {
               "name": "width",
               "type": "number",
               "required": false,
-              "description": ""
+              "default": "380",
+              "description": "Panel width in pixels."
             },
             {
               "name": "container",
@@ -423,20 +427,34 @@
               "required": false,
               "default": "500",
               "description": "Viewport width below which the panel takes full screen width."
+            },
+            {
+              "name": "initialOpen",
+              "type": "boolean",
+              "required": false,
+              "default": "false",
+              "description": "Whether to open the panel automatically on initialization.\nTakes priority over localStorage persisted state."
+            },
+            {
+              "name": "resizable",
+              "type": "boolean",
+              "required": false,
+              "default": "true",
+              "description": "Whether the panel can be resized by dragging its edge.\nA drag handle appears on the content-facing edge of the panel when enabled.\nThe resized width is persisted to localStorage."
             }
           ],
-          "typeDefinition": "interface PanelConfig {\n  enabled?: boolean;\n  position?: PanelPosition;\n  /** Panel mode: 'overlay' slides over content, 'push' shifts content aside */\n  mode?: PanelMode;\n  width?: number;\n  /** \n   * Custom mount point for the panel.\n   * - CSS selector string (e.g., '#pillar-panel')\n   * - HTMLElement reference\n   * - 'manual' for React component-based mounting\n   * - undefined (default) mounts to document.body\n   */\n  container?: string | HTMLElement | 'manual';\n  /**\n   * Whether to use Shadow DOM for style isolation.\n   * - false (default): Panel renders in regular DOM, inherits host app CSS.\n   *   Custom cards can use the host app's design system (Tailwind, etc.)\n   * - true: Panel renders in Shadow DOM, fully isolated from host CSS.\n   *   Use this if you need style isolation on third-party sites.\n   * @default false\n   */\n  useShadowDOM?: boolean;\n  /**\n   * Viewport width below which the panel switches from 'push' mode to 'hover' mode.\n   * In hover mode, the panel floats over content instead of pushing it aside.\n   * - number: The breakpoint in pixels (default: 1200)\n   * - false: Disable responsive behavior, always use push mode\n   * @default 1200\n   */\n  hoverBreakpoint?: number | false;\n  /**\n   * Whether to show a backdrop overlay when the panel is in hover mode.\n   * Only applies when viewport is below hoverBreakpoint.\n   * @default true\n   */\n  hoverBackdrop?: boolean;\n  /**\n   * Viewport width below which the panel takes full screen width.\n   * @default 500\n   */\n  fullWidthBreakpoint?: number;\n}"
+          "typeDefinition": "interface PanelConfig {\n  /**\n   * Whether the panel is enabled.\n   * @default true\n   */\n  enabled?: boolean;\n  /**\n   * Which side of the screen the panel appears on.\n   * @default 'right'\n   */\n  position?: PanelPosition;\n  /**\n   * Panel mode: 'overlay' slides over content, 'push' shifts content aside.\n   * @default 'push'\n   */\n  mode?: PanelMode;\n  /**\n   * Panel width in pixels.\n   * @default 380\n   */\n  width?: number;\n  /** \n   * Custom mount point for the panel.\n   * - CSS selector string (e.g., '#pillar-panel')\n   * - HTMLElement reference\n   * - 'manual' for React component-based mounting\n   * - undefined (default) mounts to document.body\n   */\n  container?: string | HTMLElement | 'manual';\n  /**\n   * Whether to use Shadow DOM for style isolation.\n   * - false (default): Panel renders in regular DOM, inherits host app CSS.\n   *   Custom cards can use the host app's design system (Tailwind, etc.)\n   * - true: Panel renders in Shadow DOM, fully isolated from host CSS.\n   *   Use this if you need style isolation on third-party sites.\n   * @default false\n   */\n  useShadowDOM?: boolean;\n  /**\n   * Viewport width below which the panel switches from 'push' mode to 'hover' mode.\n   * In hover mode, the panel floats over content instead of pushing it aside.\n   * - number: The breakpoint in pixels (default: 1200)\n   * - false: Disable responsive behavior, always use push mode\n   * @default 1200\n   */\n  hoverBreakpoint?: number | false;\n  /**\n   * Whether to show a backdrop overlay when the panel is in hover mode.\n   * Only applies when viewport is below hoverBreakpoint.\n   * @default true\n   */\n  hoverBackdrop?: boolean;\n  /**\n   * Viewport width below which the panel takes full screen width.\n   * @default 500\n   */\n  fullWidthBreakpoint?: number;\n  /**\n   * Whether to open the panel automatically on initialization.\n   * Takes priority over localStorage persisted state.\n   * @default false\n   */\n  initialOpen?: boolean;\n  /**\n   * Whether the panel can be resized by dragging its edge.\n   * A drag handle appears on the content-facing edge of the panel when enabled.\n   * The resized width is persisted to localStorage.\n   * @default true\n   */\n  resizable?: boolean;\n}"
         },
         {
           "name": "PanelPosition",
           "category": "type-alias",
-          "description": "",
+          "description": "Which side of the screen the panel appears on.",
           "typeDefinition": "type PanelPosition = 'left' | 'right'"
         },
         {
           "name": "PanelMode",
           "category": "type-alias",
-          "description": "",
+          "description": "How the panel interacts with page content: 'overlay' floats over it, 'push' shifts it aside.",
           "typeDefinition": "type PanelMode = 'overlay' | 'push'"
         }
       ]
@@ -556,14 +574,20 @@
               "type": "string",
               "required": false,
               "description": "Border color for subtle/light borders"
+            },
+            {
+              "name": "outlineColor",
+              "type": "string",
+              "required": false,
+              "description": "Outline/focus ring color for interactive elements"
             }
           ],
-          "typeDefinition": "interface ThemeColors {\n  /** Primary brand color (buttons, links, accents) */\n  primary?: string;\n  /** Primary color on hover state */\n  primaryHover?: string;\n  /** Main background color */\n  background?: string;\n  /** Secondary/subtle background (inputs, cards) */\n  backgroundSecondary?: string;\n  /** Primary text color */\n  text?: string;\n  /** Muted/secondary text color */\n  textMuted?: string;\n  /** Border color */\n  border?: string;\n  /** Border color for subtle/light borders */\n  borderLight?: string;\n}"
+          "typeDefinition": "interface ThemeColors {\n  /** Primary brand color (buttons, links, accents) */\n  primary?: string;\n  /** Primary color on hover state */\n  primaryHover?: string;\n  /** Main background color */\n  background?: string;\n  /** Secondary/subtle background (inputs, cards) */\n  backgroundSecondary?: string;\n  /** Primary text color */\n  text?: string;\n  /** Muted/secondary text color */\n  textMuted?: string;\n  /** Border color */\n  border?: string;\n  /** Border color for subtle/light borders */\n  borderLight?: string;\n  /** Outline/focus ring color for interactive elements */\n  outlineColor?: string;\n}"
         },
         {
           "name": "ThemeMode",
           "category": "type-alias",
-          "description": "",
+          "description": "Color mode for the panel theme. 'auto' follows the system preference.",
           "typeDefinition": "type ThemeMode = 'light' | 'dark' | 'auto'"
         }
       ]
@@ -853,32 +877,30 @@
         {
           "name": "completeAction",
           "signature": "completeAction(actionName: string, success?: boolean, data?: Record<string, unknown>): Promise<void>",
-          "description": "Signal that an action has completed.\n\nFor simple actions, this emits the completion event.\nFor wizard actions (modals, multi-step flows), call this when the user\nfinishes the flow.",
+          "description": "",
           "parameters": [
             {
               "name": "actionName",
               "type": "string",
               "required": true,
-              "description": "- The action identifier"
+              "description": ""
             },
             {
               "name": "success",
               "type": "boolean",
               "required": false,
-              "description": "- Whether the action completed successfully (default: true)"
+              "description": ""
             },
             {
               "name": "data",
               "type": "Record<string, unknown>",
               "required": false,
-              "description": "- Optional result data"
+              "description": ""
             }
           ],
           "returnType": "Promise<void>",
           "isStatic": false,
-          "examples": [
-            "// In your wizard completion handler:\npillar.completeAction('add_source', true, { sourceId: source.id });"
-          ]
+          "examples": []
         }
       ],
       "properties": [],
@@ -971,181 +993,188 @@
               "name": "ready",
               "type": "void",
               "required": true,
-              "description": ""
+              "description": "SDK is initialized and ready."
             },
             {
               "name": "error",
               "type": "Error",
               "required": true,
-              "description": ""
+              "description": "SDK encountered an error."
             },
             {
               "name": "\"panel:open\"",
               "type": "void",
               "required": true,
-              "description": ""
+              "description": "Panel was opened."
             },
             {
               "name": "\"panel:close\"",
               "type": "void",
               "required": true,
-              "description": ""
+              "description": "Panel was closed."
             },
             {
               "name": "\"panel:navigate\"",
               "type": "{ view: string; params?: Record<string, string> }",
               "required": true,
-              "description": ""
+              "description": "Panel navigated to a different view."
             },
             {
               "name": "\"article:view\"",
               "type": "{ articleSlug: string }",
               "required": true,
-              "description": ""
+              "description": "User viewed an article."
             },
             {
               "name": "\"search:query\"",
               "type": "{ query: string }",
               "required": true,
-              "description": ""
+              "description": "User performed a search."
             },
             {
               "name": "\"chat:message\"",
               "type": "{ message: string }",
               "required": true,
-              "description": ""
+              "description": "User sent a chat message."
             },
             {
               "name": "\"textSelection:shown\"",
               "type": "{ text: string }",
               "required": true,
-              "description": ""
+              "description": "Text selection popover was shown."
             },
             {
               "name": "\"textSelection:click\"",
               "type": "{ text: string }",
               "required": true,
-              "description": ""
+              "description": "User clicked the text selection popover."
             },
             {
               "name": "\"context:change\"",
               "type": "{ context: Context }",
               "required": true,
-              "description": ""
+              "description": "Context was updated."
             },
             {
               "name": "\"profile:change\"",
               "type": "{ profile: UserProfile }",
               "required": true,
-              "description": ""
+              "description": "User profile was updated."
             },
             {
               "name": "\"action:report\"",
               "type": "{ action: string; metadata?: Record<string, unknown> }",
               "required": true,
-              "description": ""
+              "description": "User action was reported."
             },
             {
               "name": "\"user:identified\"",
               "type": "{\n    userId: string;\n    profile?: {\n      name?: string;\n      email?: string;\n      metadata?: Record<string, unknown>;\n    };\n  }",
               "required": true,
-              "description": ""
+              "description": "User was identified."
             },
             {
               "name": "\"user:logout\"",
               "type": "Record<string, never>",
               "required": true,
-              "description": ""
+              "description": "User logged out."
+            },
+            {
+              "name": "\"tool:result\"",
+              "type": "{ toolName: string; result: unknown; toolCallId?: string }",
+              "required": true,
+              "description": "Query tool returned a result to the agent."
             },
             {
               "name": "\"action:result\"",
               "type": "{ actionName: string; result: unknown; toolCallId?: string }",
               "required": true,
-              "description": ""
+              "description": "",
+              "deprecated": true
             },
             {
               "name": "\"task:execute\"",
               "type": "TaskExecutePayload",
               "required": true,
-              "description": ""
+              "description": "AI-suggested task is being executed."
             },
             {
               "name": "\"task:complete\"",
               "type": "{\n    id?: string;\n    name: string;\n    success: boolean;\n    data?: Record<string, unknown>;\n  }",
               "required": true,
-              "description": ""
+              "description": "Task completed."
             },
             {
               "name": "\"workflow:start\"",
               "type": "Workflow",
               "required": true,
-              "description": ""
+              "description": "Multi-step workflow started."
             },
             {
               "name": "\"workflow:step:active\"",
               "type": "{ workflow: Workflow; step: WorkflowStep }",
               "required": true,
-              "description": ""
+              "description": "Workflow step became active."
             },
             {
               "name": "\"workflow:step:complete\"",
               "type": "{\n    workflow: Workflow;\n    step: WorkflowStep;\n    success: boolean;\n  }",
               "required": true,
-              "description": ""
+              "description": "Workflow step completed."
             },
             {
               "name": "\"workflow:step:skip\"",
               "type": "{ workflow: Workflow; step: WorkflowStep }",
               "required": true,
-              "description": ""
+              "description": "Workflow step was skipped."
             },
             {
               "name": "\"workflow:complete\"",
               "type": "Workflow",
               "required": true,
-              "description": ""
+              "description": "Workflow completed all steps."
             },
             {
               "name": "\"workflow:cancel\"",
               "type": "Workflow",
               "required": true,
-              "description": ""
+              "description": "Workflow was cancelled."
             },
             {
               "name": "\"theme:change\"",
               "type": "{ theme: ResolvedThemeConfig }",
               "required": true,
-              "description": ""
+              "description": "Theme was changed."
             },
             {
               "name": "\"textSelection:change\"",
               "type": "{ enabled: boolean }",
               "required": true,
-              "description": ""
+              "description": "Text selection feature was toggled."
             },
             {
               "name": "\"dom:scanned\"",
               "type": "CompactScanResult",
               "required": true,
-              "description": ""
+              "description": "DOM was scanned."
             },
             {
               "name": "\"domScanning:change\"",
               "type": "{ enabled: boolean }",
               "required": true,
-              "description": ""
+              "description": "DOM scanning feature was toggled."
             },
             {
               "name": "\"suggestions:updated\"",
               "type": "{\n    suggestions: Array<{ id: string; text: string }>;\n    route: string;\n  }",
               "required": true,
-              "description": ""
+              "description": "Page-aware suggestions were updated."
             },
             {
               "name": "\"sidebar:click\"",
               "type": "{ tabId: string; label: string }",
               "required": true,
-              "description": ""
+              "description": "Sidebar tab was clicked. Use to integrate external support systems."
             },
             {
               "name": "\"support:request\"",
@@ -1155,7 +1184,7 @@
               "deprecated": true
             }
           ],
-          "typeDefinition": "interface PillarEvents {\n  ready: void;\n  error: Error;\n  \"panel:open\": void;\n  \"panel:close\": void;\n  \"panel:navigate\": { view: string; params?: Record<string, string> };\n  \"article:view\": { articleSlug: string };\n  \"search:query\": { query: string };\n  \"chat:message\": { message: string };\n  \"textSelection:shown\": { text: string };\n  \"textSelection:click\": { text: string };\n  // Context events\n  \"context:change\": { context: Context };\n  \"profile:change\": { profile: UserProfile };\n  \"action:report\": { action: string; metadata?: Record<string, unknown> };\n\n  // User identity events\n  \"user:identified\": {\n    userId: string;\n    profile?: {\n      name?: string;\n      email?: string;\n      metadata?: Record<string, unknown>;\n    };\n  };\n  \"user:logout\": Record<string, never>;\n  // Query action events - for actions that return data to the agent\n  \"action:result\": { actionName: string; result: unknown; toolCallId?: string };\n  // Task events - for AI-suggested actions\n  \"task:execute\": TaskExecutePayload;\n  \"task:complete\": {\n    id?: string;\n    name: string;\n    success: boolean;\n    data?: Record<string, unknown>;\n  };\n\n  // Workflow events - for multi-step sequences\n  \"workflow:start\": Workflow;\n  \"workflow:step:active\": { workflow: Workflow; step: WorkflowStep };\n  \"workflow:step:complete\": {\n    workflow: Workflow;\n    step: WorkflowStep;\n    success: boolean;\n  };\n  \"workflow:step:skip\": { workflow: Workflow; step: WorkflowStep };\n  \"workflow:complete\": Workflow;\n  \"workflow:cancel\": Workflow;\n\n  // Theme events\n  \"theme:change\": { theme: ResolvedThemeConfig };\n\n  // Text selection feature toggle\n  \"textSelection:change\": { enabled: boolean };\n\n  // DOM scanning events\n  \"dom:scanned\": CompactScanResult;\n  \"domScanning:change\": { enabled: boolean };\n\n  // Suggestions events - for page-aware suggestion sorting\n  \"suggestions:updated\": {\n    suggestions: Array<{ id: string; text: string }>;\n    route: string;\n  };\n\n  // Sidebar tab click events - for triggering custom actions on non-assistant tabs\n  // Customers use this to integrate their own support systems (Intercom, Zendesk, etc.)\n  \"sidebar:click\": { tabId: string; label: string };\n\n  /** @deprecated Use 'sidebar:click' instead. Will be removed in next major version. */\n  \"support:request\": { tabId: string };\n}"
+          "typeDefinition": "interface PillarEvents {\n  /** SDK is initialized and ready. */\n  ready: void;\n  /** SDK encountered an error. */\n  error: Error;\n  /** Panel was opened. */\n  \"panel:open\": void;\n  /** Panel was closed. */\n  \"panel:close\": void;\n  /** Panel navigated to a different view. */\n  \"panel:navigate\": { view: string; params?: Record<string, string> };\n  /** User viewed an article. */\n  \"article:view\": { articleSlug: string };\n  /** User performed a search. */\n  \"search:query\": { query: string };\n  /** User sent a chat message. */\n  \"chat:message\": { message: string };\n  /** Text selection popover was shown. */\n  \"textSelection:shown\": { text: string };\n  /** User clicked the text selection popover. */\n  \"textSelection:click\": { text: string };\n  /** Context was updated. */\n  \"context:change\": { context: Context };\n  /** User profile was updated. */\n  \"profile:change\": { profile: UserProfile };\n  /** User action was reported. */\n  \"action:report\": { action: string; metadata?: Record<string, unknown> };\n\n  /** User was identified. */\n  \"user:identified\": {\n    userId: string;\n    profile?: {\n      name?: string;\n      email?: string;\n      metadata?: Record<string, unknown>;\n    };\n  };\n  /** User logged out. */\n  \"user:logout\": Record<string, never>;\n  /** Query tool returned a result to the agent. */\n  \"tool:result\": { toolName: string; result: unknown; toolCallId?: string };\n  /** @deprecated Use tool:result instead */\n  \"action:result\": { actionName: string; result: unknown; toolCallId?: string };\n  /** AI-suggested task is being executed. */\n  \"task:execute\": TaskExecutePayload;\n  /** Task completed. */\n  \"task:complete\": {\n    id?: string;\n    name: string;\n    success: boolean;\n    data?: Record<string, unknown>;\n  };\n\n  /** Multi-step workflow started. */\n  \"workflow:start\": Workflow;\n  /** Workflow step became active. */\n  \"workflow:step:active\": { workflow: Workflow; step: WorkflowStep };\n  /** Workflow step completed. */\n  \"workflow:step:complete\": {\n    workflow: Workflow;\n    step: WorkflowStep;\n    success: boolean;\n  };\n  /** Workflow step was skipped. */\n  \"workflow:step:skip\": { workflow: Workflow; step: WorkflowStep };\n  /** Workflow completed all steps. */\n  \"workflow:complete\": Workflow;\n  /** Workflow was cancelled. */\n  \"workflow:cancel\": Workflow;\n\n  /** Theme was changed. */\n  \"theme:change\": { theme: ResolvedThemeConfig };\n\n  /** Text selection feature was toggled. */\n  \"textSelection:change\": { enabled: boolean };\n\n  /** DOM was scanned. */\n  \"dom:scanned\": CompactScanResult;\n  /** DOM scanning feature was toggled. */\n  \"domScanning:change\": { enabled: boolean };\n\n  /** Page-aware suggestions were updated. */\n  \"suggestions:updated\": {\n    suggestions: Array<{ id: string; text: string }>;\n    route: string;\n  };\n\n  /** Sidebar tab was clicked. Use to integrate external support systems. */\n  \"sidebar:click\": { tabId: string; label: string };\n\n  /** @deprecated Use 'sidebar:click' instead. Will be removed in next major version. */\n  \"support:request\": { tabId: string };\n}"
         }
       ]
     },
@@ -1203,7 +1232,7 @@
               "name": "onConfirm",
               "type": "(modifiedData?: Record<string, unknown>) => void",
               "required": true,
-              "description": "Called when user confirms the action. Pass modified data if needed."
+              "description": "Called when user confirms the action. Pass modified data if needed.\nWARNING: Data passed here flows through the SDK pipeline (telemetry,\nagent context, logs). Never include secrets, tokens, or PII."
             },
             {
               "name": "onCancel",
@@ -1218,7 +1247,7 @@
               "description": "Called to report card state changes (for analytics/confirmation)"
             }
           ],
-          "typeDefinition": "interface CardCallbacks {\n  /** Called when user confirms the action. Pass modified data if needed. */\n  onConfirm: (modifiedData?: Record<string, unknown>) => void;\n  /** Called when user cancels the action */\n  onCancel: () => void;\n  /** Called to report card state changes (for analytics/confirmation) */\n  onStateChange?: (\n    state: \"loading\" | \"success\" | \"error\",\n    message?: string\n  ) => void;\n}"
+          "typeDefinition": "interface CardCallbacks {\n  /**\n   * Called when user confirms the action. Pass modified data if needed.\n   * WARNING: Data passed here flows through the SDK pipeline (telemetry,\n   * agent context, logs). Never include secrets, tokens, or PII.\n   */\n  onConfirm: (modifiedData?: Record<string, unknown>) => void;\n  /** Called when user cancels the action */\n  onCancel: () => void;\n  /** Called to report card state changes (for analytics/confirmation) */\n  onStateChange?: (\n    state: \"loading\" | \"success\" | \"error\",\n    message?: string\n  ) => void;\n}"
         },
         {
           "name": "CardFieldSchema",
@@ -1362,21 +1391,19 @@
         },
         {
           "name": "setDOMScanningEnabled",
-          "signature": "setDOMScanningEnabled(enabled: boolean): void",
+          "signature": "setDOMScanningEnabled(_enabled: boolean): void",
           "description": "Enable or disable DOM scanning at runtime.",
           "parameters": [
             {
-              "name": "enabled",
+              "name": "_enabled",
               "type": "boolean",
               "required": true,
-              "description": "- Whether to enable DOM scanning"
+              "description": "- Ignored, DOM scanning cannot be enabled"
             }
           ],
           "returnType": "void",
           "isStatic": false,
-          "examples": [
-            "// Enable DOM scanning\npillar.setDOMScanningEnabled(true);\n\n// Disable DOM scanning\npillar.setDOMScanningEnabled(false);"
-          ]
+          "examples": []
         }
       ],
       "properties": [],
@@ -1404,48 +1431,43 @@
         {
           "name": "DOMScanningConfig",
           "category": "type",
-          "description": "",
+          "description": "DOM scanning configuration.",
           "properties": [
             {
               "name": "enabled",
               "type": "boolean",
               "required": false,
-              "default": "false",
-              "description": "Whether DOM scanning is enabled.\nWhen enabled, page structure is captured and sent with messages."
+              "description": ""
             },
             {
               "name": "includeText",
               "type": "boolean",
               "required": false,
-              "default": "true",
-              "description": "Whether to include text content in the scan."
+              "description": ""
             },
             {
               "name": "maxDepth",
               "type": "number",
               "required": false,
-              "default": "20",
-              "description": "Maximum depth to traverse the DOM tree."
+              "description": ""
             },
             {
               "name": "visibleOnly",
               "type": "boolean",
               "required": false,
-              "default": "true",
-              "description": "Whether to only include visible elements."
+              "description": ""
             },
             {
               "name": "excludeSelector",
               "type": "string",
               "required": false,
-              "description": "CSS selector for elements to exclude from scanning."
+              "description": ""
             },
             {
               "name": "maxTextLength",
               "type": "number",
               "required": false,
-              "default": "500",
-              "description": "Maximum text length before truncation."
+              "description": ""
             },
             {
               "name": "interactionHighlight",
@@ -1454,7 +1476,7 @@
               "description": "Configuration for highlighting elements during AI interactions."
             }
           ],
-          "typeDefinition": "interface DOMScanningConfig {\n  /**\n   * Whether DOM scanning is enabled.\n   * When enabled, page structure is captured and sent with messages.\n   * @default false\n   */\n  enabled?: boolean;\n  /**\n   * Whether to include text content in the scan.\n   * @default true\n   */\n  includeText?: boolean;\n  /**\n   * Maximum depth to traverse the DOM tree.\n   * @default 20\n   */\n  maxDepth?: number;\n  /**\n   * Whether to only include visible elements.\n   * @default true\n   */\n  visibleOnly?: boolean;\n  /**\n   * CSS selector for elements to exclude from scanning.\n   * @example '.sidebar, .footer, [data-no-scan]'\n   */\n  excludeSelector?: string;\n  /**\n   * Maximum text length before truncation.\n   * @default 500\n   */\n  maxTextLength?: number;\n  /**\n   * Configuration for highlighting elements during AI interactions.\n   */\n  interactionHighlight?: InteractionHighlightConfig;\n}"
+          "typeDefinition": "interface DOMScanningConfig {\n  /** @internal DOM scanning is disabled */\n  enabled?: boolean;\n  /** @internal */\n  includeText?: boolean;\n  /** @internal */\n  maxDepth?: number;\n  /** @internal */\n  visibleOnly?: boolean;\n  /** @internal */\n  excludeSelector?: string;\n  /** @internal */\n  maxTextLength?: number;\n  /** Configuration for highlighting elements during AI interactions. */\n  interactionHighlight?: InteractionHighlightConfig;\n}"
         }
       ]
     },
@@ -1497,61 +1519,69 @@
           "name": "panel",
           "type": "PanelConfig",
           "required": false,
-          "description": ""
+          "description": "Panel layout and behavior settings."
         },
         {
           "name": "edgeTrigger",
           "type": "EdgeTriggerConfig",
           "required": false,
-          "description": ""
+          "description": "Edge trigger (sidebar tab that opens the panel)."
         },
         {
           "name": "mobileTrigger",
           "type": "MobileTriggerConfig",
           "required": false,
-          "description": ""
+          "description": "Mobile trigger (floating button on small screens)."
         },
         {
           "name": "urlParams",
           "type": "UrlParamsConfig",
           "required": false,
-          "description": ""
+          "description": "URL params for auto-opening the panel."
         },
         {
           "name": "textSelection",
           "type": "TextSelectionConfig",
           "required": false,
-          "description": ""
+          "description": "Text selection \"Ask AI\" popover."
         },
         {
           "name": "domScanning",
           "type": "DOMScanningConfig",
           "required": false,
-          "description": ""
+          "description": "DOM scanning for page context.",
+          "deprecated": true
         },
         {
           "name": "suggestions",
           "type": "SuggestionsConfig",
           "required": false,
-          "description": ""
+          "description": "Page-aware suggestions."
         },
         {
           "name": "sidebarTabs",
           "type": "SidebarTabConfig[]",
           "required": false,
-          "description": ""
+          "description": "Sidebar tabs configuration."
         },
         {
           "name": "apiBaseUrl",
           "type": "string",
           "required": false,
-          "description": ""
+          "description": "API base URL. Defaults to Pillar's production API."
+        },
+        {
+          "name": "tracing",
+          "type": "boolean",
+          "required": false,
+          "default": "false",
+          "description": "Enable OpenTelemetry tracing. Browser spans are exported to the server's\nCloud Trace project via the OTLP proxy endpoint. Also enabled when debug\nis true."
         },
         {
           "name": "theme",
           "type": "ThemeConfig",
           "required": false,
-          "description": ""
+          "description": "Theme customization."
         },
         {
           "name": "customCSS",
@@ -1563,16 +1593,16 @@
           "name": "onReady",
           "type": "() => void",
           "required": false,
-          "description": ""
+          "description": "Called when the SDK is initialized and ready."
         },
         {
           "name": "onError",
           "type": "(error: Error) => void",
           "required": false,
-          "description": ""
+          "description": "Called when the SDK encounters an error."
         }
       ],
-      "typeDefinition": "interface PillarConfig {\n  /**\n   * Your product key from the Pillar app.\n   * Get it at app.trypillar.com\n   */\n  productKey?: string;\n  \n  /**\n   * Platform identifier for code-first actions.\n   * Used to filter actions by deployment platform.\n   * @default 'web'\n   */\n  platform?: Platform;\n  \n  /**\n   * App version for code-first actions.\n   * Used to match actions to the correct deployment version.\n   * @example '1.2.3' or git commit SHA\n   */\n  version?: string;\n  \n  /**\n   * Enable debug mode for verbose logging and debug panel.\n   * When enabled:\n   * - All SDK events are logged to console\n   * - A debug panel shows real-time execution flow\n   * - Network requests/responses are captured\n   * @default false\n   */\n  debug?: boolean;\n  \n  // Panel settings\n  panel?: PanelConfig;\n  \n  // Edge trigger (sidebar tab that opens the panel)\n  edgeTrigger?: EdgeTriggerConfig;\n  \n  // Mobile trigger (floating button on small screens)\n  mobileTrigger?: MobileTriggerConfig;\n  \n  // URL params for auto-opening the panel\n  urlParams?: UrlParamsConfig;\n  \n  // Text selection \"Ask AI\" popover\n  textSelection?: TextSelectionConfig;\n  \n  // DOM scanning for page context\n  domScanning?: DOMScanningConfig;\n  \n  // Page-aware suggestions\n  suggestions?: SuggestionsConfig;\n  \n  // Sidebar tabs configuration\n  sidebarTabs?: SidebarTabConfig[];\n  \n  // API base URL (defaults to production)\n  apiBaseUrl?: string;\n  \n  // Theme customization\n  theme?: ThemeConfig;\n  \n  /** \n   * Custom CSS to inject into the panel's Shadow DOM.\n   * Use public class names (pillar-*) to override default styles.\n   * @example\n   * ```css\n   * .pillar-header { padding: 24px; }\n   * .pillar-message-user { border-radius: 8px; }\n   * ```\n   */\n  customCSS?: string;\n  \n  // Callbacks\n  onReady?: () => void;\n  onError?: (error: Error) => void;\n}",
+      "typeDefinition": "interface PillarConfig {\n  /**\n   * Your product key from the Pillar app.\n   * Get it at app.trypillar.com\n   */\n  productKey?: string;\n  \n  /**\n   * Platform identifier for code-first actions.\n   * Used to filter actions by deployment platform.\n   * @default 'web'\n   */\n  platform?: Platform;\n  \n  /**\n   * App version for code-first actions.\n   * Used to match actions to the correct deployment version.\n   * @example '1.2.3' or git commit SHA\n   */\n  version?: string;\n  \n  /**\n   * Enable debug mode for verbose logging and debug panel.\n   * When enabled:\n   * - All SDK events are logged to console\n   * - A debug panel shows real-time execution flow\n   * - Network requests/responses are captured\n   * @default false\n   */\n  debug?: boolean;\n  \n  /** Panel layout and behavior settings. */\n  panel?: PanelConfig;\n  \n  /** Edge trigger (sidebar tab that opens the panel). */\n  edgeTrigger?: EdgeTriggerConfig;\n  \n  /** Mobile trigger (floating button on small screens). */\n  mobileTrigger?: MobileTriggerConfig;\n  \n  /** URL params for auto-opening the panel. */\n  urlParams?: UrlParamsConfig;\n  \n  /** Text selection \"Ask AI\" popover. */\n  textSelection?: TextSelectionConfig;\n  \n  /**\n   * DOM scanning for page context.\n   * @internal DOM scanning is currently disabled.\n   * @deprecated This feature is not available.\n   */\n  domScanning?: DOMScanningConfig;\n  \n  /** Page-aware suggestions. */\n  suggestions?: SuggestionsConfig;\n  \n  /** Sidebar tabs configuration. */\n  sidebarTabs?: SidebarTabConfig[];\n  \n  /** API base URL. Defaults to Pillar's production API. */\n  apiBaseUrl?: string;\n  \n  /**\n   * Enable OpenTelemetry tracing. Browser spans are exported to the server's\n   * Cloud Trace project via the OTLP proxy endpoint. Also enabled when debug\n   * is true.\n   * @default false\n   */\n  tracing?: boolean;\n  \n  /** Theme customization. */\n  theme?: ThemeConfig;\n  \n  /** \n   * Custom CSS to inject into the panel's Shadow DOM.\n   * Use public class names (pillar-*) to override default styles.\n   * @example\n   * ```css\n   * .pillar-header { padding: 24px; }\n   * .pillar-message-user { border-radius: 8px; }\n   * ```\n   */\n  customCSS?: string;\n  \n  /** Called when the SDK is initialized and ready. */\n  onReady?: () => void;\n  /** Called when the SDK encounters an error. */\n  onError?: (error: Error) => void;\n}",
       "examples": [],
       "relatedTypes": [
         "PanelConfig",
@@ -1687,19 +1717,19 @@
         {
           "name": "MobileTriggerPosition",
           "category": "type-alias",
-          "description": "",
+          "description": "Position of the mobile floating trigger button.",
           "typeDefinition": "type MobileTriggerPosition = 'bottom-right' | 'bottom-left'"
         },
         {
           "name": "MobileTriggerIcon",
           "category": "type-alias",
-          "description": "",
+          "description": "Preset icon for the mobile floating trigger button.",
           "typeDefinition": "type MobileTriggerIcon = 'sparkle' | 'question' | 'help' | 'chat' | 'support'"
         },
         {
           "name": "MobileTriggerSize",
           "category": "type-alias",
-          "description": "",
+          "description": "Size preset for the mobile floating trigger button.",
           "typeDefinition": "type MobileTriggerSize = 'small' | 'medium' | 'large'"
         },
         {
@@ -1853,6 +1883,150 @@
           "typeDefinition": "interface SidebarTabConfig {\n  id: string;\n  label: string;\n  enabled: boolean;\n  order: number;\n  /** Preset icon for this tab */\n  icon?: 'help' | 'support' | 'settings' | 'feedback' | 'chat' | 'calendar' | 'mail';\n}"
         }
       ]
+    },
+    {
+      "slug": "core/other",
+      "title": "Other",
+      "category": "domain",
+      "package": "@pillar-ai/sdk",
+      "description": "API items not yet assigned to a domain. These need to be categorized.",
+      "importStatement": "import Pillar from '@pillar-ai/sdk'",
+      "methods": [
+        {
+          "name": "defineTool",
+          "signature": "defineTool(schema: ToolSchema<TInput>): () => void",
+          "description": "Define a tool with co-located metadata and handler.\n\nThis is the recommended way to register tools. The metadata\n(name, description, inputSchema) is discoverable by the CLI scanner\n(`npx pillar-sync --scan ./src`) and the handler runs client-side.\n\nIf `execute` returns a value, it is automatically sent back to the\nagent — no explicit `returns: true` flag needed.",
+          "parameters": [
+            {
+              "name": "schema",
+              "type": "ToolSchema<TInput>",
+              "required": true,
+              "description": "- Tool schema with metadata and execute handler"
+            }
+          ],
+          "returnType": "() => void",
+          "isStatic": false,
+          "examples": []
+        },
+        {
+          "name": "registerTool",
+          "signature": "registerTool(tool: { name: string } & Record<string, unknown>): void",
+          "description": "Register a tool definition at runtime.",
+          "parameters": [
+            {
+              "name": "tool",
+              "type": "{ name: string } & Record<string, unknown>",
+              "required": true,
+              "description": "- Tool definition with name and properties"
+            }
+          ],
+          "returnType": "void",
+          "isStatic": false,
+          "examples": []
+        },
+        {
+          "name": "getRegisteredTool",
+          "signature": "getRegisteredTool(name: string): Record<string, unknown> | undefined",
+          "description": "Get a registered tool definition by name.",
+          "parameters": [
+            {
+              "name": "name",
+              "type": "string",
+              "required": true,
+              "description": "- Tool name"
+            }
+          ],
+          "returnType": "Record<string, unknown> | undefined",
+          "isStatic": false,
+          "examples": []
+        },
+        {
+          "name": "completeTool",
+          "signature": "completeTool(toolName: string, success?: boolean, data?: Record<string, unknown>): Promise<void>",
+          "description": "Signal that a tool has completed.\n\nFor simple tools, this emits the completion event.\nFor wizard tools (modals, multi-step flows), call this when the user\nfinishes the flow.",
+          "parameters": [
+            {
+              "name": "toolName",
+              "type": "string",
+              "required": true,
+              "description": "- The tool identifier"
+            },
+            {
+              "name": "success",
+              "type": "boolean",
+              "required": false,
+              "description": "- Whether the tool completed successfully (default: true)"
+            },
+            {
+              "name": "data",
+              "type": "Record<string, unknown>",
+              "required": false,
+              "description": "- Optional result data"
+            }
+          ],
+          "returnType": "Promise<void>",
+          "isStatic": false,
+          "examples": []
+        },
+        {
+          "name": "sendToolResult",
+          "signature": "sendToolResult(toolName: string, result: unknown, toolCallId?: string): Promise<void>",
+          "description": "Send tool result back to the agent.\n\nCalled automatically for tools with `returns: true` after their\nhandler completes. The result is sent to the agent for further reasoning.",
+          "parameters": [
+            {
+              "name": "toolName",
+              "type": "string",
+              "required": true,
+              "description": "- The name of the tool that was executed"
+            },
+            {
+              "name": "result",
+              "type": "unknown",
+              "required": true,
+              "description": "- The result data to send back to the agent"
+            },
+            {
+              "name": "toolCallId",
+              "type": "string",
+              "required": false,
+              "description": "- Unique ID for this specific tool invocation (for result correlation)"
+            }
+          ],
+          "returnType": "Promise<void>",
+          "isStatic": false,
+          "examples": []
+        },
+        {
+          "name": "executeQueryTool",
+          "signature": "executeQueryTool(toolName: string, args?: Record<string, unknown>, schema?: { properties?: Record<string, unknown>; required?: string[] }): Promise<void>",
+          "description": "Execute a query tool and send the result back to the agent.\n\nThis is called when the agent sends a `query_request` event.\nQuery tools are expected to return data that the agent can use\nfor further reasoning.",
+          "parameters": [
+            {
+              "name": "toolName",
+              "type": "string",
+              "required": true,
+              "description": "- The name of the tool to execute"
+            },
+            {
+              "name": "args",
+              "type": "Record<string, unknown>",
+              "required": false,
+              "description": "- Arguments for the tool"
+            },
+            {
+              "name": "schema",
+              "type": "{ properties?: Record<string, unknown>; required?: string[] }",
+              "required": false,
+              "description": "- Optional schema for parameter validation"
+            }
+          ],
+          "returnType": "Promise<void>",
+          "isStatic": false,
+          "examples": []
+        }
+      ],
+      "properties": [],
+      "types": []
     }
   ],
   "navigation": [
@@ -1911,6 +2085,10 @@
         {
           "title": "Features",
           "href": "/docs/reference/core/features"
+        },
+        {
+          "title": "Other",
+          "href": "/docs/reference/core/other"
         }
       ]
     },

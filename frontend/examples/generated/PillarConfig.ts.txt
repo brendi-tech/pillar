@@ -44,7 +44,11 @@ interface PillarConfig {
   /** Text selection "Ask AI" popover. */
   textSelection?: TextSelectionConfig;
   
-  /** DOM scanning for page context. */
+  /**
+   * DOM scanning for page context.
+   * @internal DOM scanning is currently disabled.
+   * @deprecated This feature is not available.
+   */
   domScanning?: DOMScanningConfig;
   
   /** Page-aware suggestions. */
@@ -55,6 +59,14 @@ interface PillarConfig {
   
   /** API base URL. Defaults to Pillar's production API. */
   apiBaseUrl?: string;
+  
+  /**
+   * Enable OpenTelemetry tracing. Browser spans are exported to the server's
+   * Cloud Trace project via the OTLP proxy endpoint. Also enabled when debug
+   * is true.
+   * @default false
+   */
+  tracing?: boolean;
   
   /** Theme customization. */
   theme?: ThemeConfig;

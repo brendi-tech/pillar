@@ -61,4 +61,11 @@ interface PanelConfig {
    * @default false
    */
   initialOpen?: boolean;
+  /**
+   * Whether the panel can be resized by dragging its edge.
+   * A drag handle appears on the content-facing edge of the panel when enabled.
+   * The resized width is persisted to localStorage.
+   * @default true
+   */
+  resizable?: boolean;
 }

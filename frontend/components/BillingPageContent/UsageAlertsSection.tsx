@@ -27,7 +27,12 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import type { UsageAlert } from "./BillingPageContent";
+
+export interface UsageAlert {
+  enabled: boolean;
+  threshold: number;
+  channel: "email" | "slack";
+}
 
 interface UsageAlertsSectionProps {
   alerts: UsageAlert;

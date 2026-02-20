@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-02-11T19:13:43.429Z",
+  "generatedAt": "2026-02-20T21:16:01.394Z",
   "interfaces": {
     "PillarConfig": {
       "name": "PillarConfig",
@@ -66,7 +66,8 @@
           "name": "domScanning",
           "type": "DOMScanningConfig",
           "required": false,
-          "description": "DOM scanning for page context."
+          "description": "DOM scanning for page context.",
+          "deprecated": true
         },
         {
           "name": "suggestions",
@@ -85,6 +86,13 @@
           "type": "string",
           "required": false,
           "description": "API base URL. Defaults to Pillar's production API."
+        },
+        {
+          "name": "tracing",
+          "type": "boolean",
+          "required": false,
+          "default": "false",
+          "description": "Enable OpenTelemetry tracing. Browser spans are exported to the server's\nCloud Trace project via the OTLP proxy endpoint. Also enabled when debug\nis true."
         },
         {
           "name": "theme",
@@ -185,6 +193,13 @@
           "required": false,
           "default": "false",
           "description": "Whether to open the panel automatically on initialization.\nTakes priority over localStorage persisted state."
+        },
+        {
+          "name": "resizable",
+          "type": "boolean",
+          "required": false,
+          "default": "true",
+          "description": "Whether the panel can be resized by dragging its edge.\nA drag handle appears on the content-facing edge of the panel when enabled.\nThe resized width is persisted to localStorage."
         }
       ]
     },
@@ -424,49 +439,44 @@
     },
     "DOMScanningConfig": {
       "name": "DOMScanningConfig",
-      "description": "",
+      "description": "DOM scanning configuration.",
       "sourceFile": "packages/sdk/src/core/config.ts",
       "properties": [
         {
           "name": "enabled",
           "type": "boolean",
           "required": false,
-          "default": "false",
-          "description": "Whether DOM scanning is enabled.\nWhen enabled, page structure is captured and sent with messages."
+          "description": ""
         },
         {
           "name": "includeText",
           "type": "boolean",
           "required": false,
-          "default": "true",
-          "description": "Whether to include text content in the scan."
+          "description": ""
         },
         {
           "name": "maxDepth",
           "type": "number",
           "required": false,
-          "default": "20",
-          "description": "Maximum depth to traverse the DOM tree."
+          "description": ""
         },
         {
           "name": "visibleOnly",
           "type": "boolean",
           "required": false,
-          "default": "true",
-          "description": "Whether to only include visible elements."
+          "description": ""
         },
         {
           "name": "excludeSelector",
           "type": "string",
           "required": false,
-          "description": "CSS selector for elements to exclude from scanning."
+          "description": ""
         },
         {
           "name": "maxTextLength",
           "type": "number",
           "required": false,
-          "default": "500",
-          "description": "Maximum text length before truncation."
+          "description": ""
         },
         {
           "name": "interactionHighlight",
@@ -772,7 +782,7 @@
           "name": "onConfirm",
           "type": "(modifiedData?: Record<string, unknown>) => void",
           "required": true,
-          "description": "Called when user confirms the action. Pass modified data if needed."
+          "description": "Called when user confirms the action. Pass modified data if needed.\nWARNING: Data passed here flows through the SDK pipeline (telemetry,\nagent context, logs). Never include secrets, tokens, or PII."
         },
         {
           "name": "onCancel",
@@ -951,7 +961,8 @@
         }
       ],
       "returnType": "Promise<Pillar>",
-      "isStatic": true
+      "isStatic": true,
+      "examples": []
     },
     {
       "name": "getInstance",
@@ -959,7 +970,8 @@
       "description": "Get the current Pillar instance",
       "parameters": [],
       "returnType": "Pillar | null",
-      "isStatic": true
+      "isStatic": true,
+      "examples": []
     },
     {
       "name": "destroy",
@@ -967,30 +979,33 @@
       "description": "Destroy the Pillar instance",
       "parameters": [],
       "returnType": "void",
-      "isStatic": true
+      "isStatic": true,
+      "examples": []
     },
     {
       "name": "getDebugLog",
-      "signature": "getDebugLog(): import('../utils/debug').DebugEntry[]",
+      "signature": "getDebugLog(): import(\"../utils/debug\").DebugEntry[]",
       "description": "Get debug log entries (for debug panel).\nReturns empty array if debug mode is not enabled.",
       "parameters": [],
-      "returnType": "import('../utils/debug').DebugEntry[]",
-      "isStatic": false
+      "returnType": "import(\"../utils/debug\").DebugEntry[]",
+      "isStatic": false,
+      "examples": []
     },
     {
       "name": "onDebugLog",
-      "signature": "onDebugLog(callback: (entries: import('../utils/debug').DebugEntry[]) => void): () => void",
+      "signature": "onDebugLog(callback: (entries: import(\"../utils/debug\").DebugEntry[]) => void): () => void",
       "description": "Subscribe to debug log updates (for debug panel).\nReturns unsubscribe function.",
       "parameters": [
         {
           "name": "callback",
-          "type": "(entries: import('../utils/debug').DebugEntry[]) => void",
+          "type": "(entries: import(\"../utils/debug\").DebugEntry[]) => void",
           "required": true,
           "description": ""
         }
       ],
       "returnType": "() => void",
-      "isStatic": false
+      "isStatic": false,
+      "examples": []
     },
     {
       "name": "clearDebugLog",
@@ -998,7 +1013,8 @@
       "description": "Clear debug log entries.",
       "parameters": [],
       "returnType": "void",
-      "isStatic": false
+      "isStatic": false,
+      "examples": []
     },
     {
       "name": "on",
@@ -1019,7 +1035,8 @@
         }
       ],
       "returnType": "() => void",
-      "isStatic": false
+      "isStatic": false,
+      "examples": []
     },
     {
       "name": "open",
@@ -1034,7 +1051,8 @@
         }
       ],
       "returnType": "void",
-      "isStatic": false
+      "isStatic": false,
+      "examples": []
     },
     {
       "name": "close",
@@ -1042,7 +1060,8 @@
       "description": "Close the help panel",
       "parameters": [],
       "returnType": "void",
-      "isStatic": false
+      "isStatic": false,
+      "examples": []
     },
     {
       "name": "toggle",
@@ -1050,7 +1069,8 @@
       "description": "Toggle the help panel",
       "parameters": [],
       "returnType": "void",
-      "isStatic": false
+      "isStatic": false,
+      "examples": []
     },
     {
       "name": "navigate",
@@ -1071,7 +1091,8 @@
         }
       ],
       "returnType": "void",
-      "isStatic": false
+      "isStatic": false,
+      "examples": []
     },
     {
       "name": "setContext",
@@ -1086,7 +1107,10 @@
         }
       ],
       "returnType": "void",
-      "isStatic": false
+      "isStatic": false,
+      "examples": [
+        "pillar.setContext({\n  currentPage: '/settings/billing',\n  currentFeature: 'Billing Settings',\n  userRole: 'admin',\n});"
+      ]
     },
     {
       "name": "getChatContext",
@@ -1094,7 +1118,10 @@
       "description": "Get the current chat context (conversation ID and messages).\nUseful for escalation to human support with conversation history.",
       "parameters": [],
       "returnType": "ChatContext | null",
-      "isStatic": false
+      "isStatic": false,
+      "examples": [
+        "// Get chat context for escalation\nconst context = pillar.getChatContext();\nif (context) {\n  const summary = context.messages\n    .map(m => `${m.role}: ${m.content.slice(0, 100)}`)\n    .join('\\n');\n  showIntercom(`Escalating from AI assistant:\\n${summary}`);\n}"
+      ]
     },
     {
       "name": "setTheme",
@@ -1109,7 +1136,10 @@
         }
       ],
       "returnType": "void",
-      "isStatic": false
+      "isStatic": false,
+      "examples": [
+        "// Switch to dark mode\npillar.setTheme({ mode: 'dark' });\n\n// Switch to light mode with custom primary color\npillar.setTheme({ mode: 'light', colors: { primary: '#ff0000' } });\n\n// Let system preference decide\npillar.setTheme({ mode: 'auto' });"
+      ]
     },
     {
       "name": "setTextSelectionEnabled",
@@ -1124,22 +1154,26 @@
         }
       ],
       "returnType": "void",
-      "isStatic": false
+      "isStatic": false,
+      "examples": [
+        "// Disable text selection popover\npillar.setTextSelectionEnabled(false);\n\n// Re-enable it\npillar.setTextSelectionEnabled(true);"
+      ]
     },
     {
       "name": "setDOMScanningEnabled",
-      "signature": "setDOMScanningEnabled(enabled: boolean): void",
+      "signature": "setDOMScanningEnabled(_enabled: boolean): void",
       "description": "Enable or disable DOM scanning at runtime.",
       "parameters": [
         {
-          "name": "enabled",
+          "name": "_enabled",
           "type": "boolean",
           "required": true,
-          "description": "- Whether to enable DOM scanning"
+          "description": "- Ignored, DOM scanning cannot be enabled"
         }
       ],
       "returnType": "void",
-      "isStatic": false
+      "isStatic": false,
+      "examples": []
     },
     {
       "name": "getElement",
@@ -1154,7 +1188,8 @@
         }
       ],
       "returnType": "Element | null",
-      "isStatic": false
+      "isStatic": false,
+      "examples": []
     },
     {
       "name": "clickElement",
@@ -1169,7 +1204,8 @@
         }
       ],
       "returnType": "boolean",
-      "isStatic": false
+      "isStatic": false,
+      "examples": []
     },
     {
       "name": "typeInElement",
@@ -1190,7 +1226,8 @@
         }
       ],
       "returnType": "boolean",
-      "isStatic": false
+      "isStatic": false,
+      "examples": []
     },
     {
       "name": "selectOption",
@@ -1211,7 +1248,8 @@
         }
       ],
       "returnType": "boolean",
-      "isStatic": false
+      "isStatic": false,
+      "examples": []
     },
     {
       "name": "focusElement",
@@ -1226,7 +1264,8 @@
         }
       ],
       "returnType": "boolean",
-      "isStatic": false
+      "isStatic": false,
+      "examples": []
     },
     {
       "name": "toggleElement",
@@ -1241,22 +1280,26 @@
         }
       ],
       "returnType": "boolean",
-      "isStatic": false
+      "isStatic": false,
+      "examples": []
     },
     {
       "name": "handlePageInteraction",
-      "signature": "handlePageInteraction(params: {\n    operation: 'click' | 'type' | 'select' | 'focus' | 'toggle';\n    ref: string;\n    value?: string;\n  }): Promise<{ success: boolean; error?: string }>",
+      "signature": "handlePageInteraction(params: {\n    operation: \"click\" | \"type\" | \"select\" | \"focus\" | \"toggle\";\n    ref: string;\n    value?: string;\n  }): Promise<{ success: boolean; error?: string }>",
       "description": "Handle the interact_with_page action from the LLM.\nRoutes to appropriate DOM interaction method based on operation.\nValidates the ref format, verifies the element attribute, and\nprompts user confirmation for destructive actions.",
       "parameters": [
         {
           "name": "params",
-          "type": "{\n    operation: 'click' | 'type' | 'select' | 'focus' | 'toggle';\n    ref: string;\n    value?: string;\n  }",
+          "type": "{\n    operation: \"click\" | \"type\" | \"select\" | \"focus\" | \"toggle\";\n    ref: string;\n    value?: string;\n  }",
           "required": true,
           "description": "- Interaction parameters from LLM"
         }
       ],
       "returnType": "Promise<{ success: boolean; error?: string }>",
-      "isStatic": false
+      "isStatic": false,
+      "examples": [
+        "// Click a button\nawait pillar.handlePageInteraction({ operation: 'click', ref: 'pr-a1' });\n\n// Type in an input\nawait pillar.handlePageInteraction({ operation: 'type', ref: 'pr-b1', value: 'hello' });"
+      ]
     },
     {
       "name": "mountPanelTo",
@@ -1271,7 +1314,8 @@
         }
       ],
       "returnType": "void",
-      "isStatic": false
+      "isStatic": false,
+      "examples": []
     },
     {
       "name": "getPanelHostElement",
@@ -1279,7 +1323,8 @@
       "description": "Get the panel host element for external mounting",
       "parameters": [],
       "returnType": "HTMLElement | null",
-      "isStatic": false
+      "isStatic": false,
+      "examples": []
     },
     {
       "name": "setUserProfile",
@@ -1294,7 +1339,8 @@
         }
       ],
       "returnType": "void",
-      "isStatic": false
+      "isStatic": false,
+      "examples": []
     },
     {
       "name": "identify",
@@ -1321,7 +1367,10 @@
         }
       ],
       "returnType": "Promise<void>",
-      "isStatic": false
+      "isStatic": false,
+      "examples": [
+        "// When user logs in\nawait pillar.identify('user-123', {\n  name: 'John Doe',\n  email: 'john@example.com',\n});\n\n// Keep current conversation when identifying\nawait pillar.identify('user-123', undefined, { preserveConversation: true });"
+      ]
     },
     {
       "name": "logout",
@@ -1336,7 +1385,10 @@
         }
       ],
       "returnType": "void",
-      "isStatic": false
+      "isStatic": false,
+      "examples": [
+        "// When user logs out\npillar.logout();\n\n// Keep current conversation when logging out\npillar.logout({ preserveConversation: true });"
+      ]
     },
     {
       "name": "reportAction",
@@ -1357,7 +1409,8 @@
         }
       ],
       "returnType": "void",
-      "isStatic": false
+      "isStatic": false,
+      "examples": []
     },
     {
       "name": "clearErrorState",
@@ -1365,7 +1418,8 @@
       "description": "Clear any error state from the context.",
       "parameters": [],
       "returnType": "void",
-      "isStatic": false
+      "isStatic": false,
+      "examples": []
     },
     {
       "name": "setErrorState",
@@ -1386,7 +1440,8 @@
         }
       ],
       "returnType": "void",
-      "isStatic": false
+      "isStatic": false,
+      "examples": []
     },
     {
       "name": "getSuggestions",
@@ -1394,7 +1449,8 @@
       "description": "Get contextual help suggestions based on current context.\nReturns relevant articles, videos, and actions.",
       "parameters": [],
       "returnType": "Promise<Suggestion[]>",
-      "isStatic": false
+      "isStatic": false,
+      "examples": []
     },
     {
       "name": "getAssistantContext",
@@ -1402,7 +1458,8 @@
       "description": "Get the full context object to send to the backend.\nUsed internally by the API client.",
       "parameters": [],
       "returnType": "{ product: Context; user: UserProfile }",
-      "isStatic": false
+      "isStatic": false,
+      "examples": []
     },
     {
       "name": "onTask",
@@ -1423,52 +1480,128 @@
         }
       ],
       "returnType": "() => void",
-      "isStatic": false
+      "isStatic": false,
+      "examples": [
+        "pillar.onTask('invite_team_member', (data) => {\n  openInviteModal(data);\n});"
+      ]
+    },
+    {
+      "name": "defineTool",
+      "signature": "defineTool(schema: ToolSchema<TInput>): () => void",
+      "description": "Define a tool with co-located metadata and handler.\n\nThis is the recommended way to register tools. The metadata\n(name, description, inputSchema) is discoverable by the CLI scanner\n(`npx pillar-sync --scan ./src`) and the handler runs client-side.\n\nIf `execute` returns a value, it is automatically sent back to the\nagent — no explicit `returns: true` flag needed.",
+      "parameters": [
+        {
+          "name": "schema",
+          "type": "ToolSchema<TInput>",
+          "required": true,
+          "description": "- Tool schema with metadata and execute handler"
+        }
+      ],
+      "returnType": "() => void",
+      "isStatic": false,
+      "examples": [
+        "const unsub = pillar.defineTool({\n  name: 'add_to_cart',\n  description: 'Add a product to the shopping cart',\n  inputSchema: {\n    type: 'object',\n    properties: {\n      productId: { type: 'string' },\n      quantity: { type: 'number' },\n    },\n    required: ['productId', 'quantity'],\n  },\n  execute: async ({ productId, quantity }) => {\n    await cartApi.add(productId, quantity);\n    return { content: [{ type: 'text', text: 'Added to cart' }] };\n  },\n});\n\n// Later: unsub() to remove the tool"
+      ]
+    },
+    {
+      "name": "defineAction",
+      "signature": "defineAction(schema: ToolSchema<TInput>): () => void",
+      "description": "",
+      "parameters": [
+        {
+          "name": "schema",
+          "type": "ToolSchema<TInput>",
+          "required": true,
+          "description": ""
+        }
+      ],
+      "returnType": "() => void",
+      "isStatic": false,
+      "examples": []
+    },
+    {
+      "name": "registerTool",
+      "signature": "registerTool(tool: { name: string } & Record<string, unknown>): void",
+      "description": "Register a tool definition at runtime.",
+      "parameters": [
+        {
+          "name": "tool",
+          "type": "{ name: string } & Record<string, unknown>",
+          "required": true,
+          "description": "- Tool definition with name and properties"
+        }
+      ],
+      "returnType": "void",
+      "isStatic": false,
+      "examples": [
+        "pillar.registerTool({\n  name: 'list_datasets',\n  description: 'List available datasets',\n  type: 'query',\n  returnsData: true,\n});"
+      ]
     },
     {
       "name": "registerAction",
       "signature": "registerAction(action: { name: string } & Record<string, unknown>): void",
-      "description": "Register an action definition at runtime.\n\nThis is primarily for demos and development. In production, actions\nshould be synced via the `pillar-sync` CLI during CI/CD.\n\nThe action definition is stored locally and can be used by `onTask`\nhandlers. For actions with `returnsData: true`, the handler's return\nvalue is sent back to the agent.",
+      "description": "",
       "parameters": [
         {
           "name": "action",
           "type": "{ name: string } & Record<string, unknown>",
           "required": true,
-          "description": "- Action definition with name and properties"
+          "description": ""
         }
       ],
       "returnType": "void",
-      "isStatic": false
+      "isStatic": false,
+      "examples": []
     },
     {
-      "name": "getRegisteredAction",
-      "signature": "getRegisteredAction(name: string): Record<string, unknown> | undefined",
-      "description": "Get a registered action definition by name.",
+      "name": "getRegisteredTool",
+      "signature": "getRegisteredTool(name: string): Record<string, unknown> | undefined",
+      "description": "Get a registered tool definition by name.",
       "parameters": [
         {
           "name": "name",
           "type": "string",
           "required": true,
-          "description": "- Action name"
+          "description": "- Tool name"
         }
       ],
       "returnType": "Record<string, unknown> | undefined",
-      "isStatic": false
+      "isStatic": false,
+      "examples": []
+    },
+    {
+      "name": "getRegisteredAction",
+      "signature": "getRegisteredAction(name: string): Record<string, unknown> | undefined",
+      "description": "",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "description": ""
+        }
+      ],
+      "returnType": "Record<string, unknown> | undefined",
+      "isStatic": false,
+      "examples": []
     },
     {
       "name": "getHandler",
-      "signature": "getHandler(actionName: string): ((data: Record<string, unknown>) => unknown) | undefined",
-      "description": "Get handler for an action, checking all registration systems.\n\nLookup order:\n1. Code-first action registry (synced via pillar-sync CLI) - handler in definition\n2. Task handlers (registered via onTask at runtime)\n\nThis is the recommended pattern:\n- Action definitions synced to server via CLI (so AI knows what's possible)\n- Handlers registered at runtime via onTask (client-side execution)",
+      "signature": "getHandler(toolName: string): ((data: Record<string, unknown>) => unknown) | undefined",
+      "description": "Get handler for a tool, checking all registration systems.\n\nLookup order:\n1. Code-first tool registry (synced via pillar-sync CLI) - handler in definition\n2. Task handlers (registered via onTask at runtime)\n\nThis is the recommended pattern:\n- Tool definitions synced to server via CLI (so AI knows what's possible)\n- Handlers registered at runtime via onTask (client-side execution)",
       "parameters": [
         {
-          "name": "actionName",
+          "name": "toolName",
           "type": "string",
           "required": true,
-          "description": "- Action name to look up"
+          "description": "- Tool name to look up"
         }
       ],
       "returnType": "((data: Record<string, unknown>) => unknown) | undefined",
-      "isStatic": false
+      "isStatic": false,
+      "examples": [
+        "const handler = pillar.getHandler('list_datasources');\nif (handler) {\n  const result = await handler({ limit: 10 });\n}"
+      ]
     },
     {
       "name": "onAnyTask",
@@ -1483,7 +1616,10 @@
         }
       ],
       "returnType": "() => void",
-      "isStatic": false
+      "isStatic": false,
+      "examples": [
+        "pillar.onAnyTask((name, data) => {\n  analytics.track('task_executed', { name, data });\n});"
+      ]
     },
     {
       "name": "offTask",
@@ -1498,7 +1634,8 @@
         }
       ],
       "returnType": "void",
-      "isStatic": false
+      "isStatic": false,
+      "examples": []
     },
     {
       "name": "executeTask",
@@ -1513,7 +1650,8 @@
         }
       ],
       "returnType": "void",
-      "isStatic": false
+      "isStatic": false,
+      "examples": []
     },
     {
       "name": "completeTask",
@@ -1540,24 +1678,25 @@
         }
       ],
       "returnType": "void",
-      "isStatic": false
+      "isStatic": false,
+      "examples": []
     },
     {
-      "name": "completeAction",
-      "signature": "completeAction(actionName: string, success?: boolean, data?: Record<string, unknown>): Promise<void>",
-      "description": "Signal that an action has completed.\n\nFor simple actions, this emits the completion event.\nFor wizard actions (modals, multi-step flows), call this when the user\nfinishes the flow.",
+      "name": "completeTool",
+      "signature": "completeTool(toolName: string, success?: boolean, data?: Record<string, unknown>): Promise<void>",
+      "description": "Signal that a tool has completed.\n\nFor simple tools, this emits the completion event.\nFor wizard tools (modals, multi-step flows), call this when the user\nfinishes the flow.",
       "parameters": [
         {
-          "name": "actionName",
+          "name": "toolName",
           "type": "string",
           "required": true,
-          "description": "- The action identifier"
+          "description": "- The tool identifier"
         },
         {
           "name": "success",
           "type": "boolean",
           "required": false,
-          "description": "- Whether the action completed successfully (default: true)"
+          "description": "- Whether the tool completed successfully (default: true)"
         },
         {
           "name": "data",
@@ -1567,7 +1706,38 @@
         }
       ],
       "returnType": "Promise<void>",
-      "isStatic": false
+      "isStatic": false,
+      "examples": [
+        "// In your wizard completion handler:\npillar.completeTool('add_source', true, { sourceId: source.id });"
+      ]
+    },
+    {
+      "name": "completeAction",
+      "signature": "completeAction(actionName: string, success?: boolean, data?: Record<string, unknown>): Promise<void>",
+      "description": "",
+      "parameters": [
+        {
+          "name": "actionName",
+          "type": "string",
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "success",
+          "type": "boolean",
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "data",
+          "type": "Record<string, unknown>",
+          "required": false,
+          "description": ""
+        }
+      ],
+      "returnType": "Promise<void>",
+      "isStatic": false,
+      "examples": []
     },
     {
       "name": "confirmTaskExecution",
@@ -1594,7 +1764,10 @@
         }
       ],
       "returnType": "void",
-      "isStatic": false
+      "isStatic": false,
+      "examples": [
+        "pillar.on('task:execute', async (task) => {\n  const startTime = Date.now();\n  try {\n    await performAction(task);\n    pillar.confirmTaskExecution(task.id, 'success', {\n      duration_ms: Date.now() - startTime,\n    });\n  } catch (error) {\n    pillar.confirmTaskExecution(task.id, 'failure', {\n      error: error.message,\n      duration_ms: Date.now() - startTime,\n    });\n  }\n});"
+      ]
     },
     {
       "name": "registerCard",
@@ -1615,7 +1788,10 @@
         }
       ],
       "returnType": "() => void",
-      "isStatic": false
+      "isStatic": false,
+      "examples": [
+        "// Vanilla JS\npillar.registerCard('invite_members', (container, data, callbacks) => {\n  container.innerHTML = `\n    <div class=\"invite-card\">\n      <h3>Invite Team Members</h3>\n      ${data.emails.map(e => `<div>${e}</div>`).join('')}\n      <button id=\"confirm\">Send Invites</button>\n    </div>\n  `;\n  container.querySelector('#confirm').onclick = callbacks.onConfirm;\n  return () => container.innerHTML = ''; // cleanup\n});"
+      ]
     },
     {
       "name": "getCardRenderer",
@@ -1630,7 +1806,8 @@
         }
       ],
       "returnType": "CardRenderer | undefined",
-      "isStatic": false
+      "isStatic": false,
+      "examples": []
     },
     {
       "name": "hasCardRenderer",
@@ -1645,7 +1822,8 @@
         }
       ],
       "returnType": "boolean",
-      "isStatic": false
+      "isStatic": false,
+      "examples": []
     },
     {
       "name": "startWorkflow",
@@ -1660,7 +1838,8 @@
         }
       ],
       "returnType": "void",
-      "isStatic": false
+      "isStatic": false,
+      "examples": []
     },
     {
       "name": "initiateWorkflowStep",
@@ -1675,7 +1854,8 @@
         }
       ],
       "returnType": "void",
-      "isStatic": false
+      "isStatic": false,
+      "examples": []
     },
     {
       "name": "confirmWorkflowStep",
@@ -1696,7 +1876,8 @@
         }
       ],
       "returnType": "void",
-      "isStatic": false
+      "isStatic": false,
+      "examples": []
     },
     {
       "name": "skipWorkflowStep",
@@ -1711,7 +1892,8 @@
         }
       ],
       "returnType": "void",
-      "isStatic": false
+      "isStatic": false,
+      "examples": []
     },
     {
       "name": "cancelWorkflow",
@@ -1719,18 +1901,19 @@
       "description": "Cancel the active workflow.",
       "parameters": [],
       "returnType": "void",
-      "isStatic": false
+      "isStatic": false,
+      "examples": []
     },
     {
-      "name": "sendActionResult",
-      "signature": "sendActionResult(actionName: string, result: unknown, toolCallId?: string): Promise<void>",
-      "description": "Send action result back to the agent.\n\nCalled automatically for actions with `returns: true` after their\nhandler completes. The result is sent to the agent for further reasoning.",
+      "name": "sendToolResult",
+      "signature": "sendToolResult(toolName: string, result: unknown, toolCallId?: string): Promise<void>",
+      "description": "Send tool result back to the agent.\n\nCalled automatically for tools with `returns: true` after their\nhandler completes. The result is sent to the agent for further reasoning.",
       "parameters": [
         {
-          "name": "actionName",
+          "name": "toolName",
           "type": "string",
           "required": true,
-          "description": "- The name of the action that was executed"
+          "description": "- The name of the tool that was executed"
         },
         {
           "name": "result",
@@ -1746,24 +1929,53 @@
         }
       ],
       "returnType": "Promise<void>",
-      "isStatic": false
+      "isStatic": false,
+      "examples": []
     },
     {
-      "name": "executeQueryAction",
-      "signature": "executeQueryAction(actionName: string, args?: Record<string, unknown>, schema?: { properties?: Record<string, unknown>; required?: string[] }): Promise<void>",
-      "description": "Execute a query action and send the result back to the agent.\n\nThis is called when the agent sends a `query_request` event.\nQuery actions are expected to return data that the agent can use\nfor further reasoning.",
+      "name": "sendActionResult",
+      "signature": "sendActionResult(actionName: string, result: unknown, toolCallId?: string): Promise<void>",
+      "description": "",
       "parameters": [
         {
           "name": "actionName",
           "type": "string",
           "required": true,
-          "description": "- The name of the action to execute"
+          "description": ""
+        },
+        {
+          "name": "result",
+          "type": "unknown",
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "toolCallId",
+          "type": "string",
+          "required": false,
+          "description": ""
+        }
+      ],
+      "returnType": "Promise<void>",
+      "isStatic": false,
+      "examples": []
+    },
+    {
+      "name": "executeQueryTool",
+      "signature": "executeQueryTool(toolName: string, args?: Record<string, unknown>, schema?: { properties?: Record<string, unknown>; required?: string[] }): Promise<void>",
+      "description": "Execute a query tool and send the result back to the agent.\n\nThis is called when the agent sends a `query_request` event.\nQuery tools are expected to return data that the agent can use\nfor further reasoning.",
+      "parameters": [
+        {
+          "name": "toolName",
+          "type": "string",
+          "required": true,
+          "description": "- The name of the tool to execute"
         },
         {
           "name": "args",
           "type": "Record<string, unknown>",
           "required": false,
-          "description": "- Arguments for the action"
+          "description": "- Arguments for the tool"
         },
         {
           "name": "schema",
@@ -1773,7 +1985,36 @@
         }
       ],
       "returnType": "Promise<void>",
-      "isStatic": false
+      "isStatic": false,
+      "examples": []
+    },
+    {
+      "name": "executeQueryAction",
+      "signature": "executeQueryAction(actionName: string, args?: Record<string, unknown>, schema?: { properties?: Record<string, unknown>; required?: string[] }): Promise<void>",
+      "description": "",
+      "parameters": [
+        {
+          "name": "actionName",
+          "type": "string",
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "args",
+          "type": "Record<string, unknown>",
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "schema",
+          "type": "{ properties?: Record<string, unknown>; required?: string[] }",
+          "required": false,
+          "description": ""
+        }
+      ],
+      "returnType": "Promise<void>",
+      "isStatic": false,
+      "examples": []
     },
     {
       "name": "state",
@@ -1781,7 +2022,8 @@
       "description": "Current SDK state",
       "parameters": [],
       "returnType": "PillarState",
-      "isStatic": false
+      "isStatic": false,
+      "examples": []
     },
     {
       "name": "isReady",
@@ -1789,7 +2031,8 @@
       "description": "Whether SDK is ready",
       "parameters": [],
       "returnType": "boolean",
-      "isStatic": false
+      "isStatic": false,
+      "examples": []
     },
     {
       "name": "isPanelOpen",
@@ -1797,7 +2040,8 @@
       "description": "Whether the panel is currently open",
       "parameters": [],
       "returnType": "boolean",
-      "isStatic": false
+      "isStatic": false,
+      "examples": []
     },
     {
       "name": "config",
@@ -1805,7 +2049,8 @@
       "description": "Get the resolved configuration",
       "parameters": [],
       "returnType": "ResolvedConfig | null",
-      "isStatic": false
+      "isStatic": false,
+      "examples": []
     },
     {
       "name": "isDebugEnabled",
@@ -1813,7 +2058,8 @@
       "description": "Whether debug mode is enabled",
       "parameters": [],
       "returnType": "boolean",
-      "isStatic": false
+      "isStatic": false,
+      "examples": []
     },
     {
       "name": "isDOMScanningEnabled",
@@ -1821,7 +2067,8 @@
       "description": "Whether DOM scanning is currently enabled.",
       "parameters": [],
       "returnType": "boolean",
-      "isStatic": false
+      "isStatic": false,
+      "examples": []
     },
     {
       "name": "context",
@@ -1829,7 +2076,8 @@
       "description": "Get the current context",
       "parameters": [],
       "returnType": "Context",
-      "isStatic": false
+      "isStatic": false,
+      "examples": []
     },
     {
       "name": "userProfile",
@@ -1837,7 +2085,8 @@
       "description": "Get the current user profile",
       "parameters": [],
       "returnType": "UserProfile",
-      "isStatic": false
+      "isStatic": false,
+      "examples": []
     },
     {
       "name": "externalUserId",
@@ -1845,7 +2094,8 @@
       "description": "Get the current external user ID (if identified).",
       "parameters": [],
       "returnType": "string | null",
-      "isStatic": false
+      "isStatic": false,
+      "examples": []
     },
     {
       "name": "isIdentified",
@@ -1853,7 +2103,8 @@
       "description": "Whether the current user is identified (logged in).",
       "parameters": [],
       "returnType": "boolean",
-      "isStatic": false
+      "isStatic": false,
+      "examples": []
     },
     {
       "name": "workflow",
@@ -1861,7 +2112,8 @@
       "description": "Get the active workflow, if any.",
       "parameters": [],
       "returnType": "Workflow | null",
-      "isStatic": false
+      "isStatic": false,
+      "examples": []
     }
   ]
 }
