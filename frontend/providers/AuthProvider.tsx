@@ -168,7 +168,6 @@ export function AdminAuthProvider({
         body: JSON.stringify({
           email,
           password,
-          username: email,
           full_name: fullName,
           ...(inviteCode && { invite_code: inviteCode }),
           ...(invitationToken && { invitation_token: invitationToken }),
@@ -177,14 +176,15 @@ export function AdminAuthProvider({
 
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
-        // Extract field errors from DRF validation response
+        const errors = data.errors || {};
         const fieldErrors: string[] = [];
-        if (data.email?.[0]) fieldErrors.push(data.email[0]);
-        if (data.username?.[0]) fieldErrors.push(data.username[0]);
-        if (data.password?.[0]) fieldErrors.push(data.password[0]);
-        if (data.invite_code?.[0]) fieldErrors.push(data.invite_code[0]);
+        if (errors.email?.[0]) fieldErrors.push(errors.email[0]);
+        if (errors.password?.[0]) fieldErrors.push(errors.password[0]);
+        if (errors.invite_code?.[0]) fieldErrors.push(errors.invite_code[0]);
         const errorMessage =
-          data.detail || fieldErrors.join(". ") || "Registration failed";
+          data.detail ||
+          fieldErrors.join(". ") ||
+          "Registration failed. Please try again.";
         throw new Error(errorMessage);
       }
 

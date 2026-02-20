@@ -189,6 +189,13 @@ class UserViewSet(viewsets.ModelViewSet):
             signup_method="email",
         )
 
+        # Send CEO welcome email (fire-and-forget)
+        try:
+            from apps.users.services.email_service import send_welcome_email
+            send_welcome_email(user)
+        except Exception:
+            logger.exception("Failed to send welcome email to %s", user.email)
+
         # Serialize user data
         user_serializer = UserSerializer(user, context={'request': request})
 

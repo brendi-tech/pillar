@@ -2,10 +2,49 @@
 Email service for user notifications.
 """
 import logging
+from typing import TYPE_CHECKING
+
 from django.conf import settings
-from django.core.mail import send_mail
+from django.core.mail import EmailMultiAlternatives, send_mail
+
+if TYPE_CHECKING:
+    from apps.users.models import User
 
 logger = logging.getLogger(__name__)
+
+
+def send_welcome_email(user: "User") -> bool:
+    """
+    Send a personal welcome email from the CEO to a new user.
+
+    Returns:
+        True if the email was sent, False otherwise.
+    """
+    from apps.users.services.email_templates import (
+        WELCOME_FROM_EMAIL,
+        WELCOME_REPLY_TO,
+        welcome_email_html,
+        welcome_email_plain_text,
+        welcome_email_subject,
+    )
+
+    try:
+        msg = EmailMultiAlternatives(
+            subject=welcome_email_subject(),
+            body=welcome_email_plain_text(user),
+            from_email=WELCOME_FROM_EMAIL,
+            to=[user.email],
+            reply_to=[WELCOME_REPLY_TO],
+        )
+        msg.attach_alternative(welcome_email_html(user), "text/html")
+        msg.send(fail_silently=False)
+
+        logger.info("Sent welcome email to %s", user.email)
+        return True
+
+    except Exception:
+        logger.exception("Failed to send welcome email to %s", user.email)
+        return False
 
 
 def send_organization_invitation_email(

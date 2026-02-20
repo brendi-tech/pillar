@@ -280,6 +280,13 @@ def oauth_callback(request: Request) -> Response:
             signup_method=provider_name,
         )
 
+        # Send CEO welcome email (fire-and-forget)
+        try:
+            from apps.users.services.email_service import send_welcome_email
+            send_welcome_email(user)
+        except Exception:
+            logger.exception("Failed to send welcome email to %s", user.email)
+
     # Auto-create organization for new users with free email providers
     # This allows Gmail/personal email users to skip the organization selection page
     if created:

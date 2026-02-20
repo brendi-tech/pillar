@@ -98,6 +98,7 @@ class UserListSerializer(serializers.ModelSerializer):
 
 class UserCreateSerializer(serializers.ModelSerializer):
     """Serializer for user registration."""
+    email = serializers.EmailField()
     password = serializers.CharField(write_only=True, min_length=8)
     invitation_token = serializers.UUIDField(required=False, write_only=True)
     invite_code = serializers.CharField(required=False, write_only=True)
@@ -107,7 +108,14 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'password', 'full_name', 'invitation_token', 'invite_code']
+        fields = ['email', 'password', 'full_name', 'invitation_token', 'invite_code']
+
+    def validate_email(self, value):
+        if User.objects.filter(email__iexact=value).exists():
+            raise serializers.ValidationError(
+                "An account with this email already exists."
+            )
+        return value
 
     def validate_invite_code(self, value):
         """Validate the invite code if provided."""
