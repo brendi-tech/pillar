@@ -15,6 +15,10 @@ if (typeof window !== "undefined" && POSTHOG_KEY) {
     person_profiles: "identified_only",
     capture_pageview: false,
     capture_pageleave: true,
+    capture_exceptions: {
+      capture_unhandled_errors: true,
+      capture_unhandled_rejections: true,
+    },
     session_recording: {
       recordCrossOriginIframes: true,
     },
