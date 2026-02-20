@@ -106,13 +106,12 @@ def _to_html(content: str) -> str:
 def _welcome_content(user: "User") -> str:
     """Welcome email body. Edit here — both plain text and HTML are derived."""
     admin_url = getattr(settings, "ADMIN_URL", "https://admin.trypillar.com")
-    frontend_url = getattr(settings, "FRONTEND_URL", "https://trypillar.com")
     first_name = _first_name(user)
 
     return f"""\
 Hey {first_name},
 
-I'm JJ, cofounder and CEO of [Pillar]({frontend_url}).
+I'm JJ, cofounder and CEO of [Pillar](https://trypillar.com).
 
 Pillar is your app's copilot, embedded in your product to execute real tasks for your users.
 

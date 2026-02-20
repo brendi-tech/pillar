@@ -62,6 +62,13 @@ class User(AbstractUser):
         help_text="User's last selected product (restored on login)"
     )
 
+    # Email tracking
+    welcome_email_sent_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When the CEO welcome email was sent to this user",
+    )
+
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

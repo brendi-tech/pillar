@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives, send_mail
+from django.utils import timezone
 
 if TYPE_CHECKING:
     from apps.users.models import User
@@ -38,6 +39,9 @@ def send_welcome_email(user: "User") -> bool:
         )
         msg.attach_alternative(welcome_email_html(user), "text/html")
         msg.send(fail_silently=False)
+
+        user.welcome_email_sent_at = timezone.now()
+        user.save(update_fields=["welcome_email_sent_at"])
 
         logger.info("Sent welcome email to %s", user.email)
         return True
