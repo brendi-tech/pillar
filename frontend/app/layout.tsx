@@ -5,6 +5,7 @@ import {
   isAdminRequest,
   isMarketingRequest,
 } from "@/lib/api-client";
+import { PostHogMarketingProvider } from "@/providers/PostHogProvider";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import type { Metadata } from "next";
 import { ThemeProvider } from "next-themes";
@@ -189,14 +190,16 @@ export default async function RootLayout({
           </head>
           <GoogleAnalytics gaId="G-VRNTGFMQMR" />
           <body className={bodyClasses} style={bodyStyle}>
-            <ThemeProvider
-              attribute="class"
-              defaultTheme="dark"
-              enableSystem={false}
-              disableTransitionOnChange
-            >
-              {children}
-            </ThemeProvider>
+            <PostHogMarketingProvider>
+              <ThemeProvider
+                attribute="class"
+                defaultTheme="dark"
+                enableSystem={false}
+                disableTransitionOnChange
+              >
+                {children}
+              </ThemeProvider>
+            </PostHogMarketingProvider>
             {/* <Agentation /> */}
           </body>
         </html>
@@ -217,7 +220,9 @@ export default async function RootLayout({
         </head>
         <GoogleAnalytics gaId="G-VRNTGFMQMR" />
         <body className={bodyClasses} style={bodyStyle}>
-          {children}
+          <PostHogMarketingProvider>
+            {children}
+          </PostHogMarketingProvider>
           <Agentation />
         </body>
       </html>

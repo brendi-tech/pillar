@@ -30,8 +30,12 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # NEXT_PUBLIC_* vars must be available at build time (they get inlined into JS bundle)
 ARG NEXT_PUBLIC_ENV=production
 ARG NEXT_PUBLIC_PILLAR_API_URL
+ARG NEXT_PUBLIC_POSTHOG_KEY
+ARG NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
 ENV NEXT_PUBLIC_ENV=${NEXT_PUBLIC_ENV}
 ENV NEXT_PUBLIC_PILLAR_API_URL=${NEXT_PUBLIC_PILLAR_API_URL}
+ENV NEXT_PUBLIC_POSTHOG_KEY=${NEXT_PUBLIC_POSTHOG_KEY}
+ENV NEXT_PUBLIC_POSTHOG_HOST=${NEXT_PUBLIC_POSTHOG_HOST}
 
 # Strip prebuild script — it requires SDK source files outside the Docker context.
 # The generated output files are committed to the repo and already present via COPY.
