@@ -36,7 +36,7 @@ PROGRESS EVENT KINDS (nested in type="progress"):
 
 SERVER-SIDE ONLY (not yielded to client):
 
-- reasoning_trace: Token usage analytics, logged via session_logger.log_session_complete
+- reasoning_trace: Token usage analytics, captured via OpenTelemetry span attributes
 - tool_decision: Internal event consumed by agentic loop
 
 DEPRECATED (handlers removed from streamable_http.py):

@@ -89,13 +89,3 @@ PILLAR_PROD_API_URL = os.environ.get(
 # Resolved via LLMConfigService.resolve_model() -> e.g. 'gemini-3-flash-preview'
 DEFAULT_LLM_MODEL = 'google/budget'
 
-# Enable agent session logging for E2E tests
-# This captures LLM thinking, tool decisions, and full session traces
-# for debugging test failures in CI
-AGENT_SESSION_LOGGING = {
-    "enabled": True,
-    "log_dir": BASE_DIR / "logs" / "agent-sessions",
-    "max_files": 50,
-    "include_full_responses": True,
-    "include_tool_results": True,
-}

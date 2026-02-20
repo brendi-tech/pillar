@@ -11,6 +11,7 @@ Copyright (C) 2025 Pillar Team
 import logging
 import json
 import asyncio
+import os
 from typing import Optional
 from django.http import JsonResponse, StreamingHttpResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -26,7 +27,6 @@ from apps.mcp.services.mcp_server.utils import get_effective_language
 from common.observability.tracing import (
     get_tracer,
     extract_context_from_request,
-    is_tracing_enabled,
 )
 
 logger = logging.getLogger(__name__)
@@ -82,8 +82,8 @@ async def handle_client_log(params: dict, context: dict = None):
     
     # Write to client session log file (separate folder from agent logs)
     logged_to_file = False
-    config = getattr(settings, 'AGENT_SESSION_LOGGING', {})
-    if config.get('enabled', False) and session_id:
+    is_local = os.getenv("ENV", "dev").lower() in ("dev", "development", "local", "test", "e2e")
+    if is_local and session_id:
         try:
             # Client logs go in logs/client-sessions/ (parallel to agent-sessions/)
             base_log_dir = Path(settings.BASE_DIR) / 'logs'

@@ -507,9 +507,3 @@ LOGGING = {
         },
     },
 }
-
-# Agent session logging for debugging (disabled by default)
-# Override in development.py to enable
-AGENT_SESSION_LOGGING = {
-    "enabled": False,
-}

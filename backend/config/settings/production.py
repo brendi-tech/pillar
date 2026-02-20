@@ -139,12 +139,7 @@ else:
 # Keep root logger at INFO level
 LOGGING['root']['level'] = 'INFO'
 
-# Agent session logging disabled in production
-AGENT_SESSION_LOGGING = {
-    "enabled": False,
-}
-
-# OpenTelemetry tracing (controlled by ENABLE_TRACING env var)
+# OpenTelemetry tracing (always on)
 from common.observability.tracing import setup_tracing as _setup_tracing  # noqa: E402
 _setup_tracing(project_id=os.environ.get("GCP_PROJECT_ID"))
 

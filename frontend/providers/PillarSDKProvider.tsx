@@ -21,6 +21,7 @@ import { useTheme } from "next-themes";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 
+import { ApiKeysCard } from "@/components/PillarCards";
 import { ThemeSelectorModal } from "@/components/ThemeSelectorModal";
 import { usePillarTools } from "@/hooks/usePillarTools";
 import { applyPendingHighlight } from "@/lib/highlight";
@@ -58,6 +59,9 @@ export function PillarSDKProvider({ children }: PillarSDKProviderProps) {
     <PillarProvider
       productKey={productKey}
       domScanning={true}
+      cards={{
+        api_keys: ApiKeysCard,
+      }}
       config={{
         apiBaseUrl,
         sidebarTabs,

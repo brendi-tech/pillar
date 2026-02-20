@@ -4,14 +4,14 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Pillar - Your App's Copilot",
   description:
-    "Pillar is an open source copilot that turns user requests into completed actions, right inside your app.",
+    "Pillar is an open source copilot that turns user and agent requests into completed actions, right inside your app.",
   alternates: {
     canonical: "/",
   },
   openGraph: {
     title: "Pillar - Your App's Copilot",
     description:
-      "Pillar is an open source copilot that turns user requests into completed actions, right inside your app.",
+      "Pillar is an open source copilot that turns user and agent requests into completed actions, right inside your app.",
     url: "https://trypillar.com",
   },
   robots: {

@@ -1,166 +1,124 @@
 """
-Management command to view recent agent session logs.
+Management command to view recent agent trace files.
 
 Usage:
     uv run python manage.py view_agent_logs --list
-    uv run python manage.py view_agent_logs --view th_abc123_20250201_143022.txt
-    uv run python manage.py view_agent_logs --search "TimeoutError"
+    uv run python manage.py view_agent_logs --view <filename>
     uv run python manage.py view_agent_logs --latest
+    uv run python manage.py view_agent_logs --search "TimeoutError"
+    uv run python manage.py view_agent_logs --cleanup
 """
-from collections import deque
+import json
+from datetime import datetime
 from pathlib import Path
 
 from django.core.management.base import BaseCommand
 
-from apps.mcp.services.agent.session_logger import AgentSessionLogManager
+from common.observability.file_exporter import TraceFileManager
 
 
 class Command(BaseCommand):
-    help = 'View recent agent session logs for debugging'
+    help = 'View recent agent trace files for debugging'
 
     def add_arguments(self, parser):
-        parser.add_argument(
-            '--list',
-            action='store_true',
-            help='List recent log files',
-        )
-        parser.add_argument(
-            '--view',
-            type=str,
-            help='View a specific log file by name',
-        )
-        parser.add_argument(
-            '--latest',
-            action='store_true',
-            help='View the most recent log file',
-        )
-        parser.add_argument(
-            '--search',
-            type=str,
-            help='Search for a pattern across all log files',
-        )
-        parser.add_argument(
-            '--tail',
-            type=int,
-            default=20,
-            help='Number of recent logs to list (default: 20)',
-        )
-        parser.add_argument(
-            '--cleanup',
-            action='store_true',
-            help='Clean up old log files (keeps most recent 100)',
-        )
-        parser.add_argument(
-            '--with-django',
-            action='store_true',
-            help='Include linked Django log output when viewing logs',
-        )
-        parser.add_argument(
-            '--django-lines',
-            type=int,
-            default=200,
-            help='Number of Django log lines to include (default: 200)',
-        )
+        parser.add_argument('--list', action='store_true', help='List recent trace files')
+        parser.add_argument('--view', type=str, help='View a specific trace file by name')
+        parser.add_argument('--latest', action='store_true', help='View the most recent trace file')
+        parser.add_argument('--search', type=str, help='Search for a pattern across all trace files')
+        parser.add_argument('--tail', type=int, default=20, help='Number of recent traces to list (default: 20)')
+        parser.add_argument('--cleanup', action='store_true', help='Clean up old trace files (keeps most recent 100)')
+        parser.add_argument('--raw', action='store_true', help='Output raw NDJSON instead of formatted view')
 
     def handle(self, *args, **options):
-        log_dir = AgentSessionLogManager.get_log_dir()
-        self._with_django = options.get('with_django', False)
-        self._django_lines = options.get('django_lines', 200)
-        
+        self._manager = TraceFileManager()
+        self._raw = options.get('raw', False)
+
         if options['list']:
-            self._list_logs(options['tail'])
+            self._list_traces(options['tail'])
         elif options['view']:
-            self._view_log(options['view'])
+            self._view_trace(options['view'])
         elif options['latest']:
             self._view_latest()
         elif options['search']:
-            self._search_logs(options['search'])
+            self._search_traces(options['search'])
         elif options['cleanup']:
-            self._cleanup_logs()
+            self._cleanup_traces()
         else:
             self.stdout.write(self.style.WARNING(
                 'No action specified. Use --list, --view, --latest, --search, or --cleanup'
             ))
-            self.stdout.write(f'\nLog directory: {log_dir}')
+            self.stdout.write(f'\nTrace directory: {self._manager.get_dir()}')
 
-    def _list_logs(self, limit: int):
-        """List recent log files."""
-        logs = AgentSessionLogManager.list_recent_logs(limit=limit)
-        
-        if not logs:
-            self.stdout.write(self.style.WARNING('No agent session logs found.'))
+    def _list_traces(self, limit: int):
+        traces = self._manager.list_recent_traces(limit=limit)
+        if not traces:
+            self.stdout.write(self.style.WARNING('No trace files found.'))
             return
-        
-        self.stdout.write(self.style.SUCCESS(f'Recent agent session logs ({len(logs)} files):'))
+
+        self.stdout.write(self.style.SUCCESS(f'Recent agent traces ({len(traces)} files):'))
         self.stdout.write('')
-        
-        for log_file in logs:
-            stat = log_file.stat()
+
+        for trace_file in traces:
+            stat = trace_file.stat()
             size_kb = stat.st_size / 1024
-            from datetime import datetime
             mtime = datetime.fromtimestamp(stat.st_mtime)
-            
+            span_count = sum(1 for _ in open(trace_file, encoding='utf-8'))
             self.stdout.write(
-                f'  {log_file.name} '
-                f'({size_kb:.1f} KB, {mtime.strftime("%Y-%m-%d %H:%M:%S")})'
+                f'  {trace_file.name} '
+                f'({size_kb:.1f} KB, {span_count} spans, {mtime.strftime("%Y-%m-%d %H:%M:%S")})'
             )
 
-    def _view_log(self, filename: str):
-        """View a specific log file."""
-        log_dir = AgentSessionLogManager.get_log_dir()
-        log_file = log_dir / filename
-        
-        if not log_file.exists():
-            self.stdout.write(self.style.ERROR(f'Log file not found: {filename}'))
-            return
-        
-        self.stdout.write(self.style.SUCCESS(f'=== {filename} ==='))
-        self.stdout.write('')
-        
-        with open(log_file, 'r', encoding='utf-8') as f:
-            self.stdout.write(f.read())
+    def _view_trace(self, filename: str):
+        base = self._manager.get_dir()
+        # Support both direct filename and path within month dirs
+        trace_file = base / filename
+        if not trace_file.exists():
+            # Search month subdirectories
+            matches = list(base.glob(f"**/{filename}"))
+            if matches:
+                trace_file = matches[0]
+            else:
+                self.stdout.write(self.style.ERROR(f'Trace file not found: {filename}'))
+                return
 
-        linked_path = self._get_linked_django_log_path(log_file)
-        if linked_path:
-            self.stdout.write('')
-            self.stdout.write(self.style.SUCCESS(f'Linked Django log: {linked_path}'))
-            if self._with_django:
-                self._print_django_log_tail(linked_path)
+        self.stdout.write(self.style.SUCCESS(f'=== {trace_file.name} ==='))
+        self.stdout.write('')
+
+        if self._raw:
+            with open(trace_file, 'r', encoding='utf-8') as f:
+                self.stdout.write(f.read())
+            return
+
+        self._print_formatted_trace(trace_file)
 
     def _view_latest(self):
-        """View the most recent log file."""
-        logs = AgentSessionLogManager.list_recent_logs(limit=1)
-        
-        if not logs:
-            self.stdout.write(self.style.WARNING('No agent session logs found.'))
+        traces = self._manager.list_recent_traces(limit=1)
+        if not traces:
+            self.stdout.write(self.style.WARNING('No trace files found.'))
             return
-        
-        self._view_log(logs[0].name)
+        self._view_trace(traces[0].name)
 
-    def _search_logs(self, pattern: str):
-        """Search for a pattern across all log files."""
-        log_dir = AgentSessionLogManager.get_log_dir()
-        logs = list(log_dir.glob('*.txt'))
-        
-        if not logs:
-            self.stdout.write(self.style.WARNING('No agent session logs found.'))
+    def _search_traces(self, pattern: str):
+        base = self._manager.get_dir()
+        files = list(base.glob('**/*.ndjson'))
+        if not files:
+            self.stdout.write(self.style.WARNING('No trace files found.'))
             return
-        
-        self.stdout.write(self.style.SUCCESS(f'Searching for "{pattern}" in {len(logs)} files...'))
+
+        self.stdout.write(self.style.SUCCESS(f'Searching for "{pattern}" in {len(files)} files...'))
         self.stdout.write('')
-        
+
         matches = []
-        for log_file in logs:
+        for trace_file in files:
             try:
-                with open(log_file, 'r', encoding='utf-8') as f:
+                with open(trace_file, 'r', encoding='utf-8') as f:
                     content = f.read()
                     if pattern.lower() in content.lower():
-                        # Count occurrences
                         count = content.lower().count(pattern.lower())
-                        matches.append((log_file.name, count))
+                        matches.append((trace_file.name, count))
             except Exception as e:
-                self.stdout.write(self.style.WARNING(f'  Error reading {log_file.name}: {e}'))
-        
+                self.stdout.write(self.style.WARNING(f'  Error reading {trace_file.name}: {e}'))
+
         if matches:
             self.stdout.write(self.style.SUCCESS(f'Found matches in {len(matches)} files:'))
             for filename, count in sorted(matches, key=lambda x: x[1], reverse=True):
@@ -168,48 +126,72 @@ class Command(BaseCommand):
         else:
             self.stdout.write(self.style.WARNING(f'No matches found for "{pattern}"'))
 
-    def _cleanup_logs(self):
-        """Clean up old log files."""
-        deleted = AgentSessionLogManager.cleanup_old_logs(max_files=100)
-        
+    def _cleanup_traces(self):
+        deleted = self._manager.cleanup_old_traces(max_files=100)
         if deleted > 0:
-            self.stdout.write(self.style.SUCCESS(f'Cleaned up {deleted} old log file(s).'))
+            self.stdout.write(self.style.SUCCESS(f'Cleaned up {deleted} old trace file(s).'))
         else:
-            self.stdout.write(self.style.SUCCESS('No cleanup needed. Log count within limits.'))
+            self.stdout.write(self.style.SUCCESS('No cleanup needed. Trace count within limits.'))
 
-    def _get_linked_django_log_path(self, log_file: Path) -> Path | None:
-        """Extract linked Django log path from agent session log header."""
-        try:
-            with open(log_file, 'r', encoding='utf-8') as f:
-                for _ in range(120):
-                    line = f.readline()
-                    if not line:
-                        break
-                    if line.startswith("Django Log File:"):
-                        _, _, value = line.partition("Django Log File:")
-                        path_str = value.strip()
-                        if path_str:
-                            return Path(path_str)
-        except Exception:
-            return None
-        return None
+    def _print_formatted_trace(self, trace_file: Path):
+        """Pretty-print spans in chronological order with parent-child indentation."""
+        spans = []
+        with open(trace_file, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    try:
+                        spans.append(json.loads(line))
+                    except json.JSONDecodeError:
+                        continue
 
-    def _print_django_log_tail(self, log_path: Path) -> None:
-        """Print the tail of a linked Django log file."""
-        if not log_path.exists():
-            self.stdout.write(self.style.WARNING('Linked Django log file not found.'))
+        if not spans:
+            self.stdout.write('  (empty trace file)')
             return
 
-        try:
-            with open(log_path, 'r', encoding='utf-8') as f:
-                tail_lines = deque(f, maxlen=self._django_lines)
-        except Exception as exc:
-            self.stdout.write(self.style.WARNING(f'Error reading Django log: {exc}'))
-            return
+        # Sort by start_time
+        spans.sort(key=lambda s: s.get('start_time', ''))
 
-        self.stdout.write(self.style.SUCCESS(
-            f'=== LINKED DJANGO LOG (last {len(tail_lines)} lines) ==='
-        ))
-        self.stdout.write('')
-        for line in tail_lines:
-            self.stdout.write(line.rstrip('\n'))
+        # Build parent lookup for indentation
+        parent_map = {}
+        for s in spans:
+            parent_map[s.get('span_id')] = s.get('parent_span_id')
+
+        def _depth(span_id: str, seen: set = None) -> int:
+            if seen is None:
+                seen = set()
+            if span_id in seen:
+                return 0
+            seen.add(span_id)
+            parent = parent_map.get(span_id)
+            if parent is None:
+                return 0
+            return 1 + _depth(parent, seen)
+
+        for span in spans:
+            depth = _depth(span.get('span_id', ''))
+            indent = '  ' * depth
+            name = span.get('name', 'unknown')
+            duration = span.get('duration_ms', 0)
+            status = span.get('status', {})
+            status_str = f" [{status.get('status_code', '')}]" if status else ""
+
+            self.stdout.write(f'{indent}{name} ({duration:.0f}ms){status_str}')
+
+            # Show key attributes
+            attrs = span.get('attributes', {})
+            for key in sorted(attrs.keys()):
+                val = attrs[key]
+                if isinstance(val, str) and len(val) > 200:
+                    val = val[:200] + '...'
+                self.stdout.write(f'{indent}  {key}: {val}')
+
+            # Show events
+            for event in span.get('events', []):
+                self.stdout.write(f'{indent}  [{event.get("name", "")}]')
+                for ek, ev in event.get('attributes', {}).items():
+                    if isinstance(ev, str) and len(ev) > 200:
+                        ev = ev[:200] + '...'
+                    self.stdout.write(f'{indent}    {ek}: {ev}')
+
+            self.stdout.write('')

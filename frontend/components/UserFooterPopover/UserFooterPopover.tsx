@@ -6,8 +6,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
+import {
+  createProductMutation,
+  productKeys,
+} from "@/queries/v2/products.queries";
 import type { AdminProduct } from "@/types/admin";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Check,
   ChevronDown,
@@ -17,7 +23,6 @@ import {
   Plus,
   Sun,
 } from "lucide-react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -49,7 +54,18 @@ export function UserFooterPopover({
   setTheme,
 }: UserFooterPopoverProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [footerPopoverOpen, setFooterPopoverOpen] = useState(false);
+
+  const createProduct = useMutation({
+    ...createProductMutation(),
+    onSuccess: async (newProduct) => {
+      switchProduct(newProduct.id);
+      await queryClient.invalidateQueries({ queryKey: productKeys.all });
+      setFooterPopoverOpen(false);
+      router.push("/setup");
+    },
+  });
 
   const userInitials = user.name
     ? user.name
@@ -146,17 +162,21 @@ export function UserFooterPopover({
                 </div>
               ))}
             </div>
-            {/* New Assistant Link */}
-            <Link
-              href="/onboarding?new=true"
-              onClick={() => setFooterPopoverOpen(false)}
-              className="flex w-full items-center gap-3 sm:gap-2 rounded-md px-3 py-3 sm:px-2 sm:py-1.5 text-base sm:text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground"
+            {/* New Assistant */}
+            <button
+              onClick={() => createProduct.mutate({ name: "New Product" })}
+              disabled={createProduct.isPending}
+              className="flex w-full items-center gap-3 sm:gap-2 rounded-md px-3 py-3 sm:px-2 sm:py-1.5 text-base sm:text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground disabled:opacity-50"
             >
               <div className="flex h-7 w-7 sm:h-5 sm:w-5 items-center justify-center rounded border border-dashed border-muted-foreground/50">
-                <Plus className="h-4 w-4 sm:h-3 sm:w-3" />
+                {createProduct.isPending ? (
+                  <Spinner size="sm" />
+                ) : (
+                  <Plus className="h-4 w-4 sm:h-3 sm:w-3" />
+                )}
               </div>
-              <span>New Assistant</span>
-            </Link>
+              <span>{createProduct.isPending ? "Creating..." : "New Assistant"}</span>
+            </button>
             <div className="border-t border-sidebar-border my-1.5 sm:my-1" />
           </>
         )}

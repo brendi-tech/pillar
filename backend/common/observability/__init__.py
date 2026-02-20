@@ -1,1 +1,2 @@
-from .tracing import setup_tracing, get_tracer, is_tracing_enabled
+from .tracing import setup_tracing, get_tracer
+from .file_exporter import TraceFileManager, sanitize_attributes

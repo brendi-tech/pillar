@@ -44,7 +44,7 @@ export interface Product {
   id: string;
   organization: string;
   name: string;
-  subdomain: string;
+  subdomain: string | null;
   website_url: string;
   config: ProductConfig;
   is_default: boolean;
@@ -135,7 +135,7 @@ export interface ProductEmbed {
 
 export interface CreateProductPayload {
   name: string;
-  subdomain: string;
+  subdomain?: string;
   website_url?: string;
   config?: Partial<ProductConfig>;
   is_default?: boolean;

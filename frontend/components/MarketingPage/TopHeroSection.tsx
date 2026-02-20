@@ -34,8 +34,8 @@ export function TopHeroSection() {
             >
               open source
             </a>{" "}
-            copilot that turns user requests into completed actions, right
-            inside your app.
+            copilot that turns user and agent requests into completed actions,
+            right inside your app.
           </p>
         </div>
         <div className="flex flex-col items-center gap-2 pb-8 md:pb-12 px-4">

@@ -1,0 +1,185 @@
+# Build Pillar SDK Tools for My App
+
+I want to implement Pillar SDK tools for my application using the vanilla JS SDK. Help me create a set of tools that will make my app's co-pilot useful.
+
+## Pillar SDK Overview (Vanilla JS)
+
+Pillar tools are defined using `pillar.defineTool()` from `@pillar-ai/sdk`. Initialize the SDK and register tools anywhere in your JavaScript.
+
+```ts
+import Pillar from '@pillar-ai/sdk';
+
+const pillar = new Pillar({ productKey: 'your-product-key' });
+
+pillar.defineTool({
+  name: 'tool_name',
+  description: 'AI-friendly description of what this does',
+  guidance: 'When and how to use this tool, pitfalls, chaining notes',
+  type: 'navigate' | 'trigger_tool' | 'query' | 'inline_ui' | 'external_link' | 'copy_text',
+  examples: ['phrases users might say'],
+  autoRun: true,            // execute without clicking
+  autoComplete: true,       // mark done immediately
+  inputSchema: { ... },     // JSON Schema for data extraction
+  requiredContext: { ... },  // context filtering
+  execute: (data) => { ... },
+});
+```
+
+This works with any framework (Angular, Vue, Svelte, plain JS) or no framework at all. Group tools into separate files and import them at app startup.
+
+### Tool Types
+- **navigate**: Go to a page (use with `autoRun: true`)
+- **trigger_tool**: Run custom logic (modals, wizards, toggles, API calls)
+- **query**: Fetch data and return it to the AI agent for reasoning (auto-sets `returns: true`)
+- **inline_ui**: Show interactive UI in chat
+- **external_link**: Open URL in new tab
+- **copy_text**: Copy to clipboard
+
+### Organizing Tools
+
+Group related tools into registration functions:
+
+```ts
+// tools/dashboardTools.ts
+export function registerDashboardTools(pillar: PillarInstance) {
+  pillar.defineTool({
+    name: 'create_dashboard',
+    description: 'Create a new empty dashboard',
+    guidance: 'First step in dashboard workflow. Returns dashboard_uid for panel tools.',
+    type: 'trigger_tool',
+    autoRun: true,
+    inputSchema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string', description: 'Dashboard title' },
+      },
+      required: ['title'],
+    },
+    execute: async (data) => {
+      const result = await api.createDashboard(data.title);
+      return { success: true, data: { uid: result.uid } };
+    },
+  });
+}
+```
+
+```ts
+// main.ts
+import Pillar from '@pillar-ai/sdk';
+import { registerDashboardTools } from './tools/dashboardTools';
+import { registerNavTools } from './tools/navTools';
+
+const pillar = new Pillar({ productKey: 'your-product-key' });
+registerDashboardTools(pillar);
+registerNavTools(pillar);
+```
+
+## Your Task
+
+1. **Analyze my codebase** to understand:
+   - Framework (Angular, Vue, Svelte, jQuery, vanilla, etc.)
+   - Routing pattern and all navigable pages
+   - Modal/dialog systems (what modals exist?)
+   - Key user flows and features
+   - Authentication and role patterns
+
+2. **Identify tools** in these categories:
+
+   **Navigation Tools** (type: 'navigate')
+   - All main pages users might want to reach
+   - Settings sections (account, billing, notifications, etc.)
+   - Dashboard views and detail pages
+   - Use `autoRun: true` for simple navigations
+   - Use `window.location.href` or your framework's router
+
+   **Trigger Tools** (type: 'trigger_tool')
+   - Modals: invite users, create items, confirmations
+   - Wizards: onboarding, setup flows, multi-step processes
+   - Feature toggles: dark mode, sidebar, notifications
+   - Tools that open forms or dialogs
+   - Call your framework's APIs or manipulate DOM directly
+
+   **Query Tools** (type: 'query')
+   - Discovery tools that fetch data for the AI: list items, get details, inspect schemas
+   - Validation tools: test a query, preview results before committing
+   - These return data to the AI agent so it can reason and decide what to do next
+   - Use `autoRun: true` and `autoComplete: true` so the agent can chain them without user clicks
+
+   **API Tools** (type: 'trigger_tool' with `returns: true`)
+   - Tools that create, update, or delete via API and return the result
+   - Break up by operation: `create_X`, `update_X`, `delete_X` -- not one `manage_X`
+   - Each gets a tight schema matching only the fields that specific operation needs
+   - Use `returns: true` so the agent gets confirmation and can continue its workflow
+   - Add a `guidance` field with per-tool instructions (pitfalls, chaining notes, etc.)
+
+   **Context-Filtered Tools**
+   - Admin-only tools with `requiredContext: { userRole: 'admin' }`
+   - Feature-gated tools based on subscription/plan
+   - Page-specific tools
+
+3. **Generate implementation:**
+
+   Create tool registration files organized by feature area:
+   - `tools/navTools.ts` -- navigation tools
+   - `tools/featureTools.ts` -- feature-specific tools
+   - `tools/adminTools.ts` -- admin-only tools
+   - `tools/index.ts` -- registers all tools on the Pillar instance
+   - 10-30 tools depending on app complexity
+   - Include query/discovery tools, not just navigation and triggers
+   - Clear, specific descriptions that help AI matching
+   - `guidance` field for tools that need usage instructions
+   - Example phrases for each tool (3-5 per tool)
+   - inputSchema for tools that need extracted data
+
+4. **For each tool, include:**
+   - A specific description (not generic)
+   - A `guidance` field when the tool has usage caveats, chaining requirements, or pitfalls
+   - Multiple example phrases users might say
+   - The right tool type
+   - Any required context filtering
+
+5. **Design for verification** (for apps with create/update APIs):
+
+   For tools that modify data, consider adding a companion query tool that lets the AI validate first.
+
+   Pattern:
+   1. `test_*` or `preview_*` tool with `type: 'query'` -- returns data for the agent to inspect
+   2. `create_*` tool with `returns: true` -- commits the change and returns confirmation
+   3. Agent guidance tells the AI to always test before creating
+
+   ```ts
+   pillar.defineTool({
+     name: 'test_report_query',
+     description: 'Test a report query and return sample results',
+     type: 'query',
+     guidance: 'Use this before create_report to verify the query returns expected data.',
+     inputSchema: {
+       type: 'object',
+       properties: {
+         datasource_id: { type: 'number', description: 'Dataset to query' },
+       },
+       required: ['datasource_id'],
+     },
+     execute: async (data) => {
+       const results = await api.testQuery(data);
+       return { valid: results.length > 0, row_count: results.length, sample: results.slice(0, 3) };
+     },
+   });
+   ```
+
+## Start Here
+
+First, explore my codebase:
+1. Look at the project structure and identify the framework
+2. Find the routing mechanism (router config, URL patterns, etc.)
+3. Find modal/dialog systems
+4. Identify settings pages and their sections
+5. Look for admin-only features
+6. Find any existing navigation patterns
+
+Then ask me about:
+- What are the main features of my app?
+- What user roles exist?
+- What tools do users ask about most often?
+- Does my app have APIs where the AI agent should create, update, or delete resources?
+- Are there queries or lookups the AI should validate before committing changes?

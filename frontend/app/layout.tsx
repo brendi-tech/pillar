@@ -115,7 +115,7 @@ export async function generateMetadata(): Promise<Metadata> {
       ...baseMetadata,
       title: "Pillar - Your App's Copilot",
       description:
-        "Pillar is an open source copilot that turns user requests into completed actions, right inside your app.",
+        "Pillar is an open source copilot that turns user and agent requests into completed actions, right inside your app.",
       robots: "index, follow, max-snippet:-1, max-image-preview:large",
     };
   }
@@ -125,7 +125,7 @@ export async function generateMetadata(): Promise<Metadata> {
     ...baseMetadata,
     title: "Pillar - Your App's Copilot",
     description:
-      "Pillar is an open source copilot that turns user requests into completed actions, right inside your app.",
+      "Pillar is an open source copilot that turns user and agent requests into completed actions, right inside your app.",
   };
 }
 

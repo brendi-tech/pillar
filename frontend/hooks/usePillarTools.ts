@@ -35,7 +35,7 @@ import {
   analyticsAPI,
   getDateRangeFromPreset,
 } from "@/lib/admin/analytics-api";
-import { adminPatch, getCurrentOrganizationId } from "@/lib/admin/api-client";
+import { adminFetch, adminPatch, getCurrentOrganizationId } from "@/lib/admin/api-client";
 import { snippetsAPI } from "@/lib/admin/knowledge-api";
 import { organizationAPI } from "@/lib/admin/organization-api";
 import { knowledgeSourcesAPI } from "@/lib/admin/sources-api";
@@ -1166,6 +1166,127 @@ export function usePillarTools() {
             queryClient.invalidateQueries({ queryKey: configKeys.all }),
           nav: (path: string) => nav(path),
         });
+      },
+    },
+  ]);
+
+  // =========================================================================
+  // API Key tools
+  // =========================================================================
+  usePillarTool([
+    {
+      name: "generate_api_key",
+      type: "trigger_tool",
+      description:
+        "Generate a new API key (sync secret) for the current project. " +
+        "Returns the raw secret which must be copied immediately — it cannot " +
+        "be retrieved later. Use when user asks to create, generate, or add an API key.",
+      examples: [
+        "generate an API key",
+        "create a new API key",
+        "I need an API key",
+        "add an API key called production",
+        "generate a key for CI",
+      ],
+      autoRun: false,
+      autoComplete: false,
+      inputSchema: {
+        type: "object",
+        properties: {
+          name: {
+            type: "string",
+            description:
+              "Optional label for the key (e.g. production, staging, ci). " +
+              "Lowercase alphanumeric and hyphens only.",
+          },
+        },
+      },
+      execute: async (data: { name?: string }) => {
+        const productId = currentProduct?.id;
+        if (!productId) {
+          return { success: false, error: "No product selected" };
+        }
+        const name =
+          data.name?.trim().toLowerCase().replace(/[^a-z0-9-]/g, "") || undefined;
+        try {
+          const result = await adminFetch<{
+            id: string;
+            name: string;
+            secret: string;
+          }>(`/configs/${productId}/secrets/`, {
+            method: "POST",
+            body: JSON.stringify({ name }),
+          });
+          return {
+            success: true,
+            name: result.name,
+            secret: result.secret,
+            message:
+              "Copy this secret now — it will not be shown again! " +
+              `Key name: ${result.name}`,
+          };
+        } catch {
+          return { success: false, error: "Failed to generate API key" };
+        }
+      },
+    },
+    {
+      name: "manage_api_keys",
+      type: "inline_ui" as const,
+      description:
+        "Show an interactive API key manager. Lists all existing keys " +
+        "with the ability to create new keys or revoke existing ones. " +
+        "Use when user wants to view, list, manage, or delete API keys.",
+      examples: [
+        "show my API keys",
+        "list API keys",
+        "delete an API key",
+        "manage API keys",
+        "view my keys",
+        "revoke an API key",
+      ],
+      autoRun: true,
+      autoComplete: true,
+      execute: () => {
+        return { card_type: "api_keys" };
+      },
+    },
+    {
+      name: "list_api_keys",
+      type: "query",
+      description:
+        "Get the list of API keys (sync secrets) for the current project. " +
+        "Returns key names, creation dates, and last used dates. " +
+        "Call this when you need to reference keys by name before other operations.",
+      autoRun: true,
+      autoComplete: true,
+      execute: async () => {
+        const productId = currentProduct?.id;
+        if (!productId) {
+          return { error: "No product selected" };
+        }
+        try {
+          const secrets = await adminFetch<
+            Array<{
+              id: string;
+              name: string;
+              created_at: string;
+              last_used_at: string | null;
+            }>
+          >(`/configs/${productId}/secrets/`);
+          return {
+            keys: secrets.map((s) => ({
+              id: s.id,
+              name: s.name,
+              createdAt: s.created_at,
+              lastUsedAt: s.last_used_at,
+            })),
+            count: secrets.length,
+            canCreateMore: secrets.length < 10,
+          };
+        } catch {
+          return { keys: [], count: 0, error: "Failed to load API keys" };
+        }
       },
     },
   ]);

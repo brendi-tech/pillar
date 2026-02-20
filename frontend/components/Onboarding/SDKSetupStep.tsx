@@ -1,45 +1,25 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { formatDistanceToNow } from "date-fns";
 import {
-  AlertTriangle,
   ArrowLeft,
   ArrowRight,
   Check,
   Code2,
-  Copy,
   Key,
   Package,
   Play,
-  Plus,
   RefreshCw,
   Sparkles,
   Tag,
-  Trash2,
 } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 
 import { AIPromptBlock } from "@/components/mdx/AIPromptBlock";
 import { SyntaxHighlightedPre } from "@/components/mdx/SyntaxHighlightedPre";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -49,10 +29,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { adminFetch } from "@/lib/admin/api-client";
 import { cn } from "@/lib/utils";
 import { useProduct } from "@/providers/ProductProvider";
 
+import { CopyButton, SecretsManager } from "./SecretsManager";
 import { TestPillarStep } from "./TestPillarStep";
 
 // Example file imports (raw strings via webpack .txt loader)
@@ -79,318 +59,6 @@ interface SubStep {
   icon: React.ReactNode;
 }
 
-interface SyncSecret {
-  id: string;
-  name: string;
-  created_at: string;
-  last_used_at: string | null;
-  created_by_email: string | null;
-}
-
-interface CreateSecretResponse {
-  id: string;
-  name: string;
-  secret: string;
-  message: string;
-}
-
-function CopyButton({
-  value,
-  className,
-  disabled,
-}: {
-  value: string;
-  className?: string;
-  disabled?: boolean;
-}) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = () => {
-    if (disabled || !value) return;
-    navigator.clipboard.writeText(value);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  return (
-    <Button
-      type="button"
-      variant="ghost"
-      size="sm"
-      className={className}
-      onClick={handleCopy}
-      disabled={disabled || !value}
-    >
-      {copied ? (
-        <Check className="h-4 w-4 text-green-600" />
-      ) : (
-        <Copy className="h-4 w-4" />
-      )}
-    </Button>
-  );
-}
-
-// =============================================================================
-// Secrets Manager Component
-// =============================================================================
-
-interface SecretsManagerProps {
-  productId: string;
-  onSecretCreated: (secret: string, name: string) => void;
-}
-
-function SecretsManager({ productId, onSecretCreated }: SecretsManagerProps) {
-  const queryClient = useQueryClient();
-  const [newSecretName, setNewSecretName] = useState("");
-  const [nameError, setNameError] = useState<string | null>(null);
-  const autoCreatedRef = useRef(false);
-
-  const {
-    data: secrets,
-    isPending,
-    isError,
-  } = useQuery({
-    queryKey: ["sync-secrets", productId],
-    queryFn: () => adminFetch<SyncSecret[]>(`/configs/${productId}/secrets/`),
-    enabled: !!productId,
-  });
-
-  const createSecretMutation = useMutation({
-    mutationFn: async (name: string) => {
-      return adminFetch<CreateSecretResponse>(
-        `/configs/${productId}/secrets/`,
-        {
-          method: "POST",
-          body: JSON.stringify({ name }),
-        }
-      );
-    },
-    onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: ["sync-secrets", productId] });
-      queryClient.invalidateQueries({ queryKey: ["help-center-config"] });
-      setNewSecretName("");
-      setNameError(null);
-      onSecretCreated(result.secret, result.name);
-    },
-    onError: (error: Error) => {
-      setNameError(error.message || "Failed to create secret");
-    },
-  });
-
-  // Auto-create a "default" secret when the page loads with no existing secrets
-  useEffect(() => {
-    if (
-      !isPending &&
-      !isError &&
-      secrets &&
-      secrets.length === 0 &&
-      !autoCreatedRef.current &&
-      !createSecretMutation.isPending
-    ) {
-      autoCreatedRef.current = true;
-      createSecretMutation.mutate("default");
-    }
-  }, [isPending, isError, secrets, createSecretMutation]);
-
-  const deleteSecretMutation = useMutation({
-    mutationFn: async (secretId: string) => {
-      return adminFetch(`/configs/${productId}/secrets/${secretId}/`, {
-        method: "DELETE",
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["sync-secrets", productId] });
-      queryClient.invalidateQueries({ queryKey: ["help-center-config"] });
-    },
-  });
-
-  const validateName = (name: string): boolean => {
-    if (!name.trim()) {
-      setNameError("Name is required");
-      return false;
-    }
-    if (!/^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$/.test(name.toLowerCase())) {
-      setNameError("Use lowercase letters, numbers, and hyphens only");
-      return false;
-    }
-    if (name.length > 50) {
-      setNameError("Name must be 50 characters or less");
-      return false;
-    }
-    setNameError(null);
-    return true;
-  };
-
-  const handleCreateSecret = () => {
-    const name = newSecretName.toLowerCase().trim();
-    if (validateName(name)) {
-      createSecretMutation.mutate(name);
-    }
-  };
-
-  const isAutoCreating =
-    createSecretMutation.isPending && (!secrets || secrets.length === 0);
-
-  if (isPending || isAutoCreating) {
-    return (
-      <div className="space-y-3">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Spinner size="sm" />
-          <span>
-            {isAutoCreating ? "Generating your secret key..." : "Loading..."}
-          </span>
-        </div>
-        <Skeleton className="h-10 w-full" />
-      </div>
-    );
-  }
-
-  if (isError) {
-    return (
-      <Alert variant="destructive">
-        <AlertTriangle className="h-4 w-4" />
-        <AlertTitle>Error</AlertTitle>
-        <AlertDescription>
-          Failed to load secrets. Please try again.
-        </AlertDescription>
-      </Alert>
-    );
-  }
-
-  const hasSecrets = secrets && secrets.length > 0;
-  const canCreateMore = !secrets || secrets.length < 10;
-
-  return (
-    <div className="space-y-4">
-      {/* Existing secrets table */}
-      {hasSecrets && (
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead>Last Used</TableHead>
-                <TableHead className="w-[80px]"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {secrets.map((secret) => (
-                <TableRow key={secret.id}>
-                  <TableCell className="font-mono text-sm">
-                    {secret.name}
-                  </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {formatDistanceToNow(new Date(secret.created_at), {
-                      addSuffix: true,
-                    })}
-                  </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {secret.last_used_at
-                      ? formatDistanceToNow(new Date(secret.last_used_at), {
-                          addSuffix: true,
-                        })
-                      : "Never"}
-                  </TableCell>
-                  <TableCell>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-destructive hover:text-destructive"
-                          disabled={deleteSecretMutation.isPending}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Revoke Secret</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Are you sure you want to revoke the &quot;
-                            {secret.name}&quot; secret? Any CI/CD pipelines
-                            using this secret will fail to authenticate.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() =>
-                              deleteSecretMutation.mutate(secret.id)
-                            }
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                          >
-                            Revoke
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      )}
-
-      {/* Create new secret */}
-      {canCreateMore && (
-        <div className="rounded-lg border border-dashed p-4 space-y-3">
-          <Label htmlFor="secret-name" className="text-sm font-medium">
-            {hasSecrets ? "Add Another Secret" : "Create Your First Secret"}
-          </Label>
-          <div className="flex gap-2">
-            <div className="flex-1">
-              <Input
-                id="secret-name"
-                placeholder="e.g., production, staging, dev-ci"
-                value={newSecretName}
-                onChange={(e) => {
-                  setNewSecretName(
-                    e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "")
-                  );
-                  setNameError(null);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    handleCreateSecret();
-                  }
-                }}
-                className="font-mono"
-              />
-              {nameError && (
-                <p className="text-xs text-destructive mt-1">{nameError}</p>
-              )}
-            </div>
-            <Button
-              onClick={handleCreateSecret}
-              disabled={createSecretMutation.isPending || !newSecretName.trim()}
-            >
-              {createSecretMutation.isPending ? (
-                <Spinner size="sm" className="sm:mr-2" />
-              ) : (
-                <Plus className="h-4 w-4 sm:mr-2" />
-              )}
-              <span className="hidden sm:inline">Generate</span>
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Create separate secrets for different environments (e.g.,
-            production, staging)
-          </p>
-        </div>
-      )}
-
-      {!canCreateMore && (
-        <p className="text-xs text-muted-foreground">
-          Maximum 10 secrets per product. Delete an existing secret to create a
-          new one.
-        </p>
-      )}
-    </div>
-  );
-}
 
 // =============================================================================
 // Sub-step Components

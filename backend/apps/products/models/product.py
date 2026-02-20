@@ -46,7 +46,7 @@ def validate_subdomain(value: str) -> None:
     - Cannot be a reserved word
     """
     if not value:
-        raise ValidationError("Subdomain is required")
+        return
 
     if len(value) < 3:
         raise ValidationError("Subdomain must be at least 3 characters")
@@ -91,6 +91,8 @@ class Product(TenantAwareModel):
     subdomain = models.CharField(
         max_length=50,
         unique=True,
+        null=True,
+        blank=True,
         db_index=True,
         validators=[validate_subdomain],
         help_text="Unique subdomain for this product (e.g., 'acme' for acme.help.pillar.io)"
@@ -159,7 +161,7 @@ class Product(TenantAwareModel):
         ]
 
     def __str__(self):
-        return f"{self.name} ({self.subdomain})"
+        return f"{self.name} ({self.subdomain or 'draft'})"
 
     def save(self, *args, **kwargs):
         # Ensure subdomain is lowercase

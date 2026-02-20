@@ -19,7 +19,7 @@ from opentelemetry.trace import StatusCode
 from apps.mcp.services.agent.error_types import is_tool_error
 from apps.mcp.services.agent.helpers import log_action_execution
 from apps.mcp.services.agent.messages import get_fallback_message
-from apps.mcp.services.agent.session_logger import AgentSessionLogger
+from common.observability.file_exporter import sanitize_attributes
 from common.observability.tracing import get_tracer
 from apps.mcp.services.agent.streaming_events import (
     emit_search_complete,
@@ -122,7 +122,6 @@ async def _handle_parallel_tool_calls(
     tool_executor,
     service,
     session_id: str,
-    session_logger,
     display_trace: list[dict],
     iteration: int,
     start_time_ms: int,
@@ -149,7 +148,6 @@ async def _handle_parallel_tool_calls(
         tool_executor: AgentToolExecutor instance
         service: AgentAnswerServiceReActAsync instance
         session_id: Session ID for query result correlation
-        session_logger: AgentSessionLogger instance
         display_trace: List to append reasoning trace entries
         iteration: Current iteration number
         start_time_ms: Start timestamp for timing
@@ -222,14 +220,6 @@ async def _handle_parallel_tool_calls(
                 # Unlock get_article tool now that we have knowledge with item_ids
                 agent_context.get_article_unlocked = True
             
-            # Log tool execution
-            session_logger.log_tool_execution(
-                tool="search",
-                duration_ms=int((time.time() - tool_start) * 1000),
-                results=results,
-                results_count=len(actions) + len(knowledge),
-            )
-            
             # UI sources
             ui_sources = []
             for a in actions:
@@ -291,13 +281,6 @@ async def _handle_parallel_tool_calls(
             
             tool_start = time.time()
             result = await tool_executor.execute_get_article(item_id)
-            
-            session_logger.log_tool_execution(
-                tool="get_article",
-                duration_ms=int((time.time() - tool_start) * 1000),
-                results=result,
-                results_count=1 if "error" not in result else 0,
-            )
             
             is_success = "error" not in result
             if not is_success:
@@ -395,8 +378,6 @@ async def _handle_parallel_tool_calls(
                 "tool_call_id": tool_call_id,
             }
             
-            session_logger.log_query_action_sent(action_name, parameters)
-            
             # Wait for result from client
             from apps.mcp.services.agent.helpers import wait_for_query_result
             
@@ -411,7 +392,6 @@ async def _handle_parallel_tool_calls(
             wait_duration_ms = int((time.time() - wait_start) * 1000)
             
             if result is None:
-                session_logger.log_query_timeout(action_name, 60.0)
                 display_name = format_tool_name_for_display(action_name)
                 display_trace.append({
                     "step_type": "tool_result",
@@ -437,10 +417,6 @@ async def _handle_parallel_tool_calls(
                     arguments=parameters,
                 )
             else:
-                session_logger.log_query_result_received(
-                    wait_duration_ms=wait_duration_ms,
-                    result=result,
-                )
                 
                 is_success = True
                 error_msg = ""
@@ -511,8 +487,6 @@ async def _handle_parallel_tool_calls(
                 "tool_call_id": tool_call_id,
             }
 
-            session_logger.log_query_action_sent(action_name, parameters)
-
             # Wait for result from client
             from apps.mcp.services.agent.helpers import wait_for_query_result
 
@@ -527,7 +501,6 @@ async def _handle_parallel_tool_calls(
             wait_duration_ms = int((time.time() - wait_start) * 1000)
 
             if result is None:
-                session_logger.log_query_timeout(action_name, 60.0)
                 display_name = format_tool_name_for_display(action_name)
                 display_trace.append({
                     "step_type": "tool_result",
@@ -553,11 +526,6 @@ async def _handle_parallel_tool_calls(
                     arguments=parameters,
                 )
             else:
-                session_logger.log_query_result_received(
-                    wait_duration_ms=wait_duration_ms,
-                    result=result,
-                )
-                
                 is_success = True
                 error_msg = ""
                 result_data = result
@@ -640,8 +608,6 @@ async def _handle_parallel_tool_calls(
                 "tool_call_id": tool_call_id,
             }
 
-            session_logger.log_query_action_sent(action_name, parameters)
-
             # Wait for result from client
             from apps.mcp.services.agent.helpers import wait_for_query_result
 
@@ -656,7 +622,6 @@ async def _handle_parallel_tool_calls(
             wait_duration_ms = int((time.time() - wait_start) * 1000)
 
             if result is None:
-                session_logger.log_query_timeout(action_name, 60.0)
                 display_name = format_tool_name_for_display(action_name)
                 display_trace.append({
                     "step_type": "tool_result",
@@ -682,10 +647,6 @@ async def _handle_parallel_tool_calls(
                     arguments=parameters,
                 )
             else:
-                session_logger.log_query_result_received(
-                    wait_duration_ms=wait_duration_ms,
-                    result=result,
-                )
                 
                 is_success = True
                 error_msg = ""
@@ -868,30 +829,25 @@ async def run_agentic_loop(
 
     # OpenTelemetry: root span for the agentic loop
     _tracer = get_tracer("pillar.agent")
+    run_id = str(uuid.uuid4())
+    thread_id = session_id or str(uuid.uuid4())
+    widget_id = str(service.help_center_config.id)
+    org_id = str(service.organization.id) if service.organization else "unknown"
+
     _loop_span = _tracer.start_span(
         "agentic_loop",
         attributes={
-            "agent.question": question[:200],
+            "agent.question": question,
             "agent.session_id": session_id or "",
+            "agent.thread_id": thread_id,
+            "agent.run_id": run_id,
             "agent.conversation_id": conversation_id or "",
+            "agent.widget_id": widget_id,
+            "agent.org_id": org_id,
         },
     )
     _loop_ctx = trace.set_span_in_context(_loop_span)
     _loop_token = otel_context.attach(_loop_ctx)
-
-    # Initialize session logger for debugging
-    run_id = str(uuid.uuid4())
-    thread_id = session_id or str(uuid.uuid4())
-    session_logger = AgentSessionLogger(
-        session_id=session_id or thread_id,
-        thread_id=thread_id,
-        run_id=run_id,
-    )
-
-    # Log session header with context
-    widget_id = str(service.help_center_config.id)
-    org_id = str(service.organization.id) if service.organization else "unknown"
-    session_logger.log_header(widget_id, org_id, question)
 
     site_context = f"{service.help_center_config.name}"
     site_description = getattr(service.help_center_config, 'description', None)
@@ -943,10 +899,11 @@ async def run_agentic_loop(
             if not any(a.get("name") == action.get("name") for a in agent_context.found_actions):
                 agent_context.found_actions.append(action)
         logger.info(f"[AgenticLoop] Restored {len(registered_actions)} registered actions from previous turns")
-        session_logger.log_actions_registered(
-            action_names=[a.get("name", "unknown") for a in registered_actions],
-            source="restored_from_previous_turn",
-        )
+        _loop_span.add_event("actions_registered", {
+            "source": "restored_from_previous_turn",
+            "action_names": json.dumps([a.get("name", "unknown") for a in registered_actions]),
+            "count": len(registered_actions),
+        })
 
     # Initialize token budget tracking
     model_name = getattr(service, 'model_name', None) or 'unknown'
@@ -1004,22 +961,19 @@ async def run_agentic_loop(
 
     logger.info(f"[AgenticLoop] Built initial messages: {len(messages)} messages")
 
-    # Log system prompt (first message is always the system prompt)
+    # Log system prompt as span event
     if messages and messages[0].get('role') == 'system':
-        session_logger.log_system_prompt(messages[0].get('content', ''))
+        _loop_span.add_event("system_prompt", {
+            "prompt": messages[0].get('content', ''),
+        })
 
     # Main agentic loop
     _iter_span = None
     for iteration in range(MAX_AGENT_ITERATIONS):
         if cancel_event and cancel_event.is_set():
-            # Log session cancelled
-            session_logger.log_session_complete(
-                status="CANCELLED",
-                display_trace=display_trace,
-                total_tokens_prompt=agent_context.token_budget.total_prompt_tokens if agent_context.token_budget else 0,
-                total_tokens_completion=agent_context.token_budget.total_completion_tokens if agent_context.token_budget else 0,
-            )
             _loop_span.set_attribute("agent.status", "CANCELLED")
+            _loop_span.set_attribute("agent.total_tokens_prompt", agent_context.token_budget.total_prompt_tokens if agent_context.token_budget else 0)
+            _loop_span.set_attribute("agent.total_tokens_completion", agent_context.token_budget.total_completion_tokens if agent_context.token_budget else 0)
             break
 
         # OTel: span per iteration
@@ -1034,11 +988,15 @@ async def run_agentic_loop(
         # Emit debug event for SDK DebugPanel
         yield emit_debug_iteration(iteration + 1, MAX_AGENT_ITERATIONS)
 
-        # Log iteration start for session debugging
-        session_logger.log_iteration_start(iteration, MAX_AGENT_ITERATIONS)
-        session_logger.log_context_state(agent_context)
+        # Enrich iteration span with context state
+        _iter_span.set_attribute("context.found_actions_count", len(agent_context.found_actions))
+        _iter_span.set_attribute("context.found_knowledge_count", len(agent_context.found_knowledge))
+        _iter_span.set_attribute("context.query_results_count", len(agent_context.query_results))
+        _iter_span.set_attribute("context.tool_calls_count", len(agent_context.tool_calls))
         if agent_context.token_budget:
-            session_logger.log_token_budget(agent_context.token_budget)
+            _iter_span.set_attribute("tokens.used", agent_context.token_budget.total_used)
+            _iter_span.set_attribute("tokens.total", agent_context.token_budget.context_window)
+            _iter_span.set_attribute("tokens.occupancy_pct", round(agent_context.token_budget.occupancy_pct, 1))
 
         # Prepare thinking event (only emit when we receive actual thinking content)
         thinking_event = emit_thinking_start()
@@ -1065,7 +1023,6 @@ async def run_agentic_loop(
             context=agent_context,
             iteration=iteration,
             cancel_event=cancel_event,
-            session_logger=session_logger,
             extra_tools=action_tools,
         ):
             if event['type'] == 'thinking':
@@ -1090,6 +1047,9 @@ async def run_agentic_loop(
                 # Don't break - collect all tool decisions for parallel support
 
         # End the LLM decision span
+        thinking_text = ''.join(thinking_content)
+        if thinking_text:
+            _llm_span.set_attribute("llm.thinking", thinking_text)
         if tool_calls:
             _llm_span.set_attribute("llm.tool_calls", json.dumps(
                 [{"tool": tc.get("tool"), "id": tc.get("tool_call_id", "")} for tc in tool_calls],
@@ -1103,9 +1063,9 @@ async def run_agentic_loop(
             # Model responded directly via content tokens — turn is complete
             logger.info(f"[AgenticLoop] Model responded directly ({len(final_content)} chars)")
 
-            session_logger.log_response_stream_start()
-            session_logger.log_response_stream_content(final_content)
-            session_logger.log_response_stream_complete(sources=[])
+            _iter_span.add_event("direct_response", {
+                "response.content": final_content,
+            })
 
             # Add final response to display_trace so history replay includes it
             display_trace.append({
@@ -1119,14 +1079,6 @@ async def run_agentic_loop(
             if thinking_started:
                 yield emit_thinking_done(thinking_id)
 
-            # Log session complete
-            session_logger.log_session_complete(
-                status="SUCCESS",
-                display_trace=display_trace,
-                total_tokens_prompt=agent_context.token_budget.total_prompt_tokens if agent_context.token_budget else 0,
-                total_tokens_completion=agent_context.token_budget.total_completion_tokens if agent_context.token_budget else 0,
-            )
-
             # End iteration + loop spans before returning
             if _iter_span:
                 _iter_span.set_attribute("agent.direct_response", True)
@@ -1134,6 +1086,8 @@ async def run_agentic_loop(
             _loop_span.set_attribute("agent.status", "SUCCESS")
             _loop_span.set_attribute("agent.iterations", iteration + 1)
             _loop_span.set_attribute("agent.duration_ms", int((time.time() - start_time) * 1000))
+            _loop_span.set_attribute("agent.total_tokens_prompt", agent_context.token_budget.total_prompt_tokens if agent_context.token_budget else 0)
+            _loop_span.set_attribute("agent.total_tokens_completion", agent_context.token_budget.total_completion_tokens if agent_context.token_budget else 0)
             _loop_span.end()
             otel_context.detach(_loop_token)
 
@@ -1160,9 +1114,6 @@ async def run_agentic_loop(
                 error_type="empty_stream",
             )
             tool_calls = [{"type": "tool_decision", **fallback}]
-
-        # Log thinking content
-        thinking_text = ''.join(thinking_content)
 
         # Extract reasoning_details and thinking_text from the first tool_decision event
         # (attached by agent_decide_tool_native to the first tool_decision)
@@ -1197,14 +1148,7 @@ async def run_agentic_loop(
         if len(tool_calls) > 1:
             logger.info(f"[AgenticLoop] Parallel tool calls: {len(tool_calls)} tools")
             
-            # Log the LLM response with all tools
             tool_names = [tc.get("tool", "unknown") for tc in tool_calls]
-            session_logger.log_llm_response(
-                thinking=thinking_text,
-                tool=f"parallel({', '.join(tool_names)})",
-                reasoning="Multiple tools called in parallel",
-                args={"tools": tool_names},
-            )
             
             # Capture decision in reasoning trace
             display_trace.append({
@@ -1222,7 +1166,6 @@ async def run_agentic_loop(
                 tool_executor=tool_executor,
                 service=service,
                 session_id=session_id,
-                session_logger=session_logger,
                 display_trace=display_trace,
                 iteration=iteration,
                 start_time_ms=start_time_ms,
@@ -1251,14 +1194,6 @@ async def run_agentic_loop(
         arguments = tool_call.get("arguments", {})
         reasoning = tool_call.get("reasoning", "")
         tool_call_id = tool_call.get("tool_call_id", "")
-
-        # Log the LLM response and tool decision
-        session_logger.log_llm_response(
-            thinking=thinking_text,
-            tool=tool_name,
-            reasoning=reasoning,
-            args=arguments,
-        )
 
         # Capture decision in reasoning trace
         display_trace.append({
@@ -1320,10 +1255,11 @@ async def run_agentic_loop(
                 # Register discovered actions as native tools for future iterations
                 agent_context.register_actions_as_tools(actions)
                 logger.info(f"[AgenticLoop] Registered {len(actions)} actions as native tools")
-                session_logger.log_actions_registered(
-                    action_names=[a.get("name", "unknown") for a in actions],
-                    source="search",
-                )
+                _iter_span.add_event("actions_registered", {
+                    "source": "search",
+                    "action_names": json.dumps([a.get("name", "unknown") for a in actions]),
+                    "count": len(actions),
+                })
             if knowledge:
                 agent_context.add_knowledge_results(knowledge, query)
                 # Unlock get_article tool now that we have knowledge with item_ids
@@ -1347,14 +1283,6 @@ async def run_agentic_loop(
             _tool_span.set_attribute("tool.actions_count", len(actions))
             _tool_span.set_attribute("tool.knowledge_count", len(knowledge))
             _tool_span.end()
-
-            # Log tool execution
-            session_logger.log_tool_execution(
-                tool="search",
-                duration_ms=_search_duration_ms,
-                results=results,
-                results_count=len(actions) + len(knowledge),
-            )
 
             # Convert results to source format for UI
             ui_sources = []
@@ -1447,13 +1375,6 @@ async def run_agentic_loop(
             _tool_span.set_attribute("tool.success", is_success)
             _tool_span.end()
             
-            session_logger.log_tool_execution(
-                tool="get_article",
-                duration_ms=_article_duration_ms,
-                results=result,
-                results_count=1 if is_success else 0,
-            )
-            
             if not is_success:
                 result_content = f"Error: {result['error']}"
             else:
@@ -1502,13 +1423,6 @@ async def run_agentic_loop(
             
             logger.info(f"[AgenticLoop] Executing built-in action: {action_name} with params: {parameters}")
             
-            # Log the action tool call
-            session_logger.log_action_tool_call(
-                action_name=action_name,
-                parameters=parameters,
-                tool_call_id=tool_call_id,
-            )
-            
             tool_event = emit_tool_call_start(action_name, parameters)
             tool_id = tool_event["data"]["id"]
             yield tool_event
@@ -1521,9 +1435,6 @@ async def run_agentic_loop(
                 "action": action,  # Include full action definition for SDK
                 "tool_call_id": tool_call_id,
             }
-
-            # Log action sent
-            session_logger.log_query_action_sent(action_name, parameters)
 
             _qa_span = _tracer.start_span(
                 "query_action.round_trip",
@@ -1551,7 +1462,6 @@ async def run_agentic_loop(
                 _qa_span.set_status(StatusCode.ERROR, "Timeout waiting for client result")
                 _qa_span.end()
 
-                session_logger.log_query_timeout(action_name, 60.0)
                 display_name = format_tool_name_for_display(action_name)
                 display_trace.append({
                     "step_type": "tool_result",
@@ -1586,11 +1496,6 @@ async def run_agentic_loop(
                 _qa_span.set_attribute("query_action.result", "received")
                 _qa_span.end()
 
-                session_logger.log_query_result_received(
-                    wait_duration_ms=wait_duration_ms,
-                    result=result,
-                )
-                
                 # Check if result indicates success or failure
                 is_success = True
                 error_msg = ""
@@ -1671,13 +1576,6 @@ async def run_agentic_loop(
             
             logger.info(f"[AgenticLoop] Executing action tool: {action_name} with params: {list(parameters.keys()) if parameters else '(none)'}")
             
-            # Log the action tool call
-            session_logger.log_action_tool_call(
-                action_name=action_name,
-                parameters=parameters,
-                tool_call_id=tool_call_id,
-            )
-            
             tool_event = emit_tool_call_start(action_name, parameters, reasoning=thinking_text)
             tool_id = tool_event["data"]["id"]
             yield tool_event
@@ -1690,9 +1588,6 @@ async def run_agentic_loop(
                 "action": action,  # Include full action definition for SDK
                 "tool_call_id": tool_call_id,
             }
-
-            # Log action sent
-            session_logger.log_query_action_sent(action_name, parameters)
 
             # Wait for result from client
             from apps.mcp.services.agent.helpers import wait_for_query_result
@@ -1710,7 +1605,6 @@ async def run_agentic_loop(
 
             if result is None:
                 # Timeout
-                session_logger.log_query_timeout(action_name, 60.0)
                 display_name = format_tool_name_for_display(action_name)
                 display_trace.append({
                     "step_type": "tool_result",
@@ -1755,11 +1649,6 @@ async def run_agentic_loop(
                     yield emit_thinking_done(thinking_id)
             else:
                 # Got result
-                session_logger.log_query_result_received(
-                    wait_duration_ms=wait_duration_ms,
-                    result=result,
-                )
-                
                 # Check if result indicates success or failure
                 is_success = True
                 error_msg = ""
@@ -1911,9 +1800,6 @@ async def run_agentic_loop(
                 "tool_call_id": tool_call_id,
             }
 
-            # Log action sent
-            session_logger.log_query_action_sent(action_name, parameters)
-
             # Wait for result from client
             from apps.mcp.services.agent.helpers import wait_for_query_result
 
@@ -1929,8 +1815,6 @@ async def run_agentic_loop(
             wait_duration_ms = int((time.time() - wait_start) * 1000)
 
             if result is None:
-                # Timeout
-                session_logger.log_query_timeout(action_name, 60.0)
                 display_name = format_tool_name_for_display(action_name)
                 display_trace.append({
                     "step_type": "tool_result",
@@ -1961,12 +1845,6 @@ async def run_agentic_loop(
                 if thinking_started:
                     yield emit_thinking_done(thinking_id)
             else:
-                # Got result
-                session_logger.log_query_result_received(
-                    wait_duration_ms=wait_duration_ms,
-                    result=result,
-                )
-                
                 # Check if result indicates success or failure
                 is_success = True
                 error_msg = ""
@@ -2095,18 +1973,12 @@ async def run_agentic_loop(
             "iterations": len(agent_context.token_budget.iteration_history),
         })
 
-    # Log session complete with max iterations status
-    session_logger.log_session_complete(
-        status="MAX_ITERATIONS",
-        display_trace=display_trace,
-        total_tokens_prompt=agent_context.token_budget.total_prompt_tokens if agent_context.token_budget else 0,
-        total_tokens_completion=agent_context.token_budget.total_completion_tokens if agent_context.token_budget else 0,
-    )
-
     # End the loop span
     _loop_span.set_attribute("agent.status", "MAX_ITERATIONS")
     _loop_span.set_attribute("agent.iterations", MAX_AGENT_ITERATIONS)
     _loop_span.set_attribute("agent.duration_ms", int((time.time() - start_time) * 1000))
+    _loop_span.set_attribute("agent.total_tokens_prompt", agent_context.token_budget.total_prompt_tokens if agent_context.token_budget else 0)
+    _loop_span.set_attribute("agent.total_tokens_completion", agent_context.token_budget.total_completion_tokens if agent_context.token_budget else 0)
     _loop_span.end()
     otel_context.detach(_loop_token)
 
@@ -2127,7 +1999,6 @@ async def agent_decide_tool_native(
     context,  # AgentContext - for token budget tracking
     iteration: int,  # For token budget tracking
     cancel_event=None,
-    session_logger: 'AgentSessionLogger' = None,  # For logging tool calls
     extra_tools: list[dict] = None,  # Additional tools (discovered actions)
 ) -> AsyncGenerator[dict[str, Any], None]:
     """
@@ -2148,7 +2019,6 @@ async def agent_decide_tool_native(
         context: AgentContext for token budget tracking
         iteration: Current iteration number (for token budget tracking)
         cancel_event: Optional cancellation event
-        session_logger: Optional session logger for debugging
         extra_tools: Additional tools from discovered actions (dynamic action tools)
     
     Yields:
@@ -2347,14 +2217,6 @@ async def agent_decide_tool_native(
             f"retrying with fallback: {fallback_openrouter}. Error: {e}"
         )
         
-        # Log the fallback for debugging
-        if session_logger:
-            session_logger.log_model_fallback(
-                original_model=primary_model,
-                fallback_model=fallback_openrouter,
-                reason=str(e),
-            )
-        
         # Retry with fallback model
         try:
             used_fallback = True
@@ -2391,16 +2253,6 @@ async def agent_decide_tool_native(
         current_model = service.llm_client.get_current_model() if hasattr(service.llm_client, 'get_current_model') else 'unknown'
         
         for i, tc in enumerate(all_tool_calls):
-            # Log the native tool call for debugging
-            if session_logger:
-                session_logger.log_native_tool_call(
-                    tool_name=tc['tool'],
-                    arguments=tc['arguments'],
-                    tool_call_id=tc['tool_call_id'],
-                    model=current_model,
-                    used_fallback=used_fallback,
-                )
-            
             yield {
                 'type': 'tool_decision',
                 'tool': tc['tool'],

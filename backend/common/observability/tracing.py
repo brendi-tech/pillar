@@ -1,9 +1,9 @@
 """
 OpenTelemetry tracing for Pillar agent server.
 
-Instruments Django, ASGI, database, Redis, and HTTP clients automatically.
-Exports traces to Google Cloud Trace in production and accepts OTLP for
-forwarding browser-side spans.
+Always-on: traces are exported to local NDJSON files in development and to
+Google Cloud Trace in production.  Instruments Django, ASGI, database, Redis,
+and HTTP clients automatically.
 """
 import logging
 import os
@@ -13,7 +13,7 @@ from opentelemetry import trace, context as otel_context
 from opentelemetry.context import Context
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.sdk.trace.export import BatchSpanProcessor, SimpleSpanProcessor
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 
 logger = logging.getLogger(__name__)
@@ -22,8 +22,10 @@ _propagator = TraceContextTextMapPropagator()
 _initialized = False
 
 
-def is_tracing_enabled() -> bool:
-    return os.getenv("ENABLE_TRACING", "false").lower() in ("true", "1", "yes")
+def _is_local_dev() -> bool:
+    """Return True when running in local development (not Cloud Run)."""
+    env = os.getenv("ENV", "dev").lower()
+    return env in ("dev", "development", "local", "test", "e2e")
 
 
 def _get_service_name() -> str:
@@ -32,20 +34,20 @@ def _get_service_name() -> str:
     return f"pillar-{service_type}-{env}"
 
 
-def setup_tracing(project_id: Optional[str] = None) -> Optional[trace.Tracer]:
+def setup_tracing(project_id: Optional[str] = None) -> trace.Tracer:
     """
-    Initialize OpenTelemetry with Cloud Trace exporter.
+    Initialize OpenTelemetry tracing.
+
+    Always initialises a TracerProvider:
+    - Local dev / E2E: ``FileSpanExporter`` with ``SimpleSpanProcessor``
+    - Production: ``CloudTraceSpanExporter`` with ``BatchSpanProcessor``
 
     Safe to call multiple times; only the first call takes effect.
-    Returns a Tracer or None if tracing is disabled / init fails.
+    Returns a Tracer.
     """
     global _initialized
     if _initialized:
         return trace.get_tracer("pillar")
-
-    if not is_tracing_enabled():
-        logger.info("[Tracing] Disabled (ENABLE_TRACING != true)")
-        return None
 
     try:
         resource = Resource.create({
@@ -66,39 +68,47 @@ def setup_tracing(project_id: Optional[str] = None) -> Optional[trace.Tracer]:
 
         provider = TracerProvider(resource=resource)
 
-        # Primary exporter: Google Cloud Trace
-        try:
-            from opentelemetry.exporter.cloud_trace import CloudTraceSpanExporter
+        if _is_local_dev():
+            from common.observability.file_exporter import FileSpanExporter
+            provider.add_span_processor(SimpleSpanProcessor(FileSpanExporter()))
+            logger.info(
+                f"[Tracing] Local file exporter enabled for "
+                f"{resource.attributes.get('service.name', 'unknown')}"
+            )
+        else:
+            # Production: Google Cloud Trace
+            try:
+                from opentelemetry.exporter.cloud_trace import CloudTraceSpanExporter
 
-            cloud_exporter = CloudTraceSpanExporter(
-                project_id=project_id or os.getenv("GCP_PROJECT_ID"),
-            )
-            provider.add_span_processor(
-                BatchSpanProcessor(
-                    cloud_exporter,
-                    max_queue_size=2048,
-                    max_export_batch_size=512,
-                    schedule_delay_millis=5000,
+                cloud_exporter = CloudTraceSpanExporter(
+                    project_id=project_id or os.getenv("GCP_PROJECT_ID"),
                 )
-            )
-        except Exception as exc:
-            logger.warning(f"[Tracing] Cloud Trace exporter unavailable: {exc}")
+                provider.add_span_processor(
+                    BatchSpanProcessor(
+                        cloud_exporter,
+                        max_queue_size=2048,
+                        max_export_batch_size=512,
+                        schedule_delay_millis=5000,
+                    )
+                )
+                logger.info(
+                    f"[Tracing] Cloud Trace exporter enabled for "
+                    f"{resource.attributes.get('service.name', 'unknown')} "
+                    f"-> project: {project_id or 'auto'}"
+                )
+            except Exception as exc:
+                logger.warning(f"[Tracing] Cloud Trace exporter unavailable: {exc}")
 
         trace.set_tracer_provider(provider)
 
-        # Auto-instrument libraries
         _auto_instrument()
 
         _initialized = True
-        logger.info(
-            f"[Tracing] Enabled for {resource.attributes.get('service.name', 'unknown')} "
-            f"→ Cloud Trace (project: {project_id or 'auto'})"
-        )
         return trace.get_tracer("pillar")
 
     except Exception as exc:
         logger.error(f"[Tracing] Failed to initialize: {exc}", exc_info=True)
-        return None
+        return trace.get_tracer("pillar")
 
 
 def _auto_instrument() -> None:
@@ -118,7 +128,7 @@ def _auto_instrument() -> None:
 
 
 def get_tracer(name: str = "pillar") -> trace.Tracer:
-    """Return a tracer instance (always safe to call, even when tracing is off)."""
+    """Return a tracer instance (always safe to call, even before setup)."""
     return trace.get_tracer(name)
 
 
@@ -159,7 +169,7 @@ def get_span_exporter():
     Return the BatchSpanProcessor attached to the global TracerProvider.
 
     Used by the OTLP proxy endpoint to forward browser spans through the
-    same Cloud Trace exporter pipeline.
+    same exporter pipeline.
     """
     provider = trace.get_tracer_provider()
     if isinstance(provider, TracerProvider):

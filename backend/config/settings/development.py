@@ -159,16 +159,6 @@ else:
 
     print(f"📝 Logging to: {LOG_FILENAME}")
 
-# Agent session logging for debugging
-# Creates detailed session dumps in logs/agent-sessions/
-AGENT_SESSION_LOGGING = {
-    "enabled": True,
-    "log_dir": BASE_DIR / "logs" / "agent-sessions",
-    "max_files": 100,
-    "include_full_responses": True,
-    "include_tool_results": True,
-}
-
 # Use GCS for storage in development when STORAGE_BACKEND=gcs
 # This allows signed URLs to work properly for image uploads
 if STORAGE_BACKEND == 'gcs':

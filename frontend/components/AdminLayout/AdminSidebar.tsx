@@ -24,6 +24,7 @@ import {
   BookOpen,
   CreditCard,
   MessageSquare,
+  Rocket,
   Search,
   Sliders,
   Users,
@@ -54,6 +55,12 @@ interface NavItem {
 // ============================================================================
 
 const navigationItems: NavItem[] = [
+  {
+    title: "Setup",
+    href: "/setup",
+    icon: Rocket,
+    category: "overview",
+  },
   {
     title: "Knowledge",
     href: "/knowledge",
@@ -260,6 +267,11 @@ export function AdminSidebar(props: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
+            {/* Setup */}
+            {groupedItems.overview.length > 0 && (
+              <SidebarMenu>{groupedItems.overview.map(renderNavItem)}</SidebarMenu>
+            )}
+
             {/* Knowledge Section (Primary) */}
             <SidebarSeparatorWithLabel label="KNOWLEDGE" />
             <SidebarMenu>{groupedItems.data.map(renderNavItem)}</SidebarMenu>

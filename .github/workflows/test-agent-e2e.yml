@@ -170,27 +170,27 @@ jobs:
           cd backend
           echo ""
           echo "========================================"
-          echo "       AGENT SESSION LOGS"
+          echo "       AGENT TRACE FILES"
           echo "========================================"
           echo ""
           
-          if [ -d "logs/agent-sessions" ]; then
-            SESSION_LOGS=$(find logs/agent-sessions -name "*.txt" -type f 2>/dev/null | sort)
+          if [ -d "logs/traces" ]; then
+            TRACE_FILES=$(find logs/traces -name "*.ndjson" -type f 2>/dev/null | sort)
             
-            if [ -n "$SESSION_LOGS" ]; then
-              for log_file in $SESSION_LOGS; do
+            if [ -n "$TRACE_FILES" ]; then
+              for trace_file in $TRACE_FILES; do
                 echo ""
                 echo "========================================"
-                echo "SESSION: $log_file"
+                echo "TRACE: $trace_file"
                 echo "========================================"
-                cat "$log_file"
+                cat "$trace_file"
                 echo ""
               done
             else
-              echo "No session logs found in logs/agent-sessions/"
+              echo "No trace files found in logs/traces/"
             fi
           else
-            echo "logs/agent-sessions directory does not exist"
+            echo "logs/traces directory does not exist"
           fi
 
       - name: Test Summary
@@ -224,5 +224,5 @@ jobs:
           name: agent-eval-logs-${{ github.run_number }}
           path: |
             backend/test_output.log
-            backend/logs/agent-sessions/
+            backend/logs/traces/
           retention-days: 7

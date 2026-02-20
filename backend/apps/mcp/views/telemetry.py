@@ -12,7 +12,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
-from common.observability.tracing import get_span_exporter, is_tracing_enabled
+from common.observability.tracing import get_span_exporter
 
 logger = logging.getLogger(__name__)
 
@@ -33,10 +33,6 @@ async def otlp_traces_proxy(request):
 
     if request.method == "OPTIONS":
         response = JsonResponse({})
-        return add_cors_headers(response, request)
-
-    if not is_tracing_enabled():
-        response = JsonResponse({"status": "tracing_disabled"}, status=200)
         return add_cors_headers(response, request)
 
     try:
