@@ -24,14 +24,48 @@ LANGUAGE_CHOICES = [
 ]
 
 
-# Reserved subdomains that cannot be used
+# Reserved subdomains that cannot be used.
+# Kept in sync with frontend/middleware.ts RESERVED_SUBDOMAINS (routing layer).
 RESERVED_SUBDOMAINS = {
-    'admin', 'api', 'www', 'help', 'support', 'mail', 'email',
-    'ftp', 'cdn', 'static', 'assets', 'app', 'dashboard', 'login',
-    'signup', 'register', 'auth', 'oauth', 'sso', 'status', 'docs',
-    'blog', 'news', 'store', 'shop', 'billing', 'pay', 'checkout',
-    'demo', 'test', 'staging', 'dev', 'development', 'production',
-    'pillar', 'trypillar', 'internal', 'external', 'public', 'private',
+    # Infrastructure routing (must match frontend middleware)
+    'admin', 'api', 'ai', 'app', 'help-api', 'www', 'staging',
+    # Web / product defaults
+    'dashboard', 'login', 'signup', 'register', 'status', 'docs',
+    'blog', 'news', 'store', 'shop', 'changelog', 'updates',
+    'community', 'forum', 'feedback', 'roadmap',
+    'about', 'brand', 'press',
+    'partners', 'affiliates', 'careers', 'jobs',
+    'pricing', 'enterprise', 'sales',
+    # Auth / identity
+    'auth', 'oauth', 'sso', 'id', 'identity', 'account', 'accounts',
+    # Billing
+    'billing', 'pay', 'checkout',
+    # Email / compliance (RFC 2142)
+    'mail', 'email', 'postmaster', 'webmaster', 'hostmaster',
+    'abuse', 'noreply', 'no-reply', 'mailer-daemon', 'info', 'contact',
+    # Security / trust
+    'security', 'privacy', 'trust', 'verify',
+    'compliance', 'legal', 'terms', 'dmca',
+    # Infrastructure / DNS
+    'cdn', 'static', 'assets', 'ftp',
+    'proxy', 'gateway', 'vpn',
+    'monitoring', 'metrics', 'logs', 'alerts', 'backup',
+    'ns1', 'ns2', 'mx', 'smtp', 'imap', 'pop', 'dns',
+    'ws', 'socket', 'realtime',
+    'media', 'images', 'files', 'uploads',
+    'workers', 'cron',
+    # Developer-facing
+    'sdk', 'developers', 'sandbox', 'preview',
+    'packages', 'webhooks', 'graphql', 'git',
+    # Environments / release channels
+    'demo', 'test', 'dev', 'development', 'production',
+    'beta', 'alpha', 'canary', 'nightly', 'rc',
+    # Pillar-specific
+    'pillar', 'trypillar', 'help', 'support',
+    'internal', 'external', 'public', 'private',
+    # Dangerous / confusing values
+    'root', 'null', 'undefined', 'localhost',
+    'system', 'config', 'www2', 'origin', 'self',
 }
 
 
