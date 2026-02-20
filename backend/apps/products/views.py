@@ -65,6 +65,18 @@ class ProductViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(organization=self.request.user.primary_organization)
 
+    def create(self, request, *args, **kwargs):
+        """Create a product and return full product data."""
+        # Use ProductCreateSerializer for input validation
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        
+        # Return full product data using ProductSerializer
+        response_serializer = ProductSerializer(serializer.instance)
+        headers = self.get_success_headers(response_serializer.data)
+        return Response(response_serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
     @extend_schema(
         summary="List action deployments",
         description="List all action deployments for this product.",

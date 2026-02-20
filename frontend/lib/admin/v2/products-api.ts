@@ -9,6 +9,7 @@
  */
 
 import { v2Fetch, v2Post, v2Patch, v2Delete, v2FetchWithProduct, v2PostWithProduct } from './api-client';
+import type { AdminProduct } from '@/types/admin';
 import type {
   Product,
   ProductListResponse,
@@ -48,6 +49,14 @@ export const productsAPI = {
   },
 
   /**
+   * List all products across all user's organizations (no org filtering).
+   * Used by ProductProvider to show all available products for switching.
+   */
+  listAll: async (): Promise<ProductListResponse> => {
+    return v2Fetch<ProductListResponse>('/products/', { skipAutoContext: true });
+  },
+
+  /**
    * Get a single product by ID.
    */
   get: async (id: string): Promise<Product> => {
@@ -56,9 +65,10 @@ export const productsAPI = {
 
   /**
    * Create a new product.
+   * Returns AdminProduct format (with organization_id).
    */
-  create: async (data: CreateProductPayload): Promise<Product> => {
-    return v2Post<Product>('/products/', data);
+  create: async (data: CreateProductPayload): Promise<AdminProduct> => {
+    return v2Post<AdminProduct>('/products/', data);
   },
 
   /**

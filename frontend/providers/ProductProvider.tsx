@@ -1,8 +1,8 @@
 "use client";
 
-import { adminFetch } from "@/lib/admin/api-client";
+import { allProductsQuery } from "@/queries/v2/products.queries";
 import type { AdminProduct } from "@/types/admin";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createContext,
   useCallback,
@@ -26,8 +26,8 @@ interface ProductContextValue {
   currentProductId: string | null;
   currentProduct: AdminProduct | null;
   availableProducts: AdminProduct[];
-  /** Switch to a product - updates org if needed, invalidates queries, saves to server */
-  switchProduct: (productId: string) => void;
+  /** Switch to a product - updates org if needed, invalidates queries. Pass product directly for newly created products. */
+  switchProduct: (productId: string, product?: AdminProduct) => void;
   /** Low-level setter, use switchProduct() for user-initiated switches */
   setCurrentProductId: (id: string | null) => void;
   isLoading: boolean;
@@ -86,10 +86,16 @@ export function ProductProvider({ children }: ProductProviderProps) {
   const { currentOrganizationId, setCurrentOrganizationId } = useOrganization();
   const queryClient = useQueryClient();
 
-  const [availableProducts, setAvailableProducts] = useState<AdminProduct[]>(
-    []
-  );
-  const [isLoading, setIsLoading] = useState(true);
+  const {
+    data: availableProducts = [],
+    isPending: isLoading,
+    refetch,
+  } = useQuery(allProductsQuery());
+
+  const refetchProducts = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
+
   const [hasRestoredFromServer, setHasRestoredFromServer] = useState(false);
 
   const [currentProductId, setCurrentProductIdState] = useState<string | null>(
@@ -115,8 +121,9 @@ export function ProductProvider({ children }: ProductProviderProps) {
 
   // High-level switch function - handles org sync, cache invalidation, and server persistence
   const switchProduct = useCallback(
-    (productId: string) => {
-      const product = availableProducts.find((p) => p.id === productId);
+    (productId: string, productOverride?: AdminProduct) => {
+      // Use provided product or look up from available products
+      const product = productOverride ?? availableProducts.find((p) => p.id === productId);
       if (!product) {
         console.warn("[ProductProvider] Product not found:", productId);
         return;
@@ -157,37 +164,6 @@ export function ProductProvider({ children }: ProductProviderProps) {
       queryClient,
     ]
   );
-
-  // Fetch ALL products across user's organizations
-  const refetchProducts = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      // Fetch products without filtering by organization
-      // The backend filters by user's accessible organizations automatically
-      // Use skipAutoContext to avoid adding org/product params that would filter results
-      const response = await adminFetch<{
-        results: AdminProduct[];
-        count: number;
-      }>("/configs/", {
-        skipAutoContext: true,
-      });
-      console.log(
-        "[ProductProvider] Fetched products:",
-        response.results.length
-      );
-      setAvailableProducts(response.results);
-    } catch (error) {
-      console.error("[ProductProvider] Failed to fetch products:", error);
-      setAvailableProducts([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  // Fetch products on mount
-  useEffect(() => {
-    refetchProducts();
-  }, [refetchProducts]);
 
   // Restore product from server preference (only once, on initial load)
   useEffect(() => {

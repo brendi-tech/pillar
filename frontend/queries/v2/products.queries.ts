@@ -8,56 +8,68 @@
  * - ActionExecutionLog
  */
 
-import { queryOptions } from '@tanstack/react-query';
+import { adminFetch } from "@/lib/admin/api-client";
 import {
-  productsAPI,
-  platformsAPI,
-  actionsAPI,
   actionExecutionLogsAPI,
-} from '@/lib/admin/v2/products-api';
+  actionsAPI,
+  platformsAPI,
+  productsAPI,
+} from "@/lib/admin/v2/products-api";
+import type { AdminProduct } from "@/types/admin";
 import type {
-  CreateProductPayload,
-  UpdateProductPayload,
-  CreatePlatformPayload,
-  UpdatePlatformPayload,
-  CreateActionPayload,
-  UpdateActionPayload,
   ActionStatus,
-} from '@/types/v2/products';
+  CreateActionPayload,
+  CreatePlatformPayload,
+  CreateProductPayload,
+  UpdateActionPayload,
+  UpdatePlatformPayload,
+  UpdateProductPayload,
+} from "@/types/v2/products";
+import { queryOptions } from "@tanstack/react-query";
 
 // =============================================================================
 // Query Keys Factory
 // =============================================================================
 
 export const productKeys = {
-  all: ['v2', 'product'] as const,
+  all: ["v2", "product"] as const,
+  allOrgs: () => [...productKeys.all, "all-orgs"] as const,
 
   // Products
-  lists: () => [...productKeys.all, 'list'] as const,
-  list: (params?: { search?: string; is_default?: boolean; page?: number; page_size?: number }) =>
-    [...productKeys.lists(), params] as const,
-  details: () => [...productKeys.all, 'detail'] as const,
+  lists: () => [...productKeys.all, "list"] as const,
+  list: (params?: {
+    search?: string;
+    is_default?: boolean;
+    page?: number;
+    page_size?: number;
+  }) => [...productKeys.lists(), params] as const,
+  details: () => [...productKeys.all, "detail"] as const,
   detail: (id: string) => [...productKeys.details(), id] as const,
-  bySubdomain: (subdomain: string) => [...productKeys.all, 'subdomain', subdomain] as const,
-  integrationStatus: (id: string) => [...productKeys.detail(id), 'integration-status'] as const,
+  bySubdomain: (subdomain: string) =>
+    [...productKeys.all, "subdomain", subdomain] as const,
+  integrationStatus: (id: string) =>
+    [...productKeys.detail(id), "integration-status"] as const,
 
   // Platforms
-  platforms: () => [...productKeys.all, 'platforms'] as const,
+  platforms: () => [...productKeys.all, "platforms"] as const,
   platformList: (params?: { data_source?: string; is_active?: boolean }) =>
-    [...productKeys.platforms(), 'list', params] as const,
-  platformDetail: (id: string) => [...productKeys.platforms(), 'detail', id] as const,
+    [...productKeys.platforms(), "list", params] as const,
+  platformDetail: (id: string) =>
+    [...productKeys.platforms(), "detail", id] as const,
 
   // Actions
-  actions: () => [...productKeys.all, 'actions'] as const,
+  actions: () => [...productKeys.all, "actions"] as const,
   actionList: (params?: { status?: ActionStatus; search?: string }) =>
-    [...productKeys.actions(), 'list', params] as const,
-  actionDetail: (id: string) => [...productKeys.actions(), 'detail', id] as const,
+    [...productKeys.actions(), "list", params] as const,
+  actionDetail: (id: string) =>
+    [...productKeys.actions(), "detail", id] as const,
 
   // Action Execution Logs
-  actionLogs: () => [...productKeys.all, 'action-logs'] as const,
+  actionLogs: () => [...productKeys.all, "action-logs"] as const,
   actionLogList: (params?: { action?: string; status?: string }) =>
-    [...productKeys.actionLogs(), 'list', params] as const,
-  actionLogDetail: (id: string) => [...productKeys.actionLogs(), 'detail', id] as const,
+    [...productKeys.actionLogs(), "list", params] as const,
+  actionLogDetail: (id: string) =>
+    [...productKeys.actionLogs(), "detail", id] as const,
 };
 
 // =============================================================================
@@ -76,6 +88,22 @@ export const productListQuery = (params?: {
   queryOptions({
     queryKey: productKeys.list(params),
     queryFn: () => productsAPI.list(params),
+  });
+
+/**
+ * List all products across all user's organizations (no org filtering).
+ * Used by ProductProvider to show all available products for switching.
+ */
+export const allProductsQuery = () =>
+  queryOptions({
+    queryKey: productKeys.allOrgs(),
+    queryFn: async () => {
+      const response = await adminFetch<{
+        results: AdminProduct[];
+        count: number;
+      }>("/configs/", { skipAutoContext: true });
+      return response.results;
+    },
   });
 
 /**
@@ -222,8 +250,13 @@ export const deleteActionMutation = () => ({
 });
 
 export const executeActionMutation = () => ({
-  mutationFn: ({ id, inputData }: { id: string; inputData?: Record<string, unknown> }) =>
-    actionsAPI.execute(id, inputData),
+  mutationFn: ({
+    id,
+    inputData,
+  }: {
+    id: string;
+    inputData?: Record<string, unknown>;
+  }) => actionsAPI.execute(id, inputData),
 });
 
 // =============================================================================
@@ -253,4 +286,3 @@ export const actionLogDetailQuery = (id: string) =>
     queryFn: () => actionExecutionLogsAPI.get(id),
     enabled: !!id,
   });
-

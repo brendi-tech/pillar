@@ -21,6 +21,8 @@ interface FetchOptions {
   body?: unknown;
   method?: string;
   headers?: Record<string, string>;
+  /** Skip auto-adding organization param from localStorage */
+  skipAutoContext?: boolean;
 }
 
 function redirectToLogin(): void {
@@ -43,14 +45,17 @@ export async function v2Fetch<T>(
     throw new Error('Not authenticated');
   }
 
-  const { params, body, method = 'GET', headers } = options;
+  const { params, body, method = 'GET', headers, skipAutoContext } = options;
 
   // Build params with org ID
   const queryParams: Record<string, string> = {};
 
-  const orgId = getCurrentOrganizationId();
-  if (orgId && !params?.organization) {
-    queryParams.organization = orgId;
+  // Auto-add organization context unless explicitly skipped
+  if (!skipAutoContext) {
+    const orgId = getCurrentOrganizationId();
+    if (orgId && !params?.organization) {
+      queryParams.organization = orgId;
+    }
   }
 
   if (params) {
