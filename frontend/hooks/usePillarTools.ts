@@ -29,6 +29,8 @@ import { useTheme } from "next-themes";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect } from "react";
 
+import { openApiKeysModal } from "@/components/ApiKeysModal";
+import { openInviteMembersModal } from "@/components/InviteMembersModal";
 import { openThemeSelectorModal } from "@/components/ThemeSelectorModal";
 import { actionsAPI } from "@/lib/admin/actions-api";
 import {
@@ -937,6 +939,45 @@ export function usePillarTools() {
   // =========================================================================
   usePillarTool([
     {
+      name: "invite_members",
+      type: "trigger_tool",
+      description:
+        "Open the invite members dialog to send team invitations. " +
+        "Use when user wants to invite someone, add a team member, or send an invite. " +
+        "If the user mentions specific emails or a role, pass them to pre-fill the dialog.",
+      examples: [
+        "invite someone",
+        "add a team member",
+        "invite user@example.com",
+        "send an invite",
+        "invite my team",
+      ],
+      autoRun: true,
+      autoComplete: true,
+      inputSchema: {
+        type: "object",
+        properties: {
+          emails: {
+            type: "array",
+            items: { type: "string" },
+            description: "Email addresses to pre-fill in the invite dialog",
+          },
+          role: {
+            type: "string",
+            enum: ["admin", "member"],
+            description: "Role for the invitees (defaults to member)",
+          },
+        },
+      },
+      execute: (data: { emails?: string[]; role?: "admin" | "member" }) => {
+        openInviteMembersModal({
+          emails: data.emails,
+          role: data.role,
+        });
+        return { success: true, message: "Invite members dialog opened." };
+      },
+    },
+    {
       name: "open_team_settings",
       type: "navigate",
       description:
@@ -1176,11 +1217,12 @@ export function usePillarTools() {
   usePillarTool([
     {
       name: "generate_api_key",
-      type: "inline_ui" as const,
+      type: "trigger_tool" as const,
       description:
         "Generate a new API key (sync secret) for the current project. " +
-        "Opens an interactive card that creates the key and displays it " +
-        "for the user to copy. Use when user asks to create, generate, or add an API key. " +
+        "Opens a dialog where the key is created and displayed for the user to copy. " +
+        "The raw key is only shown in the dialog and never returned to the assistant. " +
+        "Use when user asks to create, generate, or add an API key. " +
         "Always provide a name — do NOT ask the user for one. If they specified a name, use it. " +
         "Otherwise, pick a sensible default like 'default', 'development', or 'api-key-1'.",
       examples: [
@@ -1190,7 +1232,7 @@ export function usePillarTools() {
         "add an API key called production",
         "generate a key for CI",
       ],
-      autoRun: false,
+      autoRun: true,
       autoComplete: true,
       inputSchema: {
         type: "object",
@@ -1208,14 +1250,15 @@ export function usePillarTools() {
       execute: (data: { name?: string }) => {
         const name =
           data.name?.trim().toLowerCase().replace(/[^a-z0-9-]/g, "") || undefined;
-        return { card_type: "api_keys", auto_generate: true, name };
+        openApiKeysModal({ auto_generate: true, name });
+        return { success: true, message: "API key dialog opened — the key will be shown there." };
       },
     },
     {
       name: "manage_api_keys",
-      type: "inline_ui" as const,
+      type: "trigger_tool" as const,
       description:
-        "Show an interactive API key manager. Lists all existing keys " +
+        "Open the API key manager dialog. Lists all existing keys " +
         "with the ability to create new keys or revoke existing ones. " +
         "Use when user wants to view, list, manage, or delete API keys.",
       examples: [
@@ -1229,7 +1272,8 @@ export function usePillarTools() {
       autoRun: true,
       autoComplete: true,
       execute: () => {
-        return { card_type: "api_keys" };
+        openApiKeysModal();
+        return { success: true, message: "API key manager opened." };
       },
     },
     {

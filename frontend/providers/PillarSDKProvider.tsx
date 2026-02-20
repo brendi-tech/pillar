@@ -21,7 +21,8 @@ import { useTheme } from "next-themes";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 
-import { ApiKeysCard } from "@/components/PillarCards";
+import { ApiKeysModal } from "@/components/ApiKeysModal";
+import { InviteMembersModal } from "@/components/InviteMembersModal";
 import { ThemeSelectorModal } from "@/components/ThemeSelectorModal";
 import { usePillarTools } from "@/hooks/usePillarTools";
 import { applyPendingHighlight } from "@/lib/highlight";
@@ -59,9 +60,6 @@ export function PillarSDKProvider({ children }: PillarSDKProviderProps) {
     <PillarProvider
       productKey={productKey}
       domScanning={true}
-      cards={{
-        api_keys: ApiKeysCard,
-      }}
       config={{
         apiBaseUrl,
         sidebarTabs,
@@ -124,6 +122,8 @@ export function PillarSyncProvider({
       <PillarIdentitySync />
       <PillarRouteSync />
       <ThemeSelectorModal />
+      <ApiKeysModal />
+      <InviteMembersModal />
       {children}
     </>
   );

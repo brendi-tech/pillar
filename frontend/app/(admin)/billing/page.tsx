@@ -8,7 +8,7 @@ export default function BillingPage() {
     <div className="space-y-6 p-6">
       <PageHeader
         title="Billing"
-        description="Manage your subscription, usage, and payment settings"
+        description="Subscription and payment management"
       />
       <BillingPageContent />
     </div>
