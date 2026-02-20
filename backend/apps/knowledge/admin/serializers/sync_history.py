@@ -20,6 +20,7 @@ class KnowledgeSyncHistorySerializer(serializers.ModelSerializer):
             'items_created',
             'items_updated',
             'items_failed',
+            'items_deleted',
             'error_message',
             'created_at',
         ]

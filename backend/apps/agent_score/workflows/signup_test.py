@@ -93,11 +93,6 @@ async def signup_test_workflow(workflow_input: SignupTestInput, context: Context
     report_id = workflow_input.report_id
     logger.info(f"[AGENT SCORE] Starting signup test for report {report_id}")
 
-    # Close stale DB connections — Hatchet workers hold long-lived connections
-    # that the DB server may have closed (idle timeout, restart, etc.)
-    from django.db import close_old_connections
-    close_old_connections()
-
     try:
         report = await AgentScoreReport.objects.aget(id=report_id)
     except AgentScoreReport.DoesNotExist:

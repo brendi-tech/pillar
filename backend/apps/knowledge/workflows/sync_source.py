@@ -236,6 +236,7 @@ async def _sync_cloud_storage_source(source) -> dict:
         items_updated = 0
         items_skipped = 0
         created_item_ids = []
+        seen_external_ids: set[str] = set()
 
         for raw_item in raw_items:
             try:
@@ -243,6 +244,7 @@ async def _sync_cloud_storage_source(source) -> dict:
                 external_id = raw_item.external_id or hashlib.md5(
                     raw_item.url.encode()
                 ).hexdigest()
+                seen_external_ids.add(external_id)
 
                 # Calculate content hash
                 content_hash = hashlib.md5(raw_item.raw_content.encode()).hexdigest()
@@ -313,6 +315,20 @@ async def _sync_cloud_storage_source(source) -> dict:
                 logger.error(f"[CLOUD STORAGE] Error processing item {raw_item.title}: {e}")
                 continue
 
+        # Delete orphaned items no longer found in the bucket
+        items_deleted = 0
+        if seen_external_ids:
+            orphaned_qs = KnowledgeItem.objects.filter(source=source).exclude(
+                external_id__in=seen_external_ids,
+            )
+            items_deleted = await orphaned_qs.acount()
+            if items_deleted:
+                await orphaned_qs.adelete()
+                logger.info(
+                    f"[CLOUD STORAGE] Deleted {items_deleted} orphaned items "
+                    f"for source {source_id}"
+                )
+
         # Trigger indexing for all created/updated items
         dispatched_count = 0
         for item_id in created_item_ids:
@@ -324,7 +340,8 @@ async def _sync_cloud_storage_source(source) -> dict:
         )
         logger.info(
             f"[CLOUD STORAGE] Sync complete: {items_created} created, "
-            f"{items_updated} updated, {items_skipped} skipped"
+            f"{items_updated} updated, {items_skipped} skipped, "
+            f"{items_deleted} deleted"
         )
 
         # Update sync history
@@ -333,8 +350,10 @@ async def _sync_cloud_storage_source(source) -> dict:
         sync_history.items_synced = items_created + items_updated
         sync_history.items_created = items_created
         sync_history.items_updated = items_updated
+        sync_history.items_deleted = items_deleted
         await sync_history.asave(update_fields=[
-            'status', 'completed_at', 'items_synced', 'items_created', 'items_updated'
+            'status', 'completed_at', 'items_synced',
+            'items_created', 'items_updated', 'items_deleted',
         ])
 
         # Update source status
@@ -350,6 +369,7 @@ async def _sync_cloud_storage_source(source) -> dict:
             'items_created': items_created,
             'items_updated': items_updated,
             'items_skipped': items_skipped,
+            'items_deleted': items_deleted,
         }
 
     except Exception as e:

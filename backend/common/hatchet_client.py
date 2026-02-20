@@ -6,8 +6,13 @@ imported and used throughout the application to register workflows and steps.
 
 The client is pre-initialized during Django startup (in CommonConfig.ready())
 to avoid 16+ second connection delays on the first request.
+
+The client is wrapped in DjangoHatchetClient which automatically calls
+close_old_connections() before each task execution, preventing stale DB
+connection errors in long-lived Hatchet worker processes.
 """
 from django.conf import settings
+import asyncio
 import logging
 from typing import Optional, List, Callable, Any
 from datetime import timedelta
@@ -88,6 +93,52 @@ class MockHatchetClient:
         def decorator(func: Callable) -> Callable:
             return func
         return decorator
+
+
+class DjangoHatchetClient:
+    """
+    Wraps the real Hatchet client to automatically close stale Django DB
+    connections before each task execution.
+
+    Hatchet workers are long-lived processes. Between task executions the
+    PostgreSQL connection can go stale (Cloud SQL proxy idle timeout, DB
+    restart, etc.). Django's request/response cycle normally calls
+    close_old_connections(), but Hatchet tasks bypass that cycle entirely.
+
+    This wrapper intercepts @hatchet.task() so every decorated function
+    gets close_old_connections() called before it runs — no workflow
+    author ever has to remember to add it manually.
+    """
+
+    def __init__(self, hatchet):
+        self._hatchet = hatchet
+
+    def __getattr__(self, name: str):
+        return getattr(self._hatchet, name)
+
+    def task(self, **kwargs) -> Callable:
+        real_decorator = self._hatchet.task(**kwargs)
+
+        def wrapper_decorator(fn: Callable) -> Callable:
+            if asyncio.iscoroutinefunction(fn):
+                @wraps(fn)
+                async def wrapped(*args, **inner_kwargs):
+                    from django.db import close_old_connections
+                    close_old_connections()
+                    return await fn(*args, **inner_kwargs)
+            else:
+                @wraps(fn)
+                def wrapped(*args, **inner_kwargs):
+                    from django.db import close_old_connections
+                    close_old_connections()
+                    return fn(*args, **inner_kwargs)
+
+            return real_decorator(wrapped)
+
+        return wrapper_decorator
+
+    def worker(self, *args, **kwargs):
+        return self._hatchet.worker(*args, **kwargs)
 
 
 # Singleton mock client instance
@@ -180,10 +231,10 @@ def get_hatchet_client():
         
         try:
             config = ClientConfig(**config_params)
-            _hatchet_client = Hatchet(
+            _hatchet_client = DjangoHatchetClient(Hatchet(
                 debug=settings.DEBUG,
                 config=config,
-            )
+            ))
             logger.info("Hatchet client initialized successfully")
         except Exception as e:
             logger.error(f"Failed to initialize Hatchet client: {e}", exc_info=True)

@@ -76,6 +76,7 @@ export interface SyncHistoryItem {
   items_created: number;
   items_updated: number;
   items_failed: number;
+  items_deleted: number;
   error_message: string;
   created_at: string;
 }

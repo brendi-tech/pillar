@@ -1176,11 +1176,13 @@ export function usePillarTools() {
   usePillarTool([
     {
       name: "generate_api_key",
-      type: "trigger_tool",
+      type: "inline_ui" as const,
       description:
         "Generate a new API key (sync secret) for the current project. " +
-        "Returns the raw secret which must be copied immediately — it cannot " +
-        "be retrieved later. Use when user asks to create, generate, or add an API key.",
+        "Opens an interactive card that creates the key and displays it " +
+        "for the user to copy. Use when user asks to create, generate, or add an API key. " +
+        "Always provide a name — do NOT ask the user for one. If they specified a name, use it. " +
+        "Otherwise, pick a sensible default like 'default', 'development', or 'api-key-1'.",
       examples: [
         "generate an API key",
         "create a new API key",
@@ -1189,45 +1191,24 @@ export function usePillarTools() {
         "generate a key for CI",
       ],
       autoRun: false,
-      autoComplete: false,
+      autoComplete: true,
       inputSchema: {
         type: "object",
         properties: {
           name: {
             type: "string",
             description:
-              "Optional label for the key (e.g. production, staging, ci). " +
-              "Lowercase alphanumeric and hyphens only.",
+              "Label for the key (e.g. production, staging, ci). " +
+              "Lowercase alphanumeric and hyphens only. " +
+              "Always provide a value — use the user's choice if given, otherwise default to 'default'.",
           },
         },
+        required: ["name"],
       },
-      execute: async (data: { name?: string }) => {
-        const productId = currentProduct?.id;
-        if (!productId) {
-          return { success: false, error: "No product selected" };
-        }
+      execute: (data: { name?: string }) => {
         const name =
           data.name?.trim().toLowerCase().replace(/[^a-z0-9-]/g, "") || undefined;
-        try {
-          const result = await adminFetch<{
-            id: string;
-            name: string;
-            secret: string;
-          }>(`/configs/${productId}/secrets/`, {
-            method: "POST",
-            body: JSON.stringify({ name }),
-          });
-          return {
-            success: true,
-            name: result.name,
-            secret: result.secret,
-            message:
-              "Copy this secret now — it will not be shown again! " +
-              `Key name: ${result.name}`,
-          };
-        } catch {
-          return { success: false, error: "Failed to generate API key" };
-        }
+        return { card_type: "api_keys", auto_generate: true, name };
       },
     },
     {

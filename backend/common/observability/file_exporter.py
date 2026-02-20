@@ -3,12 +3,18 @@ NDJSON file-based span exporter for local development.
 
 Writes OpenTelemetry spans as newline-delimited JSON to logs/traces/{YYYY-MM}/.
 One file per trace ID (agent session), with child spans appended as they complete.
+
+Only writes traces that contain at least one meaningful span (agent sessions,
+tool calls, LLM decisions).  Auto-instrumented noise (standalone Redis, DB,
+HTTP spans) is buffered then discarded when the root span arrives without any
+meaningful sibling.
 """
 import json
 import logging
 import os
 import random
 import threading
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence
@@ -22,6 +28,14 @@ logger = logging.getLogger(__name__)
 SENSITIVE_KEYS = frozenset({
     "password", "token", "key", "secret", "api_key", "apikey", "auth", "credential",
 })
+
+MEANINGFUL_SPAN_PREFIXES = (
+    "mcp.request",
+    "agentic_loop",
+    "llm.",
+    "tool.",
+    "query_action.",
+)
 
 
 def sanitize_attributes(attrs: Dict[str, Any]) -> Dict[str, Any]:
@@ -157,43 +171,98 @@ class FileSpanExporter(SpanExporter):
     """
     Exports spans as NDJSON to local trace files.
 
-    Each trace ID gets its own file. Spans are appended as they complete,
-    so child spans appear before the root span.
+    Buffers spans by trace ID.  When the root span (no parent) arrives, the
+    trace is flushed to disk only if it contains at least one meaningful span.
+    Otherwise the entire trace is silently discarded.
     """
 
     def __init__(self, manager: Optional[TraceFileManager] = None, max_files: int = 100):
         self._manager = manager or TraceFileManager()
         self._max_files = max_files
         self._lock = threading.Lock()
-        # trace_id -> file path (cached so we don't create duplicate files)
         self._trace_files: Dict[str, Path] = {}
+        self._buffers: Dict[str, List[Dict[str, Any]]] = {}
+        self._meaningful_traces: set = set()
+        self._buffer_timestamps: Dict[str, float] = {}
 
-    def _get_trace_file(self, trace_id: str) -> Path:
-        with self._lock:
-            if trace_id not in self._trace_files:
-                path = self._manager.trace_file_for(trace_id)
-                self._trace_files[trace_id] = path
-                # Probabilistic cleanup (5% chance)
-                if random.random() < 0.05:
-                    self._manager.cleanup_old_traces(self._max_files)
-            return self._trace_files[trace_id]
+    @staticmethod
+    def _is_meaningful(span_name: str) -> bool:
+        return any(span_name.startswith(p) for p in MEANINGFUL_SPAN_PREFIXES)
+
+    def _flush_trace(self, trace_id: str) -> None:
+        """Write buffered spans to disk. Caller must hold _lock."""
+        spans = self._buffers.pop(trace_id, [])
+        self._meaningful_traces.discard(trace_id)
+        self._buffer_timestamps.pop(trace_id, None)
+        if not spans:
+            return
+
+        if trace_id not in self._trace_files:
+            self._trace_files[trace_id] = self._manager.trace_file_for(trace_id)
+            if random.random() < 0.05:
+                self._manager.cleanup_old_traces(self._max_files)
+
+        path = self._trace_files[trace_id]
+        with open(path, "a", encoding="utf-8") as f:
+            for span_dict in spans:
+                f.write(json.dumps(span_dict, default=str) + "\n")
+
+    def _discard_trace(self, trace_id: str) -> None:
+        """Discard buffered spans. Caller must hold _lock."""
+        self._buffers.pop(trace_id, None)
+        self._meaningful_traces.discard(trace_id)
+        self._buffer_timestamps.pop(trace_id, None)
+
+    def _cleanup_stale_buffers(self) -> None:
+        """Flush or discard traces buffered for over 5 minutes. Caller must hold _lock."""
+        cutoff = time.time() - 300
+        stale = [tid for tid, ts in self._buffer_timestamps.items() if ts < cutoff]
+        for tid in stale:
+            if tid in self._meaningful_traces:
+                self._flush_trace(tid)
+            else:
+                self._discard_trace(tid)
 
     def export(self, spans: Sequence[ReadableSpan]) -> SpanExportResult:
         try:
-            for span in spans:
-                ctx = span.get_span_context()
-                trace_id = format(ctx.trace_id, "032x")
-                path = self._get_trace_file(trace_id)
-                line = json.dumps(_span_to_dict(span), default=str) + "\n"
-                with open(path, "a", encoding="utf-8") as f:
-                    f.write(line)
+            with self._lock:
+                for span in spans:
+                    ctx = span.get_span_context()
+                    trace_id = format(ctx.trace_id, "032x")
+                    span_dict = _span_to_dict(span)
+
+                    if self._is_meaningful(span.name):
+                        self._meaningful_traces.add(trace_id)
+
+                    self._buffers.setdefault(trace_id, []).append(span_dict)
+                    self._buffer_timestamps.setdefault(trace_id, time.time())
+
+                    # Root span (no parent) = trace is complete
+                    if span.parent is None:
+                        if trace_id in self._meaningful_traces:
+                            self._flush_trace(trace_id)
+                        else:
+                            self._discard_trace(trace_id)
+
+                if random.random() < 0.05:
+                    self._cleanup_stale_buffers()
+
             return SpanExportResult.SUCCESS
         except Exception as exc:
             logger.warning(f"[FileSpanExporter] Export failed: {exc}")
             return SpanExportResult.FAILURE
 
     def shutdown(self) -> None:
-        self._trace_files.clear()
+        with self._lock:
+            for trace_id in list(self._meaningful_traces):
+                self._flush_trace(trace_id)
+            self._buffers.clear()
+            self._meaningful_traces.clear()
+            self._buffer_timestamps.clear()
+            self._trace_files.clear()
 
     def force_flush(self, timeout_millis: int = 30000) -> bool:
+        with self._lock:
+            for trace_id in list(self._meaningful_traces):
+                self._flush_trace(trace_id)
         return True

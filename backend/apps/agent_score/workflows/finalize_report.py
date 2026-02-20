@@ -50,9 +50,6 @@ async def finalize_report_workflow(
     logger.info(f"[AGENT SCORE] Finalizing report {report_id}")
     await log_activity(report_id, "finalize", "info", "Finalizing report scores")
 
-    from django.db import close_old_connections
-    close_old_connections()
-
     try:
         report = await AgentScoreReport.objects.aget(id=report_id)
     except AgentScoreReport.DoesNotExist:

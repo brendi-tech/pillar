@@ -230,6 +230,7 @@ apiClient.interceptors.request.use((config) => {
       { path: "/api/auth/token/", method: "POST" },
       { path: "/api/auth/oauth/", method: "POST" },
       { path: "/api/users/password-reset/", method: "POST" },
+      { path: "/api/users/password-reset/confirm/", method: "POST" },
     ];
 
     const isPublicEndpoint = publicEndpoints.some(

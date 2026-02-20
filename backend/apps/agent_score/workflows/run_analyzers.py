@@ -117,11 +117,6 @@ async def analyze_and_score_workflow(
     logger.info(f"[AGENT SCORE] Running analyze-and-score for report {report_id}")
     await log_activity(report_id, "analyze_and_score", "info", "Running analyzers")
 
-    # Close stale DB connections — Hatchet workers hold long-lived connections
-    # that the DB server may have closed (idle timeout, restart, etc.)
-    from django.db import close_old_connections
-    close_old_connections()
-
     try:
         report = await AgentScoreReport.objects.aget(id=report_id)
     except AgentScoreReport.DoesNotExist:

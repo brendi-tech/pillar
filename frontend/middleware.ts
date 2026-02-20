@@ -255,7 +255,9 @@ export function middleware(request: NextRequest) {
     (pathname.startsWith("/login") ||
       pathname.startsWith("/signup") ||
       pathname.startsWith("/onboarding") ||
-      pathname.startsWith("/logout"))
+      pathname.startsWith("/logout") ||
+      pathname.startsWith("/forgot-password") ||
+      pathname.startsWith("/reset-password"))
   ) {
     const adminUrl = getAdminSubdomainUrl(hostname);
     return NextResponse.redirect(

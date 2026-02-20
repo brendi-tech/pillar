@@ -289,10 +289,13 @@ async def process_async_crawl_workflow(workflow_input: CrawlProcessInput, contex
         pages_updated = 0
         pages_skipped = 0
         pages_failed = 0
+        seen_external_ids: set[str] = set()
         
         for page_data in pages_data:
             try:
-                result = await _process_page(source, page_data)
+                result, external_id = await _process_page(source, page_data)
+                if external_id:
+                    seen_external_ids.add(external_id)
                 if result == 'created':
                     pages_created += 1
                 elif result == 'updated':
@@ -302,6 +305,22 @@ async def process_async_crawl_workflow(workflow_input: CrawlProcessInput, contex
             except Exception as e:
                 logger.error(f"[KNOWLEDGE CRAWL] Page processing error: {e}")
                 pages_failed += 1
+        
+        # Delete orphaned items no longer found at the source.
+        # Only runs after all pages processed successfully — if the sync
+        # failed or raised, the except block skips this entirely.
+        pages_deleted = 0
+        if seen_external_ids:
+            orphaned_qs = KnowledgeItem.objects.filter(source=source).exclude(
+                external_id__in=seen_external_ids,
+            )
+            pages_deleted = await orphaned_qs.acount()
+            if pages_deleted:
+                await orphaned_qs.adelete()
+                logger.info(
+                    f"[KNOWLEDGE CRAWL] Deleted {pages_deleted} orphaned items "
+                    f"for source {source_id}"
+                )
         
         # Update source (item_count is computed dynamically via annotation)
         crawl_config['pages_processed'] = pages_created + pages_updated
@@ -324,9 +343,11 @@ async def process_async_crawl_workflow(workflow_input: CrawlProcessInput, contex
                 sync_history.items_created = pages_created
                 sync_history.items_updated = pages_updated
                 sync_history.items_failed = pages_failed
+                sync_history.items_deleted = pages_deleted
                 await sync_history.asave(update_fields=[
                     'status', 'completed_at', 'items_synced',
-                    'items_created', 'items_updated', 'items_failed', 'updated_at'
+                    'items_created', 'items_updated', 'items_failed',
+                    'items_deleted', 'updated_at',
                 ])
                 logger.info(f"[KNOWLEDGE CRAWL] Updated sync history {sync_history_id} to COMPLETED")
             except KnowledgeSyncHistory.DoesNotExist:
@@ -359,7 +380,8 @@ async def process_async_crawl_workflow(workflow_input: CrawlProcessInput, contex
         
         logger.info(
             f"[KNOWLEDGE CRAWL] Complete: {pages_created} created, "
-            f"{pages_updated} updated, {pages_skipped} skipped, {pages_failed} failed"
+            f"{pages_updated} updated, {pages_skipped} skipped, "
+            f"{pages_failed} failed, {pages_deleted} deleted"
         )
         
         return {
@@ -368,6 +390,7 @@ async def process_async_crawl_workflow(workflow_input: CrawlProcessInput, contex
             'pages_updated': pages_updated,
             'pages_skipped': pages_skipped,
             'pages_failed': pages_failed,
+            'pages_deleted': pages_deleted,
         }
         
     except Exception as e:
@@ -414,11 +437,13 @@ async def _update_sync_history_failed(sync_history_id: Optional[str], error_mess
         logger.error(f"[KNOWLEDGE CRAWL] Failed to update sync history: {e}")
 
 
-async def _process_page(source, page_data: dict) -> str:
+async def _process_page(source, page_data: dict) -> tuple[str, Optional[str]]:
     """
     Process a single crawled page into a KnowledgeItem.
     
-    Returns: 'created', 'updated', or 'skipped'
+    Returns: (result, external_id) where result is 'created', 'updated', or
+    'skipped', and external_id is the item's external_id (None if skipped
+    before one could be computed).
     """
     from apps.knowledge.models import KnowledgeItem
     
@@ -429,32 +454,33 @@ async def _process_page(source, page_data: dict) -> str:
         url = metadata.get('url') or metadata.get('sourceURL')
     
     if not url:
-        return 'skipped'
-    
-    # Check for error pages (404s, 500s, soft 404s)
-    skip, reason = should_skip_page(page_data, url)
-    if skip:
-        logger.info(f"[KNOWLEDGE CRAWL] Skipping page {url}: {reason}")
-        return 'skipped'
-    
-    # Check for minimal content
-    markdown = page_data.get('markdown', '')
-    if len(markdown) < 100:
-        return 'skipped'
+        return 'skipped', None
     
     # Filter to source domain
     source_host = urlparse(source.url).netloc.lower()
     url_host = urlparse(url).netloc.lower()
     if url_host != source_host:
-        return 'skipped'
+        return 'skipped', None
+    
+    # Generate external ID early so the caller can track it even if we skip
+    external_id = KnowledgeItem.generate_external_id(url)
+    
+    # Check for error pages (404s, 500s, soft 404s)
+    skip, reason = should_skip_page(page_data, url)
+    if skip:
+        logger.info(f"[KNOWLEDGE CRAWL] Skipping page {url}: {reason}")
+        return 'skipped', external_id
+    
+    # Check for minimal content
+    markdown = page_data.get('markdown', '')
+    if len(markdown) < 100:
+        return 'skipped', external_id
     
     # Extract metadata
     metadata = page_data.get('metadata', {})
     title = (metadata.get('title') or url)[:500]
     description = metadata.get('description', '') or ''
     
-    # Generate external ID
-    external_id = KnowledgeItem.generate_external_id(url)
     content_hash = hashlib.md5(markdown.encode()).hexdigest()
     
     # Check for existing item
@@ -467,12 +493,12 @@ async def _process_page(source, page_data: dict) -> str:
         # Content unchanged: skip if already indexed; otherwise re-queue for processing (e.g. was FAILED)
         if existing.content_hash == content_hash:
             if existing.status == KnowledgeItem.Status.INDEXED:
-                return 'skipped'
+                return 'skipped', external_id
             # Same content but not indexed (failed/pending) — re-trigger processing
             existing.status = KnowledgeItem.Status.PENDING
             existing.processing_error = None
             await existing.asave(update_fields=['status', 'processing_error'])
-            return 'updated'
+            return 'updated', external_id
         
         # Update existing (content changed)
         existing.title = title
@@ -485,7 +511,7 @@ async def _process_page(source, page_data: dict) -> str:
             'scraped_at': timezone.now().isoformat(),
         }
         await existing.asave()
-        return 'updated'
+        return 'updated', external_id
         
     except KnowledgeItem.DoesNotExist:
         # Create new item
@@ -507,4 +533,4 @@ async def _process_page(source, page_data: dict) -> str:
                 'scraped_at': timezone.now().isoformat(),
             },
         )
-        return 'created'
+        return 'created', external_id

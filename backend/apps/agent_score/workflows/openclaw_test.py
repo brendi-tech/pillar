@@ -291,9 +291,6 @@ async def openclaw_test_workflow(
     report_id = workflow_input.report_id
     logger.info(f"[AGENT SCORE] Starting OpenClaw test for report {report_id}")
 
-    from django.db import close_old_connections
-    close_old_connections()
-
     try:
         report = await AgentScoreReport.objects.aget(id=report_id)
     except AgentScoreReport.DoesNotExist:

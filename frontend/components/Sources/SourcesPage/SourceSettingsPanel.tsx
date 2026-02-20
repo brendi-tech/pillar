@@ -524,6 +524,9 @@ export function SourceSettingsPanel({
                               <p className="text-muted-foreground tabular-nums">
                                 {sync.items_created} created,{" "}
                                 {sync.items_updated} updated
+                                {sync.items_deleted > 0 && (
+                                  <>, {sync.items_deleted} removed</>
+                                )}
                               </p>
                             )}
                             {sync.status === "failed" && sync.error_message && (

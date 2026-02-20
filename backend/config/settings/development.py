@@ -193,3 +193,7 @@ if STORAGE_BACKEND == 'gcs':
         "BACKEND": "storages.backends.gcloud.GoogleCloudStorage",
         "OPTIONS": storage_options,
     }
+
+# OpenTelemetry tracing (local file exporter)
+from common.observability.tracing import setup_tracing as _setup_tracing  # noqa: E402
+_setup_tracing()

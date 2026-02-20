@@ -90,7 +90,7 @@ export const NOTIFICATION_REGISTRY: NotificationRule[] = [
       message: 'Install the Pillar SDK to enable your AI assistant on your site.',
       action: {
         label: 'Setup Guide',
-        href: '/configure',
+        href: '/setup',
       },
     },
     condition: ({ integrationStatus, productCreatedAt, isLoading }) => {

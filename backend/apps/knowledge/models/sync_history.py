@@ -82,6 +82,10 @@ class KnowledgeSyncHistory(TenantAwareModel):
         default=0,
         help_text="Items that failed to process"
     )
+    items_deleted = models.IntegerField(
+        default=0,
+        help_text="Stale items removed (no longer found at source)"
+    )
 
     # Error tracking
     error_message = models.TextField(
@@ -110,7 +114,10 @@ class KnowledgeSyncHistory(TenantAwareModel):
         self.started_at = timezone.now()
         self.save(update_fields=['status', 'started_at', 'updated_at'])
 
-    def mark_completed(self, items_synced=0, items_created=0, items_updated=0, items_failed=0):
+    def mark_completed(
+        self, items_synced=0, items_created=0, items_updated=0,
+        items_failed=0, items_deleted=0,
+    ):
         """Mark the sync as completed with stats."""
         from django.utils import timezone
         self.status = self.Status.COMPLETED
@@ -119,9 +126,11 @@ class KnowledgeSyncHistory(TenantAwareModel):
         self.items_created = items_created
         self.items_updated = items_updated
         self.items_failed = items_failed
+        self.items_deleted = items_deleted
         self.save(update_fields=[
             'status', 'completed_at', 'items_synced',
-            'items_created', 'items_updated', 'items_failed', 'updated_at'
+            'items_created', 'items_updated', 'items_failed',
+            'items_deleted', 'updated_at',
         ])
 
     def mark_failed(self, error_message: str):

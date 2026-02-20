@@ -35,12 +35,17 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface CardComponentProps<T = Record<string, unknown>> {
   data: T;
   onConfirm: (modifiedData?: Record<string, unknown>) => void;
   onCancel: () => void;
+}
+
+interface ApiKeysCardData {
+  auto_generate?: boolean;
+  name?: string;
 }
 
 interface SyncSecret {
@@ -61,17 +66,19 @@ interface CreateSecretResponse {
 type CardState = "loading" | "ready" | "error";
 
 export function ApiKeysCard({
+  data,
   onConfirm,
   onCancel,
-}: CardComponentProps) {
+}: CardComponentProps<ApiKeysCardData>) {
   const productId = getCurrentProductId();
 
   const [secrets, setSecrets] = useState<SyncSecret[]>([]);
   const [cardState, setCardState] = useState<CardState>("loading");
   const [errorMessage, setErrorMessage] = useState("");
 
-  const [nameInput, setNameInput] = useState("");
+  const [nameInput, setNameInput] = useState(data?.name ?? "");
   const [isCreating, setIsCreating] = useState(false);
+  const autoGenerateTriggered = useRef(false);
   const [newlyCreatedSecret, setNewlyCreatedSecret] = useState<string | null>(
     null
   );
@@ -103,10 +110,10 @@ export function ApiKeysCard({
     fetchSecrets();
   }, [fetchSecrets]);
 
-  const handleCreate = useCallback(async () => {
+  const handleCreate = useCallback(async (nameOverride?: string) => {
     if (!productId) return;
     const name =
-      nameInput.trim() || `key-${(secrets?.length ?? 0) + 1}`;
+      (nameOverride ?? nameInput.trim()) || `key-${(secrets?.length ?? 0) + 1}`;
     if (name.length > 50) return;
 
     setIsCreating(true);
@@ -125,6 +132,17 @@ export function ApiKeysCard({
       setIsCreating(false);
     }
   }, [productId, nameInput, secrets?.length, fetchSecrets]);
+
+  useEffect(() => {
+    if (
+      data?.auto_generate &&
+      cardState === "ready" &&
+      !autoGenerateTriggered.current
+    ) {
+      autoGenerateTriggered.current = true;
+      handleCreate(data.name);
+    }
+  }, [data?.auto_generate, data?.name, cardState, handleCreate]);
 
   const handleDelete = useCallback(
     async (secretId: string) => {
@@ -231,7 +249,7 @@ export function ApiKeysCard({
       {canCreateMore && (
         <div className="mb-3 flex gap-2">
           <Button
-            onClick={handleCreate}
+            onClick={() => handleCreate()}
             disabled={isCreating}
             size="sm"
             className="shrink-0"

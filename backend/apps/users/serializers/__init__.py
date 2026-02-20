@@ -12,6 +12,7 @@ from .organization_invitation import (
     BulkInvitationSerializer,
     BulkInvitationResultSerializer
 )
+from .password_reset import PasswordResetRequestSerializer, PasswordResetConfirmSerializer
 
 __all__ = [
     'UserSerializer',
@@ -26,4 +27,6 @@ __all__ = [
     'InvitationPreviewSerializer',
     'BulkInvitationSerializer',
     'BulkInvitationResultSerializer',
+    'PasswordResetRequestSerializer',
+    'PasswordResetConfirmSerializer',
 ]

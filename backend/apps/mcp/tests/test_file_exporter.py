@@ -80,7 +80,7 @@ class TestFileSpanExporter:
         provider.add_span_processor(SimpleSpanProcessor(exporter))
         tracer = provider.get_tracer("test")
 
-        with tracer.start_as_current_span("test_span") as span:
+        with tracer.start_as_current_span("mcp.request") as span:
             span.set_attribute("test.key", "test_value")
 
         provider.shutdown()
@@ -93,7 +93,7 @@ class TestFileSpanExporter:
         assert len(lines) == 1
 
         data = json.loads(lines[0])
-        assert data["name"] == "test_span"
+        assert data["name"] == "mcp.request"
         assert data["attributes"]["test.key"] == "test_value"
         assert data["trace_id"]
         assert data["span_id"]
@@ -110,8 +110,8 @@ class TestFileSpanExporter:
         provider.add_span_processor(SimpleSpanProcessor(exporter))
         tracer = provider.get_tracer("test")
 
-        with tracer.start_as_current_span("parent"):
-            with tracer.start_as_current_span("child"):
+        with tracer.start_as_current_span("mcp.request"):
+            with tracer.start_as_current_span("agentic_loop"):
                 pass
 
         provider.shutdown()
@@ -124,10 +124,71 @@ class TestFileSpanExporter:
         assert len(lines) == 2
 
         spans = [json.loads(l) for l in lines]
-        assert spans[0]["name"] == "child"
-        assert spans[1]["name"] == "parent"
+        assert spans[0]["name"] == "agentic_loop"
+        assert spans[1]["name"] == "mcp.request"
         assert spans[0]["trace_id"] == spans[1]["trace_id"]
         assert spans[0]["parent_span_id"] == spans[1]["span_id"]
+
+    def test_export_filters_noise_traces(self, tmp_path):
+        """Standalone auto-instrumented traces should not be written to disk."""
+        mgr = TraceFileManager(base_dir=tmp_path)
+        exporter = FileSpanExporter(manager=mgr)
+
+        from opentelemetry.sdk.trace import TracerProvider
+        from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+
+        provider = TracerProvider()
+        provider.add_span_processor(SimpleSpanProcessor(exporter))
+        tracer = provider.get_tracer("test")
+
+        with tracer.start_as_current_span("POST mcp/"):
+            with tracer.start_as_current_span("SELECT"):
+                pass
+
+        with tracer.start_as_current_span("EVAL"):
+            pass
+
+        with tracer.start_as_current_span("BZPOPMIN"):
+            pass
+
+        provider.shutdown()
+
+        files = list(tmp_path.glob("**/*.ndjson"))
+        assert len(files) == 0
+
+    def test_meaningful_trace_includes_all_children(self, tmp_path):
+        """Auto-instrumented child spans within a meaningful trace are kept."""
+        mgr = TraceFileManager(base_dir=tmp_path)
+        exporter = FileSpanExporter(manager=mgr)
+
+        from opentelemetry.sdk.trace import TracerProvider
+        from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+
+        provider = TracerProvider()
+        provider.add_span_processor(SimpleSpanProcessor(exporter))
+        tracer = provider.get_tracer("test")
+
+        with tracer.start_as_current_span("mcp.request"):
+            with tracer.start_as_current_span("agentic_loop"):
+                with tracer.start_as_current_span("SELECT"):
+                    pass
+                with tracer.start_as_current_span("llm.tool_decision"):
+                    pass
+
+        provider.shutdown()
+
+        files = list(tmp_path.glob("**/*.ndjson"))
+        assert len(files) == 1
+
+        with open(files[0], 'r') as f:
+            lines = [l.strip() for l in f if l.strip()]
+        assert len(lines) == 4
+
+        span_names = [json.loads(l)["name"] for l in lines]
+        assert "SELECT" in span_names
+        assert "llm.tool_decision" in span_names
+        assert "agentic_loop" in span_names
+        assert "mcp.request" in span_names
 
     def test_export_captures_events(self, tmp_path):
         mgr = TraceFileManager(base_dir=tmp_path)
@@ -140,7 +201,7 @@ class TestFileSpanExporter:
         provider.add_span_processor(SimpleSpanProcessor(exporter))
         tracer = provider.get_tracer("test")
 
-        with tracer.start_as_current_span("span_with_events") as span:
+        with tracer.start_as_current_span("mcp.request") as span:
             span.add_event("test_event", {"detail": "something happened"})
 
         provider.shutdown()
@@ -165,7 +226,7 @@ class TestFileSpanExporter:
         provider.add_span_processor(SimpleSpanProcessor(exporter))
         tracer = provider.get_tracer("test")
 
-        with tracer.start_as_current_span("error_span") as span:
+        with tracer.start_as_current_span("mcp.request") as span:
             span.set_status(StatusCode.ERROR, "something failed")
 
         provider.shutdown()
