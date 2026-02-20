@@ -43,7 +43,7 @@ export function CreateToolStepContent({
             <TabsTrigger
               key={framework.id}
               value={framework.id}
-              className="shrink-0"
+              className="shrink-0 px-3 py-1.5 sm:px-4"
             >
               {framework.name}
             </TabsTrigger>

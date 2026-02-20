@@ -6,9 +6,8 @@ import { Spinner } from "@/components/ui/spinner";
  */
 export function FullScreenLoading() {
   return (
-    <div className="flex h-screen items-center justify-center bg-[var(--hc-bg)]">
+    <div className="flex h-screen items-center justify-center bg-(--hc-background)">
       <Spinner size="lg" />
     </div>
   );
 }
-

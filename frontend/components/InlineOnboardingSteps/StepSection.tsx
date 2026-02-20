@@ -18,33 +18,47 @@ export function StepSection({
   const isLocked = state === "locked";
   const isCompleted = state === "completed";
 
+  const StepIndicator = ({ className }: { className?: string }) => (
+    <span
+      className={cn(
+        "flex h-6 w-6 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-full border transition-colors",
+        isCompleted &&
+          "border-foreground/20 bg-foreground text-background",
+        state === "active" &&
+          "border-foreground bg-background text-foreground ring-4 ring-foreground/5",
+        isLocked &&
+          "border-muted-foreground/20 bg-muted text-muted-foreground",
+        className
+      )}
+    >
+      {isCompleted ? (
+        <Check className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+      ) : (
+        <span className="text-xs sm:text-sm font-medium">{step.id}</span>
+      )}
+    </span>
+  );
+
   return (
     <div
       className={cn(
-        "relative flex gap-6 w-full overflow-hidden",
+        "relative flex sm:gap-6 w-full overflow-hidden",
         isLocked && "opacity-50"
       )}
     >
-      <div className="flex flex-col items-center">
+      {/* Desktop: Vertical sidebar with step indicator and connecting line */}
+      <div className="hidden sm:flex flex-col items-center">
         <button
           type="button"
           disabled={isLocked}
           onClick={onToggle}
           className={cn(
-            "relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition-colors",
-            isCompleted &&
-              "border-foreground/20 bg-foreground text-background cursor-pointer",
-            state === "active" &&
-              "border-foreground bg-background text-foreground ring-4 ring-foreground/5",
-            isLocked &&
-              "border-muted-foreground/20 bg-muted text-muted-foreground cursor-not-allowed"
+            "relative z-10",
+            !isLocked && "cursor-pointer",
+            isLocked && "cursor-not-allowed"
           )}
         >
-          {isCompleted ? (
-            <Check className="h-3.5 w-3.5" />
-          ) : (
-            <span className="text-sm font-medium">{step.id}</span>
-          )}
+          <StepIndicator />
         </button>
 
         {!isLast && (
@@ -57,7 +71,7 @@ export function StepSection({
         )}
       </div>
 
-      <div className={cn("flex-1 pb-10 overflow-hidden", isLast && "pb-0")}>
+      <div className={cn("flex-1 pb-6 sm:pb-10 overflow-hidden", isLast && "pb-0")}>
         <button
           type="button"
           disabled={isLocked}
@@ -74,6 +88,10 @@ export function StepSection({
               isLocked ? "text-muted-foreground" : "text-foreground"
             )}
           >
+            {/* Mobile: Inline step indicator */}
+            <span className="sm:hidden">
+              <StepIndicator />
+            </span>
             {step.title}
             {step.optional && (
               <Badge
@@ -84,7 +102,7 @@ export function StepSection({
               </Badge>
             )}
           </h3>
-          <p className="text-sm text-muted-foreground mt-0.5">
+          <p className="text-sm text-muted-foreground mt-0.5 sm:mt-0.5 ml-8 sm:ml-0">
             {step.description}
           </p>
         </button>

@@ -45,8 +45,8 @@ npx pillar-sync --scan ./src`;
       </p>
 
       <div className="space-y-3">
-        <div className="flex items-center gap-3">
-          <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-medium shrink-0">
+        <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3">
+          <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-medium w-fit">
             PILLAR_SLUG
           </code>
           <div className="flex items-center gap-1 min-w-0">
@@ -55,8 +55,8 @@ npx pillar-sync --scan ./src`;
           </div>
         </div>
 
-        <div className="flex items-start gap-3">
-          <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-medium shrink-0 mt-1.5">
+        <div className="flex flex-col gap-1.5 sm:flex-row sm:items-start sm:gap-3">
+          <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-medium w-fit sm:mt-1.5">
             PILLAR_SECRET
           </code>
           <div className="flex-1 min-w-0">
