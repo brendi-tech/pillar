@@ -1,5 +1,6 @@
 "use client";
 
+import { Toaster } from "@/components/ui/sonner";
 import { PillarSDKProvider } from "@/providers";
 import { AdminAuthProvider } from "@/providers/AuthProvider";
 import { IntercomProvider } from "@/providers/IntercomProvider";
@@ -33,7 +34,10 @@ export function AdminProviders({ children }: AdminProvidersProps) {
     <QueryClientProvider client={queryClient}>
       <PillarSDKProvider>
         <AdminAuthProvider>
-          <IntercomProvider>{children}</IntercomProvider>
+          <IntercomProvider>
+            {children}
+            <Toaster />
+          </IntercomProvider>
         </AdminAuthProvider>
       </PillarSDKProvider>
     </QueryClientProvider>
