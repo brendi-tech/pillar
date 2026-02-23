@@ -6,6 +6,8 @@ from rest_framework.response import Response
 from rest_framework import status
 import logging
 
+import sentry_sdk
+
 logger = logging.getLogger(__name__)
 
 
@@ -44,6 +46,7 @@ def custom_exception_handler(exc, context):
 
     # If response is None, it's an unhandled exception
     if response is None:
+        sentry_sdk.capture_exception(exc)
         logger.error(
             f"Unhandled exception: {exc}",
             exc_info=True,

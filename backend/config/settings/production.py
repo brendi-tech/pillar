@@ -143,6 +143,19 @@ LOGGING['root']['level'] = 'INFO'
 from common.observability.tracing import setup_tracing as _setup_tracing  # noqa: E402
 _setup_tracing(project_id=os.environ.get("GCP_PROJECT_ID"))
 
+# Sentry error tracking — only active when SENTRY_DSN is set. Internal services
+# like metabase-prod, grafana-copilot-demo, and superset-demo intentionally omit
+# this env var so their errors don't trigger alerts.
+import sentry_sdk  # noqa: E402
+_sentry_dsn = os.environ.get("SENTRY_DSN")
+if _sentry_dsn:
+    sentry_sdk.init(
+        dsn=_sentry_dsn,
+        environment=os.environ.get("DEPLOY_ENV", "production"),
+        traces_sample_rate=0,
+        send_default_pii=False,
+    )
+
 # ASGI application (inherited from base, but explicitly set for clarity)
 ASGI_APPLICATION = 'config.asgi.application'
 
