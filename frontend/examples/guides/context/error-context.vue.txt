@@ -1,0 +1,26 @@
+<script setup lang="ts">
+import { usePillar } from "@pillar-ai/vue";
+import { ref } from "vue";
+
+const { pillar } = usePillar();
+const error = ref(null);
+
+function handlePaymentError(err: { code: string; message: string }) {
+  error.value = err;
+
+  // Tell Pillar about the error
+  pillar.value?.setContext({
+    errorState: {
+      code: err.code,
+      message: err.message,
+    },
+  });
+}
+</script>
+
+<template>
+  <form @submit="handleSubmit">
+    <ErrorMessage v-if="error" :error="error" />
+    <!-- ... -->
+  </form>
+</template>

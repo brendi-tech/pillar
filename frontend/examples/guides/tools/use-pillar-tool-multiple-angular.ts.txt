@@ -1,0 +1,37 @@
+import { Component } from '@angular/core';
+import { Router } from '@angular/router';
+import { injectPillarTool } from '@pillar-ai/angular';
+
+@Component({
+  selector: 'app-navigation-tools',
+  standalone: true,
+  template: ``,
+})
+export class NavigationToolsComponent {
+  constructor(private router: Router) {
+    // Register multiple related tools in a single call
+    injectPillarTool([
+      {
+        name: 'open_billing',
+        type: 'navigate',
+        description: 'Navigate to billing and subscription settings',
+        examples: ['go to billing', 'view my subscription', 'payment settings'],
+        execute: () => this.router.navigate(['/settings/billing']),
+      },
+      {
+        name: 'open_team',
+        type: 'navigate',
+        description: 'Navigate to team management page',
+        examples: ['manage team', 'invite team members', 'team settings'],
+        execute: () => this.router.navigate(['/settings/team']),
+      },
+      {
+        name: 'open_integrations',
+        type: 'navigate',
+        description: 'Navigate to integrations and connected apps',
+        examples: ['view integrations', 'connect apps', 'api settings'],
+        execute: () => this.router.navigate(['/settings/integrations']),
+      },
+    ]);
+  }
+}

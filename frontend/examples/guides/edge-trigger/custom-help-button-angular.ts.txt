@@ -1,0 +1,20 @@
+import { Component } from '@angular/core';
+import { injectPillar } from '@pillar-ai/angular';
+
+@Component({
+  selector: 'app-custom-help-button',
+  standalone: true,
+  template: `
+    <button (click)="toggle()">
+      {{ isPanelOpen() ? 'Close' : 'Help' }}
+    </button>
+  `,
+})
+export class CustomHelpButtonComponent {
+  private pillar = injectPillar();
+  isPanelOpen = this.pillar.isPanelOpen;
+
+  toggle() {
+    this.pillar.toggle();
+  }
+}

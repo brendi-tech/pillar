@@ -1,0 +1,28 @@
+import { Pillar } from '@pillar-ai/sdk';
+
+const pillar = Pillar.getInstance()!;
+
+// Register multiple related tools
+pillar.defineTool({
+  name: 'open_billing',
+  type: 'navigate',
+  description: 'Navigate to billing and subscription settings',
+  examples: ['go to billing', 'view my subscription', 'payment settings'],
+  execute: () => { window.location.href = '/settings/billing'; },
+});
+
+pillar.defineTool({
+  name: 'open_team',
+  type: 'navigate',
+  description: 'Navigate to team management page',
+  examples: ['manage team', 'invite team members', 'team settings'],
+  execute: () => { window.location.href = '/settings/team'; },
+});
+
+pillar.defineTool({
+  name: 'open_integrations',
+  type: 'navigate',
+  description: 'Navigate to integrations and connected apps',
+  examples: ['view integrations', 'connect apps', 'api settings'],
+  execute: () => { window.location.href = '/settings/integrations'; },
+});

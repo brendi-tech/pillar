@@ -1,0 +1,19 @@
+import { Component, OnInit } from '@angular/core';
+import { injectPillar } from '@pillar-ai/angular';
+
+@Component({
+  selector: 'app-settings',
+  standalone: true,
+  template: `<app-settings-content />`,
+})
+export class SettingsPageComponent implements OnInit {
+  private pillar = injectPillar();
+
+  ngOnInit() {
+    this.pillar.pillar()?.setContext({
+      currentPage: '/settings',
+      currentFeature: 'Account Settings',
+      userRole: 'admin',
+    });
+  }
+}

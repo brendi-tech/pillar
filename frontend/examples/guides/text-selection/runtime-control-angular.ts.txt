@@ -1,0 +1,25 @@
+import { Component } from '@angular/core';
+import { injectPillar } from '@pillar-ai/angular';
+
+@Component({
+  selector: 'app-settings',
+  standalone: true,
+  template: `
+    <label>
+      <input
+        type="checkbox"
+        [checked]="true"
+        (change)="handleToggle($event)"
+      />
+      Enable text selection helper
+    </label>
+  `,
+})
+export class SettingsComponent {
+  private pillar = injectPillar();
+
+  handleToggle(event: Event) {
+    const enabled = (event.target as HTMLInputElement).checked;
+    this.pillar.pillar()?.setTextSelectionEnabled(enabled);
+  }
+}

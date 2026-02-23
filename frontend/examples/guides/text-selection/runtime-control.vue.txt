@@ -1,0 +1,20 @@
+<script setup lang="ts">
+import { usePillar } from "@pillar-ai/vue";
+
+const { pillar } = usePillar();
+
+function handleToggle(enabled: boolean) {
+  pillar.value?.setTextSelectionEnabled(enabled);
+}
+</script>
+
+<template>
+  <label>
+    <input
+      type="checkbox"
+      checked
+      @change="(e) => handleToggle((e.target as HTMLInputElement).checked)"
+    />
+    Enable text selection helper
+  </label>
+</template>

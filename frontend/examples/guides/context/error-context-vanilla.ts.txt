@@ -1,0 +1,13 @@
+import { Pillar } from '@pillar-ai/sdk';
+
+const pillar = Pillar.getInstance();
+
+function handlePaymentError(err: { code: string; message: string }) {
+  // Tell Pillar about the error
+  pillar?.setContext({
+    errorState: {
+      code: err.code,
+      message: err.message,
+    },
+  });
+}

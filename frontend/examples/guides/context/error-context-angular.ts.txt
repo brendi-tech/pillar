@@ -1,0 +1,28 @@
+import { Component } from '@angular/core';
+import { injectPillar } from '@pillar-ai/angular';
+
+@Component({
+  selector: 'app-payment-form',
+  standalone: true,
+  template: `
+    <form (submit)="handleSubmit()">
+      <app-error-message *ngIf="error" [error]="error" />
+    </form>
+  `,
+})
+export class PaymentFormComponent {
+  private pillar = injectPillar();
+  error: { code: string; message: string } | null = null;
+
+  handlePaymentError(err: { code: string; message: string }) {
+    this.error = err;
+
+    // Tell Pillar about the error
+    this.pillar.pillar()?.setContext({
+      errorState: {
+        code: err.code,
+        message: err.message,
+      },
+    });
+  }
+}

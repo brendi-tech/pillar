@@ -1,0 +1,30 @@
+// src/tools/pillar-tools.ts
+import { Pillar } from '@pillar-ai/sdk';
+
+const pillar = Pillar.getInstance()!;
+
+pillar.defineTool({
+  name: 'open_settings',
+  type: 'navigate',
+  description: 'Open the application settings page',
+  examples: ['go to settings', 'open preferences', 'change my settings'],
+  execute: () => {
+    window.location.href = '/settings';
+  },
+});
+
+pillar.defineTool({
+  name: 'search_products',
+  type: 'query',
+  description: 'Search for products in the catalog',
+  inputSchema: {
+    query: { type: 'string', description: 'Search term' },
+    category: { type: 'string', description: 'Optional category filter' },
+  },
+  examples: ['find blue shirts', 'search for laptops under $1000'],
+  execute: async ({ query, category }) => {
+    const params = new URLSearchParams({ q: query });
+    if (category) params.set('cat', category);
+    window.location.href = `/search?${params}`;
+  },
+});

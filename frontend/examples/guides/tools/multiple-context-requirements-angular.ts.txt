@@ -1,0 +1,23 @@
+import { Component } from '@angular/core';
+import { Router } from '@angular/router';
+import { injectPillarTool } from '@pillar-ai/angular';
+
+@Component({
+  selector: 'app-beta-tools',
+  standalone: true,
+  template: ``,
+})
+export class BetaToolsComponent {
+  constructor(private router: Router) {
+    injectPillarTool({
+      name: 'beta_feature',
+      type: 'trigger_tool',
+      description: 'Access the beta analytics dashboard',
+      requiredContext: {
+        plan: 'enterprise',
+        betaAccess: true,
+      },
+      execute: () => this.router.navigate(['/analytics/beta']),
+    });
+  }
+}

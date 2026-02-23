@@ -1,0 +1,18 @@
+<script setup lang="ts">
+import { usePillarTool } from "@pillar-ai/vue";
+import { ref } from "vue";
+
+const showInviteModal = ref(false);
+
+usePillarTool({
+  name: "invite_member",
+  description: "Invite a new team member",
+  examples: [
+    "invite someone to my team",
+    "add a new team member",
+    "how do I add users?",
+    "share access with someone",
+  ],
+  execute: () => { showInviteModal.value = true; },
+});
+</script>

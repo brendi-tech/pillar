@@ -1,0 +1,10 @@
+import { Pillar } from '@pillar-ai/sdk';
+
+const pillar = Pillar.getInstance()!;
+
+const checkbox = document.querySelector<HTMLInputElement>('#text-selection-toggle')!;
+
+checkbox.addEventListener('change', (e) => {
+  const enabled = (e.target as HTMLInputElement).checked;
+  pillar.setTextSelectionEnabled(enabled);
+});

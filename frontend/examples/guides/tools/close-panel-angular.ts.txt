@@ -1,0 +1,24 @@
+import { Component } from '@angular/core';
+import { Router } from '@angular/router';
+import { injectPillarTool, injectHelpPanel } from '@pillar-ai/angular';
+
+@Component({
+  selector: 'app-navigation',
+  standalone: true,
+  template: ``,
+})
+export class NavigationComponent {
+  constructor(private router: Router) {
+    const panel = injectHelpPanel();
+
+    injectPillarTool({
+      name: 'open_settings',
+      type: 'navigate',
+      description: 'Navigate to account settings',
+      execute: () => {
+        panel.close();
+        this.router.navigate(['/settings']);
+      },
+    });
+  }
+}

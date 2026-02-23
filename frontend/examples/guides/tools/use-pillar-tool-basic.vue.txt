@@ -1,0 +1,43 @@
+<script setup lang="ts">
+import { usePillarTool } from "@pillar-ai/vue";
+import { useRouter } from "vue-router";
+
+const router = useRouter();
+
+// Basic navigation tool
+usePillarTool({
+  name: "open_dashboard",
+  type: "navigate",
+  description: "Navigate to the main dashboard",
+  examples: ["go to dashboard", "show me the dashboard", "open home"],
+  execute: () => {
+    router.push("/dashboard");
+  },
+});
+
+// Tool with input schema for data extraction
+usePillarTool({
+  name: "view_user_profile",
+  type: "navigate",
+  description: "View a specific user's profile page",
+  inputSchema: {
+    userId: { type: "string", description: "The user ID to view" },
+  },
+  examples: ["show user 123's profile", "view profile for john@example.com"],
+  execute: ({ userId }) => {
+    router.push(`/users/${userId}`);
+  },
+});
+
+// Auto-run tool (executes without confirmation)
+usePillarTool({
+  name: "toggle_dark_mode",
+  type: "trigger_tool",
+  description: "Toggle between light and dark theme",
+  autoRun: true,
+  examples: ["switch to dark mode", "turn on light theme"],
+  execute: () => {
+    document.documentElement.classList.toggle("dark");
+  },
+});
+</script>

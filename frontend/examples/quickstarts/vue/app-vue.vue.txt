@@ -1,0 +1,10 @@
+<!-- App.vue -->
+<script setup lang="ts">
+import { PillarProvider } from '@pillar-ai/vue';
+</script>
+
+<template>
+  <PillarProvider :product-key="import.meta.env.VITE_PILLAR_PRODUCT_KEY">
+    <RouterView />
+  </PillarProvider>
+</template>

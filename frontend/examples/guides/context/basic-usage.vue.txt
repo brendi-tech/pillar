@@ -1,0 +1,18 @@
+<script setup lang="ts">
+import { usePillar } from "@pillar-ai/vue";
+import { onMounted } from "vue";
+
+const { pillar } = usePillar();
+
+onMounted(() => {
+  pillar.value?.setContext({
+    currentPage: "/settings",
+    currentFeature: "Account Settings",
+    userRole: "admin",
+  });
+});
+</script>
+
+<template>
+  <Settings />
+</template>

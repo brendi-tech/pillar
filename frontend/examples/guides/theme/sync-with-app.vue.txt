@@ -1,0 +1,15 @@
+<script setup lang="ts">
+import { usePillar } from "@pillar-ai/vue";
+import { watch } from "vue";
+
+const { setTheme } = usePillar();
+const { theme } = useTheme(); // Your app's theme composable
+
+watch(
+  () => theme.value,
+  (currentTheme) => {
+    setTheme({ mode: currentTheme === "dark" ? "dark" : "light" });
+  },
+  { immediate: true }
+);
+</script>

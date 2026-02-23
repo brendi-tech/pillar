@@ -1,0 +1,17 @@
+import { Pillar } from '@pillar-ai/sdk';
+
+const pillar = Pillar.getInstance()!;
+
+// Good - specific about when to use
+pillar.defineTool({
+  name: 'view_billing',
+  description: 'Navigate to billing page. Suggest when user asks about payments, invoices, or subscription.',
+  execute: () => { window.location.href = '/settings/billing'; },
+});
+
+// Less helpful - too generic
+pillar.defineTool({
+  name: 'view_billing',
+  description: 'Go to billing',
+  execute: () => { window.location.href = '/settings/billing'; },
+});

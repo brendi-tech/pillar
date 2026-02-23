@@ -1,0 +1,28 @@
+import { Component } from '@angular/core';
+import { injectPillarTool, injectPillar } from '@pillar-ai/angular';
+
+@Component({
+  selector: 'app-onboarding',
+  standalone: true,
+  template: ``,
+})
+export class OnboardingComponent {
+  constructor() {
+    const { pillar } = injectPillar();
+
+    injectPillarTool({
+      name: 'start_onboarding',
+      type: 'trigger_tool',
+      description: 'Start the onboarding wizard',
+      execute: () => {
+        openOnboardingWizard({
+          onComplete: () => {
+            // Signal to Pillar that the tool is done
+            pillar()?.completeTool();
+          },
+        });
+        // Don't return success yet - wizard handles completion
+      },
+    });
+  }
+}

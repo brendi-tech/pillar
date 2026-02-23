@@ -1,0 +1,36 @@
+<script setup lang="ts">
+import { usePillar } from "@pillar-ai/vue";
+import { onMounted, onUnmounted } from "vue";
+
+const { on, getChatContext, close } = usePillar();
+
+let unsubscribe: (() => void) | undefined;
+
+onMounted(() => {
+  unsubscribe = on("sidebar:click", ({ tabId }) => {
+    if (tabId === "support") {
+      handleEscalation();
+    }
+  });
+});
+
+onUnmounted(() => {
+  unsubscribe?.();
+});
+
+function handleEscalation() {
+  const context = getChatContext();
+
+  if (context) {
+    const summary = context.messages
+      .map((m) => `${m.role === "user" ? "Customer" : "Co-pilot"}: ${m.content}`)
+      .join("\n\n");
+
+    window.Intercom("showNewMessage", `Escalated from Co-pilot:\n\n${summary}`);
+  } else {
+    window.Intercom("showNewMessage");
+  }
+
+  close();
+}
+</script>

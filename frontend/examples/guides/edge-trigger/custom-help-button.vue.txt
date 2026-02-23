@@ -1,0 +1,11 @@
+<script setup lang="ts">
+import { usePillar } from "@pillar-ai/vue";
+
+const { open, close, toggle, isPanelOpen } = usePillar();
+</script>
+
+<template>
+  <button @click="toggle">
+    {{ isPanelOpen ? "Close" : "Help" }}
+  </button>
+</template>

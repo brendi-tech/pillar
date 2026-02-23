@@ -1,0 +1,16 @@
+import { Pillar } from '@pillar-ai/sdk';
+
+const pillar = Pillar.getInstance()!;
+
+pillar.defineTool({
+  name: 'beta_feature',
+  type: 'trigger_tool',
+  description: 'Access the beta analytics dashboard',
+  requiredContext: {
+    plan: 'enterprise',
+    betaAccess: true,
+  },
+  execute: () => {
+    window.location.href = '/analytics/beta';
+  },
+});

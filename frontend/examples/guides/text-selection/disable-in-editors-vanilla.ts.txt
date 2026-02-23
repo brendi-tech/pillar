@@ -1,0 +1,11 @@
+import { Pillar } from '@pillar-ai/sdk';
+
+const pillar = Pillar.getInstance()!;
+
+function onEditorMount() {
+  pillar.setTextSelectionEnabled(false);
+}
+
+function onEditorUnmount() {
+  pillar.setTextSelectionEnabled(true);
+}

@@ -1,0 +1,19 @@
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { injectPillar } from '@pillar-ai/angular';
+
+@Component({
+  selector: 'app-editor-page',
+  standalone: true,
+  template: `<app-rich-text-editor />`,
+})
+export class EditorPageComponent implements OnInit, OnDestroy {
+  private pillar = injectPillar();
+
+  ngOnInit() {
+    this.pillar.pillar()?.setTextSelectionEnabled(false);
+  }
+
+  ngOnDestroy() {
+    this.pillar.pillar()?.setTextSelectionEnabled(true);
+  }
+}

@@ -1,0 +1,18 @@
+<!-- App.vue -->
+<script setup lang="ts">
+import { PillarProvider } from '@pillar-ai/vue';
+
+const pillarConfig = {
+  edgeTrigger: { enabled: false },
+  mobileTrigger: { enabled: false },
+};
+</script>
+
+<template>
+  <PillarProvider
+    :product-key="import.meta.env.VITE_PILLAR_PRODUCT_KEY"
+    :config="pillarConfig"
+  >
+    <RouterView />
+  </PillarProvider>
+</template>

@@ -1,0 +1,18 @@
+import { Pillar } from '@pillar-ai/sdk';
+
+const pillar = Pillar.getInstance();
+
+function syncUserContext(user: { role: string; subscription?: { status: string; plan: string } }) {
+  pillar?.setContext({
+    userRole: user.role,
+    userState: user.subscription?.status,
+    custom: {
+      plan: user.subscription?.plan,
+    },
+  });
+}
+
+// Call after auth resolves
+authService.onUser((user) => {
+  if (user) syncUserContext(user);
+});

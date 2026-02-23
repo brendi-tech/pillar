@@ -1,0 +1,19 @@
+<script setup lang="ts">
+import { usePillarTool } from "@pillar-ai/vue";
+
+usePillarTool({
+  name: "add_source",
+  type: "trigger_tool",
+  description: "Add a new knowledge source",
+  inputSchema: {
+    url: { type: "string", description: "URL of the source to add" },
+    name: { type: "string", description: "Display name for the source" },
+  },
+  execute: ({ url, name }) => {
+    openAddSourceWizard({
+      prefillUrl: url,
+      prefillName: name,
+    });
+  },
+});
+</script>

@@ -1,0 +1,2 @@
+# .env.local
+VITE_PILLAR_PRODUCT_KEY=your-product-slug

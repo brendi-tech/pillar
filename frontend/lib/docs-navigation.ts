@@ -52,6 +52,8 @@ export const docsNavigation: NavSection[] = [
     slug: "quickstarts",
     items: [
       { title: "React", href: "/docs/quickstarts/react" },
+      { title: "Vue", href: "/docs/quickstarts/vue" },
+      { title: "Angular", href: "/docs/quickstarts/angular" },
       { title: "Vanilla JavaScript", href: "/docs/quickstarts/vanilla" },
     ],
   },
@@ -81,6 +83,7 @@ export const docsNavigation: NavSection[] = [
       { title: "Edge Trigger", href: "/docs/guides/edge-trigger" },
       { title: "Human Escalation", href: "/docs/guides/human-escalation" },
       { title: "Testing", href: "/docs/guides/testing" },
+      { title: "Debug Mode", href: "/docs/guides/debug-mode" },
     ],
   },
   {

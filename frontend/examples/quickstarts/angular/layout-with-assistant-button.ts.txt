@@ -1,0 +1,15 @@
+// app.component.ts
+import { Component } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
+import { AssistantButtonComponent } from './components/assistant-button.component';
+
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [RouterOutlet, AssistantButtonComponent],
+  template: `
+    <router-outlet />
+    <app-assistant-button />
+  `,
+})
+export class AppComponent {}

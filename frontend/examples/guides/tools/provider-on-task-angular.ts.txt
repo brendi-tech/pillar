@@ -1,0 +1,23 @@
+import { Injectable, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
+import { PillarService } from '@pillar-ai/angular';
+
+@Injectable({ providedIn: 'root' })
+export class GenericHandlersService implements OnInit {
+  constructor(
+    private pillarService: PillarService,
+    private router: Router
+  ) {}
+
+  ngOnInit() {
+    // Handle any navigate tool dynamically
+    this.pillarService.onTask('navigate', (data) => {
+      this.router.navigate([data.path]);
+    });
+
+    // Handle backend-triggered events
+    this.pillarService.on('session:updated', (session) => {
+      console.log('Session updated:', session);
+    });
+  }
+}

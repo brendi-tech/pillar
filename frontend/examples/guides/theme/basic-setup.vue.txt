@@ -1,0 +1,20 @@
+<!-- App.vue -->
+<script setup lang="ts">
+import { PillarProvider } from "@pillar-ai/vue";
+</script>
+
+<template>
+  <PillarProvider
+    :product-key="productKey"
+    :config="{
+      theme: {
+        mode: 'auto',
+        colors: {
+          primary: '#2563eb',
+        },
+      },
+    }"
+  >
+    <RouterView />
+  </PillarProvider>
+</template>

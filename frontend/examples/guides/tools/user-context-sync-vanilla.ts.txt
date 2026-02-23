@@ -1,0 +1,15 @@
+import { Pillar } from '@pillar-ai/sdk';
+
+const pillar = Pillar.getInstance()!;
+
+// Set context when the user is known
+function syncUserContext(user: { role: string }) {
+  pillar.setContext({
+    userRole: user.role,
+  });
+}
+
+// Call after auth resolves
+authService.onUser((user) => {
+  if (user) syncUserContext(user);
+});

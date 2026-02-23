@@ -1,0 +1,13 @@
+import { Pillar } from '@pillar-ai/sdk';
+
+await Pillar.init({
+  productKey: 'your-product-key',
+  config: {
+    panel: {
+      enabled: true,
+      position: 'right',
+      mode: 'push',
+      width: 380,
+    },
+  },
+});

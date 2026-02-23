@@ -1,0 +1,40 @@
+// src/app/tools/pillar-tools.component.ts
+import { Component } from '@angular/core';
+import { Router } from '@angular/router';
+import { injectPillarTool } from '@pillar-ai/angular';
+
+@Component({
+  selector: 'app-pillar-tools',
+  standalone: true,
+  template: '',
+})
+export class PillarToolsComponent {
+  constructor(private router: Router) {
+    injectPillarTool([
+      {
+        name: 'open_settings',
+        type: 'navigate',
+        description: 'Open the application settings page',
+        examples: ['go to settings', 'open preferences', 'change my settings'],
+        execute: () => {
+          this.router.navigate(['/settings']);
+        },
+      },
+      {
+        name: 'search_products',
+        type: 'query',
+        description: 'Search for products in the catalog',
+        inputSchema: {
+          query: { type: 'string', description: 'Search term' },
+          category: { type: 'string', description: 'Optional category filter' },
+        },
+        examples: ['find blue shirts', 'search for laptops under $1000'],
+        execute: async ({ query, category }) => {
+          this.router.navigate(['/search'], {
+            queryParams: { q: query, ...(category ? { cat: category } : {}) },
+          });
+        },
+      },
+    ]);
+  }
+}

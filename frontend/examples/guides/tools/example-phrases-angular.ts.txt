@@ -1,0 +1,25 @@
+import { Component } from '@angular/core';
+import { injectPillarTool } from '@pillar-ai/angular';
+
+@Component({
+  selector: 'app-invite-tools',
+  standalone: true,
+  template: ``,
+})
+export class InviteToolsComponent {
+  showInviteModal = false;
+
+  constructor() {
+    injectPillarTool({
+      name: 'invite_member',
+      description: 'Invite a new team member',
+      examples: [
+        'invite someone to my team',
+        'add a new team member',
+        'how do I add users?',
+        'share access with someone',
+      ],
+      execute: () => { this.showInviteModal = true; },
+    });
+  }
+}

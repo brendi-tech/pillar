@@ -1,0 +1,18 @@
+<script setup lang="ts">
+import { usePillarTool } from "@pillar-ai/vue";
+
+usePillarTool({
+  name: "my_tool",
+  description: "Example tool showing return values",
+  execute: async () => {
+    // Success
+    return { success: true };
+
+    // Success with message
+    return { success: true, message: "Invite sent!" };
+
+    // Failure
+    return { success: false, message: "Something went wrong" };
+  },
+});
+</script>

@@ -1,0 +1,14 @@
+<script setup lang="ts">
+import { usePillarTool } from "@pillar-ai/vue";
+
+usePillarTool({
+  name: "delete_user",
+  type: "trigger_tool",
+  description: "Delete a user from the organization",
+  requiredContext: { userRole: "admin" },
+  inputSchema: {
+    userId: { type: "string", description: "ID of the user to delete" },
+  },
+  execute: ({ userId }) => deleteUser(userId),
+});
+</script>

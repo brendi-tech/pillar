@@ -1,0 +1,23 @@
+import { Component } from '@angular/core';
+import { injectPillar } from '@pillar-ai/angular';
+
+@Component({
+  selector: 'app-theme-controls',
+  standalone: true,
+  template: `
+    <button (click)="toggleMode()">Toggle Mode</button>
+    <button (click)="updateBrand()">Update Brand</button>
+  `,
+})
+export class ThemeControlsComponent {
+  private pillar = injectPillar();
+  isDarkMode = false;
+
+  toggleMode() {
+    this.pillar.setTheme({ mode: this.isDarkMode ? 'dark' : 'light' });
+  }
+
+  updateBrand() {
+    this.pillar.setTheme({ colors: { primary: '#10b981' } });
+  }
+}

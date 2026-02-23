@@ -1,0 +1,20 @@
+<!-- App.vue -->
+<script setup lang="ts">
+import { PillarProvider } from '@pillar-ai/vue';
+import AssistantButton from './components/AssistantButton.vue';
+
+const pillarConfig = {
+  edgeTrigger: { enabled: false },
+  mobileTrigger: { enabled: false },
+};
+</script>
+
+<template>
+  <PillarProvider
+    :product-key="import.meta.env.VITE_PILLAR_PRODUCT_KEY"
+    :config="pillarConfig"
+  >
+    <RouterView />
+    <AssistantButton />
+  </PillarProvider>
+</template>

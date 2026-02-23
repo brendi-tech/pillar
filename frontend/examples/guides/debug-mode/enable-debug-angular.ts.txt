@@ -1,0 +1,12 @@
+import { PillarService } from '@pillar-ai/angular';
+import { environment } from './environments/environment';
+
+@Component({ ... })
+export class AppComponent {
+  constructor(private pillar: PillarService) {
+    this.pillar.init({
+      productKey: 'your-product-key',
+      debug: !environment.production,
+    });
+  }
+}

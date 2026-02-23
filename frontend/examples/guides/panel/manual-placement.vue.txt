@@ -1,0 +1,17 @@
+<!-- App.vue -->
+<script setup lang="ts">
+import { PillarProvider, PillarPanel } from "@pillar-ai/vue";
+</script>
+
+<template>
+  <PillarProvider
+    :product-key="productKey"
+    :config="{ panel: { container: 'manual' } }"
+  >
+    <div class="layout">
+      <Sidebar />
+      <main>Your content</main>
+      <PillarPanel class="custom-panel" />
+    </div>
+  </PillarProvider>
+</template>

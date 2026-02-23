@@ -1,0 +1,13 @@
+import { Pillar } from '@pillar-ai/sdk';
+
+const pillar = Pillar.getInstance()!;
+
+// Toggle mode
+function toggleMode(isDarkMode: boolean) {
+  pillar.setTheme({ mode: isDarkMode ? 'dark' : 'light' });
+}
+
+// Update colors
+function updateBrand() {
+  pillar.setTheme({ colors: { primary: '#10b981' } });
+}

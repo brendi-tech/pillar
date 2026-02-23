@@ -1,0 +1,26 @@
+import { Component } from '@angular/core';
+import { injectPillarTool } from '@pillar-ai/angular';
+
+@Component({
+  selector: 'app-tool',
+  standalone: true,
+  template: ``,
+})
+export class ToolComponent {
+  constructor() {
+    injectPillarTool({
+      name: 'my_tool',
+      description: 'Example tool showing return values',
+      execute: async () => {
+        // Success
+        return { success: true };
+
+        // Success with message
+        return { success: true, message: 'Invite sent!' };
+
+        // Failure
+        return { success: false, message: 'Something went wrong' };
+      },
+    });
+  }
+}

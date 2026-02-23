@@ -1,0 +1,18 @@
+<script setup lang="ts">
+import { usePillar } from "@pillar-ai/vue";
+import { onMounted, onUnmounted } from "vue";
+
+const { pillar } = usePillar();
+
+onMounted(() => {
+  pillar.value?.setTextSelectionEnabled(false);
+});
+
+onUnmounted(() => {
+  pillar.value?.setTextSelectionEnabled(true);
+});
+</script>
+
+<template>
+  <RichTextEditor />
+</template>

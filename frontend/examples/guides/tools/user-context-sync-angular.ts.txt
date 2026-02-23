@@ -1,0 +1,22 @@
+import { Component, OnInit, inject } from '@angular/core';
+import { injectPillar } from '@pillar-ai/angular';
+import { AuthService } from './auth.service';
+
+@Component({
+  selector: 'app-context-sync',
+  standalone: true,
+  template: ``,
+})
+export class ContextSyncComponent implements OnInit {
+  private pillar = injectPillar();
+  private auth = inject(AuthService);
+
+  ngOnInit() {
+    const user = this.auth.currentUser;
+    if (user && this.pillar.pillar()) {
+      this.pillar.pillar()!.setContext({
+        userRole: user.role,
+      });
+    }
+  }
+}

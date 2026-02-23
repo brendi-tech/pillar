@@ -1,0 +1,22 @@
+import { Component, OnInit } from '@angular/core';
+import { injectPillar } from '@pillar-ai/angular';
+
+@Component({
+  selector: 'app-billing',
+  standalone: true,
+  template: `<app-billing-settings />`,
+})
+export class BillingPageComponent implements OnInit {
+  private pillar = injectPillar();
+
+  ngOnInit() {
+    this.pillar.pillar()?.setContext({
+      currentPage: '/settings/billing',
+      currentFeature: 'Billing Settings',
+      custom: {
+        userPlan: 'pro',
+        hasPaymentMethod: true,
+      },
+    });
+  }
+}

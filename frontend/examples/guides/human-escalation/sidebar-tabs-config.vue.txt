@@ -1,0 +1,18 @@
+<!-- App.vue -->
+<script setup lang="ts">
+import { PillarProvider } from "@pillar-ai/vue";
+</script>
+
+<template>
+  <PillarProvider
+    :product-key="productKey"
+    :config="{
+      sidebarTabs: [
+        { id: 'assistant', label: 'Co-pilot', icon: 'sparkle' },
+        { id: 'support', label: 'Talk to Human', icon: 'headset' },
+      ],
+    }"
+  >
+    <RouterView />
+  </PillarProvider>
+</template>

@@ -1,0 +1,14 @@
+<script setup lang="ts">
+import { PillarProvider } from '@pillar-ai/vue';
+</script>
+
+<template>
+  <PillarProvider
+    product-key="your-product-key"
+    :config="{
+      debug: import.meta.env.DEV,
+    }"
+  >
+    <slot />
+  </PillarProvider>
+</template>

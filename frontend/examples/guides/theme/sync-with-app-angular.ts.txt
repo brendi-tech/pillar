@@ -1,0 +1,19 @@
+import { Component, OnInit, inject } from '@angular/core';
+import { injectPillar } from '@pillar-ai/angular';
+import { ThemeService } from './theme.service';
+
+@Component({
+  selector: 'app-theme-sync',
+  standalone: true,
+  template: ``,
+})
+export class ThemeSyncComponent implements OnInit {
+  private pillar = injectPillar();
+  private themeService = inject(ThemeService);
+
+  ngOnInit() {
+    this.themeService.theme$.subscribe((theme) => {
+      this.pillar.setTheme({ mode: theme === 'dark' ? 'dark' : 'light' });
+    });
+  }
+}

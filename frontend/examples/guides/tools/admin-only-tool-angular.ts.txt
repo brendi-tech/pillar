@@ -1,0 +1,22 @@
+import { Component } from '@angular/core';
+import { injectPillarTool } from '@pillar-ai/angular';
+
+@Component({
+  selector: 'app-admin-tools',
+  standalone: true,
+  template: ``,
+})
+export class AdminToolsComponent {
+  constructor() {
+    injectPillarTool({
+      name: 'delete_user',
+      type: 'trigger_tool',
+      description: 'Delete a user from the organization',
+      requiredContext: { userRole: 'admin' },
+      inputSchema: {
+        userId: { type: 'string', description: 'ID of the user to delete' },
+      },
+      execute: ({ userId }) => deleteUser(userId),
+    });
+  }
+}

@@ -1,0 +1,37 @@
+// app.config.ts — configure manual container
+import { ApplicationConfig, APP_INITIALIZER, inject } from '@angular/core';
+import { PillarService } from '@pillar-ai/angular';
+import { environment } from '../environments/environment';
+
+function initPillar() {
+  const pillarService = inject(PillarService);
+  return () =>
+    pillarService.init({
+      productKey: environment.pillarProductKey,
+      config: { panel: { container: 'manual' } },
+    });
+}
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    { provide: APP_INITIALIZER, useFactory: initPillar, multi: true },
+  ],
+};
+
+// app.component.ts — place PillarPanel in your layout
+import { Component } from '@angular/core';
+import { PillarPanelComponent } from '@pillar-ai/angular';
+
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [PillarPanelComponent],
+  template: `
+    <div class="layout">
+      <app-sidebar />
+      <main>Your content</main>
+      <pillar-panel class="custom-panel" />
+    </div>
+  `,
+})
+export class AppComponent {}

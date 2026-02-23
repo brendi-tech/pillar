@@ -1,0 +1,29 @@
+import { Component } from '@angular/core';
+import { injectPillarTool } from '@pillar-ai/angular';
+
+@Component({
+  selector: 'app-export',
+  standalone: true,
+  template: ``,
+})
+export class ExportComponent {
+  constructor() {
+    injectPillarTool({
+      name: 'export_data',
+      type: 'trigger_tool',
+      description: 'Export all data as CSV',
+      execute: async () => {
+        try {
+          await exportData();
+          return { success: true };
+        } catch (error) {
+          console.error('Export failed:', error);
+          return {
+            success: false,
+            message: 'Export failed. Please try again.',
+          };
+        }
+      },
+    });
+  }
+}

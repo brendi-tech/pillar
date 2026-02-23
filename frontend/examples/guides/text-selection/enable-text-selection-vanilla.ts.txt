@@ -1,0 +1,11 @@
+import { Pillar } from '@pillar-ai/sdk';
+
+await Pillar.init({
+  productKey: 'your-product-key',
+  config: {
+    textSelection: {
+      enabled: true,
+      label: 'Ask co-pilot',
+    },
+  },
+});

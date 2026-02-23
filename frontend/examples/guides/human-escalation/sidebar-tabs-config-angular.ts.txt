@@ -1,0 +1,24 @@
+// app.config.ts
+import { ApplicationConfig, APP_INITIALIZER, inject } from '@angular/core';
+import { PillarService } from '@pillar-ai/angular';
+import { environment } from '../environments/environment';
+
+function initPillar() {
+  const pillarService = inject(PillarService);
+  return () =>
+    pillarService.init({
+      productKey: environment.pillarProductKey,
+      config: {
+        sidebarTabs: [
+          { id: 'assistant', label: 'Co-pilot', icon: 'sparkle' },
+          { id: 'support', label: 'Talk to Human', icon: 'headset' },
+        ],
+      },
+    });
+}
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    { provide: APP_INITIALIZER, useFactory: initPillar, multi: true },
+  ],
+};

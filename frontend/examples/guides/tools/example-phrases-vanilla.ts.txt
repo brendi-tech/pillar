@@ -1,0 +1,15 @@
+import { Pillar } from '@pillar-ai/sdk';
+
+const pillar = Pillar.getInstance()!;
+
+pillar.defineTool({
+  name: 'invite_member',
+  description: 'Invite a new team member',
+  examples: [
+    'invite someone to my team',
+    'add a new team member',
+    'how do I add users?',
+    'share access with someone',
+  ],
+  execute: () => { showInviteModal(); },
+});

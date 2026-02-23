@@ -17,7 +17,7 @@ Pillar provides:
 - If using Next.js App Router, create a client wrapper component in providers/
 
 ### 2. Install and Configure
-- Install packages: `npm install @pillar-ai/sdk @pillar-ai/react`
+- Install packages: `npm install @pillar-ai/react`
 - Add PillarProvider to the app root
 - Create .env.local with NEXT_PUBLIC_PILLAR_PRODUCT_KEY set to your product key
 

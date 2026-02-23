@@ -1,0 +1,17 @@
+import { Pillar } from '@pillar-ai/sdk';
+
+const pillar = Pillar.getInstance()!;
+
+const button = document.getElementById('help-button')!;
+
+button.addEventListener('click', () => {
+  pillar.toggle();
+});
+
+pillar.on('panel:open', () => {
+  button.textContent = 'Close';
+});
+
+pillar.on('panel:close', () => {
+  button.textContent = 'Help';
+});

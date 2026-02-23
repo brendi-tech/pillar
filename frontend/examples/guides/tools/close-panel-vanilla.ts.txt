@@ -1,0 +1,13 @@
+import { Pillar } from '@pillar-ai/sdk';
+
+const pillar = Pillar.getInstance()!;
+
+pillar.defineTool({
+  name: 'open_settings',
+  type: 'navigate',
+  description: 'Navigate to account settings',
+  execute: () => {
+    pillar.close();
+    window.location.href = '/settings';
+  },
+});

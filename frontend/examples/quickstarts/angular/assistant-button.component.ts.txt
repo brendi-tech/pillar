@@ -1,0 +1,21 @@
+// components/assistant-button.component.ts
+import { Component } from '@angular/core';
+import { injectHelpPanel } from '@pillar-ai/angular';
+
+@Component({
+  selector: 'app-assistant-button',
+  standalone: true,
+  template: `
+    <button
+      (click)="toggle()"
+      class="fixed bottom-4 right-4 bg-primary text-white px-4 py-2 rounded-full shadow-lg"
+    >
+      {{ isOpen() ? 'Close' : 'Ask Assistant' }}
+    </button>
+  `,
+})
+export class AssistantButtonComponent {
+  private panel = injectHelpPanel();
+  isOpen = this.panel.isOpen;
+  toggle = this.panel.toggle;
+}

@@ -1,0 +1,19 @@
+import { Component } from '@angular/core';
+import { Router } from '@angular/router';
+import { injectPillarTool } from '@pillar-ai/angular';
+
+@Component({
+  selector: 'app-billing-tools',
+  standalone: true,
+  template: ``,
+})
+export class BillingToolsComponent {
+  constructor(private router: Router) {
+    // Good - specific about when to use
+    injectPillarTool({
+      name: 'view_billing',
+      description: 'Navigate to billing page. Suggest when user asks about payments, invoices, or subscription.',
+      execute: () => this.router.navigate(['/settings/billing']),
+    });
+  }
+}

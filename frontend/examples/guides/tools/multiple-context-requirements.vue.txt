@@ -1,0 +1,17 @@
+<script setup lang="ts">
+import { usePillarTool } from "@pillar-ai/vue";
+import { useRouter } from "vue-router";
+
+const router = useRouter();
+
+usePillarTool({
+  name: "beta_feature",
+  type: "trigger_tool",
+  description: "Access the beta analytics dashboard",
+  requiredContext: {
+    plan: "enterprise",
+    betaAccess: true,
+  },
+  execute: () => router.push("/analytics/beta"),
+});
+</script>

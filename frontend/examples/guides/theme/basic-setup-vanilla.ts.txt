@@ -1,0 +1,13 @@
+import { Pillar } from '@pillar-ai/sdk';
+
+await Pillar.init({
+  productKey: 'your-product-key',
+  config: {
+    theme: {
+      mode: 'auto',
+      colors: {
+        primary: '#2563eb',
+      },
+    },
+  },
+});

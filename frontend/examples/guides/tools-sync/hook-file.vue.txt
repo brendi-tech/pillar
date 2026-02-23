@@ -1,0 +1,31 @@
+// src/composables/usePillarTools.ts
+import { usePillarTool } from "@pillar-ai/vue";
+import { useRouter } from "vue-router";
+
+export function usePillarTools() {
+  const router = useRouter();
+
+  usePillarTool({
+    name: "open_settings",
+    type: "navigate",
+    description: "Open the application settings page",
+    examples: ["go to settings", "open preferences", "change my settings"],
+    execute: () => {
+      router.push("/settings");
+    },
+  });
+
+  usePillarTool({
+    name: "search_products",
+    type: "query",
+    description: "Search for products in the catalog",
+    inputSchema: {
+      query: { type: "string", description: "Search term" },
+      category: { type: "string", description: "Optional category filter" },
+    },
+    examples: ["find blue shirts", "search for laptops under $1000"],
+    execute: async ({ query, category }) => {
+      router.push(`/search?q=${query}${category ? `&cat=${category}` : ""}`);
+    },
+  });
+}

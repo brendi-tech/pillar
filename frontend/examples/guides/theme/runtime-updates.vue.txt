@@ -1,0 +1,16 @@
+<script setup lang="ts">
+import { usePillar } from "@pillar-ai/vue";
+
+const { setTheme } = usePillar();
+const isDarkMode = ref(false);
+
+// Toggle mode
+function toggleMode() {
+  setTheme({ mode: isDarkMode.value ? 'dark' : 'light' });
+}
+
+// Update colors
+function updateBrand() {
+  setTheme({ colors: { primary: '#10b981' } });
+}
+</script>

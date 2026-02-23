@@ -1,0 +1,21 @@
+<script setup lang="ts">
+import { usePillar } from "@pillar-ai/vue";
+import { onMounted } from "vue";
+
+const { pillar } = usePillar();
+
+onMounted(() => {
+  pillar.value?.setContext({
+    currentPage: "/settings/billing",
+    currentFeature: "Billing Settings",
+    custom: {
+      userPlan: "pro",
+      hasPaymentMethod: true,
+    },
+  });
+});
+</script>
+
+<template>
+  <BillingSettings />
+</template>

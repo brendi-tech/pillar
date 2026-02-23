@@ -1,0 +1,19 @@
+<script setup lang="ts">
+import { usePillar } from "@pillar-ai/vue";
+import { watch } from "vue";
+
+const { pillar } = usePillar();
+const { user } = useAuth();
+
+watch(
+  () => user.value,
+  (currentUser) => {
+    if (currentUser && pillar.value) {
+      pillar.value.setContext({
+        userRole: currentUser.role,
+      });
+    }
+  },
+  { immediate: true }
+);
+</script>

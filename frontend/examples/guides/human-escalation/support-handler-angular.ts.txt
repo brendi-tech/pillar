@@ -1,0 +1,40 @@
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { injectPillar } from '@pillar-ai/angular';
+
+@Component({
+  selector: 'app-support-handler',
+  standalone: true,
+  template: ``,
+})
+export class SupportHandlerComponent implements OnInit, OnDestroy {
+  private pillar = injectPillar();
+  private unsubscribe?: () => void;
+
+  ngOnInit() {
+    this.unsubscribe = this.pillar.on('sidebar:click', ({ tabId }) => {
+      if (tabId === 'support') {
+        this.handleEscalation();
+      }
+    });
+  }
+
+  ngOnDestroy() {
+    this.unsubscribe?.();
+  }
+
+  private handleEscalation() {
+    const context = this.pillar.getChatContext();
+
+    if (context) {
+      const summary = context.messages
+        .map((m) => `${m.role === 'user' ? 'Customer' : 'Co-pilot'}: ${m.content}`)
+        .join('\n\n');
+
+      window.Intercom('showNewMessage', `Escalated from Co-pilot:\n\n${summary}`);
+    } else {
+      window.Intercom('showNewMessage');
+    }
+
+    this.pillar.close();
+  }
+}

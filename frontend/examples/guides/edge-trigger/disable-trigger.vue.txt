@@ -1,0 +1,18 @@
+<!-- App.vue -->
+<script setup lang="ts">
+import { PillarProvider } from "@pillar-ai/vue";
+</script>
+
+<template>
+  <PillarProvider
+    :product-key="productKey"
+    :config="{
+      edgeTrigger: {
+        enabled: false,
+      },
+    }"
+  >
+    <CustomHelpButton />
+    <RouterView />
+  </PillarProvider>
+</template>

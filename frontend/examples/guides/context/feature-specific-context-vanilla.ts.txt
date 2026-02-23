@@ -1,0 +1,12 @@
+import { Pillar } from '@pillar-ai/sdk';
+
+const pillar = Pillar.getInstance();
+
+pillar?.setContext({
+  currentPage: '/settings/billing',
+  currentFeature: 'Billing Settings',
+  custom: {
+    userPlan: 'pro',
+    hasPaymentMethod: true,
+  },
+});

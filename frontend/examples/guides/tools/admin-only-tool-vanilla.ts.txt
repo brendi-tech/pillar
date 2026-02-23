@@ -1,0 +1,14 @@
+import { Pillar } from '@pillar-ai/sdk';
+
+const pillar = Pillar.getInstance()!;
+
+pillar.defineTool({
+  name: 'delete_user',
+  type: 'trigger_tool',
+  description: 'Delete a user from the organization',
+  requiredContext: { userRole: 'admin' },
+  inputSchema: {
+    userId: { type: 'string', description: 'ID of the user to delete' },
+  },
+  execute: ({ userId }) => deleteUser(userId),
+});

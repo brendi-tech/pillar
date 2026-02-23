@@ -1,0 +1,17 @@
+<script setup lang="ts">
+import { usePillarTool, useHelpPanel } from "@pillar-ai/vue";
+import { useRouter } from "vue-router";
+
+const router = useRouter();
+const { close } = useHelpPanel();
+
+usePillarTool({
+  name: "open_settings",
+  type: "navigate",
+  description: "Navigate to account settings",
+  execute: () => {
+    close();
+    router.push("/settings");
+  },
+});
+</script>

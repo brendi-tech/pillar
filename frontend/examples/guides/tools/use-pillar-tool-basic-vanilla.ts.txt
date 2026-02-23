@@ -1,0 +1,40 @@
+import { Pillar } from '@pillar-ai/sdk';
+
+const pillar = Pillar.getInstance()!;
+
+// Basic navigation tool
+pillar.defineTool({
+  name: 'open_dashboard',
+  type: 'navigate',
+  description: 'Navigate to the main dashboard',
+  examples: ['go to dashboard', 'show me the dashboard', 'open home'],
+  execute: () => {
+    window.location.href = '/dashboard';
+  },
+});
+
+// Tool with input schema for data extraction
+pillar.defineTool({
+  name: 'view_user_profile',
+  type: 'navigate',
+  description: "View a specific user's profile page",
+  inputSchema: {
+    userId: { type: 'string', description: 'The user ID to view' },
+  },
+  examples: ["show user 123's profile", 'view profile for john@example.com'],
+  execute: ({ userId }) => {
+    window.location.href = `/users/${userId}`;
+  },
+});
+
+// Auto-run tool (executes without confirmation)
+pillar.defineTool({
+  name: 'toggle_dark_mode',
+  type: 'trigger_tool',
+  description: 'Toggle between light and dark theme',
+  autoRun: true,
+  examples: ['switch to dark mode', 'turn on light theme'],
+  execute: () => {
+    document.documentElement.classList.toggle('dark');
+  },
+});

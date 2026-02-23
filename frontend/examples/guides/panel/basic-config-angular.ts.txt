@@ -1,0 +1,26 @@
+// app.config.ts
+import { ApplicationConfig, APP_INITIALIZER, inject } from '@angular/core';
+import { PillarService } from '@pillar-ai/angular';
+import { environment } from '../environments/environment';
+
+function initPillar() {
+  const pillarService = inject(PillarService);
+  return () =>
+    pillarService.init({
+      productKey: environment.pillarProductKey,
+      config: {
+        panel: {
+          enabled: true,
+          position: 'right',
+          mode: 'push',
+          width: 380,
+        },
+      },
+    });
+}
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    { provide: APP_INITIALIZER, useFactory: initPillar, multi: true },
+  ],
+};
