@@ -1,16 +1,19 @@
 "use client";
 
 import { DateRangePicker } from "@/components/DateRangePicker";
-import { getDefaultDateRange, getDateRangeFromPreset } from "@/lib/admin/analytics-api";
+import {
+  getDateRangeFromPreset,
+  getDefaultDateRange,
+} from "@/lib/admin/analytics-api";
 import {
   aiUsageQuery,
   conversationsTrendQuery,
 } from "@/queries/analytics.queries";
 import type { AnalyticsDateRange } from "@/types/admin";
 import { useQuery } from "@tanstack/react-query";
+import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
-import dynamic from "next/dynamic";
 
 import { PageHeader } from "@/components/shared";
 import { AIMetricsOverview } from "./AIMetricsOverview";
@@ -19,14 +22,17 @@ import { TopQuestions } from "./TopQuestions";
 
 // Lazy-load recharts-based component to reduce initial bundle size
 const ConversationsChart = dynamic(
-  () => import("./ConversationsChart").then((mod) => ({ default: mod.ConversationsChart })),
+  () =>
+    import("./ConversationsChart").then((mod) => ({
+      default: mod.ConversationsChart,
+    })),
   { ssr: false }
 );
 
 export function AnalyticsPageContent() {
   // Read initial range from URL parameters
   const searchParams = useSearchParams();
-  const initialRange = searchParams.get('range') as '7d' | '30d' | '90d' | null;
+  const initialRange = searchParams.get("range") as "7d" | "30d" | "90d" | null;
 
   const [dateRange, setDateRange] = useState<AnalyticsDateRange>(() =>
     initialRange ? getDateRangeFromPreset(initialRange) : getDefaultDateRange()

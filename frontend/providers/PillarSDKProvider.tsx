@@ -59,9 +59,9 @@ export function PillarSDKProvider({ children }: PillarSDKProviderProps) {
   return (
     <PillarProvider
       productKey={productKey}
-      domScanning={true}
       config={{
         apiBaseUrl,
+        debug: process.env.NODE_ENV === "development",
         sidebarTabs,
         panel: {
           position: "right",
