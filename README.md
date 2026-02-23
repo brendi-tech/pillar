@@ -71,45 +71,75 @@ Sign up at [trypillar.com](https://trypillar.com) to get your **Product Key**, t
 npm install @pillar-ai/react
 ```
 
-Add the provider and define your first action:
+**1. Add the provider to your app:**
 
 ```tsx
 import { PillarProvider } from '@pillar-ai/react';
 
-const actions = {
-  go_to_settings: {
-    type: 'navigate' as const,
-    label: 'Open Settings',
-    description: 'Navigate to settings page',
-  },
-  export_to_csv: {
-    type: 'trigger' as const,
-    label: 'Export to CSV',
-    description: 'Export current data to CSV file',
-  },
-};
-
 function App() {
   return (
-    <PillarProvider
-      productKey="your-product-key"
-      actions={actions}
-      onTask={(actionName, data) => {
-        if (actionName === 'go_to_settings') {
-          router.push('/settings');
-        }
-        if (actionName === 'export_to_csv') {
-          downloadCSV();
-        }
-      }}
-    >
+    <PillarProvider productKey="your-product-key">
       <YourApp />
     </PillarProvider>
   );
 }
 ```
 
-That's it. Users can now ask the co-pilot to navigate to settings or export data, and it executes using your code.
+**2. Register tools from any component using `usePillarTool`:**
+
+```tsx
+import { usePillarTool } from '@pillar-ai/react';
+
+function SettingsButton() {
+  const router = useRouter();
+
+  usePillarTool({
+    name: 'go_to_settings',
+    description: 'Navigate to the settings page',
+    execute: async () => {
+      router.push('/settings');
+      return { content: [{ type: 'text', text: 'Navigated to settings' }] };
+    },
+  });
+
+  return <button onClick={() => router.push('/settings')}>Settings</button>;
+}
+
+function AddToCartButton({ productId }: { productId: string }) {
+  usePillarTool({
+    name: 'add_to_cart',
+    description: 'Add a product to the shopping cart',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        productId: { type: 'string', description: 'The product ID to add' },
+        quantity: { type: 'number', description: 'Number of items to add' },
+      },
+      required: ['productId', 'quantity'],
+    },
+    execute: async ({ productId, quantity }) => {
+      await cartApi.addItem(productId, quantity);
+      return { content: [{ type: 'text', text: `Added ${quantity} item(s) to cart` }] };
+    },
+  });
+
+  return <button>Add to Cart</button>;
+}
+```
+
+Tools are automatically registered when the component mounts and unregistered when it unmounts. This co-locates tool definitions with the UI they control.
+
+**3. Sync tools to Pillar:**
+
+The CLI scans your codebase for `usePillarTool` calls and syncs the tool definitions to Pillar. Run this in CI/CD after building your app:
+
+```bash
+PILLAR_SLUG=your-slug PILLAR_SECRET=your-secret npx pillar-sync --scan ./src
+```
+
+This tells Pillar what tools are available so the AI can plan and execute tasks. The `execute` functions run client-side in your app.
+
+Users can now ask the copilot to navigate to settings or add items to their cart, and it executes using your code.
 
 ### Self-Hosted
 
