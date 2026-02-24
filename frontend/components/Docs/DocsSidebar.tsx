@@ -163,13 +163,19 @@ export function DocsMobileHeader({ navigation }: DocsSidebarProps) {
               <span className="sr-only">Toggle menu</span>
             </button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-72 p-0">
+          <SheetContent side="left" className="w-72 p-0 gap-0">
             <SheetHeader className="border-b border-border p-4">
               <SheetTitle>
                 <PillarLogoWithName className="h-6" />
               </SheetTitle>
             </SheetHeader>
-            <div className="p-4 overflow-y-auto h-[calc(100vh-65px)]">
+            <div className="p-4 overflow-y-auto h-[calc(100vh-65px)] space-y-4">
+              <Link
+                href="/login"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors block"
+              >
+                Dashboard
+              </Link>
               <NavItems
                 navigation={navigation}
                 onItemClick={() => setOpen(false)}
