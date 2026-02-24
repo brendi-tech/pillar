@@ -125,8 +125,9 @@ async def agent_decide_tool_native(
         used_fallback: bool = False,
     ) -> dict | None:
         """Process and log token usage after successful stream."""
-        if all_tool_calls and len(all_tool_calls) > 1:
-            logger.info(f"[AgenticLoop Native] Parallel tool calls: {len(all_tool_calls)} tools")
+        if all_tool_calls:
+            tool_names = [tc.get('tool', '?') for tc in all_tool_calls]
+            logger.info(f"[AgenticLoop] Tool calls: {', '.join(tool_names)}")
         
         if used_fallback:
             logger.info("[AgenticLoop Native] Fallback model succeeded")
@@ -136,6 +137,11 @@ async def agent_decide_tool_native(
                 iteration=iteration,
                 prompt_tokens=usage_info.get('prompt_tokens', 0),
                 completion_tokens=usage_info.get('completion_tokens', 0),
+            )
+            logger.info(
+                f"[AgenticLoop] Tokens: {usage_info.get('prompt_tokens', 0):,}p "
+                f"+ {usage_info.get('completion_tokens', 0):,}c "
+                f"= {usage_info.get('prompt_tokens', 0) + usage_info.get('completion_tokens', 0):,}t"
             )
             
             if context.token_budget.should_compact:

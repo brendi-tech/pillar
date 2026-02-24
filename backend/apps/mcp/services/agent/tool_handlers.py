@@ -177,6 +177,7 @@ async def execute_search(
         tool_call_id=tool_call_id,
         result_content=result_content,
     ))
+    logger.info(f"[AgenticLoop] search -> OK: {len(actions)} actions, {len(knowledge)} knowledge items")
 
     yield emit_search_complete(
         search_id,
@@ -255,6 +256,10 @@ async def execute_get_article(
         tool_call_id=tool_call_id,
         result_content=result_content,
     ))
+    logger.info(
+        f"[AgenticLoop] get_article -> {'OK' if is_success else 'ERROR'}: "
+        f"{result.get('title', 'Untitled') if is_success else result_content[:300]}"
+    )
 
     yield emit_tool_call_complete(
         tool_id, "get_article", success=is_success,
@@ -354,6 +359,7 @@ async def execute_client_action(
             tool_call_id=tool_call_id,
             result_content=f"Action '{action_name}' timed out after 60s. The client may be unresponsive.",
         ))
+        logger.warning(f"[AgenticLoop] {action_name} -> TIMEOUT after 60s")
 
         yield emit_tool_call_complete(
             tool_id, action_name, success=False,
@@ -423,6 +429,7 @@ async def execute_client_action(
         tool_call_id=tool_call_id,
         result_content=result_content,
     ))
+    logger.info(f"[AgenticLoop] {action_name} -> {'OK' if is_success else 'ERROR'}: {result_summary[:300]}")
 
     yield emit_tool_call_complete(
         tool_id, action_name, success=is_success,

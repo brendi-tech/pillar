@@ -114,9 +114,7 @@ async def handle_client_log(params: dict, context: dict = None):
                     f.write(f"Created:         {datetime.now().isoformat()}\n")
                     
                     # Link to corresponding agent session log
-                    agent_log_dir = config.get('log_dir', base_log_dir / 'agent-sessions')
-                    if isinstance(agent_log_dir, str):
-                        agent_log_dir = Path(agent_log_dir)
+                    agent_log_dir = base_log_dir / 'agent-sessions'
                     matching_agent_logs = list(agent_log_dir.glob(f"**/*{session_id[:8]}*.txt"))
                     if matching_agent_logs:
                         agent_log = max(matching_agent_logs, key=lambda f: f.stat().st_mtime)
@@ -217,6 +215,8 @@ async def handle_action_result(params: dict, context: dict = None):
         f"| tool_call_id: {tool_call_id} "
         f"| result: {result_info}"
     )
+    if isinstance(result, dict) and result.get('error'):
+        logger.warning(f"[action/result] {action_name} error: {str(result['error'])[:300]}")
     
     signaled = False
     if session_id and action_name and tool_call_id:

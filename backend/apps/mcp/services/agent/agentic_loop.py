@@ -384,6 +384,13 @@ async def run_agentic_loop(
             _loop_span.set_attribute("agent.duration_ms", int((time.time() - start_time) * 1000))
             _loop_span.set_attribute("agent.total_tokens_prompt", agent_context.token_budget.total_prompt_tokens if agent_context.token_budget else 0)
             _loop_span.set_attribute("agent.total_tokens_completion", agent_context.token_budget.total_completion_tokens if agent_context.token_budget else 0)
+            duration_ms = int((time.time() - start_time) * 1000)
+            total_p = agent_context.token_budget.total_prompt_tokens if agent_context.token_budget else 0
+            total_c = agent_context.token_budget.total_completion_tokens if agent_context.token_budget else 0
+            logger.info(
+                f"[AgenticLoop] Done: {iteration + 1} iterations, {duration_ms}ms, "
+                f"{total_p + total_c:,} tokens ({total_p:,}p + {total_c:,}c)"
+            )
             _loop_span.end()
             otel_context.detach(_loop_token)
 
@@ -410,6 +417,10 @@ async def run_agentic_loop(
                 error_type="empty_stream",
             )
             tool_calls = [{"type": "tool_decision", **fallback}]
+            logger.warning(
+                f"[AgenticLoop] Empty response, falling back to: "
+                f"{fallback.get('tool', '?')}({json.dumps(fallback.get('arguments', {}), default=str)[:200]})"
+            )
 
         # Extract reasoning_details and thinking_text from the first tool_decision event
         # (attached by agent_decide_tool_native to the first tool_decision)
@@ -494,6 +505,7 @@ async def run_agentic_loop(
             tool_call_id = tc.get("tool_call_id") or f"call_{tool_name}_{iteration}_{i}"
 
             yield emit_debug_tool_call(tool_name, arguments)
+            logger.info(f"[AgenticLoop] Exec {tool_name}({json.dumps(arguments, default=str)[:500]})")
 
             if tool_name == "search":
                 async for event in execute_search(
@@ -658,6 +670,13 @@ async def run_agentic_loop(
     _loop_span.set_attribute("agent.duration_ms", int((time.time() - start_time) * 1000))
     _loop_span.set_attribute("agent.total_tokens_prompt", agent_context.token_budget.total_prompt_tokens if agent_context.token_budget else 0)
     _loop_span.set_attribute("agent.total_tokens_completion", agent_context.token_budget.total_completion_tokens if agent_context.token_budget else 0)
+    duration_ms = int((time.time() - start_time) * 1000)
+    total_p = agent_context.token_budget.total_prompt_tokens if agent_context.token_budget else 0
+    total_c = agent_context.token_budget.total_completion_tokens if agent_context.token_budget else 0
+    logger.warning(
+        f"[AgenticLoop] Max iterations reached: {MAX_AGENT_ITERATIONS} iterations, {duration_ms}ms, "
+        f"{total_p + total_c:,} tokens ({total_p:,}p + {total_c:,}c)"
+    )
     _loop_span.end()
     otel_context.detach(_loop_token)
 
