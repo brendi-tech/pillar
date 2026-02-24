@@ -23,6 +23,7 @@ import {
   BarChart3,
   BookOpen,
   CreditCard,
+  FileText,
   MessageSquare,
   Rocket,
   Search,
@@ -286,6 +287,21 @@ export function AdminSidebar(props: React.ComponentProps<typeof Sidebar>) {
             <SidebarSeparatorWithLabel label="SETTINGS" />
             <SidebarMenu>
               {groupedItems.settings.map(renderNavItem)}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup className="mt-auto">
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link href="/docs">
+                    <FileText />
+                    <span>Docs</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

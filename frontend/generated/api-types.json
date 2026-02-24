@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-02-20T21:19:44.112Z",
+  "generatedAt": "2026-02-23T22:01:17.386Z",
   "interfaces": {
     "PillarConfig": {
       "name": "PillarConfig",
@@ -601,7 +601,7 @@
         },
         {
           "name": "icon",
-          "type": "'help' | 'support' | 'settings' | 'feedback' | 'chat' | 'calendar' | 'mail'",
+          "type": "'help' | 'support' | 'settings' | 'feedback' | 'chat' | 'calendar' | 'mail' | 'tools'",
           "required": false,
           "description": "Preset icon for this tab"
         }
@@ -1013,6 +1013,37 @@
       "description": "Clear debug log entries.",
       "parameters": [],
       "returnType": "void",
+      "isStatic": false,
+      "examples": []
+    },
+    {
+      "name": "getTools",
+      "signature": "getTools(): ToolInfo[]",
+      "description": "Get all registered tools for debugging.\nReturns tools from all sources: defineTool(), registerTool(), and onTask() handlers.\n\nOnly available when debug mode is enabled.",
+      "parameters": [],
+      "returnType": "ToolInfo[]",
+      "isStatic": false,
+      "examples": []
+    },
+    {
+      "name": "executeToolForDebug",
+      "signature": "executeToolForDebug(toolName: string, input: Record<string, unknown>): Promise<{ success: boolean; result?: unknown; error?: string }>",
+      "description": "Execute a tool by name for debugging purposes.\nOnly available when debug mode is enabled.",
+      "parameters": [
+        {
+          "name": "toolName",
+          "type": "string",
+          "required": true,
+          "description": "- Name of the tool to execute"
+        },
+        {
+          "name": "input",
+          "type": "Record<string, unknown>",
+          "required": true,
+          "description": "- Input parameters to pass to the tool"
+        }
+      ],
+      "returnType": "Promise<{ success: boolean; result?: unknown; error?: string }>",
       "isStatic": false,
       "examples": []
     },

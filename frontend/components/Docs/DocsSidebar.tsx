@@ -1,5 +1,6 @@
 "use client";
 
+import { PillarLogoWithName } from "@/components/marketing/LandingPage/PillarLogoWithName";
 import {
   Collapsible,
   CollapsibleContent,
@@ -12,8 +13,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { PillarLogoWithName } from "@/components/marketing/LandingPage/PillarLogoWithName";
-import type { NavSection, NavGroup } from "@/lib/docs-navigation";
+import type { NavGroup, NavSection } from "@/lib/docs-navigation";
 import { cn } from "@/lib/utils";
 import { ChevronRight, Menu } from "lucide-react";
 import Link from "next/link";
@@ -97,7 +97,7 @@ function NavItems({
   const pathname = usePathname();
 
   return (
-    <nav className="space-y-6">
+    <nav className="space-y-6 pb-6">
       {navigation.map((section) => {
         const hasGroups = section.groups && section.groups.length > 0;
 
@@ -193,17 +193,5 @@ export function DocsDesktopSidebar({ navigation }: DocsSidebarProps) {
         <NavItems navigation={navigation} />
       </div>
     </aside>
-  );
-}
-
-/**
- * @deprecated Use DocsMobileHeader and DocsDesktopSidebar separately for proper layout control
- */
-export function DocsSidebar({ navigation }: DocsSidebarProps) {
-  return (
-    <>
-      <DocsMobileHeader navigation={navigation} />
-      <DocsDesktopSidebar navigation={navigation} />
-    </>
   );
 }

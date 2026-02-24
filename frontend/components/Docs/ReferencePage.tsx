@@ -54,7 +54,7 @@ interface DomainTypeData {
 export interface IndividualPageData {
   slug: string;
   title: string;
-  category: 'component' | 'hook' | 'type' | 'type-alias';
+  category: 'component' | 'hook' | 'composable' | 'service' | 'inject-function' | 'type' | 'type-alias';
   package: string;
   description: string;
   sourceFile: string;
@@ -92,6 +92,9 @@ export type ReferencePageData = AnyPageData;
 const CATEGORY_LABELS: Record<string, { label: string; color: string }> = {
   component: { label: 'Component', color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20' },
   hook: { label: 'Hook', color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20' },
+  composable: { label: 'Composable', color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' },
+  service: { label: 'Service', color: 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20' },
+  'inject-function': { label: 'Inject Function', color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20' },
   domain: { label: 'Core SDK', color: 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20' },
   type: { label: 'Type', color: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20' },
   'type-alias': { label: 'Type Alias', color: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20' },
@@ -260,7 +263,8 @@ function SourceLink({ sourceFile }: { sourceFile: string }) {
 function IndividualPage({ page }: { page: IndividualPageData }) {
   const propsTitle =
     page.category === 'component' ? 'Props' :
-    page.category === 'hook' ? 'Return Value' :
+    page.category === 'hook' || page.category === 'composable' || page.category === 'inject-function' ? 'Return Value' :
+    page.category === 'service' ? 'Methods' :
     'Properties';
 
   return (

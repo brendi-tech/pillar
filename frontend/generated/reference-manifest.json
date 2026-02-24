@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-02-20T21:19:44.146Z",
+  "generatedAt": "2026-02-23T22:01:17.413Z",
   "pages": [
     {
       "slug": "react/PillarProvider",
@@ -186,6 +186,20 @@
       "relatedTypes": []
     },
     {
+      "slug": "react/usePillarTool",
+      "title": "usePillarTool()",
+      "category": "hook",
+      "package": "@pillar-ai/react",
+      "description": "Register one or more Pillar tools with co-located metadata and handlers.\n\nThe tools are registered when the component mounts and automatically\nunregistered when it unmounts. The `execute` functions always capture\nthe latest React state and props via refs, so you don't need to worry\nabout stale closures.",
+      "sourceFile": "packages/sdk-react/src/hooks/usePillarTool.ts",
+      "signature": "function usePillarTool(): void",
+      "importStatement": "import { usePillarTool } from '@pillar-ai/react'",
+      "properties": [],
+      "returnType": "void",
+      "examples": [],
+      "relatedTypes": []
+    },
+    {
       "slug": "types/CardComponentProps",
       "title": "CardComponentProps",
       "category": "type",
@@ -220,6 +234,311 @@
         }
       ],
       "typeDefinition": "interface CardComponentProps<T = Record<string, unknown>> {\n  /** Data extracted by the AI for this action */\n  data: T;\n  /**\n   * Called when user confirms the action.\n   * WARNING: Data passed here flows through the SDK pipeline (telemetry,\n   * agent context, logs). Never include secrets, tokens, or PII.\n   */\n  onConfirm: (modifiedData?: Record<string, unknown>) => void;\n  /** Called when user cancels the action */\n  onCancel: () => void;\n  /** Called to report state changes (loading, success, error) */\n  onStateChange?: (\n    state: \"loading\" | \"success\" | \"error\",\n    message?: string\n  ) => void;\n}",
+      "relatedTypes": []
+    },
+    {
+      "slug": "vue/PillarProvider",
+      "title": "PillarProvider",
+      "category": "component",
+      "package": "@pillar-ai/vue",
+      "description": "Vue component for initializing and managing the Pillar SDK.",
+      "sourceFile": "packages/sdk-vue/src/PillarProvider.vue",
+      "signature": "<PillarProvider v-bind=\"props\" />",
+      "importStatement": "import { PillarProvider } from '@pillar-ai/vue'",
+      "properties": [
+        {
+          "name": "productKey",
+          "type": "string",
+          "required": false,
+          "description": "Your product key from the Pillar app.\nGet it at app.trypillar.com"
+        },
+        {
+          "name": "helpCenter",
+          "type": "string",
+          "required": false,
+          "description": "",
+          "deprecated": true
+        },
+        {
+          "name": "config",
+          "type": "Omit<PillarConfig, 'productKey' | 'helpCenter'>",
+          "required": false,
+          "description": "Additional SDK configuration\n\nNotable options:\n- `panel.useShadowDOM`: Whether to isolate styles in Shadow DOM (default: false).\n  Set to false to let custom cards inherit your app's CSS (Tailwind, etc.)"
+        },
+        {
+          "name": "onTask",
+          "type": "(task: TaskExecutePayload) => void",
+          "required": false,
+          "description": "Handler called when a task action is triggered from the chat.\nUse this to handle AI-suggested actions like opening modals, navigating, etc."
+        },
+        {
+          "name": "cards",
+          "type": "Record<string, CardComponent>",
+          "required": false,
+          "description": "Custom card components to render for inline_ui type actions.\nMap card type names to Vue components that will render the inline UI."
+        }
+      ],
+      "examples": [],
+      "relatedTypes": [
+        "PillarConfig",
+        "TaskExecutePayload"
+      ]
+    },
+    {
+      "slug": "vue/PillarPanel",
+      "title": "PillarPanel",
+      "category": "component",
+      "package": "@pillar-ai/vue",
+      "description": "Vue component for rendering the help panel at a custom location.",
+      "sourceFile": "packages/sdk-vue/src/PillarPanel.vue",
+      "signature": "<PillarPanel v-bind=\"props\" />",
+      "importStatement": "import { PillarPanel } from '@pillar-ai/vue'",
+      "properties": [
+        {
+          "name": "class",
+          "type": "string | string[] | Record<string, boolean>",
+          "required": false,
+          "description": "Custom class name for the container"
+        },
+        {
+          "name": "style",
+          "type": "import('vue').CSSProperties",
+          "required": false,
+          "description": "Custom inline styles for the container"
+        }
+      ],
+      "examples": [],
+      "relatedTypes": []
+    },
+    {
+      "slug": "vue/usePillar",
+      "title": "usePillar()",
+      "category": "composable",
+      "package": "@pillar-ai/vue",
+      "description": "Composable to access the Pillar SDK instance and state",
+      "sourceFile": "packages/sdk-vue/src/composables/usePillar.ts",
+      "signature": "function usePillar<TActions extends SyncActionDefinitions | ActionDefinitions = SyncActionDefinitions>(): TypedUsePillarResult<TActions>",
+      "importStatement": "import { usePillar } from '@pillar-ai/vue'",
+      "properties": [
+        {
+          "name": "pillar",
+          "type": "PillarContextValue['pillar']",
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "onTask",
+          "type": "<TName extends ActionNames<TActions>>(\n    taskName: TName,\n    handler: (data: ActionDataType<TActions, TName>) => void\n  ) => () => void",
+          "required": true,
+          "description": "Type-safe task handler registration."
+        }
+      ],
+      "returnType": "TypedUsePillarResult",
+      "examples": [
+        "Basic usage (untyped)\n```vue\n<script setup lang=\"ts\">\nimport { usePillar } from '@pillar-ai/vue';\n\nconst { isReady, open, close, isPanelOpen } = usePillar();\n</script>\n\n<template>\n<div v-if=\"!isReady\">Loading...</div>\n<button v-else",
+        "<script setup lang=\"ts\">\nimport { usePillar } from '@pillar-ai/vue';\nimport { actions } from '@/lib/pillar/actions';\nimport { onMounted, onUnmounted } from 'vue';\n\nconst { pillar, onTask } = usePillar<typeof actions>();\n\nlet unsub: (() => void) | undefined;\n\nonMounted(() => {\n// TypeScript knows data has { type, url, name }\nunsub = onTask('add_new_source', (data) => {\nconsole.log(data.url); // ✓ Typed!\n});\n});\n\nonUnmounted(() => {\nunsub?.();\n});\n</script>"
+      ],
+      "relatedTypes": []
+    },
+    {
+      "slug": "vue/useHelpPanel",
+      "title": "useHelpPanel()",
+      "category": "composable",
+      "package": "@pillar-ai/vue",
+      "description": "Composable for panel-specific controls",
+      "sourceFile": "packages/sdk-vue/src/composables/useHelpPanel.ts",
+      "signature": "function useHelpPanel(): UseHelpPanelResult",
+      "importStatement": "import { useHelpPanel } from '@pillar-ai/vue'",
+      "properties": [
+        {
+          "name": "isOpen",
+          "type": "ComputedRef<boolean>",
+          "required": true,
+          "description": "Whether the panel is currently open"
+        },
+        {
+          "name": "open",
+          "type": "(options?: { view?: string; article?: string; search?: string }) => void",
+          "required": true,
+          "description": "Open the panel"
+        },
+        {
+          "name": "close",
+          "type": "() => void",
+          "required": true,
+          "description": "Close the panel"
+        },
+        {
+          "name": "toggle",
+          "type": "() => void",
+          "required": true,
+          "description": "Toggle the panel"
+        },
+        {
+          "name": "openArticle",
+          "type": "(slug: string) => void",
+          "required": true,
+          "description": "Open a specific article in the panel"
+        },
+        {
+          "name": "openCategory",
+          "type": "(slug: string) => Promise<void>",
+          "required": true,
+          "description": "Open a specific category in the panel"
+        },
+        {
+          "name": "openSearch",
+          "type": "(query?: string) => void",
+          "required": true,
+          "description": "Open search with a query"
+        },
+        {
+          "name": "openChat",
+          "type": "() => void",
+          "required": true,
+          "description": "Open the AI chat"
+        }
+      ],
+      "returnType": "UseHelpPanelResult",
+      "examples": [
+        "```vue\n<script setup lang=\"ts\">\nimport { useHelpPanel } from '@pillar-ai/vue';\n\nconst { isOpen, toggle, openChat } = useHelpPanel();\n</script>\n\n<template>\n  <div>\n    <button"
+      ],
+      "relatedTypes": []
+    },
+    {
+      "slug": "vue/usePillarTool",
+      "title": "usePillarTool()",
+      "category": "composable",
+      "package": "@pillar-ai/vue",
+      "description": "Register one or more Pillar tools with co-located metadata and handlers.\n\nThe tools are registered when the component mounts and automatically\nunregistered when it unmounts. The `execute` functions always capture\nthe latest Vue reactive state via refs, so you don't need to worry\nabout stale closures.",
+      "sourceFile": "packages/sdk-vue/src/composables/usePillarTool.ts",
+      "signature": "function usePillarTool(): void",
+      "importStatement": "import { usePillarTool } from '@pillar-ai/vue'",
+      "properties": [],
+      "returnType": "void",
+      "examples": [],
+      "relatedTypes": []
+    },
+    {
+      "slug": "angular/PillarService",
+      "title": "PillarService",
+      "category": "service",
+      "package": "@pillar-ai/angular",
+      "description": "",
+      "sourceFile": "packages/sdk-angular/src/lib/pillar.service.ts",
+      "signature": "@Injectable({ providedIn: 'root' })",
+      "importStatement": "import { PillarService } from '@pillar-ai/angular'",
+      "properties": [],
+      "examples": [],
+      "relatedTypes": []
+    },
+    {
+      "slug": "angular/PillarPanelComponent",
+      "title": "PillarPanelComponent",
+      "category": "component",
+      "package": "@pillar-ai/angular",
+      "description": "Renders the Pillar help panel at a custom location in the DOM.\nUse this when you want to control where the panel is rendered instead of\nhaving it automatically appended to document.body.\n\n**Important**: When using this component, set `panel.container: 'manual'` in your\nPillar configuration to prevent automatic mounting.",
+      "sourceFile": "packages/sdk-angular/src/lib/pillar-panel.component.ts",
+      "signature": "<pillar-panel />",
+      "importStatement": "import { PillarPanelComponent } from '@pillar-ai/angular'",
+      "properties": [],
+      "examples": [],
+      "relatedTypes": []
+    },
+    {
+      "slug": "angular/injectPillar",
+      "title": "injectPillar()",
+      "category": "inject-function",
+      "package": "@pillar-ai/angular",
+      "description": "Angular injection function to access the Pillar SDK.\nUse this in components, directives, or services to interact with Pillar.\n\nMust be called within an injection context (constructor, field initializer, or inject()).",
+      "sourceFile": "packages/sdk-angular/src/lib/inject-pillar.ts",
+      "signature": "function injectPillar<TActions extends SyncActionDefinitions | ActionDefinitions = SyncActionDefinitions>(): InjectPillarResult<TActions>",
+      "importStatement": "import { injectPillar } from '@pillar-ai/angular'",
+      "properties": [],
+      "returnType": "InjectPillarResult",
+      "examples": [
+        "Basic usage (untyped)\n```typescript",
+        "Type-safe onTask with action definitions\n```typescript\nimport { actions } from '@/lib/pillar/actions';"
+      ],
+      "relatedTypes": []
+    },
+    {
+      "slug": "angular/injectHelpPanel",
+      "title": "injectHelpPanel()",
+      "category": "inject-function",
+      "package": "@pillar-ai/angular",
+      "description": "Angular injection function for panel-specific controls.\nProvides a simplified API focused on panel operations.\n\nMust be called within an injection context (constructor, field initializer, or inject()).",
+      "sourceFile": "packages/sdk-angular/src/lib/inject-help-panel.ts",
+      "signature": "function injectHelpPanel(): InjectHelpPanelResult",
+      "importStatement": "import { injectHelpPanel } from '@pillar-ai/angular'",
+      "properties": [
+        {
+          "name": "isOpen",
+          "type": "Signal<boolean>",
+          "required": true,
+          "description": "Whether the panel is currently open"
+        },
+        {
+          "name": "open",
+          "type": "(options?: { view?: string; article?: string; search?: string }) => void",
+          "required": true,
+          "description": "Open the panel"
+        },
+        {
+          "name": "close",
+          "type": "() => void",
+          "required": true,
+          "description": "Close the panel"
+        },
+        {
+          "name": "toggle",
+          "type": "() => void",
+          "required": true,
+          "description": "Toggle the panel"
+        },
+        {
+          "name": "openArticle",
+          "type": "(slug: string) => void",
+          "required": true,
+          "description": "Open a specific article in the panel"
+        },
+        {
+          "name": "openCategory",
+          "type": "(slug: string) => Promise<void>",
+          "required": true,
+          "description": "Open a specific category in the panel"
+        },
+        {
+          "name": "openSearch",
+          "type": "(query?: string) => void",
+          "required": true,
+          "description": "Open search with a query"
+        },
+        {
+          "name": "openChat",
+          "type": "() => void",
+          "required": true,
+          "description": "Open the AI chat"
+        }
+      ],
+      "returnType": "InjectHelpPanelResult",
+      "examples": [
+        "```typescript"
+      ],
+      "relatedTypes": []
+    },
+    {
+      "slug": "angular/injectPillarTool",
+      "title": "injectPillarTool()",
+      "category": "inject-function",
+      "package": "@pillar-ai/angular",
+      "description": "Register one or more Pillar tools with co-located metadata and handlers.\n\nThe tools are registered when this function is called and automatically\nunregistered when the component is destroyed. Must be called within\nan injection context (constructor, field initializer, or inject()).",
+      "sourceFile": "packages/sdk-angular/src/lib/inject-pillar-tool.ts",
+      "signature": "function injectPillarTool(): void",
+      "importStatement": "import { injectPillarTool } from '@pillar-ai/angular'",
+      "properties": [],
+      "returnType": "void",
+      "examples": [],
       "relatedTypes": []
     },
     {
@@ -1875,12 +2194,12 @@
             },
             {
               "name": "icon",
-              "type": "'help' | 'support' | 'settings' | 'feedback' | 'chat' | 'calendar' | 'mail'",
+              "type": "'help' | 'support' | 'settings' | 'feedback' | 'chat' | 'calendar' | 'mail' | 'tools'",
               "required": false,
               "description": "Preset icon for this tab"
             }
           ],
-          "typeDefinition": "interface SidebarTabConfig {\n  id: string;\n  label: string;\n  enabled: boolean;\n  order: number;\n  /** Preset icon for this tab */\n  icon?: 'help' | 'support' | 'settings' | 'feedback' | 'chat' | 'calendar' | 'mail';\n}"
+          "typeDefinition": "interface SidebarTabConfig {\n  id: string;\n  label: string;\n  enabled: boolean;\n  order: number;\n  /** Preset icon for this tab */\n  icon?: 'help' | 'support' | 'settings' | 'feedback' | 'chat' | 'calendar' | 'mail' | 'tools';\n}"
         }
       ]
     },
@@ -1892,6 +2211,37 @@
       "description": "API items not yet assigned to a domain. These need to be categorized.",
       "importStatement": "import Pillar from '@pillar-ai/sdk'",
       "methods": [
+        {
+          "name": "getTools",
+          "signature": "getTools(): ToolInfo[]",
+          "description": "Get all registered tools for debugging.\nReturns tools from all sources: defineTool(), registerTool(), and onTask() handlers.\n\nOnly available when debug mode is enabled.",
+          "parameters": [],
+          "returnType": "ToolInfo[]",
+          "isStatic": false,
+          "examples": []
+        },
+        {
+          "name": "executeToolForDebug",
+          "signature": "executeToolForDebug(toolName: string, input: Record<string, unknown>): Promise<{ success: boolean; result?: unknown; error?: string }>",
+          "description": "Execute a tool by name for debugging purposes.\nOnly available when debug mode is enabled.",
+          "parameters": [
+            {
+              "name": "toolName",
+              "type": "string",
+              "required": true,
+              "description": "- Name of the tool to execute"
+            },
+            {
+              "name": "input",
+              "type": "Record<string, unknown>",
+              "required": true,
+              "description": "- Input parameters to pass to the tool"
+            }
+          ],
+          "returnType": "Promise<{ success: boolean; result?: unknown; error?: string }>",
+          "isStatic": false,
+          "examples": []
+        },
         {
           "name": "defineTool",
           "signature": "defineTool(schema: ToolSchema<TInput>): () => void",
@@ -2048,6 +2398,60 @@
         {
           "title": "useHelpPanel()",
           "href": "/docs/reference/react/useHelpPanel"
+        },
+        {
+          "title": "usePillarTool()",
+          "href": "/docs/reference/react/usePillarTool"
+        }
+      ]
+    },
+    {
+      "title": "Vue",
+      "items": [
+        {
+          "title": "PillarProvider",
+          "href": "/docs/reference/vue/PillarProvider"
+        },
+        {
+          "title": "PillarPanel",
+          "href": "/docs/reference/vue/PillarPanel"
+        },
+        {
+          "title": "usePillar()",
+          "href": "/docs/reference/vue/usePillar"
+        },
+        {
+          "title": "useHelpPanel()",
+          "href": "/docs/reference/vue/useHelpPanel"
+        },
+        {
+          "title": "usePillarTool()",
+          "href": "/docs/reference/vue/usePillarTool"
+        }
+      ]
+    },
+    {
+      "title": "Angular",
+      "items": [
+        {
+          "title": "PillarService",
+          "href": "/docs/reference/angular/PillarService"
+        },
+        {
+          "title": "PillarPanelComponent",
+          "href": "/docs/reference/angular/PillarPanelComponent"
+        },
+        {
+          "title": "injectPillar()",
+          "href": "/docs/reference/angular/injectPillar"
+        },
+        {
+          "title": "injectHelpPanel()",
+          "href": "/docs/reference/angular/injectHelpPanel"
+        },
+        {
+          "title": "injectPillarTool()",
+          "href": "/docs/reference/angular/injectPillarTool"
         }
       ]
     },
