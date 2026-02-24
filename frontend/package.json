@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --port 3001",
-    "prebuild": "cd .. && npx tsx scripts/generate-api-docs.ts",
+    "prebuild": "cd .. && npx tsx scripts/generate-api-docs.ts && npx tsx scripts/generate-docs-search-index.ts",
     "build": "next build",
     "start": "next start --port 3001",
     "lint": "eslint",
@@ -75,6 +75,7 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "date-fns": "^4.1.0",
+    "fuse.js": "^7.1.0",
     "gray-matter": "^4.0.3",
     "lucide-react": "^0.560.0",
     "marked": "^17.0.1",

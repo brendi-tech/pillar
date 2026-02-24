@@ -2,7 +2,6 @@
 
 import {
   CommandDialog,
-  CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem,
@@ -28,6 +27,8 @@ export function DocsSearchCommand({
   const [hasSearched, setHasSearched] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+
+  console.log(results);
 
   // Reset state when dialog closes
   useEffect(() => {
@@ -113,6 +114,7 @@ export function DocsSearchCommand({
       title="Search documentation"
       description="Search documentation"
       className="max-w-[600px]"
+      shouldFilter={false}
     >
       <CommandInput
         placeholder="Search..."
@@ -136,19 +138,23 @@ export function DocsSearchCommand({
         )}
 
         {/* No results found - only show after search actually completes */}
-        {!isLoading && !error && hasSearched && query && results.length === 0 && (
-          <div className="py-6 text-center text-sm">
-            <div className="text-muted-foreground">No results found for</div>
-            <div className="font-medium mt-1">&ldquo;{query}&rdquo;</div>
-          </div>
-        )}
+        {!isLoading &&
+          !error &&
+          hasSearched &&
+          query &&
+          results.length === 0 && (
+            <div className="py-6 text-center text-sm">
+              <div className="text-muted-foreground">No results found for</div>
+              <div className="font-medium mt-1">&ldquo;{query}&rdquo;</div>
+            </div>
+          )}
 
         {results.length > 0 && (
           <CommandGroup>
             {results.map((result) => (
               <CommandItem
                 key={result.id}
-                value={result.title}
+                value={result.id}
                 onSelect={() => handleSelectResult(result)}
                 className="flex items-start gap-3 py-3"
               >
@@ -168,7 +174,6 @@ export function DocsSearchCommand({
             ))}
           </CommandGroup>
         )}
-
       </CommandList>
     </CommandDialog>
   );

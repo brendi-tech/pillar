@@ -195,7 +195,7 @@ export function DocsMobileHeader({ navigation }: DocsSidebarProps) {
 export function DocsDesktopSidebar({ navigation }: DocsSidebarProps) {
   return (
     <aside className="hidden lg:block w-64 shrink-0">
-      <div className="sticky top-20 pr-4 max-h-[calc(100vh-5rem)] overflow-y-auto">
+      <div className="sticky top-20 pr-4 max-h-[calc(100vh-5rem)] overflow-y-auto pt-4">
         <NavItems navigation={navigation} />
       </div>
     </aside>
