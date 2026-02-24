@@ -1,8 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { createContext, useContext, useState } from "react";
 import { DocsHeader } from "./DocsHeader";
 import { DocsSearchCommand } from "./DocsSearchCommand";
+
+const DocsSearchContext = createContext<() => void>(() => {});
+
+export function useDocsSearch() {
+  return useContext(DocsSearchContext);
+}
 
 interface DocsLayoutClientProps {
   children: React.ReactNode;
@@ -16,7 +22,7 @@ export function DocsLayoutClient({ children }: DocsLayoutClientProps) {
   const [searchOpen, setSearchOpen] = useState(false);
 
   return (
-    <>
+    <DocsSearchContext.Provider value={() => setSearchOpen(true)}>
       {/* Command palette modal */}
       <DocsSearchCommand open={searchOpen} onOpenChange={setSearchOpen} />
 
@@ -26,6 +32,6 @@ export function DocsLayoutClient({ children }: DocsLayoutClientProps) {
       </div>
 
       {children}
-    </>
+    </DocsSearchContext.Provider>
   );
 }

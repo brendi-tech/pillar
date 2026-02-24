@@ -15,10 +15,11 @@ import {
 } from "@/components/ui/sheet";
 import type { NavGroup, NavSection } from "@/lib/docs-navigation";
 import { cn } from "@/lib/utils";
-import { ChevronRight, Menu } from "lucide-react";
+import { ChevronRight, Menu, Search } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { useDocsSearch } from "./DocsLayoutClient";
 
 interface DocsSidebarProps {
   navigation: NavSection[];
@@ -149,6 +150,7 @@ function NavItems({
  */
 export function DocsMobileHeader({ navigation }: DocsSidebarProps) {
   const [open, setOpen] = useState(false);
+  const openSearch = useDocsSearch();
 
   return (
     <div className="lg:hidden sticky top-0 z-40 bg-background border-b border-border">
@@ -156,33 +158,42 @@ export function DocsMobileHeader({ navigation }: DocsSidebarProps) {
         <Link href="/docs" className="flex items-center">
           <PillarLogoWithName className="h-6" />
         </Link>
-        <Sheet open={open} onOpenChange={setOpen}>
-          <SheetTrigger asChild>
-            <button className="p-2 -mr-2 text-muted-foreground hover:text-foreground transition-colors">
-              <Menu className="h-5 w-5" />
-              <span className="sr-only">Toggle menu</span>
-            </button>
-          </SheetTrigger>
-          <SheetContent side="left" className="w-72 p-0 gap-0">
-            <SheetHeader className="border-b border-border p-4">
-              <SheetTitle>
-                <PillarLogoWithName className="h-6" />
-              </SheetTitle>
-            </SheetHeader>
-            <div className="p-4 overflow-y-auto h-[calc(100vh-65px)] space-y-4">
-              <Link
-                href="/login"
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors block"
-              >
-                Dashboard
-              </Link>
-              <NavItems
-                navigation={navigation}
-                onItemClick={() => setOpen(false)}
-              />
-            </div>
-          </SheetContent>
-        </Sheet>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={openSearch}
+            className="p-2 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Search className="h-5 w-5" />
+            <span className="sr-only">Search docs</span>
+          </button>
+          <Sheet open={open} onOpenChange={setOpen}>
+            <SheetTrigger asChild>
+              <button className="p-2 -mr-2 text-muted-foreground hover:text-foreground transition-colors">
+                <Menu className="h-5 w-5" />
+                <span className="sr-only">Toggle menu</span>
+              </button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-72 p-0 gap-0">
+              <SheetHeader className="border-b border-border p-4">
+                <SheetTitle>
+                  <PillarLogoWithName className="h-6" />
+                </SheetTitle>
+              </SheetHeader>
+              <div className="p-4 overflow-y-auto h-[calc(100vh-65px)] space-y-4">
+                <Link
+                  href="/login"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors block"
+                >
+                  Dashboard
+                </Link>
+                <NavItems
+                  navigation={navigation}
+                  onItemClick={() => setOpen(false)}
+                />
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
       </div>
     </div>
   );

@@ -8,7 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Check, Copy, ChevronDown, ExternalLink, Terminal } from "lucide-react";
+import { Check, ChevronDown, Copy, ExternalLink, Terminal } from "lucide-react";
 import { useCallback, useState } from "react";
 
 export function DocsCopyButton() {
@@ -20,8 +20,10 @@ export function DocsCopyButton() {
     if (!article) return "";
     // Get the page title from the first h1, or from the document title
     const h1 = article.querySelector("h1");
-    const title = h1?.textContent || document.title.replace(" | Pillar Docs", "");
-    const content = (article as HTMLElement).innerText || article.textContent || "";
+    const title =
+      h1?.textContent || document.title.replace(" | Pillar Docs", "");
+    const content =
+      (article as HTMLElement).innerText || article.textContent || "";
     return `# ${title}\n\n${content}`;
   }, []);
 
@@ -69,12 +71,12 @@ export function DocsCopyButton() {
           {copied ? (
             <>
               <Check className="h-4 w-4" />
-              Copied!
+              <span className="hidden sm:inline">Copied!</span>
             </>
           ) : (
             <>
               <Copy className="h-4 w-4" />
-              Copy page
+              <span className="hidden sm:inline">Copy page</span>
             </>
           )}
           <ChevronDown className="h-3 w-3 opacity-50" />

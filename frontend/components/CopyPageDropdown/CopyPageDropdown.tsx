@@ -1,16 +1,16 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Copy, ChevronDown, ExternalLink, Check } from 'lucide-react';
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger,
   DropdownMenuSeparator,
-} from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
+import { Check, ChevronDown, Copy, ExternalLink } from "lucide-react";
+import { useState } from "react";
 
 interface CopyPageDropdownProps {
   /** Current page URL path (e.g., "/getting-started/quick-start") */
@@ -37,10 +37,10 @@ export function CopyPageDropdown({
 
   // Get base URL for constructing full URLs
   const getBaseUrl = () => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       return window.location.origin;
     }
-    return '';
+    return "";
   };
 
   // Get full llms.txt URL (via Next.js API proxy)
@@ -64,7 +64,7 @@ export function CopyPageDropdown({
       const response = await fetch(apiUrl);
 
       if (!response.ok) {
-        throw new Error('Failed to fetch llms.txt');
+        throw new Error("Failed to fetch llms.txt");
       }
 
       const markdown = await response.text();
@@ -72,7 +72,7 @@ export function CopyPageDropdown({
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
-      console.error('Failed to copy page:', error);
+      console.error("Failed to copy page:", error);
       // Fallback: try to copy current page URL
       await navigator.clipboard.writeText(getBaseUrl() + pageUrl);
       setCopied(true);
@@ -87,7 +87,7 @@ export function CopyPageDropdown({
     const fullLlmsUrl = `${getBaseUrl()}${llmsTxtUrl}`;
     const llmsUrl = encodeURIComponent(fullLlmsUrl);
     const chatUrl = `https://chatgpt.com/?hints=search&q=Read+this+page+and+answer+my+questions:+${llmsUrl}`;
-    window.open(chatUrl, '_blank');
+    window.open(chatUrl, "_blank");
   };
 
   const handleOpenClaude = () => {
@@ -95,7 +95,7 @@ export function CopyPageDropdown({
     const fullLlmsUrl = `${getBaseUrl()}${llmsTxtUrl}`;
     const llmsUrl = encodeURIComponent(fullLlmsUrl);
     const claudeUrl = `https://claude.ai/new?q=Read+this+page+and+answer+my+questions:+${llmsUrl}`;
-    window.open(claudeUrl, '_blank');
+    window.open(claudeUrl, "_blank");
   };
 
   const handleConnectCursor = () => {
@@ -126,18 +126,18 @@ export function CopyPageDropdown({
         <Button
           variant="outline"
           size="sm"
-          className={cn('gap-2', className)}
+          className={cn("gap-2", className)}
           disabled={isLoading}
         >
           {copied ? (
             <>
               <Check className="h-4 w-4" />
-              Copied!
+              <span className="hidden sm:inline">Copied!</span>
             </>
           ) : (
             <>
               <Copy className="h-4 w-4" />
-              Copy page
+              <span className="hidden sm:inline">Copy page</span>
             </>
           )}
           <ChevronDown className="h-4 w-4 opacity-50" />
@@ -221,4 +221,3 @@ export function CopyPageDropdown({
     </DropdownMenu>
   );
 }
-

@@ -28,8 +28,6 @@ export function DocsSearchCommand({
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  console.log(results);
-
   // Reset state when dialog closes
   useEffect(() => {
     if (!open) {
@@ -120,8 +118,9 @@ export function DocsSearchCommand({
         placeholder="Search..."
         value={query}
         onValueChange={setQuery}
+        className="text-base"
       />
-      <CommandList className="max-h-[400px]">
+      <CommandList className="max-h-[60vh] sm:max-h-[400px]">
         {/* Loading state */}
         {isLoading && (
           <div className="py-6 text-center text-sm text-muted-foreground">
