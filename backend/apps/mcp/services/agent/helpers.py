@@ -56,6 +56,42 @@ def _get_result_key(session_id: str, tool_call_id: str) -> str:
 
 
 
+def validate_query_params(params: dict, schema: dict) -> dict:
+    """
+    Validate query parameters against an action's data_schema.
+    
+    Returns a dict with:
+    - valid: bool - whether params are valid
+    - error: str - error message if invalid
+    - expected_params: list - list of expected parameter names
+    """
+    properties = schema.get("properties", {})
+    required = schema.get("required", [])
+    
+    if not properties:
+        return {"valid": True}
+    
+    expected_params = list(properties.keys())
+    
+    missing = [p for p in required if p not in params]
+    if missing:
+        return {
+            "valid": False,
+            "error": f"Missing required parameters: {missing}",
+            "expected_params": expected_params,
+        }
+    
+    unknown = [p for p in params if p not in properties]
+    if unknown:
+        return {
+            "valid": False,
+            "error": f"Unknown parameters: {unknown}",
+            "expected_params": expected_params,
+        }
+    
+    return {"valid": True, "expected_params": expected_params}
+
+
 def get_smart_context(result: Dict) -> str:
     """Return content from a search result dict."""
     return result.get('content', '')

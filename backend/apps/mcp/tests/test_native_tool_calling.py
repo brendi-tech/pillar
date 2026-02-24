@@ -438,7 +438,7 @@ class TestModelFallback:
         """When primary model fails, fallback model is tried."""
         from unittest.mock import MagicMock, patch
         
-        from apps.mcp.services.agent.agentic_loop import agent_decide_tool_native
+        from apps.mcp.services.agent.tool_decision import agent_decide_tool_native
         
         call_count = 0
         
@@ -494,7 +494,7 @@ class TestModelFallback:
         """Fallback uses google/gemini-3-pro-preview model."""
         from unittest.mock import MagicMock, patch
         
-        from apps.mcp.services.agent.agentic_loop import agent_decide_tool_native
+        from apps.mcp.services.agent.tool_decision import agent_decide_tool_native
         
         models_used = []
         
@@ -541,7 +541,7 @@ class TestModelFallback:
         """When both primary and fallback fail, error content token is yielded."""
         from unittest.mock import MagicMock, patch
         
-        from apps.mcp.services.agent.agentic_loop import agent_decide_tool_native
+        from apps.mcp.services.agent.tool_decision import agent_decide_tool_native
         
         async def mock_stream_always_fails(*args, **kwargs):
             """Mock async generator that always fails after first iteration."""
@@ -580,7 +580,7 @@ class TestModelFallback:
         from unittest.mock import MagicMock, patch
         import asyncio
         
-        from apps.mcp.services.agent.agentic_loop import agent_decide_tool_native
+        from apps.mcp.services.agent.tool_decision import agent_decide_tool_native
         
         call_count = 0
         
@@ -631,7 +631,7 @@ class TestContentTokenForwarding:
         """Content tokens from the model should be forwarded as content_token events."""
         from unittest.mock import MagicMock
         
-        from apps.mcp.services.agent.agentic_loop import agent_decide_tool_native
+        from apps.mcp.services.agent.tool_decision import agent_decide_tool_native
         
         async def mock_stream(*args, **kwargs):
             yield {'type': 'token', 'content': 'Hello '}
@@ -664,7 +664,7 @@ class TestContentTokenForwarding:
         """Model can produce content tokens alongside tool calls (narration)."""
         from unittest.mock import MagicMock
         
-        from apps.mcp.services.agent.agentic_loop import agent_decide_tool_native
+        from apps.mcp.services.agent.tool_decision import agent_decide_tool_native
         
         async def mock_stream(*args, **kwargs):
             # Model writes narration first, then calls a tool

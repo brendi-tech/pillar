@@ -314,6 +314,9 @@ def oauth_callback(request: Request) -> Response:
     # Generate JWT token
     refresh = RefreshToken.for_user(user)
     access_token = str(refresh.access_token)
+
+    user.last_login = timezone.now()
+    user.save(update_fields=['last_login'])
     
     # Check if user needs to select organization
     needs_organization = not user.organizations.exists()

@@ -85,7 +85,6 @@ PILLAR_PROD_API_URL = os.environ.get(
     'https://api.trypillar.com'
 )
 
-# Use budget-tier model for E2E tests (faster, cheaper, still validates agent behavior)
-# Resolved via LLMConfigService.resolve_model() -> e.g. 'gemini-3-flash-preview'
-DEFAULT_LLM_MODEL = 'google/budget'
+# Use Anthropic flagship for E2E tests — Google preview models are unreliable at tool calling.
+DEFAULT_LLM_MODEL = 'anthropic/flagship'
 

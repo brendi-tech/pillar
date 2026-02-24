@@ -2,6 +2,7 @@
 UserViewSet for user management.
 """
 import logging
+from django.utils import timezone
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -118,6 +119,9 @@ class UserViewSet(viewsets.ModelViewSet):
         # Generate JWT tokens
         refresh = RefreshToken.for_user(user)
         access_token = str(refresh.access_token)
+
+        user.last_login = timezone.now()
+        user.save(update_fields=['last_login'])
 
         # Check for invitation token and auto-accept if present
         invitation_token = request.data.get('invitation_token')

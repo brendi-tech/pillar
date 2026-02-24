@@ -55,15 +55,37 @@ export function ApiKeyStepContent({ onComplete }: ApiKeyStepContentProps) {
 
   useEffect(() => {
     if (!isDraft) return;
-    if (
-      hasAttemptedAutofill.current ||
-      hasUserEdited.current ||
-      productKey.trim()
-    )
-      return;
-    hasAttemptedAutofill.current = true;
-    if (!user?.email) return;
+    if (hasAttemptedAutofill.current || hasUserEdited.current || productKey.trim()) return;
+    if (!currentProduct) return;
 
+    hasAttemptedAutofill.current = true;
+
+    const slug = currentProduct.name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
+
+    if (slug.length >= 3) {
+      productsAPI
+        .checkSubdomain(slug)
+        .then((response) => {
+          if (hasUserEdited.current) return;
+          if (response.valid) {
+            const key = response.available
+              ? response.subdomain
+              : response.suggestion || response.subdomain;
+            setProductKey(key);
+            setProductKeyStatus(response.available ? "available" : "taken");
+            setProductKeyError(
+              response.available ? null : "This product key is already taken"
+            );
+          }
+        })
+        .catch(() => {});
+      return;
+    }
+
+    if (!user?.email) return;
     const companyDomain = extractCompanyDomain(user.email);
     if (companyDomain) {
       const suggestedUrl = domainToWebsiteUrl(companyDomain);
@@ -80,7 +102,7 @@ export function ApiKeyStepContent({ onComplete }: ApiKeyStepContentProps) {
         })
         .catch(() => {});
     }
-  }, [isDraft, user?.email, productKey]);
+  }, [isDraft, user?.email, productKey, currentProduct]);
 
   const checkAvailability = useCallback(async (value: string) => {
     if (!value.trim()) {
