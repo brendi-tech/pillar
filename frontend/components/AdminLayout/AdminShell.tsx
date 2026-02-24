@@ -1,7 +1,7 @@
 "use client";
 
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { SystemBanner } from "@/components/SystemBanner";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AdminHeader } from "./AdminHeader";
 import { AdminSidebar } from "./AdminSidebar";
 

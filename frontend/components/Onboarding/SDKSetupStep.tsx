@@ -12,33 +12,30 @@ import {
   Sparkles,
   Tag,
 } from "lucide-react";
-import { Spinner } from "@/components/ui/spinner";
 import { useState } from "react";
 
 import { AIPromptBlock } from "@/components/mdx/AIPromptBlock";
+import {
+  AI_PROMPT_SOURCES,
+  AI_PROMPT_TITLES,
+  DOCS_URLS,
+  FRAMEWORKS,
+  getProviderCode,
+  INSTALL_COMMANDS,
+  PROVIDER_LABELS,
+  TOOL_EXAMPLES,
+} from "@/components/InlineOnboardingSteps/InlineOnboardingSteps.constants";
+import type { FrameworkId } from "@/components/InlineOnboardingSteps/InlineOnboardingSteps.types";
 import { SyntaxHighlightedPre } from "@/components/mdx/SyntaxHighlightedPre";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { useProduct } from "@/providers/ProductProvider";
 
 import { CopyButton, SecretsManager } from "./SecretsManager";
 import { TestPillarStep } from "./TestPillarStep";
-
-// Example file imports (raw strings via webpack .txt loader)
-import actionHandlerExample from "@/examples/onboarding/action-handler.tsx.txt";
-import defineActionsExample from "@/examples/onboarding/define-actions.ts.txt";
-import installProviderExample from "@/examples/onboarding/install-provider.tsx.txt";
 
 // =============================================================================
 // Types
@@ -64,20 +61,16 @@ interface SubStep {
 // Sub-step Components
 // =============================================================================
 
-const FRAMEWORKS = [
-  { id: "react", name: "React", enabled: true },
-  { id: "vue", name: "Vue", enabled: false },
-  { id: "angular", name: "Angular", enabled: false },
-  { id: "svelte", name: "Svelte", enabled: false },
-] as const;
-
-function InstallStep({ subdomain }: { subdomain: string }) {
-  const installCode = `npm install @pillar-ai/sdk @pillar-ai/react`;
-
-  const providerCode = installProviderExample.replace(
-    "your-product-key",
-    subdomain
-  );
+function InstallStep({
+  subdomain,
+  selectedFramework,
+  onFrameworkChange,
+}: {
+  subdomain: string;
+  selectedFramework: FrameworkId;
+  onFrameworkChange: (framework: FrameworkId) => void;
+}) {
+  const providerCodes = getProviderCode(subdomain);
 
   return (
     <div className="space-y-4">
@@ -85,165 +78,112 @@ function InstallStep({ subdomain }: { subdomain: string }) {
         Install the Pillar SDK packages and wrap your app with the provider.
       </p>
 
-      <Tabs defaultValue="react" className="w-full">
+      <Tabs
+        value={selectedFramework}
+        onValueChange={(v) => onFrameworkChange(v as FrameworkId)}
+        className="w-full"
+      >
         <TabsList className="w-full justify-start overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {FRAMEWORKS.map((framework) => (
             <TabsTrigger
               key={framework.id}
               value={framework.id}
-              disabled={!framework.enabled}
-              className="relative shrink-0"
+              className="relative shrink-0 px-3 py-1.5 sm:px-4"
             >
               {framework.name}
-              {!framework.enabled && (
-                <span className="ml-1.5 text-[10px] text-muted-foreground/70">
-                  Soon
-                </span>
-              )}
             </TabsTrigger>
           ))}
         </TabsList>
 
-        <TabsContent value="react" className="space-y-4 mt-4">
-          <div className="space-y-2">
-            <h4 className="text-sm font-medium">Install packages</h4>
-            <SyntaxHighlightedPre
-              code={installCode}
-              language="bash"
-              docsUrl="https://trypillar.com/docs/quickstarts/react"
-            />
-          </div>
+        {FRAMEWORKS.map((framework) => {
+          const providerConfig = providerCodes[framework.id];
+          return (
+            <TabsContent
+              key={framework.id}
+              value={framework.id}
+              className="space-y-4 mt-4 min-w-0"
+            >
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium">Install packages</h4>
+                <SyntaxHighlightedPre
+                  code={INSTALL_COMMANDS[framework.id]}
+                  language="bash"
+                  docsUrl={DOCS_URLS[framework.id]}
+                />
+              </div>
 
-          <div className="space-y-2">
-            <h4 className="text-sm font-medium">
-              Wrap your app with PillarProvider
-            </h4>
-            <SyntaxHighlightedPre
-              code={providerCode}
-              language="tsx"
-              filePath="app/layout.tsx"
-              docsUrl="https://trypillar.com/docs/quickstarts/react"
-            />
-          </div>
-        </TabsContent>
-
-        {/* Placeholder content for future frameworks */}
-        {FRAMEWORKS.filter((f) => !f.enabled).map((framework) => (
-          <TabsContent key={framework.id} value={framework.id} className="mt-4">
-            <div className="text-center py-8 text-muted-foreground">
-              <p>{framework.name} support coming soon!</p>
-            </div>
-          </TabsContent>
-        ))}
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium">
+                  {PROVIDER_LABELS[framework.id]}
+                </h4>
+                <SyntaxHighlightedPre
+                  code={providerConfig.code}
+                  language={providerConfig.language}
+                  filePath={providerConfig.filePath}
+                  docsUrl={DOCS_URLS[framework.id]}
+                />
+              </div>
+            </TabsContent>
+          );
+        })}
       </Tabs>
     </div>
   );
 }
 
-function ActionsStep() {
-  const actionsCode = defineActionsExample;
-
-  const handlerCode = actionHandlerExample;
-
+function ActionsStep({
+  selectedFramework,
+  onFrameworkChange,
+}: {
+  selectedFramework: FrameworkId;
+  onFrameworkChange: (framework: FrameworkId) => void;
+}) {
   return (
     <div className="space-y-4">
       <p className="text-muted-foreground text-sm">
-        Actions let the AI assistant perform tasks in your app, like navigating
-        to pages or triggering features. Use the{" "}
-        <code className="bg-muted px-1 rounded">usePillarTool</code> hook to
-        define tools with co-located handlers.
+        Tools let the AI assistant perform tasks in your app. Here&apos;s an
+        example to get started:
       </p>
 
-      <AIPromptBlock title="Build tools for my app" src="build-tools.md" />
+      <Tabs
+        value={selectedFramework}
+        onValueChange={(v) => onFrameworkChange(v as FrameworkId)}
+        className="w-full"
+      >
+        <TabsList className="w-full justify-start overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+          {FRAMEWORKS.map((framework) => (
+            <TabsTrigger
+              key={framework.id}
+              value={framework.id}
+              className="shrink-0 px-3 py-1.5 sm:px-4"
+            >
+              {framework.name}
+            </TabsTrigger>
+          ))}
+        </TabsList>
 
-      <div className="space-y-2">
-        <h4 className="text-sm font-medium">Action types</h4>
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[140px]">Type</TableHead>
-                <TableHead>Description</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              <TableRow>
-                <TableCell className="font-mono text-xs">navigate</TableCell>
-                <TableCell className="text-sm text-muted-foreground">
-                  Go to a page in your app
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="font-mono text-xs">
-                  trigger_action
-                </TableCell>
-                <TableCell className="text-sm text-muted-foreground">
-                  Run custom logic (modals, wizards, API calls)
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="font-mono text-xs">query</TableCell>
-                <TableCell className="text-sm text-muted-foreground">
-                  Fetch data and return to the AI agent
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell className="font-mono text-xs">
-                  external_link
-                </TableCell>
-                <TableCell className="text-sm text-muted-foreground">
-                  Open URL in new tab
-                </TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <h4 className="text-sm font-medium">Define tools with usePillarTool</h4>
-        <SyntaxHighlightedPre
-          code={actionsCode}
-          language="typescript"
-          filePath="hooks/usePillarTools.ts"
-          docsUrl="https://trypillar.com/docs/guides/tools"
-        />
-      </div>
-
-      <div className="space-y-2">
-        <h4 className="text-sm font-medium">Use the hook in your app</h4>
-        <SyntaxHighlightedPre
-          code={handlerCode}
-          language="tsx"
-          filePath="app/layout.tsx"
-          docsUrl="https://trypillar.com/docs/guides/tools"
-        />
-      </div>
-
-      <div className="bg-blue-100 dark:bg-blue-500/10 rounded-lg p-3 border border-blue-300 dark:border-blue-500/30 flex gap-2">
-        <Check className="h-4 w-4 text-blue-600 dark:text-blue-500 shrink-0 mt-0.5" />
-        <p className="text-sm text-blue-800 dark:text-blue-200">
-          The CLI automatically scans your code for{" "}
-          <code className="bg-blue-200 dark:bg-blue-500/20 px-1 rounded">
-            usePillarTool
-          </code>{" "}
-          calls — no need to export from a single file.
-        </p>
-      </div>
-
-      <p className="text-xs text-muted-foreground">
-        The AI uses the description and examples to match user requests to the
-        right action.{" "}
-        <a
-          href="https://trypillar.com/docs/guides/tools"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-primary hover:underline"
-        >
-          Read the full Actions guide
-        </a>{" "}
-        for data extraction, context filtering, and best practices.
-      </p>
+        {FRAMEWORKS.map((framework) => {
+          const toolConfig = TOOL_EXAMPLES[framework.id];
+          return (
+            <TabsContent
+              key={framework.id}
+              value={framework.id}
+              className="space-y-4 mt-4 min-w-0"
+            >
+              <SyntaxHighlightedPre
+                code={toolConfig.code}
+                language={toolConfig.language}
+                filePath={toolConfig.filePath}
+                docsUrl="https://trypillar.com/docs/guides/tools"
+              />
+              <AIPromptBlock
+                title={AI_PROMPT_TITLES[framework.id]}
+                src={AI_PROMPT_SOURCES[framework.id]}
+              />
+            </TabsContent>
+          );
+        })}
+      </Tabs>
     </div>
   );
 }
@@ -464,6 +404,8 @@ export function SDKSetupStep({
   const subdomain = currentProduct?.subdomain || "your-subdomain";
   const productId = currentProduct?.id;
   const [currentSubStep, setCurrentSubStep] = useState(initialSubStep);
+  const [selectedFramework, setSelectedFramework] =
+    useState<FrameworkId>("react");
 
   // Include test step if enabled
   const subSteps = showTestStep
@@ -505,8 +447,19 @@ export function SDKSetupStep({
         />
 
         {/* Step Content */}
-        {currentSubStep === 1 && <InstallStep subdomain={subdomain} />}
-        {currentSubStep === 2 && <ActionsStep />}
+        {currentSubStep === 1 && (
+          <InstallStep
+            subdomain={subdomain}
+            selectedFramework={selectedFramework}
+            onFrameworkChange={setSelectedFramework}
+          />
+        )}
+        {currentSubStep === 2 && (
+          <ActionsStep
+            selectedFramework={selectedFramework}
+            onFrameworkChange={setSelectedFramework}
+          />
+        )}
         {currentSubStep === 3 && (
           <SyncStep subdomain={subdomain} productId={productId} />
         )}

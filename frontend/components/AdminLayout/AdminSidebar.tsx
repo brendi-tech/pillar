@@ -16,8 +16,10 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useAuth, useProduct } from "@/providers";
+import { productIntegrationStatusQuery } from "@/queries/v2/products.queries";
 import type { AdminProduct } from "@/types/admin";
 import { usePillar } from "@pillar-ai/react";
+import { useQuery } from "@tanstack/react-query";
 import type { LucideIcon } from "lucide-react";
 import {
   BarChart3,
@@ -127,6 +129,17 @@ export function AdminSidebar(props: React.ComponentProps<typeof Sidebar>) {
     null
   );
 
+  const { data: integrationStatus } = useQuery({
+    ...productIntegrationStatusQuery(currentProduct?.id || ""),
+    enabled: !!currentProduct?.id && !!currentProduct?.subdomain,
+    refetchInterval: false,
+  });
+
+  const isSetupComplete =
+    !!currentProduct?.subdomain &&
+    !!integrationStatus?.sdk_initialized &&
+    !!integrationStatus?.actions_registered;
+
   // Handle ⌘K keyboard shortcut to open Pillar panel
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -151,15 +164,19 @@ export function AdminSidebar(props: React.ComponentProps<typeof Sidebar>) {
     }
   }, [isMobile, setOpenMobile]);
 
-  // Group navigation items by category
+  // Group navigation items by category, hiding Setup when complete
   const groupedItems = useMemo(() => {
+    const items = isSetupComplete
+      ? navigationItems.filter((item) => item.href !== "/setup")
+      : navigationItems;
+
     return {
-      overview: navigationItems.filter((item) => item.category === "overview"),
-      data: navigationItems.filter((item) => item.category === "data"),
-      insights: navigationItems.filter((item) => item.category === "insights"),
-      settings: navigationItems.filter((item) => item.category === "settings"),
+      overview: items.filter((item) => item.category === "overview"),
+      data: items.filter((item) => item.category === "data"),
+      insights: items.filter((item) => item.category === "insights"),
+      settings: items.filter((item) => item.category === "settings"),
     };
-  }, []);
+  }, [isSetupComplete]);
 
   // Check if a path is active
   const isActive = useCallback(

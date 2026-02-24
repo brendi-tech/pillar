@@ -10,7 +10,10 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import type { BulkInvitationResult, OrganizationRole } from "@/types/organization";
+import type {
+  BulkInvitationResult,
+  OrganizationRole,
+} from "@/types/organization";
 import { AlertTriangle, X } from "lucide-react";
 
 interface InviteMemberDialogProps {
@@ -102,7 +105,9 @@ export function InviteMemberDialog({
               <select
                 id="role"
                 value={inviteRole}
-                onChange={(e) => onRoleChange(e.target.value as OrganizationRole)}
+                onChange={(e) =>
+                  onRoleChange(e.target.value as OrganizationRole)
+                }
                 className="border-input focus-visible:ring-ring flex h-9 w-full rounded-md border bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <option value="member">Member</option>
@@ -120,7 +125,8 @@ export function InviteMemberDialog({
                 {bulkInviteResult.successful.length > 0 && (
                   <div className="rounded-md border border-green-500/20 bg-green-500/10 p-3">
                     <p className="text-sm font-medium text-green-600 dark:text-green-400">
-                      ✓ Successfully invited {bulkInviteResult.successful.length}{" "}
+                      ✓ Successfully invited{" "}
+                      {bulkInviteResult.successful.length}{" "}
                       {bulkInviteResult.successful.length === 1
                         ? "member"
                         : "members"}
@@ -180,7 +186,10 @@ export function InviteMemberDialog({
                 ? "Close"
                 : "Cancel"}
             </Button>
-            <Button type="submit" disabled={isInviting || parsedEmails.length === 0}>
+            <Button
+              type="submit"
+              disabled={isInviting || parsedEmails.length === 0}
+            >
               {isInviting
                 ? "Inviting..."
                 : parsedEmails.length === 0
