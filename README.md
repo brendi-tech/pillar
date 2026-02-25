@@ -33,7 +33,7 @@
 **The open-source product copilot. Build AI agents into your app that execute tasks, not just answer questions.**
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/pillarhq/pillar/main/.github/img/banking-demo.png" alt="Pillar banking demo — user asks the copilot to pay their cleaner $200" width="800" />
+  <img src="https://raw.githubusercontent.com/pillarhq/pillar/main/.github/img/banking-demo.gif" alt="Pillar banking demo — user asks the copilot to pay their cleaner $200" width="800" />
 </p>
 
 [Pillar](https://trypillar.com) is an embeddable AI co-pilot SDK. Users say what they want, and Pillar uses your UI to make it happen — navigating pages, pre-filling forms, and calling your APIs. It runs client-side with the user's session, so there's no proxy servers or token forwarding.
