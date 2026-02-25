@@ -33,17 +33,17 @@ def should_skip_page(page_data: dict, url: str) -> Tuple[bool, str]:
     # Check HTTP status code - Firecrawl returns it as 'statusCode' or 'status_code'
     status_code = metadata.get('statusCode') or metadata.get('status_code', 200)
     if status_code >= 500:
-        logger.debug(f"Skipping server error page {url}: HTTP {status_code}")
+        logger.info(f"Skipping server error page {url}: HTTP {status_code}")
         return True, f'server_error_{status_code}'
     if status_code >= 400:
-        logger.debug(f"Skipping client error page {url}: HTTP {status_code}")
+        logger.info(f"Skipping client error page {url}: HTTP {status_code}")
         return True, f'client_error_{status_code}'
     
     # Check for soft 404 (page returns 200 but is actually an error page)
     title = metadata.get('title', '')
     markdown = page_data.get('markdown', '')
     if is_soft_404(title, markdown):
-        logger.debug(f"Skipping soft 404 page: {url}")
+        logger.info(f"Skipping soft 404 page: {url}")
         return True, 'soft_404'
     
     return False, ''

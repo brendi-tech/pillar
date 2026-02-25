@@ -454,16 +454,21 @@ async def _process_page(source, page_data: dict) -> tuple[str, Optional[str]]:
         url = metadata.get('url') or metadata.get('sourceURL')
     
     if not url:
-        return 'skipped', None
-    
-    # Filter to source domain
-    source_host = urlparse(source.url).netloc.lower()
-    url_host = urlparse(url).netloc.lower()
-    if url_host != source_host:
+        logger.info("[KNOWLEDGE CRAWL] Skipping page: no URL in page data")
         return 'skipped', None
     
     # Generate external ID early so the caller can track it even if we skip
     external_id = KnowledgeItem.generate_external_id(url)
+
+    # Log domain mismatches but don't skip — Firecrawl's allow_subdomains
+    # and allow_external_links settings handle domain filtering at crawl time.
+    source_host = urlparse(source.url).netloc.lower()
+    url_host = urlparse(url).netloc.lower()
+    if url_host != source_host:
+        logger.warning(
+            f"[KNOWLEDGE CRAWL] Domain mismatch for {url}: "
+            f"page={url_host}, source={source_host} (processing anyway)"
+        )
     
     # Check for error pages (404s, 500s, soft 404s)
     skip, reason = should_skip_page(page_data, url)
@@ -474,6 +479,10 @@ async def _process_page(source, page_data: dict) -> tuple[str, Optional[str]]:
     # Check for minimal content
     markdown = page_data.get('markdown', '')
     if len(markdown) < 100:
+        logger.info(
+            f"[KNOWLEDGE CRAWL] Skipping page {url}: "
+            f"content too short ({len(markdown)} chars)"
+        )
         return 'skipped', external_id
     
     # Extract metadata

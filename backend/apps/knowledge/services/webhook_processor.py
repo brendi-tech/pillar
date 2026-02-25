@@ -203,6 +203,7 @@ class KnowledgeWebhookProcessor:
             url = page_metadata.get('url') or page_metadata.get('sourceURL')
         
         if not url:
+            logger.info("[KNOWLEDGE WEBHOOK] Skipping page: no URL in page data")
             return 'skipped'
         
         # Check for error pages (404s, 500s, soft 404s)
@@ -214,13 +215,21 @@ class KnowledgeWebhookProcessor:
         # Check for minimal content
         markdown = page_data.get('markdown', '')
         if len(markdown) < 100:
+            logger.info(
+                f"[KNOWLEDGE WEBHOOK] Skipping page {url}: "
+                f"content too short ({len(markdown)} chars)"
+            )
             return 'skipped'
         
-        # Filter to source domain
+        # Log domain mismatches but don't skip — Firecrawl's allow_subdomains
+        # and allow_external_links settings handle domain filtering at crawl time.
         source_host = urlparse(source.url).netloc.lower()
         url_host = urlparse(url).netloc.lower()
         if url_host != source_host:
-            return 'skipped'
+            logger.warning(
+                f"[KNOWLEDGE WEBHOOK] Domain mismatch for {url}: "
+                f"page={url_host}, source={source_host} (processing anyway)"
+            )
         
         # Extract metadata
         page_metadata = page_data.get('metadata', {})

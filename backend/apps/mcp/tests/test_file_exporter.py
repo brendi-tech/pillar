@@ -145,6 +145,9 @@ class TestFileSpanExporter:
             with tracer.start_as_current_span("SELECT"):
                 pass
 
+        with tracer.start_as_current_span("GET /health"):
+            pass
+
         with tracer.start_as_current_span("EVAL"):
             pass
 
@@ -201,7 +204,7 @@ class TestFileSpanExporter:
         provider.add_span_processor(SimpleSpanProcessor(exporter))
         tracer = provider.get_tracer("test")
 
-        with tracer.start_as_current_span("mcp.request") as span:
+        with tracer.start_as_current_span("agentic_loop") as span:
             span.add_event("test_event", {"detail": "something happened"})
 
         provider.shutdown()
@@ -226,7 +229,7 @@ class TestFileSpanExporter:
         provider.add_span_processor(SimpleSpanProcessor(exporter))
         tracer = provider.get_tracer("test")
 
-        with tracer.start_as_current_span("mcp.request") as span:
+        with tracer.start_as_current_span("agentic_loop") as span:
             span.set_status(StatusCode.ERROR, "something failed")
 
         provider.shutdown()
