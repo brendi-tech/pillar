@@ -35,6 +35,37 @@ export function GrafanaDemoPage() {
           </Link>
         </div>
 
+        <div className="relative flex-1 min-h-[75vh] overflow-hidden bg-white">
+          <div className="absolute top-0 left-0 right-0 h-9 bg-[#1A1A1A] flex items-center px-4 z-10">
+            <div className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-full bg-[#FF5F57]" />
+              <div className="w-2.5 h-2.5 rounded-full bg-[#FFBD2E]" />
+              <div className="w-2.5 h-2.5 rounded-full bg-[#28CA41]" />
+            </div>
+            <div className="flex-1 flex justify-center">
+              <div className="bg-[#333] rounded-md px-4 py-0.5 text-xs text-[#999] max-w-sm w-full text-center">
+                trypillar.com/demos/grafana
+              </div>
+            </div>
+            <Link
+              href={GRAFANA_DEMO_URL}
+              target="_blank"
+              className="text-[#999] hover:text-white transition-colors"
+              title="Open in new tab"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+
+          <iframe
+            src={GRAFANA_DEMO_URL}
+            className="w-full h-full border-0 pt-9"
+            title="Grafana Copilot Demo"
+            allow="clipboard-write"
+            loading="lazy"
+          />
+        </div>
+
         <div className="h-[80vh]">
           <div className="h-9 bg-[#1A1A1A] flex items-center px-4">
             <div className="flex items-center gap-1.5">
