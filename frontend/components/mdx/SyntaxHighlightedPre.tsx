@@ -4,6 +4,7 @@ import { useState, useCallback, ReactNode } from 'react';
 import { Check, Copy, Sparkles, Terminal } from 'lucide-react';
 import { Highlight, themes } from 'prism-react-renderer';
 import { usePathname } from 'next/navigation';
+import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 import { Mermaid } from './Mermaid';
 
@@ -115,6 +116,8 @@ export function SyntaxHighlightedPre({
 }: SyntaxHighlightedPreProps) {
   const [copied, setCopied] = useState<'code' | 'prompt' | null>(null);
   const pathname = usePathname();
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
 
   // Use direct props if provided, otherwise extract from children
   const extracted = children ? extractCodeInfo(children) : { code: '', language: '' };
@@ -170,8 +173,9 @@ Adapt this to fit my existing codebase—match my file structure, naming convent
     return (
       <pre
         className={cn(
-          'bg-zinc-900 text-zinc-100 p-4 rounded-lg overflow-x-auto my-3',
+          'p-4 rounded-lg overflow-x-auto my-3',
           'text-sm leading-relaxed font-mono',
+          isDark ? 'bg-zinc-900 text-zinc-100' : 'bg-zinc-100 text-zinc-800',
           className
         )}
       >
@@ -181,11 +185,19 @@ Adapt this to fit my existing codebase—match my file structure, naming convent
   }
 
   // For code - syntax highlighting with copy buttons
+  const syntaxTheme = isDark ? themes.oneDark : themes.github;
+
   return (
     <div className={cn('relative group rounded-lg overflow-hidden my-3', className)}>
       {/* Header with language and copy buttons */}
-      <div className="flex items-center justify-between bg-zinc-800 px-4 py-2">
-        <div className="flex items-center gap-2 text-zinc-400 text-xs">
+      <div className={cn(
+        'flex items-center justify-between px-4 py-2',
+        isDark ? 'bg-zinc-800' : 'bg-zinc-200'
+      )}>
+        <div className={cn(
+          'flex items-center gap-2 text-xs',
+          isDark ? 'text-zinc-400' : 'text-zinc-600'
+        )}>
           <Terminal className="h-3.5 w-3.5" />
           <span>{filePath || language || 'code'}</span>
         </div>
@@ -199,7 +211,9 @@ Adapt this to fit my existing codebase—match my file structure, naming convent
               'text-xs font-medium transition-all duration-200',
               copied === 'prompt'
                 ? 'bg-green-500/90 text-white'
-                : 'bg-zinc-700/90 text-zinc-200 hover:bg-zinc-600'
+                : isDark
+                  ? 'bg-zinc-700/90 text-zinc-200 hover:bg-zinc-600'
+                  : 'bg-zinc-300/90 text-zinc-700 hover:bg-zinc-400/90'
             )}
             aria-label="Copy as AI prompt"
           >
@@ -224,7 +238,9 @@ Adapt this to fit my existing codebase—match my file structure, naming convent
               'text-xs font-medium transition-all duration-200',
               copied === 'code'
                 ? 'bg-green-500/90 text-white'
-                : 'bg-zinc-700/90 text-zinc-200 hover:bg-zinc-600'
+                : isDark
+                  ? 'bg-zinc-700/90 text-zinc-200 hover:bg-zinc-600'
+                  : 'bg-zinc-300/90 text-zinc-700 hover:bg-zinc-400/90'
             )}
             aria-label="Copy code"
           >
@@ -245,7 +261,7 @@ Adapt this to fit my existing codebase—match my file structure, naming convent
 
       {/* Syntax highlighted code */}
       <Highlight
-        theme={themes.oneDark}
+        theme={syntaxTheme}
         code={code}
         language={isCode ? (LANGUAGE_ALIASES[language] || language) as any : 'text'}
       >
@@ -254,7 +270,9 @@ Adapt this to fit my existing codebase—match my file structure, naming convent
             className={cn(
               highlightClassName,
               'overflow-x-auto p-4 text-sm leading-relaxed',
-              'scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent'
+              isDark
+                ? 'scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent'
+                : 'scrollbar-thin scrollbar-thumb-zinc-400 scrollbar-track-transparent'
             )}
             style={{ ...style, margin: 0, borderRadius: 0 }}
           >

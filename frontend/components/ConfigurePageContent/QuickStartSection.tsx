@@ -6,36 +6,35 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { SyntaxHighlightedPre } from '@/components/mdx/SyntaxHighlightedPre';
 import { 
   CheckCircle2, 
-  Copy, 
+  Copy,
   ExternalLink,
   Search,
   Sparkles,
   PanelRight,
   Key,
 } from 'lucide-react';
+import {
+  FRAMEWORKS,
+  INSTALL_COMMANDS,
+  getProviderCode,
+  PROVIDER_LABELS,
+  DOCS_URLS,
+} from '@/components/InlineOnboardingSteps/InlineOnboardingSteps.constants';
+import type { FrameworkId } from '@/components/InlineOnboardingSteps/InlineOnboardingSteps.types';
 
 export function QuickStartSection() {
   const { embedConfig, helpCenterSlug } = useConfigure();
   const [copiedId, setCopiedId] = useState(false);
-  const [copiedSnippet, setCopiedSnippet] = useState<string | null>(null);
+  const [selectedFramework, setSelectedFramework] = useState<FrameworkId>('react');
 
   const handleCopyId = async () => {
     try {
       await navigator.clipboard.writeText(helpCenterSlug);
       setCopiedId(true);
       setTimeout(() => setCopiedId(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy:', err);
-    }
-  };
-
-  const handleCopySnippet = async (text: string, key: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopiedSnippet(key);
-      setTimeout(() => setCopiedSnippet(null), 2000);
     } catch (err) {
       console.error('Failed to copy:', err);
     }
@@ -49,24 +48,7 @@ export function QuickStartSection() {
     embedConfig.features.searchEnabled && 'Search',
   ].filter(Boolean);
 
-  // Code snippets
-  const scriptTag = `<script
-  src="https://sdk.trypillar.com/v1/pillar.js"
-  data-product-key="${helpCenterSlug}"
-  async
-></script>`;
-
-  const npmInstall = `npm install @pillar-ai/react`;
-
-  const reactCode = `import { PillarProvider } from '@pillar-ai/react';
-
-function App() {
-  return (
-    <PillarProvider productKey="${helpCenterSlug}">
-      {/* Your app content */}
-    </PillarProvider>
-  );
-}`;
+  const providerCodes = getProviderCode(helpCenterSlug);
 
   return (
     <Card>
@@ -120,98 +102,54 @@ function App() {
         </div>
 
         {/* Installation */}
-        <Tabs defaultValue="html" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="html">Script Tag</TabsTrigger>
-            <TabsTrigger value="react">React</TabsTrigger>
+        <Tabs 
+          value={selectedFramework} 
+          onValueChange={(v) => setSelectedFramework(v as FrameworkId)}
+          className="w-full"
+        >
+          <TabsList className="w-full justify-start overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            {FRAMEWORKS.map((framework) => (
+              <TabsTrigger
+                key={framework.id}
+                value={framework.id}
+                className="shrink-0"
+              >
+                {framework.name}
+              </TabsTrigger>
+            ))}
           </TabsList>
 
-          {/* HTML Script Tag */}
-          <TabsContent value="html" className="space-y-4 mt-4">
-            <p className="text-sm text-muted-foreground">
-              Add this script tag to your HTML, just before the closing <code className="bg-muted px-1 rounded">&lt;/body&gt;</code> tag:
-            </p>
-            <div className="relative">
-              <pre className="bg-muted rounded-lg p-4 text-sm font-mono overflow-x-auto">
-                <code>{scriptTag}</code>
-              </pre>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="absolute top-2 right-2 h-7 gap-1"
-                onClick={() => handleCopySnippet(scriptTag, 'html')}
+          {FRAMEWORKS.map((framework) => {
+            const providerConfig = providerCodes[framework.id];
+            return (
+              <TabsContent
+                key={framework.id}
+                value={framework.id}
+                className="space-y-4 mt-4 min-w-0"
               >
-                {copiedSnippet === 'html' ? (
-                  <>
-                    <CheckCircle2 className="h-3 w-3" />
-                    Copied
-                  </>
-                ) : (
-                  <>
-                    <Copy className="h-3 w-3" />
-                    Copy
-                  </>
-                )}
-              </Button>
-            </div>
-          </TabsContent>
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium">Install packages</h4>
+                  <SyntaxHighlightedPre
+                    code={INSTALL_COMMANDS[framework.id]}
+                    language="bash"
+                    docsUrl={DOCS_URLS[framework.id]}
+                  />
+                </div>
 
-          {/* React */}
-          <TabsContent value="react" className="space-y-4 mt-4">
-            <p className="text-sm text-muted-foreground">
-              Install the React package:
-            </p>
-            <div className="relative">
-              <pre className="bg-muted rounded-lg p-4 text-sm font-mono overflow-x-auto">
-                <code>{npmInstall}</code>
-              </pre>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="absolute top-2 right-2 h-7 gap-1"
-                onClick={() => handleCopySnippet(npmInstall, 'npm')}
-              >
-                {copiedSnippet === 'npm' ? (
-                  <>
-                    <CheckCircle2 className="h-3 w-3" />
-                    Copied
-                  </>
-                ) : (
-                  <>
-                    <Copy className="h-3 w-3" />
-                    Copy
-                  </>
-                )}
-              </Button>
-            </div>
-
-            <p className="text-sm text-muted-foreground mt-4">
-              Wrap your app with the provider:
-            </p>
-            <div className="relative">
-              <pre className="bg-muted rounded-lg p-4 text-sm font-mono overflow-x-auto max-h-80">
-                <code>{reactCode}</code>
-              </pre>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="absolute top-2 right-2 h-7 gap-1"
-                onClick={() => handleCopySnippet(reactCode, 'react')}
-              >
-                {copiedSnippet === 'react' ? (
-                  <>
-                    <CheckCircle2 className="h-3 w-3" />
-                    Copied
-                  </>
-                ) : (
-                  <>
-                    <Copy className="h-3 w-3" />
-                    Copy
-                  </>
-                )}
-              </Button>
-            </div>
-          </TabsContent>
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium">
+                    {PROVIDER_LABELS[framework.id]}
+                  </h4>
+                  <SyntaxHighlightedPre
+                    code={providerConfig.code}
+                    language={providerConfig.language}
+                    filePath={providerConfig.filePath}
+                    docsUrl={DOCS_URLS[framework.id]}
+                  />
+                </div>
+              </TabsContent>
+            );
+          })}
         </Tabs>
 
         {/* Enabled Features Summary */}
@@ -237,24 +175,13 @@ function App() {
         <div className="flex gap-2 pt-2">
           <Button variant="outline" size="sm" asChild>
             <a 
-              href="https://docs.trypillar.com/sdk" 
+              href={DOCS_URLS[selectedFramework]}
               target="_blank" 
               rel="noopener noreferrer"
               className="gap-1"
             >
               <ExternalLink className="h-3 w-3" />
-              SDK Documentation
-            </a>
-          </Button>
-          <Button variant="outline" size="sm" asChild>
-            <a 
-              href="https://docs.trypillar.com/sdk/react" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="gap-1"
-            >
-              <ExternalLink className="h-3 w-3" />
-              React Integration
+              {FRAMEWORKS.find(f => f.id === selectedFramework)?.name} Documentation
             </a>
           </Button>
         </div>

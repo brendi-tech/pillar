@@ -160,6 +160,7 @@ export function ActionsSidebar({
     return actions.filter(
       (action) =>
         action.name.toLowerCase().includes(lower) ||
+        deriveActionLabel(action.name).toLowerCase().includes(lower) ||
         action.description.toLowerCase().includes(lower)
     );
   }, [actions, debouncedSearch]);
@@ -169,7 +170,6 @@ export function ActionsSidebar({
     () => groupActionsByType(filteredActions),
     [filteredActions]
   );
-  console.log(filteredActions);
 
   // Track which groups are expanded
   const [expandedGroups, setExpandedGroups] = useState<Set<ActionType>>(

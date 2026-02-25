@@ -40,7 +40,7 @@ export const FRAMEWORKS = [
 ] as const;
 
 export const INSTALL_COMMANDS: Record<FrameworkId, string> = {
-  react: "npm install @pillar-ai/sdk @pillar-ai/react",
+  react: "npm install @pillar-ai/react",
   vue: "npm install @pillar-ai/vue",
   angular: "npm install @pillar-ai/angular",
   vanilla: "npm install @pillar-ai/sdk",

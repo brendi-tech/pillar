@@ -4,17 +4,17 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Spinner } from "@/components/ui/spinner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { KnowledgeItem } from "@/types/knowledge";
 import { Check, Copy, Download } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
+  FileViewType,
   formatFileSize,
   getFileIcon,
   getFileViewType,
-  FileViewType,
 } from "./file-helpers";
 
 interface ContentPreviewCardProps {
@@ -77,7 +77,7 @@ export function ContentPreviewCard({
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-sm">Content Preview</CardTitle>
+        <CardTitle>Content Preview</CardTitle>
       </CardHeader>
       <CardContent>
         <Tabs
@@ -131,7 +131,7 @@ export function ContentPreviewCard({
           </div>
 
           <TabsContent value="optimized">
-            <ScrollArea className="h-[50vh] min-h-[300px] max-h-[500px] w-full rounded-md border bg-muted/30 p-4">
+            <ScrollArea className="h-[60vh] min-h-[400px] max-h-[800px] w-full rounded-md border bg-muted/30 p-4">
               <pre className="whitespace-pre-wrap text-sm font-mono break-words">
                 {item.optimized_content || "No optimized content available"}
               </pre>
