@@ -14,6 +14,7 @@ interface UseSourcesWebSocketEventOptions {
  *
  * - On `knowledge_item.created`: Adds new items directly to the query cache
  * - On `source.sync_completed`: Invalidates the cache to get fresh data
+ * - On `source.indexing_completed`: Invalidates the cache when all items finish processing
  */
 export function useSourcesWebSocketEvent({
   sourceId,
@@ -86,6 +87,21 @@ export function useSourcesWebSocketEvent({
   // Invalidate cache when sync completes to get accurate data
   useWebSocketEvent(
     'websocket:source.sync_completed',
+    useCallback(
+      (event: CustomEvent) => {
+        if (event.detail?.source_id === sourceId) {
+          queryClient.invalidateQueries({
+            queryKey: knowledgeKeys.itemList({ source: sourceId, page_size: pageSize }),
+          });
+        }
+      },
+      [sourceId, queryClient, pageSize]
+    )
+  );
+
+  // Invalidate cache when all items finish processing
+  useWebSocketEvent(
+    'websocket:source.indexing_completed',
     useCallback(
       (event: CustomEvent) => {
         if (event.detail?.source_id === sourceId) {

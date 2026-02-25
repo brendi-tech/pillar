@@ -9,6 +9,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Spinner } from "@/components/ui/spinner";
 import { useDebounce } from "@/hooks/use-debounce";
 import { knowledgeItemsAPI } from "@/lib/admin/knowledge-api";
 import { cn } from "@/lib/utils";
@@ -20,7 +21,7 @@ import type {
 } from "@/types/knowledge";
 import type { KnowledgeSourceConfig } from "@/types/sources";
 import { KNOWLEDGE_SOURCE_TYPE_LABELS } from "@/types/sources";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import {
   BookOpen,
   ChevronRight,
@@ -32,7 +33,6 @@ import {
   Search,
   Upload,
 } from "lucide-react";
-import { Spinner } from "@/components/ui/spinner";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -105,6 +105,7 @@ export function SourcesSidebar({
   onNavigate,
   hideHeader = false,
 }: SourcesSidebarProps) {
+  const queryClient = useQueryClient();
   const { sources, isLoading, refresh } = useSources();
   const [searchTerm, setSearchTerm] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -210,7 +211,11 @@ export function SourcesSidebar({
           </div>
           {hideHeader && (
             <Button asChild size="icon" className="h-9 w-9 shrink-0">
-              <Link href="/knowledge/new" onClick={onNavigate} title="Add source">
+              <Link
+                href="/knowledge/new"
+                onClick={onNavigate}
+                title="Add source"
+              >
                 <Plus className="h-4 w-4" />
               </Link>
             </Button>
@@ -415,9 +420,7 @@ function ItemListItem({
     >
       <FileText className="h-3 w-3 shrink-0 text-muted-foreground" />
       <span className="truncate flex-1">{item.title || "Untitled"}</span>
-      {item.status === "processing" && (
-        <Spinner size="xs" />
-      )}
+      {item.status === "processing" && <Spinner size="xs" />}
       {item.status === "indexed" && item.has_optimized_content && (
         <span className="h-2 w-2 rounded-full bg-green-500" />
       )}

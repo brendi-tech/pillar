@@ -2,8 +2,14 @@
 
 import { useWebSocketEvent } from "@/hooks/use-websocket-event";
 import { getCurrentOrganizationId } from "@/lib/admin/api-client";
-import { knowledgeSourceKeys, knowledgeSourceListQuery } from "@/queries/sources.queries";
-import type { KnowledgeSourceConfig, KnowledgeSourceType } from "@/types/sources";
+import {
+  knowledgeSourceKeys,
+  knowledgeSourceListQuery,
+} from "@/queries/sources.queries";
+import type {
+  KnowledgeSourceConfig,
+  KnowledgeSourceType,
+} from "@/types/sources";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createContext,
@@ -104,19 +110,21 @@ export function SourcesProvider({ children }: SourcesProviderProps) {
     : null;
 
   const refresh = useCallback(async () => {
-    await queryClient.invalidateQueries({ queryKey: knowledgeSourceKeys.lists() });
+    await queryClient.invalidateQueries({
+      queryKey: knowledgeSourceKeys.lists(),
+    });
   }, [queryClient]);
 
   // Refresh sources when sync completes or fails (via WebSocket)
   useWebSocketEvent(
-    'websocket:source.sync_completed',
+    "websocket:source.sync_completed",
     useCallback(() => {
       queryClient.invalidateQueries({ queryKey: knowledgeSourceKeys.lists() });
     }, [queryClient])
   );
 
   useWebSocketEvent(
-    'websocket:source.sync_failed',
+    "websocket:source.sync_failed",
     useCallback(() => {
       queryClient.invalidateQueries({ queryKey: knowledgeSourceKeys.lists() });
     }, [queryClient])
@@ -139,7 +147,9 @@ export function SourcesProvider({ children }: SourcesProviderProps) {
     sources.forEach((source) => {
       const type = source.source_type as KnowledgeSourceType;
       if (type in grouped) {
-        (grouped[type as keyof SourcesByType] as KnowledgeSourceConfig[]).push(source);
+        (grouped[type as keyof SourcesByType] as KnowledgeSourceConfig[]).push(
+          source
+        );
       }
     });
 

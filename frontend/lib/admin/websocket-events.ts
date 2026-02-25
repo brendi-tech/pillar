@@ -100,6 +100,22 @@ export function handleWebSocketEvent(event: WebSocketEvent): void {
       }
       break;
 
+    case 'source.indexing_completed':
+      console.log('[WebSocket] Source indexing completed:', event.data);
+      window.dispatchEvent(
+        new CustomEvent('websocket:source.indexing_completed', {
+          detail: event.data,
+        })
+      );
+      if (event.data?.source_id) {
+        window.dispatchEvent(
+          new CustomEvent(`websocket:source.${event.data.source_id}.indexing_completed`, {
+            detail: event.data,
+          })
+        );
+      }
+      break;
+
     case 'actions.sync_completed':
       console.log('[WebSocket] Actions sync completed:', event.data);
       window.dispatchEvent(

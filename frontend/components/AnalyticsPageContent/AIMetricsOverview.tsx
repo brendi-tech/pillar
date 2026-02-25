@@ -138,7 +138,7 @@ export function AIMetricsOverview({ stats, isLoading }: AIMetricsOverviewProps) 
   const escalatedCount = stats?.escalatedCount ?? 0;
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+    <div className="@container grid grid-cols-2 gap-3 sm:gap-4 @[720px]:grid-cols-4">
       <StatCard
         title="Resolution Rate"
         value={`${resolutionRate}%`}

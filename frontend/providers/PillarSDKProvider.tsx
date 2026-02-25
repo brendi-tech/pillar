@@ -63,6 +63,9 @@ export function PillarSDKProvider({ children }: PillarSDKProviderProps) {
         apiBaseUrl,
         debug: process.env.NODE_ENV === "development",
         sidebarTabs,
+        zIndex: {
+          push: 49,
+        },
         panel: {
           position: "right",
           width: 400,

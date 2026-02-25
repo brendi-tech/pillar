@@ -51,7 +51,7 @@ export function AnalyticsPageContent() {
   const conversationsTrend = conversationsTrendData?.data ?? [];
 
   return (
-    <div className="space-y-6 p-page">
+    <div className="space-y-6 p-page  @container/analytics-page-content">
       {/* Header */}
       <PageHeader
         title="Insights"
@@ -63,11 +63,11 @@ export function AnalyticsPageContent() {
       <AIMetricsOverview stats={aiUsageStats} isLoading={isAiUsageLoading} />
 
       {/* 2. Charts Row: Trend + Feedback */}
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-6 @lg/analytics-page-content:grid-cols-3">
         <ConversationsChart
           data={conversationsTrend}
           isLoading={isTrendLoading}
-          className="lg:col-span-2"
+          className="@lg/analytics-page-content:col-span-2"
         />
         <FeedbackSummary
           feedback={aiUsageStats?.feedback}

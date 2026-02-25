@@ -96,6 +96,7 @@ def notify_knowledge_item_processed(sender, instance, created, **kwargs):
             event_type='knowledge_item.processed',
             data={
                 'id': str(instance.id),
+                'source': str(instance.source_id) if instance.source_id else None,
                 'status': instance.status,
                 'processing_error': instance.processing_error,
                 'has_optimized_content': bool(instance.optimized_content),
@@ -105,6 +106,58 @@ def notify_knowledge_item_processed(sender, instance, created, **kwargs):
         logger.info(f"Sent processed notification for item {instance.id}: {instance.status}")
     except Exception as e:
         logger.error(f"Failed to send processed notification for item {instance.id}: {e}")
+
+    # Check if all items for this source have finished processing
+    _check_source_indexing_completed(instance)
+
+
+def _check_source_indexing_completed(item: KnowledgeItem) -> None:
+    """
+    Check if all items for a source have finished processing.
+    
+    If no items remain in PENDING or PROCESSING status, emit a
+    source.indexing_completed event so the frontend can refresh.
+    """
+    if not item.source_id or not item.product_id:
+        return
+
+    try:
+        # Count items still being processed
+        pending_count = KnowledgeItem.objects.filter(
+            source_id=item.source_id,
+            status__in=[KnowledgeItem.Status.PENDING, KnowledgeItem.Status.PROCESSING],
+        ).count()
+
+        if pending_count > 0:
+            logger.debug(
+                f"Source {item.source_id} still has {pending_count} items pending/processing"
+            )
+            return
+
+        # All items done - get stats for the event
+        from django.db.models import Count, Q
+        stats = KnowledgeItem.objects.filter(source_id=item.source_id).aggregate(
+            total=Count('id'),
+            indexed=Count('id', filter=Q(status=KnowledgeItem.Status.INDEXED)),
+            failed=Count('id', filter=Q(status=KnowledgeItem.Status.FAILED)),
+        )
+
+        push.send(
+            help_center_config_id=str(item.product_id),
+            event_type='source.indexing_completed',
+            data={
+                'source_id': str(item.source_id),
+                'items_total': stats['total'],
+                'items_indexed': stats['indexed'],
+                'items_failed': stats['failed'],
+            }
+        )
+        logger.info(
+            f"Sent indexing completed notification for source {item.source_id}: "
+            f"{stats['indexed']} indexed, {stats['failed']} failed"
+        )
+    except Exception as e:
+        logger.error(f"Failed to check/send indexing completed for source {item.source_id}: {e}")
 
 
 # Track previous status for detecting sync completion
