@@ -196,6 +196,47 @@ export const RemotionRoot: React.FC = () => {
       />
 
       {/* ============================================
+          Classic Banking Demo (no logos)
+          ============================================ */}
+
+      <Composition
+        id="BankingDemoClassicNoLogos"
+        component={BankingDemoClassic}
+        durationInFrames={840}
+        fps={30}
+        width={DIMENSIONS.width}
+        height={DIMENSIONS.height}
+        defaultProps={
+          {
+            query: "Pay my cleaners $200",
+            responseText:
+              "All set! Your payment of $200.00 to Sarah Chen is ready. Just hit Confirm to send it.",
+            steps: [
+              {
+                text: "Found match: Sarah Chen",
+                techBadge: "GET /api/payees?q=cleaner",
+              },
+              {
+                text: "Opened payment screen",
+                techBadge: "navigate → /payments/new",
+              },
+              {
+                text: "Pre-filled $200 to Sarah Chen",
+                techBadge: "data: { payee, amount, account }",
+              },
+              {
+                text: "Ready for confirmation",
+                techBadge: "awaiting_user_confirm",
+              },
+            ],
+            layout: LAYOUT,
+            accentColor: "#3B82F6",
+            showLogos: false,
+          } satisfies BankingDemoClassicProps
+        }
+      />
+
+      {/* ============================================
           Classic CRM Demo
           ============================================ */}
 

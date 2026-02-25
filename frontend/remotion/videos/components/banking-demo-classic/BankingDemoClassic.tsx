@@ -28,6 +28,7 @@ export type BankingDemoClassicProps = {
   steps: Step[];
   layout: Layout;
   accentColor: string;
+  showLogos?: boolean;
 };
 
 // Layout constants - 65/35 split
@@ -48,7 +49,7 @@ const INTRO_END = 8; // 0.25 second intro with Pillar logo (quick fade)
 const OUTRO_START = 790; // Start fade for loop transition
 const TOTAL_FRAMES = 840; // 28 seconds
 
-export const BankingDemoClassic = ({ query, responseText, steps, layout, accentColor }: BankingDemoClassicProps) => {
+export const BankingDemoClassic = ({ query, responseText, steps, layout, accentColor, showLogos = true }: BankingDemoClassicProps) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
@@ -63,13 +64,15 @@ export const BankingDemoClassic = ({ query, responseText, steps, layout, accentC
   // Start at 98% scale and grow to 100% - subtle "pop in" effect
   const entranceScale = interpolate(entrance, [0, 1], [0.98, 1]);
   
-  // UI opacity: only fade out before outro
-  const uiOpacity = interpolate(
-    frame,
-    [OUTRO_START, OUTRO_START + 8],
-    [1, 0],
-    { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
-  );
+  // UI opacity: fade out before outro only when logos are shown
+  const uiOpacity = showLogos
+    ? interpolate(
+        frame,
+        [OUTRO_START, OUTRO_START + 8],
+        [1, 0],
+        { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+      )
+    : 1;
 
   // Subtle parallax float animation for organic feel
   const floatOffset = Math.sin(frame / 30) * 3;
@@ -200,25 +203,26 @@ export const BankingDemoClassic = ({ query, responseText, steps, layout, accentC
         </AbsoluteFill>
       </AbsoluteFill>
 
-      {/* Intro Pillar logo overlay */}
-      <PillarLogoOverlay
-        frame={frame}
-        fps={fps}
-        type="intro"
-        introEnd={INTRO_END}
-        outroStart={OUTRO_START}
-        totalFrames={TOTAL_FRAMES}
-      />
-
-      {/* Outro Pillar logo overlay */}
-      <PillarLogoOverlay
-        frame={frame}
-        fps={fps}
-        type="outro"
-        introEnd={INTRO_END}
-        outroStart={OUTRO_START}
-        totalFrames={TOTAL_FRAMES}
-      />
+      {showLogos && (
+        <>
+          <PillarLogoOverlay
+            frame={frame}
+            fps={fps}
+            type="intro"
+            introEnd={INTRO_END}
+            outroStart={OUTRO_START}
+            totalFrames={TOTAL_FRAMES}
+          />
+          <PillarLogoOverlay
+            frame={frame}
+            fps={fps}
+            type="outro"
+            introEnd={INTRO_END}
+            outroStart={OUTRO_START}
+            totalFrames={TOTAL_FRAMES}
+          />
+        </>
+      )}
     </AbsoluteFill>
   );
 };
