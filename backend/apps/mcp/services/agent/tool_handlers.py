@@ -390,6 +390,38 @@ async def execute_client_action(
                 error_msg = result.get("error", result.get("message", "Action failed"))
             result_data = result.get("result", result)
 
+    # --- Sensitive field interception (Tier 1 & Tier 2) ---
+    if is_success and isinstance(result_data, dict) and action_name != "interact_with_page":
+        from apps.mcp.services.agent.helpers import (
+            detect_customer_secret_ref,
+            get_sensitive_output_fields,
+            strip_and_store_sensitive_fields,
+        )
+        from apps.mcp.services.agent.streaming_events import emit_secret_reveal
+
+        sensitive_fields = get_sensitive_output_fields(action)
+        if sensitive_fields:
+            result_data, refs = strip_and_store_sensitive_fields(
+                result=result_data,
+                sensitive_fields=sensitive_fields,
+                session_id=session_id,
+                user_id="",
+            )
+            for ref_info in refs:
+                yield emit_secret_reveal(
+                    ref=ref_info["ref"],
+                    field_name=ref_info["field"],
+                    endpoint=ref_info["endpoint"],
+                )
+        else:
+            result_data, cust_ref = detect_customer_secret_ref(result_data)
+            if cust_ref:
+                yield emit_secret_reveal(
+                    ref=cust_ref["ref"],
+                    field_name=cust_ref["field"],
+                    endpoint=cust_ref["endpoint"],
+                )
+
     await log_action_execution(
         action_name=action_name,
         product_id=str(service.help_center_config.id),

@@ -95,6 +95,7 @@ KIND_TOOL_CALL = "tool_call"
 KIND_PLAN = "plan"
 KIND_GENERATING = "generating"
 KIND_TOKEN_USAGE = "token_usage"
+KIND_SECRET_REVEAL = "secret_reveal"
 
 
 def format_tool_name_for_display(tool_name: str) -> str:
@@ -464,6 +465,33 @@ def emit_debug_error(message: str, code: str = None) -> DebugEvent:
     if code:
         data["code"] = code
     return emit_debug_event("server:error", data)
+
+
+def emit_secret_reveal(
+    ref: str,
+    field_name: str,
+    endpoint: str,
+) -> dict:
+    """Emit a secret_reveal progress event for the SDK reveal UI.
+
+    Args:
+        ref: Redemption token or customer reference
+        field_name: Name of the sensitive field (used as label)
+        endpoint: Relative path (Tier 1) or absolute URL (Tier 2) to fetch the secret
+    """
+    return {
+        "type": "progress",
+        "data": {
+            "kind": KIND_SECRET_REVEAL,
+            "id": f"secret-{ref}",
+            "label": field_name,
+            "status": "done",
+            "metadata": {
+                "ref": ref,
+                "endpoint": endpoint,
+            },
+        },
+    }
 
 
 def format_query_result_summary(result: dict) -> str:

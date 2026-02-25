@@ -592,6 +592,9 @@ class ActionSearchService:
         if action.data_schema:
             result['data_schema'] = action.data_schema
 
+        if action.output_schema:
+            result['output_schema'] = action.output_schema
+
         # Include parameter_examples for get_action_details tool
         if action.parameter_examples:
             result['parameter_examples'] = action.parameter_examples

@@ -263,6 +263,7 @@ def bulk_update_actions(product, actions_data: list[dict]):
                 action.auto_complete = action_data.get('auto_complete', False)
                 action.returns_data = returns_data
                 action.data_schema = action_data.get('data_schema') or {}
+                action.output_schema = action_data.get('output_schema') or {}
                 action.default_data = action_data.get('default_data') or {}
                 action.parameter_examples = action_data.get('parameter_examples') or []
                 action.required_context = action_data.get('required_context') or {}
@@ -286,6 +287,7 @@ def bulk_update_actions(product, actions_data: list[dict]):
                     auto_complete=action_data.get('auto_complete', False),
                     returns_data=returns_data,
                     data_schema=action_data.get('data_schema') or {},
+                    output_schema=action_data.get('output_schema') or {},
                     default_data=action_data.get('default_data') or {},
                     parameter_examples=action_data.get('parameter_examples') or [],
                     required_context=action_data.get('required_context') or {},
@@ -316,7 +318,7 @@ def bulk_update_actions(product, actions_data: list[dict]):
                 fields=[
                     'description', 'guidance', 'examples', 'action_type',
                     'path_template', 'external_url', 'auto_run', 'auto_complete',
-                    'returns_data', 'data_schema', 'default_data',
+                    'returns_data', 'data_schema', 'output_schema', 'default_data',
                     'parameter_examples', 'required_context', 'status',
                 ]
             )

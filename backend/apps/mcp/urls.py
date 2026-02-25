@@ -4,7 +4,7 @@ URL configuration for MCP app.
 Copyright (C) 2025 Pillar Team
 """
 from django.urls import path
-from apps.mcp.views import streamable_http, health, image_upload, identify, conversation_history, session_resume, telemetry, webmcp_tracking
+from apps.mcp.views import streamable_http, health, image_upload, identify, conversation_history, session_resume, telemetry, webmcp_tracking, secret_redeem
 
 urlpatterns = [
     # Main MCP endpoint - handles both JSON-RPC and SSE streaming
@@ -36,4 +36,7 @@ urlpatterns = [
 
     # WebMCP execution tracking
     path('track-webmcp-execution/', webmcp_tracking.track_webmcp_execution, name='mcp_track_webmcp_execution'),
+
+    # Secret redemption (one-time reveal for sensitive tool outputs)
+    path('secrets/redeem/<str:token>/', secret_redeem.redeem_secret, name='mcp_secret_redeem'),
 ]

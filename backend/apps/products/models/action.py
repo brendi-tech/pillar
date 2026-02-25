@@ -128,6 +128,13 @@ class Action(TenantAwareModel):
         blank=True,
         help_text="JSON Schema defining the action's data payload"
     )
+    output_schema = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="JSON Schema describing output. Properties with "
+                  "'sensitive': true are stripped from AI context and delivered "
+                  "via the secure redemption flow."
+    )
     default_data = models.JSONField(
         default=dict,
         blank=True,

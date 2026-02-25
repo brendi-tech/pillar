@@ -532,6 +532,7 @@ class ActionSyncData(BaseModel):
     auto_complete: Optional[bool] = False
     returns_data: Optional[bool] = None  # Explicit, or inferred from type=query
     data_schema: Optional[dict] = None
+    output_schema: Optional[dict] = None
     default_data: Optional[dict] = None
     parameter_examples: Optional[list[dict]] = None  # Examples of valid parameter objects
     required_context: Optional[dict] = None
@@ -811,6 +812,7 @@ class ActionSyncView(APIView):
                     'auto_complete': action_data.auto_complete or False,
                     'returns_data': returns_data,
                     'data_schema': action_data.data_schema or {},
+                    'output_schema': action_data.output_schema or {},
                     'default_data': action_data.default_data or {},
                     'parameter_examples': action_data.parameter_examples or [],
                     'required_context': action_data.required_context or {},

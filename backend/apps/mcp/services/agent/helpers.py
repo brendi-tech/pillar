@@ -706,3 +706,84 @@ async def log_action_execution(
     except Exception as e:
         logger.error(f"[ActionLog] Failed to log execution: {e}", exc_info=True)
         return False
+
+
+# =============================================================================
+# Sensitive field helpers
+# =============================================================================
+
+
+def get_sensitive_output_fields(action: dict) -> list[str]:
+    """Extract field names marked ``sensitive: true`` from the action's output_schema."""
+    output_schema = action.get("output_schema") or {}
+    properties = output_schema.get("properties") or {}
+    return [
+        name
+        for name, prop in properties.items()
+        if isinstance(prop, dict) and prop.get("sensitive")
+    ]
+
+
+def strip_and_store_sensitive_fields(
+    result: dict,
+    sensitive_fields: list[str],
+    session_id: str,
+    user_id: str,
+) -> tuple[dict, list[dict]]:
+    """Remove sensitive fields from *result*, store each in the redemption store.
+
+    Returns ``(sanitized_result, secret_refs)`` where *secret_refs* is a list
+    of ``{"field": ..., "ref": ..., "endpoint": ...}`` dicts.
+    """
+    from apps.mcp.services.secret_redemption import SecretRedemptionStore
+
+    sanitized = dict(result)
+    refs: list[dict] = []
+
+    for field in sensitive_fields:
+        value = sanitized.pop(field, None)
+        if value is None:
+            continue
+        token = SecretRedemptionStore.store_secret(
+            value=str(value),
+            session_id=session_id,
+            user_id=user_id,
+            field_name=field,
+        )
+        refs.append({
+            "field": field,
+            "ref": token,
+            "endpoint": f"/mcp/secrets/redeem/{token}/",
+        })
+
+    if refs:
+        sanitized["_redacted"] = [r["field"] for r in refs]
+
+    return sanitized, refs
+
+
+def detect_customer_secret_ref(result: dict) -> tuple[dict, dict | None]:
+    """Detect Tier 2 customer-managed ``secret_ref`` + ``secret_redeem_url``.
+
+    If both fields are present, strips them from the result and returns
+    the stripped result and a ref dict.  Otherwise returns the original
+    result and ``None``.
+    """
+    if not isinstance(result, dict):
+        return result, None
+
+    secret_ref = result.get("secret_ref")
+    secret_redeem_url = result.get("secret_redeem_url")
+
+    if not secret_ref or not secret_redeem_url:
+        return result, None
+
+    sanitized = {
+        k: v for k, v in result.items()
+        if k not in ("secret_ref", "secret_redeem_url")
+    }
+    return sanitized, {
+        "field": "secret",
+        "ref": str(secret_ref),
+        "endpoint": str(secret_redeem_url),
+    }

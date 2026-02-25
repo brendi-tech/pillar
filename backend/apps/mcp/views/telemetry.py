@@ -48,10 +48,8 @@ async def otlp_traces_proxy(request):
 
     try:
         from opentelemetry.sdk.trace import ReadableSpan
-        from opentelemetry.sdk.trace.export import SimpleSpanExporter
         from opentelemetry.trace import SpanContext, SpanKind, TraceFlags
         from opentelemetry.sdk.resources import Resource
-        import time
 
         resource_spans = body.get("resourceSpans", [])
         readable_spans: list[ReadableSpan] = []

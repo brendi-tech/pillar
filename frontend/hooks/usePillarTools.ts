@@ -1220,8 +1220,7 @@ export function usePillarTools() {
       type: "trigger_tool" as const,
       description:
         "Generate a new API key (sync secret) for the current project. " +
-        "Opens a dialog where the key is created and displayed for the user to copy. " +
-        "The raw key is only shown in the dialog and never returned to the assistant. " +
+        "The raw key is securely delivered via a Reveal button — it never appears in conversation history. " +
         "Use when user asks to create, generate, or add an API key. " +
         "Always provide a name — do NOT ask the user for one. If they specified a name, use it. " +
         "Otherwise, pick a sensible default like 'default', 'development', or 'api-key-1'.",
@@ -1247,11 +1246,26 @@ export function usePillarTools() {
         },
         required: ["name"],
       },
-      execute: (data: { name?: string }) => {
+      outputSchema: {
+        type: "object" as const,
+        properties: {
+          secret: { type: "string", sensitive: true },
+          name: { type: "string" },
+          id: { type: "string" },
+        },
+      },
+      execute: async (data: { name?: string }) => {
         const name =
-          data.name?.trim().toLowerCase().replace(/[^a-z0-9-]/g, "") || undefined;
-        openApiKeysModal({ auto_generate: true, name });
-        return { success: true, message: "API key dialog opened — the key will be shown there." };
+          data.name?.trim().toLowerCase().replace(/[^a-z0-9-]/g, "") || "default";
+        const productId = currentProduct?.id;
+        if (!productId) {
+          return { error: "No product selected" };
+        }
+        const result = await adminFetch<{ id: string; name: string; secret: string; message?: string }>(
+          `/configs/${productId}/secrets/`,
+          { method: "POST", body: JSON.stringify({ name }) },
+        );
+        return result;
       },
     },
     {
