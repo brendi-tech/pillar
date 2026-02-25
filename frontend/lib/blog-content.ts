@@ -13,6 +13,7 @@ export interface BlogFrontmatter {
   slug?: string;
   description?: string;
   image?: string;
+  draft?: boolean;
 }
 
 export interface BlogPost {
@@ -34,6 +35,8 @@ export function getAllBlogPosts(): BlogPost[] {
 
     const source = fs.readFileSync(path.join(CONTENT_DIR, file), 'utf-8');
     const { data, content } = matter(source);
+
+    if (data.draft) continue;
     
     // Use explicit slug from frontmatter, or filename without extension
     const slug = data.slug || file.replace(/\.md$/, '');

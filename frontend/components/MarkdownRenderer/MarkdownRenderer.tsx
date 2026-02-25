@@ -6,6 +6,13 @@ import rehypeHighlight from 'rehype-highlight';
 import rehypeSlug from 'rehype-slug';
 import { cn, generateSlug } from '@/lib/utils';
 
+function getYouTubeVideoId(url: string): string | null {
+  const match = url.match(
+    /(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([\w-]+)/
+  );
+  return match?.[1] ?? null;
+}
+
 interface MarkdownRendererProps {
   content: string;
   className?: string;
@@ -50,11 +57,27 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
             </h3>
           );
         },
-        a: ({ href, children, ...props }) => (
-          <a href={href} className="text-primary hover:underline" {...props}>
-            {children}
-          </a>
-        ),
+        a: ({ href, children, ...props }) => {
+          const videoId = href ? getYouTubeVideoId(href) : null;
+          if (videoId) {
+            return (
+              <div className="my-6 aspect-video">
+                <iframe
+                  src={`https://www.youtube-nocookie.com/embed/${videoId}`}
+                  title={typeof children === 'string' ? children : 'YouTube video'}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  className="w-full h-full rounded-lg"
+                />
+              </div>
+            );
+          }
+          return (
+            <a href={href} className="text-primary hover:underline" {...props}>
+              {children}
+            </a>
+          );
+        },
         code: ({ className: codeClassName, children, ...props }) => {
           // Check if this is inline code (no language class) vs code block
           const isInline = !codeClassName;
