@@ -95,22 +95,43 @@ class Command(BaseCommand):
         else:
             self.stdout.write(f'  Reusing product: {product.name} (slug={slug})')
 
-        # 4. Sync secret (always generate a fresh one named "demo")
-        secret_name = 'demo'
-        raw_secret = 'plr_' + secrets.token_hex(32)
+        # 4. Sync secret — always append a new one (up to 10 per product)
+        existing = product.sync_secrets.count()
+        if existing >= 10:
+            self.stderr.write(self.style.WARNING(
+                f'  Product already has {existing} secrets (max 10). '
+                f'Delete one first via the admin UI.'
+            ))
+            secret_name = None
+            raw_secret = None
+        else:
+            # Pick a unique name: demo, demo-2, demo-3, ...
+            secret_name = 'demo'
+            counter = 2
+            existing_names = set(
+                product.sync_secrets.values_list('name', flat=True)
+            )
+            while secret_name in existing_names:
+                secret_name = f'demo-{counter}'
+                counter += 1
 
-        # Delete existing demo secret if present, then create new
-        SyncSecret.objects.filter(product=product, name=secret_name).delete()
-        SyncSecret.objects.create(
-            product=product,
-            organization=product.organization,
-            name=secret_name,
-            secret_hash=raw_secret,
-            created_by=user,
-        )
-        self.stdout.write(f'  Generated sync secret: {secret_name}')
+            raw_secret = 'plr_' + secrets.token_hex(32)
+            SyncSecret.objects.create(
+                product=product,
+                organization=product.organization,
+                name=secret_name,
+                secret_hash=raw_secret,
+                created_by=user,
+            )
+            self.stdout.write(f'  Generated sync secret: {secret_name} ({existing + 1}/10)')
 
         # 5. Write .env
+        if not raw_secret:
+            self.stdout.write(self.style.WARNING(
+                f'\nProduct "{slug}" exists but no new secret was created.'
+            ))
+            return
+
         if output:
             env_path = Path(output)
             if not env_path.is_absolute():
