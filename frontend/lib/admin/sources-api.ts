@@ -19,6 +19,7 @@ import type {
   DocumentUploadResponse,
   PendingUpload,
 } from '@/types/sources';
+import type { KnowledgeItem, KnowledgeItemListResponse } from '@/types/knowledge';
 
 // ============================================================================
 // API List Params
@@ -31,6 +32,21 @@ export interface KnowledgeSourceListParams {
   page?: number;
   page_size?: number;
   [key: string]: string | number | boolean | undefined;
+}
+
+export interface KnowledgeSourceSearchParams {
+  q: string;
+  page?: number;
+  page_size?: number;
+  [key: string]: string | number | boolean | undefined;
+}
+
+export interface KnowledgeSourceSearchResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: KnowledgeItem[];
+  source_counts: Record<string, number>;
 }
 
 // ============================================================================
@@ -91,6 +107,13 @@ export const knowledgeSourcesAPI = {
    */
   getSyncHistory: async (id: string): Promise<SyncHistoryItem[]> => {
     return adminFetch<SyncHistoryItem[]>(`/knowledge/sources/${id}/sync-history/`);
+  },
+
+  /**
+   * Search items across sources. Returns paginated items with per-source totals.
+   */
+  search: async (params: KnowledgeSourceSearchParams): Promise<KnowledgeSourceSearchResponse> => {
+    return adminFetch<KnowledgeSourceSearchResponse>('/knowledge/sources/search/', { params });
   },
 
   // ==========================================================================

@@ -18,6 +18,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Spinner } from "@/components/ui/spinner";
 import { WarningModal } from "@/components/WarningModal";
 import { useWebSocketEvent } from "@/hooks/use-websocket-event";
 import { cn } from "@/lib/utils";
@@ -48,7 +49,7 @@ import {
   Upload,
   X,
 } from "lucide-react";
-import { Spinner } from "@/components/ui/spinner";
+import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { SourceEditPanel } from "./SourceEditPanel";
@@ -145,6 +146,7 @@ export function SourceSettingsPanel({
   sourceId,
   onDeleted,
 }: SourceSettingsPanelProps) {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -212,9 +214,9 @@ export function SourceSettingsPanel({
 
   const deleteMutation = useMutation({
     ...deleteKnowledgeSourceMutation(),
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success("Source deleted");
-      queryClient.invalidateQueries({
+      await queryClient.refetchQueries({
         queryKey: knowledgeSourceKeys.lists(),
       });
       onDeleted?.();
@@ -238,6 +240,8 @@ export function SourceSettingsPanel({
     try {
       await deleteMutation.mutateAsync(sourceId);
       setShowDeleteModal(false);
+      console.log("DELETED");
+      router.push("/knowledge");
     } finally {
       setIsDeleting(false);
     }
@@ -364,7 +368,7 @@ export function SourceSettingsPanel({
                   {KNOWLEDGE_SOURCE_TYPE_LABELS[source.source_type]}
                 </Badge>
 
-                  {canSync && (
+                {canSync && (
                   <Button
                     variant="outline"
                     size="sm"

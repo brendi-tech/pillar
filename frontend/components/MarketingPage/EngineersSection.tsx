@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { Code, Layers, RefreshCw, Zap } from "lucide-react";
+import { EngineersHeading } from "./EngineersHeading";
 import { GridBackground } from "./GridBackground";
 import { NumberedHeading } from "./NumberedHeading";
 
@@ -78,24 +79,7 @@ export function EngineersSection() {
           />
           <div className="max-w-[1050px] mx-auto">
             <div className="text-left px-4 md:px-9 pb-8 md:pb-20">
-              <div className="relative ">
-                <h2 className="font-editorial relative text-regular text-3xl md:text-5xl lg:text-[4.75rem] lg:leading-[62px] text-center text-[#020202]">
-                  Built for Engineers who ship
-                </h2>
-                {/* Floating tags - hidden on mobile */}
-                <p className="hidden lg:block font-mono text-[#FF6E00] text-xs bg-[#332429] w-fit px-2.5 py-1 absolute -top-2.5 left-[100px]">
-                  TRUST
-                </p>
-                <p className="hidden lg:block font-mono text-[#FF6E00] text-xs bg-[#332429] w-fit px-2.5 py-1 absolute -bottom-4 left-[50px]">
-                  CLEAR VISION
-                </p>
-                <p className="hidden lg:block font-mono text-[#FF6E00] text-xs bg-[#332429] w-fit px-2.5 py-1 absolute top-1 left-[402px]">
-                  CODE
-                </p>
-                <p className="hidden lg:block font-mono text-[#FF6E00] text-xs bg-[#332429] w-fit px-2.5 py-1 absolute -top-2 left-[758px]">
-                  IMPLEMENTATION
-                </p>
-              </div>
+              <EngineersHeading />
             </div>
 
             {/* Feature cards grid */}

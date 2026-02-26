@@ -3,6 +3,7 @@ KnowledgeSource serializers.
 """
 from rest_framework import serializers
 from apps.knowledge.models import KnowledgeSource
+from apps.knowledge.admin.serializers.item import KnowledgeItemListSerializer
 
 
 class KnowledgeSourceListSerializer(serializers.ModelSerializer):
@@ -336,3 +337,13 @@ class KnowledgeSourceCreateSerializer(serializers.ModelSerializer):
             logger.info(f"Created {len(created_items)} items from pending uploads for source {source.id}")
         
         return source
+
+
+class SourceSearchResultSerializer(KnowledgeSourceListSerializer):
+    """Source with nested matching items for search results."""
+
+    matching_items = KnowledgeItemListSerializer(many=True, read_only=True)
+
+    class Meta(KnowledgeSourceListSerializer.Meta):
+        fields = KnowledgeSourceListSerializer.Meta.fields + ['matching_items']
+        read_only_fields = fields

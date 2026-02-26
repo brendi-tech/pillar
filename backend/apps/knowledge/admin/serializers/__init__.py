@@ -5,6 +5,7 @@ from .source import (
     KnowledgeSourceSerializer,
     KnowledgeSourceCreateSerializer,
     KnowledgeSourceListSerializer,
+    SourceSearchResultSerializer,
 )
 from .item import (
     KnowledgeItemSerializer,
@@ -23,6 +24,7 @@ __all__ = [
     'KnowledgeSourceSerializer',
     'KnowledgeSourceCreateSerializer',
     'KnowledgeSourceListSerializer',
+    'SourceSearchResultSerializer',
     'KnowledgeItemSerializer',
     'KnowledgeItemListSerializer',
     'KnowledgeItemUpdateSerializer',

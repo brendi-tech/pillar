@@ -11,9 +11,6 @@ import {
   CheckCircle2, 
   Copy,
   ExternalLink,
-  Search,
-  Sparkles,
-  PanelRight,
   Key,
 } from 'lucide-react';
 import {
@@ -26,7 +23,7 @@ import {
 import type { FrameworkId } from '@/components/InlineOnboardingSteps/InlineOnboardingSteps.types';
 
 export function QuickStartSection() {
-  const { embedConfig, helpCenterSlug } = useConfigure();
+  const { helpCenterSlug } = useConfigure();
   const [copiedId, setCopiedId] = useState(false);
   const [selectedFramework, setSelectedFramework] = useState<FrameworkId>('react');
 
@@ -39,14 +36,6 @@ export function QuickStartSection() {
       console.error('Failed to copy:', err);
     }
   };
-
-  // Calculate enabled features
-  const enabledFeatures = [
-    embedConfig.panel.enabled && 'Help Panel',
-    embedConfig.floatingButton.enabled && 'Floating Button',
-    embedConfig.features.aiChatEnabled && 'AI Chat',
-    embedConfig.features.searchEnabled && 'Search',
-  ].filter(Boolean);
 
   const providerCodes = getProviderCode(helpCenterSlug);
 
@@ -151,25 +140,6 @@ export function QuickStartSection() {
             );
           })}
         </Tabs>
-
-        {/* Enabled Features Summary */}
-        <div className="space-y-3">
-          <div className="text-sm font-medium">Enabled Features</div>
-          <div className="flex flex-wrap gap-2">
-            {enabledFeatures.length > 0 ? (
-              enabledFeatures.map((feature) => (
-                <Badge key={String(feature)} variant="outline" className="gap-1">
-                  {feature === 'Help Panel' && <PanelRight className="h-3 w-3" />}
-                  {feature === 'AI Chat' && <Sparkles className="h-3 w-3" />}
-                  {feature === 'Search' && <Search className="h-3 w-3" />}
-                  {feature}
-                </Badge>
-              ))
-            ) : (
-              <span className="text-sm text-muted-foreground">No features enabled</span>
-            )}
-          </div>
-        </div>
 
         {/* Quick Links */}
         <div className="flex gap-2 pt-2">

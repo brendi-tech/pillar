@@ -17,6 +17,7 @@ from apps.knowledge.admin.serializers import (
     KnowledgeSourceSerializer,
     KnowledgeSourceCreateSerializer,
     KnowledgeSourceListSerializer,
+    KnowledgeItemListSerializer,
     KnowledgeSyncHistorySerializer,
 )
 
@@ -424,3 +425,69 @@ class SourceViewSet(viewsets.ModelViewSet):
                 {'error': f'Upload failed: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+    @extend_schema(
+        summary="Search sources and items",
+        description=(
+            "Search knowledge items by title/URL, including all items from "
+            "sources whose name matches. Returns a flat paginated list of items "
+            "grouped by source on the client."
+        ),
+        parameters=[
+            {
+                'name': 'q',
+                'in': 'query',
+                'required': True,
+                'schema': {'type': 'string', 'minLength': 2},
+                'description': 'Search query (min 2 characters)',
+            },
+        ],
+        responses={200: KnowledgeItemListSerializer(many=True)},
+    )
+    @action(detail=False, methods=['get'])
+    def search(self, request):
+        """Search items by title/url and by source name, returned as a flat paginated list."""
+        query = request.query_params.get('q', '').strip()
+        if len(query) < 2:
+            return Response(
+                {'error': 'Query parameter "q" must be at least 2 characters.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        base_sources = self.get_queryset()
+
+        # Items matching by title or URL
+        item_matches = Q(title__icontains=query) | Q(url__icontains=query)
+        # Items belonging to sources whose name matches
+        source_name_matches = Q(source__name__icontains=query)
+
+        matching_items = (
+            KnowledgeItem.objects.filter(source__in=base_sources)
+            .filter(item_matches | source_name_matches)
+        )
+
+        # Per-source total counts (clean queryset without ordering/distinct)
+        source_counts = dict(
+            matching_items
+            .values('source_id')
+            .annotate(cnt=Count('id'))
+            .values_list('source_id', 'cnt')
+        )
+
+        items_qs = (
+            matching_items
+            .select_related('source')
+            .order_by('source__name', '-created_at')
+            .distinct()
+        )
+
+        page = self.paginate_queryset(items_qs)
+        if page is None:
+            page = list(items_qs)
+
+        serializer = KnowledgeItemListSerializer(page, many=True)
+        response = self.get_paginated_response(serializer.data)
+        response.data['source_counts'] = {
+            str(sid): cnt for sid, cnt in source_counts.items()
+        }
+        return response

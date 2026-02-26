@@ -4,6 +4,7 @@
 import {
   knowledgeSourcesAPI,
   type KnowledgeSourceListParams,
+  type KnowledgeSourceSearchResponse,
   type CreateKnowledgeSourceRequest,
   type UpdateKnowledgeSourceRequest,
 } from "@/lib/admin/sources-api";
@@ -20,6 +21,9 @@ export const knowledgeSourceKeys = {
   lists: () => [...knowledgeSourceKeys.all, "list"] as const,
   list: (params?: KnowledgeSourceListParams) =>
     [...knowledgeSourceKeys.lists(), params] as const,
+
+  // Search
+  search: (q: string) => [...knowledgeSourceKeys.all, "search", q] as const,
 
   // Details
   details: () => [...knowledgeSourceKeys.all, "detail"] as const,
@@ -42,6 +46,20 @@ export const knowledgeSourceListQuery = (params?: KnowledgeSourceListParams) =>
     queryKey: knowledgeSourceKeys.list(params),
     queryFn: () => knowledgeSourcesAPI.list(params),
   });
+
+/**
+ * Infinite query config for searching items across sources.
+ * Returns flat paginated items; the sidebar groups them by source.
+ */
+export const knowledgeSourceSearchInfiniteOptions = (q: string, pageSize = 50) => ({
+  queryKey: knowledgeSourceKeys.search(q),
+  queryFn: ({ pageParam }: { pageParam: unknown }) =>
+    knowledgeSourcesAPI.search({ q, page: pageParam as number, page_size: pageSize }),
+  getNextPageParam: (lastPage: KnowledgeSourceSearchResponse, allPages: KnowledgeSourceSearchResponse[]) =>
+    lastPage.next ? allPages.length + 1 : undefined,
+  initialPageParam: 1 as unknown,
+  enabled: q.length >= 2,
+});
 
 /**
  * Get a single knowledge source by ID

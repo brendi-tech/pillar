@@ -152,26 +152,6 @@ export function ItemMetadataSection({ item }: ItemMetadataSectionProps) {
     });
   }
 
-  // Source URL
-  if (item.url) {
-    metadataItems.push({
-      label: "Source URL",
-      value: (
-        <a
-          href={item.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
-        >
-          <ExternalLink className="h-3 w-3 shrink-0" />
-          <span className="truncate">{item.url}</span>
-        </a>
-      ),
-      tooltip: item.url,
-      colSpan: 2,
-    });
-  }
-
   // Dynamic metadata fields (not in promoted keys)
   if (item.metadata) {
     const remainingEntries = Object.entries(item.metadata).filter(
@@ -181,7 +161,6 @@ export function ItemMetadataSection({ item }: ItemMetadataSectionProps) {
     for (const [key, value] of remainingEntries) {
       if (value == null || value === "") continue;
 
-      // Format the value - detect dates and format them nicely
       let formattedValue: string;
       if (isISODateString(value)) {
         formattedValue = formatDate(String(value));
@@ -200,5 +179,27 @@ export function ItemMetadataSection({ item }: ItemMetadataSectionProps) {
     }
   }
 
-  return <MetadataStrip items={metadataItems} columns={4} />;
+  return (
+    <div className="space-y-2">
+      {item.url && (
+        <div className="rounded-lg border bg-card px-4 py-3">
+          <div className="flex items-center gap-2 text-sm min-w-0">
+            <span className="text-xs text-muted-foreground shrink-0">
+              Source URL
+            </span>
+            <a
+              href={item.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline min-w-0"
+            >
+              <ExternalLink className="h-3 w-3 shrink-0" />
+              <span className="truncate">{item.url}</span>
+            </a>
+          </div>
+        </div>
+      )}
+      <MetadataStrip items={metadataItems} columns={4} />
+    </div>
+  );
 }

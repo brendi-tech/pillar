@@ -5,7 +5,9 @@ import hashlib
 import hmac
 import json
 import logging
+import re
 import secrets
+import uuid
 from typing import Optional, Union
 
 from rest_framework import viewsets, status
@@ -63,7 +65,30 @@ class ProductViewSet(viewsets.ModelViewSet):
         return ProductSerializer
     
     def perform_create(self, serializer):
-        serializer.save(organization=self.request.user.primary_organization)
+        organization = self.request.user.primary_organization
+        
+        # Auto-generate subdomain if not provided
+        subdomain = serializer.validated_data.get('subdomain')
+        if not subdomain:
+            product_name = serializer.validated_data.get('name', 'product')
+            subdomain = self._generate_subdomain(product_name)
+        
+        serializer.save(organization=organization, subdomain=subdomain)
+    
+    def _generate_subdomain(self, name: str) -> str:
+        """Generate a unique subdomain from a product name."""
+        # Sanitize: lowercase, replace spaces with hyphens, remove invalid chars
+        base_subdomain = re.sub(r'[^a-z0-9-]', '', name.lower().replace(' ', '-').replace("'", ''))
+        base_subdomain = re.sub(r'-+', '-', base_subdomain).strip('-')
+        
+        # Ensure minimum length
+        if len(base_subdomain) < 3:
+            base_subdomain = f"product-{base_subdomain}" if base_subdomain else "product"
+        
+        # Add a short unique suffix to avoid conflicts
+        subdomain = f"{base_subdomain[:40]}-{uuid.uuid4().hex[:6]}"
+        
+        return subdomain
 
     def create(self, request, *args, **kwargs):
         """Create a product and return full product data."""
