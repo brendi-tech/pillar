@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import {
   VIDEO_DEMOS,
   type DemoSlug,
-} from "@/app/marketing/demos/[demo]/page";
+} from "@/app/marketing/demos/[demo]/demos.data";
 
 const BASE_URL = "https://trypillar.com";
 
