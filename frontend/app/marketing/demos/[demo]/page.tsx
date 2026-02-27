@@ -4,24 +4,33 @@ import { MarketingFooter } from "@/components/MarketingPage/MarketingFooter";
 import { MarketingNavbar } from "@/components/MarketingPage/MarketingNavbar";
 import { DemoVideo } from "./DemoVideo";
 
-type DemoSlug = "banking" | "crm" | "analytics" | "pm" | "hr";
+export type DemoSlug = "banking" | "crm" | "analytics" | "pm" | "hr";
 
-const VIDEO_DEMOS: Record<
-  DemoSlug,
-  {
-    title: string;
-    prompt: string;
-    description: string;
-    mp4: string;
-    webm: string;
-  }
-> = {
+export interface VideoDemoData {
+  title: string;
+  prompt: string;
+  description: string;
+  mp4: string;
+  webm: string;
+  thumbnail: string;
+  durationISO: string;
+  durationSec: number;
+  uploadDate: string;
+  tags: string[];
+}
+
+export const VIDEO_DEMOS: Record<DemoSlug, VideoDemoData> = {
   banking: {
     title: "Banking demo",
     prompt: "Send $200 to my cleaner",
     description: "Find payee, set amount/date, preview, and submit.",
     mp4: "/marketing/BankingDemo.mp4",
     webm: "/marketing/BankingDemo.webm",
+    thumbnail: "/marketing/BankingDemo-thumb.png",
+    durationISO: "PT18S",
+    durationSec: 18,
+    uploadDate: "2025-06-01",
+    tags: ["banking", "payment", "AI assistant", "fintech", "Pillar"],
   },
   crm: {
     title: "CRM demo (Salesforce)",
@@ -30,6 +39,11 @@ const VIDEO_DEMOS: Record<
       "Find the opportunity, update stage, and kick off an implementation handoff.",
     mp4: "/marketing/CRMDemo.mp4",
     webm: "/marketing/CRMDemo.webm",
+    thumbnail: "/marketing/CRMDemo-thumb.png",
+    durationISO: "PT18S",
+    durationSec: 18,
+    uploadDate: "2025-06-01",
+    tags: ["CRM", "Salesforce", "AI assistant", "sales", "Pillar"],
   },
   analytics: {
     title: "Analytics demo (Amplitude)",
@@ -37,6 +51,11 @@ const VIDEO_DEMOS: Record<
     description: "Create a chart and add it to a dashboard.",
     mp4: "/marketing/AnalyticsDemo.mp4",
     webm: "/marketing/AnalyticsDemo.webm",
+    thumbnail: "/marketing/AnalyticsDemo-thumb.png",
+    durationISO: "PT18S",
+    durationSec: 18,
+    uploadDate: "2025-06-01",
+    tags: ["analytics", "Amplitude", "AI assistant", "dashboard", "Pillar"],
   },
   pm: {
     title: "Project management demo (Linear)",
@@ -44,6 +63,17 @@ const VIDEO_DEMOS: Record<
     description: "Open issue form, fill fields, and add it to the cycle.",
     mp4: "/marketing/PMDemo.mp4",
     webm: "/marketing/PMDemo.webm",
+    thumbnail: "/marketing/PMDemo-thumb.png",
+    durationISO: "PT18S",
+    durationSec: 18,
+    uploadDate: "2025-06-01",
+    tags: [
+      "project management",
+      "Linear",
+      "AI assistant",
+      "bug tracking",
+      "Pillar",
+    ],
   },
   hr: {
     title: "HR/People demo (Rippling)",
@@ -51,6 +81,11 @@ const VIDEO_DEMOS: Record<
     description: "Navigate to payroll settings and open the edit flow.",
     mp4: "/marketing/HRDemo.mp4",
     webm: "/marketing/HRDemo.webm",
+    thumbnail: "/marketing/HRDemo-thumb.png",
+    durationISO: "PT17S",
+    durationSec: 17,
+    uploadDate: "2025-06-01",
+    tags: ["HR", "Rippling", "AI assistant", "payroll", "Pillar"],
   },
 };
 
@@ -79,6 +114,37 @@ export async function generateMetadata({
       title,
       description,
       url: `https://trypillar.com${canonical}`,
+      type: "video.other",
+      videos: [
+        {
+          url: `https://trypillar.com${data.mp4}`,
+          secureUrl: `https://trypillar.com${data.mp4}`,
+          type: "video/mp4",
+          width: 1920,
+          height: 1080,
+        },
+      ],
+      images: [
+        {
+          url: `https://trypillar.com${data.thumbnail}`,
+          width: 1920,
+          height: 1080,
+          alt: data.title,
+        },
+      ],
+    },
+    twitter: {
+      card: "player",
+      title,
+      description,
+      players: [
+        {
+          playerUrl: `https://trypillar.com/demos/${demo}`,
+          streamUrl: `https://trypillar.com${data.mp4}`,
+          width: 1920,
+          height: 1080,
+        },
+      ],
     },
   };
 }
@@ -93,8 +159,33 @@ export default async function Page({
 
   const data = VIDEO_DEMOS[demo as DemoSlug];
 
+  const videoJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "VideoObject",
+    name: data.title,
+    description: `"${data.prompt}" — ${data.description}`,
+    thumbnailUrl: `https://trypillar.com${data.thumbnail}`,
+    uploadDate: data.uploadDate,
+    duration: data.durationISO,
+    contentUrl: `https://trypillar.com${data.mp4}`,
+    embedUrl: `https://trypillar.com/demos/${demo}`,
+    publisher: {
+      "@type": "Organization",
+      name: "Pillar",
+      url: "https://trypillar.com",
+      logo: {
+        "@type": "ImageObject",
+        url: "https://trypillar.com/pillar-logo.png",
+      },
+    },
+  };
+
   return (
     <div className="min-h-screen bg-[#F3EFE8] flex flex-col">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(videoJsonLd) }}
+      />
       <MarketingNavbar />
 
       <section className="pt-10 pb-6 lg:pt-14">
@@ -129,7 +220,7 @@ export default async function Page({
       <section className="pb-12">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="bg-[#1A1A1A] rounded-xl overflow-hidden border border-[#1A1A1A] shadow-2xl">
-            <DemoVideo mp4={data.mp4} />
+            <DemoVideo mp4={data.mp4} poster={data.thumbnail} />
           </div>
         </div>
       </section>

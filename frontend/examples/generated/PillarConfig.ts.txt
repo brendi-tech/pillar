@@ -82,6 +82,12 @@ interface PillarConfig {
    */
   customCSS?: string;
   
+  /**
+   * Z-index configuration for the SDK root container.
+   * Controls stacking order relative to host app content.
+   */
+  zIndex?: ZIndexConfig;
+  
   /** Called when the SDK is initialized and ready. */
   onReady?: () => void;
   /** Called when the SDK encounters an error. */

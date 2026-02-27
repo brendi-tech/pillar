@@ -4,9 +4,10 @@ import { useEffect, useRef } from "react";
 
 interface DemoVideoProps {
   mp4: string;
+  poster?: string;
 }
 
-export function DemoVideo({ mp4 }: DemoVideoProps) {
+export function DemoVideo({ mp4, poster }: DemoVideoProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
@@ -26,6 +27,7 @@ export function DemoVideo({ mp4 }: DemoVideoProps) {
       controls
       playsInline
       preload="auto"
+      poster={poster}
       className="w-full h-auto"
     >
       <source src={mp4} type="video/mp4" />

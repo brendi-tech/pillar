@@ -62,7 +62,7 @@ export function EngineersSection() {
       <section className="max-w-marketingSection mx-auto border-x bg-white">
         <div className="flex justify-center">
           <NumberedHeading className="text-[#9B4534] bg-[#FF2200]/15">
-            [02] BATTERIES INCLUDED
+            [03] BATTERIES INCLUDED
           </NumberedHeading>
         </div>
         <div className="pt-16 md:pt-[140px] pb-13 relative">

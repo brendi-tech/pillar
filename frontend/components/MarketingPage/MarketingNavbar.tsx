@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu, X, ChevronDown, Gauge, LayoutDashboard, BarChart3 } from "lucide-react";
+import { Menu, X, ChevronDown, Gauge, LayoutDashboard, BarChart3, Scale } from "lucide-react";
 
 function GitHubIcon({ className }: { className?: string }) {
   return (
@@ -30,6 +30,12 @@ const resourcesDropdownItems = [
     description: "Agents are coming.  Is your site ready?",
     href: "/resources/agent-score",
     icon: Gauge,
+  },
+  {
+    name: "Build vs Buy",
+    description: "What it takes to build a copilot yourself vs one SDK.",
+    href: "/resources/build-vs-buy",
+    icon: Scale,
   },
 ];
 

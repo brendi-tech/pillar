@@ -42,6 +42,11 @@ import {
   ARCHITECTURE_DIMENSIONS,
   ARCHITECTURE_DURATION,
 } from "./videos/components/launch-overlays";
+import {
+  StackMergeAnimation,
+  STACK_MERGE_DIMENSIONS,
+  STACK_MERGE_DURATION,
+} from "./videos/components/stack-merge/StackMergeAnimation";
 import { getTotalDurationFrames } from "./videos/timing";
 import { bankingDemo } from "./videos/data/banking";
 import { crmDemo } from "./videos/data/crm";
@@ -369,6 +374,15 @@ export const RemotionRoot: React.FC = () => {
         fps={30}
         width={ARCHITECTURE_DIMENSIONS.width}
         height={ARCHITECTURE_DIMENSIONS.height}
+      />
+
+      <Composition
+        id="StackMerge"
+        component={StackMergeAnimation}
+        durationInFrames={STACK_MERGE_DURATION}
+        fps={30}
+        width={STACK_MERGE_DIMENSIONS.width}
+        height={STACK_MERGE_DIMENSIONS.height}
       />
 
       {/* ============================================

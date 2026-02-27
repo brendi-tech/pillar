@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --port 3001",
-    "prebuild": "cd .. && npx tsx scripts/generate-api-docs.ts && npx tsx scripts/generate-docs-search-index.ts",
+    "prebuild": "cd .. && npx tsx scripts/generate-api-docs.ts && npx tsx scripts/generate-docs-search-index.ts && npx tsx scripts/generate-sitemap-dates.ts",
     "build": "next build",
     "start": "next start --port 3001",
     "lint": "eslint",
@@ -36,7 +36,8 @@
     "wireframes:analytics": "npm run stills:css && remotion render remotion/index.ts wireframe-analytics public/marketing/AnalyticsWireframe.mp4",
     "wireframes:pm": "npm run stills:css && remotion render remotion/index.ts wireframe-pm public/marketing/PMWireframe.mp4",
     "wireframes:hr": "npm run stills:css && remotion render remotion/index.ts wireframe-hr public/marketing/HRWireframe.mp4",
-    "wireframes:all": "npm run stills:css && npm run wireframes:banking && npm run wireframes:crm && npm run wireframes:analytics && npm run wireframes:pm && npm run wireframes:hr"
+    "wireframes:all": "npm run stills:css && npm run wireframes:banking && npm run wireframes:crm && npm run wireframes:analytics && npm run wireframes:pm && npm run wireframes:hr",
+    "videos:stack-merge": "npm run stills:css && remotion render remotion/index.ts StackMerge public/marketing/StackMerge.mp4"
   },
   "dependencies": {
     "@intercom/messenger-js-sdk": "^0.0.18",

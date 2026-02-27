@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-02-24T19:43:38.794Z",
+  "generatedAt": "2026-02-27T19:04:07.135Z",
   "interfaces": {
     "PillarConfig": {
       "name": "PillarConfig",
@@ -105,6 +105,12 @@
           "type": "string",
           "required": false,
           "description": "Custom CSS to inject into the panel's Shadow DOM.\nUse public class names (pillar-*) to override default styles."
+        },
+        {
+          "name": "zIndex",
+          "type": "ZIndexConfig",
+          "required": false,
+          "description": "Z-index configuration for the SDK root container.\nControls stacking order relative to host app content."
         },
         {
           "name": "onReady",

@@ -115,7 +115,7 @@ export function UserFooterPopover({
                   Assistant
                 </span>
               </div>
-              <div className="max-h-48 sm:max-h-40 overflow-y-auto">
+              <div>
                 {availableProducts.map((hc) => (
                   <div key={hc.id} className="flex items-center rounded-md">
                     <button
