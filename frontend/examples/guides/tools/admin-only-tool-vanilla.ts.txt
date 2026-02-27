@@ -8,7 +8,11 @@ pillar.defineTool({
   description: 'Delete a user from the organization',
   requiredContext: { userRole: 'admin' },
   inputSchema: {
-    userId: { type: 'string', description: 'ID of the user to delete' },
+    type: 'object',
+    properties: {
+      userId: { type: 'string', description: 'ID of the user to delete' },
+    },
+    required: ['userId'],
   },
   execute: ({ userId }) => deleteUser(userId),
 });

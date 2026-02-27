@@ -2,13 +2,10 @@ usePillarTool({
   name: "my_tool",
   description: "Example tool showing return values",
   execute: async () => {
-    // Success
-    return { success: true };
+    // Success — return flat data (what you return is what the agent sees)
+    return { message: "Invite sent!" };
 
-    // Success with message
-    return { success: true, message: "Invite sent!" };
-
-    // Failure
-    return { success: false, message: "Something went wrong" };
+    // Failure — throw an error (SDK catches it and reports to the agent)
+    throw new Error("Something went wrong");
   },
 });

@@ -1,12 +1,12 @@
 # Set Up Pillar SDK for My App
 
-Analyze my codebase and create a complete Pillar SDK integration with actions, context sync, and handlers.
+Analyze my codebase and create a complete Pillar SDK integration with tools, context sync, and handlers.
 
 ## What Pillar Does
 
 Pillar provides:
 - A co-pilot chat panel that answers user questions using your knowledge base
-- Suggested actions that users can execute directly in your app
+- Tools that the AI can invoke directly in your app
 - Plans that guide users through multi-step workflows
 
 ## Your Task
@@ -21,20 +21,75 @@ Pillar provides:
 - Add PillarProvider to the app root
 - Create .env.local with NEXT_PUBLIC_PILLAR_PRODUCT_KEY set to your product key
 
-### 3. Generate Actions (10-30 based on my app)
-Look at my routes, features, modals, and APIs to generate actions:
+### 3. Generate Tools (10-30 based on my app)
+Look at my routes, features, modals, and APIs to generate tools using `usePillarTool`:
 
 ```tsx
-// lib/pillar/actions.ts
-import { defineActions } from '@pillar-ai/sdk';
+// hooks/usePillarTools.ts
+import { usePillarTool } from '@pillar-ai/react';
+import { useRouter } from 'next/navigation';
 
-export const actions = defineActions({
-  // Navigation actions based on my routes
-  // Trigger actions for modals/wizards I have
-  // Query actions that fetch data and return it to the AI (type: 'query')
-  // API actions that create/update/delete with returns: true
-  // Admin-only actions with requiredContext
-});
+export function usePillarTools() {
+  const router = useRouter();
+
+  // Navigation tools based on my routes
+  usePillarTool({
+    name: 'open_settings',
+    type: 'navigate',
+    description: 'Navigate to the settings page',
+    examples: ['go to settings', 'open settings'],
+    autoRun: true,
+    execute: () => { router.push('/settings'); },
+  });
+
+  // Trigger tools for modals/wizards
+  usePillarTool({
+    name: 'invite_member',
+    type: 'trigger_tool',
+    description: 'Invite a new team member',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        email: { type: 'string', description: 'Email address to invite' },
+        role: { type: 'string', description: 'Role: admin, member, or viewer' },
+      },
+      required: ['email'],
+    },
+    execute: ({ email, role }) => { openInviteModal({ email, role }); },
+  });
+
+  // Query tools that fetch data for the AI
+  usePillarTool({
+    name: 'list_projects',
+    type: 'query',
+    description: 'List all projects the user has access to',
+    autoRun: true,
+    autoComplete: true,
+    execute: async () => {
+      const projects = await api.getProjects();
+      return projects.map(p => ({ id: p.id, name: p.name }));
+    },
+  });
+
+  // Admin-only tools with requiredContext
+  usePillarTool({
+    name: 'delete_user',
+    type: 'trigger_tool',
+    description: 'Delete a user from the organization',
+    requiredContext: { userRole: 'admin' },
+    inputSchema: {
+      type: 'object',
+      properties: {
+        userId: { type: 'string', description: 'ID of the user to delete' },
+      },
+      required: ['userId'],
+    },
+    execute: async ({ userId }) => {
+      await api.deleteUser(userId);
+      return { deleted: true };
+    },
+  });
+}
 ```
 
 ### 4. Create RouteContextSync Component
@@ -58,44 +113,29 @@ export function RouteContextSync() {
 }
 ```
 
-### 5. Create PillarActionHandlers Component
-Handle action execution with proper routing:
+### 5. Mount Tools Component
+Include your tools hook in a mounted component:
 
 ```tsx
-// components/PillarActionHandlers.tsx
+// components/PillarTools.tsx
 'use client';
-import { usePillar } from '@pillar-ai/react';
-import { useRouter } from 'next/navigation';
+import { usePillarTools } from '@/hooks/usePillarTools';
 
-export function PillarActionHandlers() {
-  const { pillar } = usePillar();
-  const router = useRouter();
-  
-  useEffect(() => {
-    if (!pillar) return;
-    const handlers = [
-      pillar.onTask('navigate', ({ path }) => {
-        router.push(path);
-        return { success: true };
-      }),
-      // Add handlers for trigger_tool types
-    ];
-    return () => handlers.forEach(unsub => unsub?.());
-  }, [pillar, router]);
-  
+export function PillarTools() {
+  usePillarTools();
   return null;
 }
 ```
 
 ### 6. (Optional) Add Agent Guidance for Workflows
-If your app has multi-step workflows or API actions, add agent guidance to steer the AI:
+If your app has multi-step workflows or API tools, add agent guidance to steer the AI:
 
 ```tsx
-// lib/pillar/actions/index.ts (export alongside your actions)
+// lib/pillar/agent-guidance.ts
 export const agentGuidance = `
 PREFER API OVER NAVIGATION:
 - When you can accomplish a task via API, prefer that over navigating to a form
-- API actions execute instantly and return structured results
+- API tools execute instantly and return structured results
 
 VERIFY BEFORE COMMITTING:
 - When creating resources, test the query or configuration first to confirm it works
@@ -103,7 +143,7 @@ VERIFY BEFORE COMMITTING:
 `;
 ```
 
-Then sync with `npx pillar-sync --actions ./lib/pillar/actions/index.ts`.
+Then sync with `npx pillar-sync --scan ./src`.
 
 ### 7. Add Assistant Button (if sidebar is disabled)
 If the edge trigger sidebar is disabled, create a custom button to open the panel.

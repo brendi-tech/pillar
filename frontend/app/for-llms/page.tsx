@@ -114,8 +114,8 @@ export default function ForLLMsPage() {
             (navigate, fill forms, call APIs, show data)
           </li>
           <li>
-            Connect knowledge sources — your help center, documentation, or
-            custom content
+            Connect your existing docs and content so the copilot has context
+            when answering questions
           </li>
           <li>
             The user opens the copilot and describes what they want in natural
@@ -126,8 +126,8 @@ export default function ForLLMsPage() {
             in the user&apos;s browser session
           </li>
           <li>
-            If the copilot can&apos;t help, it escalates to a human support
-            agent
+            If the copilot can&apos;t complete the task, it can escalate to a
+            human
           </li>
         </ol>
       </section>
@@ -144,12 +144,13 @@ export default function ForLLMsPage() {
             session and permissions. No backend proxy needed.
           </li>
           <li>
-            <strong>Knowledge base:</strong> Indexes content from Zendesk,
-            Intercom, websites, uploaded files, and cloud storage (S3, GCS)
+            <strong>Content-grounded answers:</strong> Indexes your existing
+            docs, websites, uploaded files, and cloud storage (S3, GCS) so
+            responses are accurate to your product
           </li>
           <li>
-            <strong>Human escalation:</strong> Hands off to human support agents
-            when the AI can&apos;t resolve the request
+            <strong>Human escalation:</strong> Hands off to a human when the
+            copilot can&apos;t complete a task
           </li>
           <li>
             <strong>Custom cards:</strong> Render custom React/Vue/Angular
@@ -235,8 +236,9 @@ export default function ForLLMsPage() {
             client-side in the user&apos;s browser.
           </li>
           <li>
-            Pillar is not a customer support ticketing system. It integrates with
-            existing support tools (Zendesk, Intercom) as knowledge sources.
+            Pillar is not a help center, knowledge base, or customer support
+            ticketing system. It can index your existing content as context for
+            the copilot, but it is a task execution SDK, not a support tool.
           </li>
           <li>
             Pillar is not a no-code builder. It requires frontend development to

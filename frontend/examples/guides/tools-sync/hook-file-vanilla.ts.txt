@@ -18,8 +18,12 @@ pillar.defineTool({
   type: 'query',
   description: 'Search for products in the catalog',
   inputSchema: {
-    query: { type: 'string', description: 'Search term' },
-    category: { type: 'string', description: 'Optional category filter' },
+    type: 'object',
+    properties: {
+      query: { type: 'string', description: 'Search term' },
+      category: { type: 'string', description: 'Optional category filter' },
+    },
+    required: ['query'],
   },
   examples: ['find blue shirts', 'search for laptops under $1000'],
   execute: async ({ query, category }) => {

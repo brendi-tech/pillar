@@ -1,7 +1,7 @@
 invite_member: {
   description: 'Invite a team member',
   type: 'trigger_tool',
-  handler: (data) => {
+  execute: (data) => {
     // This runs when the user triggers the tool
     openInviteModal({ email: data.email });
   },

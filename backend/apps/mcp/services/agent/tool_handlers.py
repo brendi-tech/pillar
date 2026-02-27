@@ -390,6 +390,11 @@ async def execute_client_action(
                 error_msg = result.get("error", result.get("message", "Action failed"))
             result_data = result.get("result", result)
 
+    # Un-nest { data } envelope for backward compat with old SDK versions
+    # that wrap tool results in { success: true, data: { ... } }
+    if isinstance(result_data, dict) and "data" in result_data and isinstance(result_data["data"], (dict, list)):
+        result_data = result_data["data"]
+
     # --- Sensitive field interception (Tier 1 & Tier 2) ---
     if is_success and isinstance(result_data, dict) and action_name != "interact_with_page":
         from apps.mcp.services.agent.helpers import (

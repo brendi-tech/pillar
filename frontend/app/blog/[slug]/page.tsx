@@ -58,11 +58,14 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
 
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const { slug } = await params;
-  const post = getBlogPostBySlug(slug);
+  const allPosts = getAllBlogPosts();
+  const post = allPosts.find((p) => p.slug === slug) ?? null;
 
   if (!post) {
     notFound();
   }
+
+  const relatedPosts = allPosts.filter((p) => p.slug !== slug).slice(0, 3);
 
   const articleJsonLd = {
     '@context': 'https://schema.org',
@@ -133,6 +136,84 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
       <div className="prose prose-lg dark:prose-invert mx-auto max-w-none prose-headings:font-serif prose-headings:font-bold prose-a:text-primary hover:prose-a:underline">
         <MarkdownRenderer content={post.content} />
+      </div>
+
+      <div className="mt-14 pt-10 border-t border-border">
+        <section className="space-y-10">
+          <div className="rounded-2xl border border-border bg-muted/30 p-6 sm:p-8">
+            <h2 className="text-xl font-semibold text-foreground font-serif">
+              Keep exploring
+            </h2>
+            <p className="mt-2 text-muted-foreground">
+              Want a better feel for Pillar? Here are a few good next clicks.
+            </p>
+            <div className="mt-5 flex flex-col sm:flex-row flex-wrap gap-3">
+              <Link
+                href="/blog/our-story"
+                className="inline-flex items-center justify-center rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
+              >
+                Our story
+              </Link>
+              <Link
+                href="/tools/agent-score"
+                className="inline-flex items-center justify-center rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
+              >
+                Agent tool score
+              </Link>
+              <Link
+                href="/demos/grafana"
+                className="inline-flex items-center justify-center rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
+              >
+                Watch the Grafana demo
+              </Link>
+              <Link
+                href="/docs/overview/introduction"
+                className="inline-flex items-center justify-center rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
+              >
+                Read the docs
+              </Link>
+            </div>
+          </div>
+
+          {relatedPosts.length > 0 && (
+            <div>
+              <h2 className="text-xl font-semibold text-foreground font-serif">
+                Related posts
+              </h2>
+              <div className="mt-4 grid gap-4">
+                {relatedPosts.map((p) => {
+                  const description =
+                    p.frontmatter.description ||
+                    p.frontmatter.subtitle ||
+                    p.frontmatter.title;
+
+                  return (
+                    <Link
+                      key={p.slug}
+                      href={`/blog/${p.slug}`}
+                      className="group rounded-xl border border-border bg-background p-5 hover:bg-muted/40 transition-colors"
+                    >
+                      <div className="flex items-baseline justify-between gap-4">
+                        <h3 className="text-base font-semibold text-foreground">
+                          {p.frontmatter.title}
+                        </h3>
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">
+                          {format(parseISO(p.frontmatter.date), 'MMM d, yyyy')}
+                        </span>
+                      </div>
+                      <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
+                        {description}
+                      </p>
+                      <div className="mt-3 text-sm font-medium text-primary">
+                        Read →
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </section>
       </div>
     </article>
   );

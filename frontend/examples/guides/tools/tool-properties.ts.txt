@@ -8,8 +8,17 @@ usePillarTool({
   type?: ToolType,          // navigate, trigger_tool, query, inline_ui, external_link, copy_text
   guidance?: string,        // Per-tool instructions for the AI agent
   examples?: string[],      // Example phrases that trigger this tool
-  inputSchema?: object,     // Schema for extracting data from user queries
+  inputSchema?: {           // JSON Schema for extracting data from user queries
+    type: "object",
+    properties: Record<string, unknown>,
+    required?: string[],
+  },
+  outputSchema?: {          // JSON Schema for output fields (supports sensitive: true)
+    type: "object",
+    properties: Record<string, unknown>,
+  },
   autoRun?: boolean,        // Execute without user clicking (default: false)
-  autoComplete?: boolean,   // Mark done immediately (default: false)
+  autoComplete?: boolean,   // Mark done immediately (default: true)
   requiredContext?: object,  // Context required for tool to be available
+  webMCP?: boolean,         // Also register with WebMCP (navigator.modelContext)
 });

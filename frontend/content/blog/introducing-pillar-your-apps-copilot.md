@@ -27,6 +27,8 @@ Teams ship faster than ever. But when your changelog is 10x longer than it used 
 
 The bottom line: products need a way to execute actions end-to-end, with proper permissions, not just document them.
 
+If you want a quick gut-check for whether your product is set up for this, start with the [agent tool score](/tools/agent-score).
+
 ## How it works
 
 Pillar turns a user request into action by combining planning with in-browser execution.
@@ -92,14 +94,16 @@ Install at [trypillar.com](https://trypillar.com).
 
 We also have live demos you can try right now, with Pillar installed on open-source products:
 
-- **[Grafana](https://trypillar.com/demos/grafana)** — have Pillar build you a monitoring dashboard and set up alerts
-- **[Apache Superset](https://trypillar.com/demos/superset)** — explore the names dataset and build a dashboard
+- **[Grafana](/demos/grafana)** — have Pillar build you a monitoring dashboard and set up alerts
+- **[Apache Superset](/demos/superset)** — explore the names dataset and build a dashboard
 
 Want help getting live? Reach out at [founders@trypillar.com](mailto:founders@trypillar.com).
 
 ## Backstory
 
 We built Pillar to solve our own problem. At our last company (Double Finance), we saw a pattern: users asked for outcomes we already supported, but still opened support tickets. We wanted a way to reuse the frontend code we'd already shipped, without rebuilding flows or adding new "automation" surfaces.
+
+If you want the longer version of how we got here, read [our story](/blog/our-story).
 
 Pillar is what we wish we had.
 

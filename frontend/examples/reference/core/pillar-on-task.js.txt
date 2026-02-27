@@ -2,7 +2,6 @@ const pillar = Pillar.getInstance();
 
 const unsubscribe = pillar.onTask('navigate', (data) => {
   window.location.href = data.path;
-  return { success: true };
 });
 
 // Later: unsubscribe();

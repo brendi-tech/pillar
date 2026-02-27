@@ -13,8 +13,12 @@ export class SourceComponent {
       type: 'trigger_tool',
       description: 'Add a new knowledge source',
       inputSchema: {
-        url: { type: 'string', description: 'URL of the source to add' },
-        name: { type: 'string', description: 'Display name for the source' },
+        type: 'object',
+        properties: {
+          url: { type: 'string', description: 'URL of the source to add' },
+          name: { type: 'string', description: 'Display name for the source' },
+        },
+        required: ['url', 'name'],
       },
       execute: ({ url, name }) => {
         openAddSourceWizard({

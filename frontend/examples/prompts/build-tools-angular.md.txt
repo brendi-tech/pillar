@@ -39,7 +39,7 @@ The function can access injected services via the constructor. Include the compo
 ### Tool Types
 - **navigate**: Go to a page (use with `autoRun: true`)
 - **trigger_tool**: Run custom logic (modals, wizards, toggles, API calls)
-- **query**: Fetch data and return it to the AI agent for reasoning (auto-sets `returns: true`)
+- **query**: Fetch data and return it to the AI agent for reasoning
 - **inline_ui**: Show interactive UI in chat
 - **external_link**: Open URL in new tab
 - **copy_text**: Copy to clipboard
@@ -162,11 +162,12 @@ injectPillarTool([
    - These return data to the AI agent so it can reason and decide what to do next
    - Use `autoRun: true` and `autoComplete: true` so the agent can chain them without user clicks
 
-   **API Tools** (type: 'trigger_tool' with `returns: true`)
+   **API Tools** (type: 'trigger_tool')
    - Tools that create, update, or delete via API and return the result
    - Break up by operation: `create_X`, `update_X`, `delete_X` -- not one `manage_X`
    - Each gets a tight schema matching only the fields that specific operation needs
-   - Use `returns: true` so the agent gets confirmation and can continue its workflow
+   - All tools return data to the agent by default -- the agent gets confirmation and can continue
+   - Use `outputSchema` with `sensitive: true` for fields that should not be logged (API keys, secrets)
    - Add a `guidance` field with per-tool instructions (pitfalls, chaining notes, etc.)
 
    **Context-Filtered Tools**
@@ -198,7 +199,7 @@ injectPillarTool([
 
    Pattern:
    1. `test_*` or `preview_*` tool with `type: 'query'` -- returns data for the agent to inspect
-   2. `create_*` tool with `returns: true` -- commits the change and returns confirmation
+   2. `create_*` tool with `type: 'trigger_tool'` -- commits the change and returns confirmation
    3. Agent guidance tells the AI to always test before creating
 
    ```typescript

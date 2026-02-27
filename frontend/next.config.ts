@@ -142,6 +142,32 @@ const nextConfig: NextConfig = {
   // Redirects from old docs structure to new
   async redirects() {
     return [
+      // Clean up legacy /index.html URLs (avoid soft-404 + noindex pages)
+      {
+        source: "/blog/index.html",
+        destination: "/blog",
+        permanent: true,
+      },
+      {
+        source: "/pricing/index.html",
+        destination: "/pricing",
+        permanent: true,
+      },
+      {
+        source: "/terms/index.html",
+        destination: "/terms",
+        permanent: true,
+      },
+      {
+        source: "/agent",
+        destination: "/assistant",
+        permanent: true,
+      },
+      {
+        source: "/agent/",
+        destination: "/assistant",
+        permanent: true,
+      },
       // Docs index redirect
       {
         source: "/docs",

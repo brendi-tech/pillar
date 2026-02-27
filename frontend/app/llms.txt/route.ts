@@ -13,10 +13,12 @@ const LLMS_TXT = `# Pillar
 
 > Pillar is an open-source AI copilot SDK for SaaS — a product assistant that executes tasks, not just answers questions. Users say what they want, and Pillar uses your UI to make it happen — navigating pages, pre-filling forms, and calling APIs client-side.
 
-- Pillar runs client-side with the user's existing browser session. No proxy servers or token forwarding required.
+- Pillar executes multi-step tasks in the user's browser — navigating pages, pre-filling forms, and calling APIs on behalf of the user.
+- Runs client-side with the user's existing browser session. No proxy servers or token forwarding required.
 - Available as vanilla JavaScript, React, Vue 3, and Angular SDKs.
-- Includes knowledge base integration (Zendesk, Intercom, websites, files), multi-step task execution, and human escalation.
+- Uses your existing docs and content as context for answering questions (supports websites, uploaded files, and cloud storage).
 - npm packages: @pillar-ai/sdk (core), @pillar-ai/react, @pillar-ai/vue, @pillar-ai/angular
+- Pillar is NOT a help center, knowledge base, or support ticketing system. It is a copilot SDK that takes actions inside your app.
 
 ## Docs
 
@@ -26,8 +28,8 @@ const LLMS_TXT = `# Pillar
 - [Vanilla JS Quickstart](https://trypillar.com/docs/quickstarts/vanilla): Get started without a framework
 - [Tools Guide](https://trypillar.com/docs/guides/tools): Define what the copilot can do in your app
 - [Context Guide](https://trypillar.com/docs/guides/context): Provide runtime context to the copilot
-- [Knowledge Base](https://trypillar.com/docs/knowledge-base/overview): Connect your help center and documentation content
-- [Human Escalation](https://trypillar.com/docs/guides/human-escalation): Hand off to human support agents
+- [Knowledge Base](https://trypillar.com/docs/knowledge-base/overview): Provide your existing docs and content as context for the copilot
+- [Human Escalation](https://trypillar.com/docs/guides/human-escalation): Hand off to a human when the copilot can't complete a task
 - [Custom Cards](https://trypillar.com/docs/guides/custom-cards): Render custom UI components in copilot responses
 - [Theme Customization](https://trypillar.com/docs/guides/theme): Match the copilot to your brand
 

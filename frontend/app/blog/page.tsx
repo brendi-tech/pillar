@@ -26,6 +26,55 @@ export default function BlogIndexPage() {
         </p>
       </header>
 
+      <section className="mb-12">
+        <div className="rounded-2xl border border-border bg-muted/30 p-6 sm:p-8">
+          <h2 className="text-xl font-semibold text-foreground font-serif">
+            Start here
+          </h2>
+          <p className="mt-2 text-muted-foreground">
+            If you’re new to Pillar, these are the best entry points.
+          </p>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            <Link
+              href="/blog/our-story"
+              className="rounded-xl border border-border bg-background p-4 hover:bg-muted/40 transition-colors"
+            >
+              <div className="text-sm font-semibold text-foreground">Our story</div>
+              <div className="mt-1 text-sm text-muted-foreground">
+                Why we built Pillar, and what we learned building complex products.
+              </div>
+            </Link>
+            <Link
+              href="/tools/agent-score"
+              className="rounded-xl border border-border bg-background p-4 hover:bg-muted/40 transition-colors"
+            >
+              <div className="text-sm font-semibold text-foreground">Agent tool score</div>
+              <div className="mt-1 text-sm text-muted-foreground">
+                A quick scorecard to see if your product is ready for agents.
+              </div>
+            </Link>
+            <Link
+              href="/demos/grafana"
+              className="rounded-xl border border-border bg-background p-4 hover:bg-muted/40 transition-colors"
+            >
+              <div className="text-sm font-semibold text-foreground">Grafana demo</div>
+              <div className="mt-1 text-sm text-muted-foreground">
+                Watch Pillar take actions in a real open-source UI.
+              </div>
+            </Link>
+            <Link
+              href="/docs/overview/introduction"
+              className="rounded-xl border border-border bg-background p-4 hover:bg-muted/40 transition-colors"
+            >
+              <div className="text-sm font-semibold text-foreground">Docs</div>
+              <div className="mt-1 text-sm text-muted-foreground">
+                Install the SDK and register your first tools.
+              </div>
+            </Link>
+          </div>
+        </div>
+      </section>
+
       <div className="divide-y divide-border">
         {posts.map((post) => (
           <article key={post.slug} className="group relative flex flex-col gap-2 py-10 first:pt-0 last:pb-0">

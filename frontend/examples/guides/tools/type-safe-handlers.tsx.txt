@@ -12,8 +12,12 @@ export function useInviteTool() {
     type: "trigger_tool",
     description: "Invite a new team member",
     inputSchema: {
-      email: { type: "string", description: "Email of the person to invite" },
-      role: { type: "string", description: "Role: admin, member, or viewer" },
+      type: "object",
+      properties: {
+        email: { type: "string", description: "Email of the person to invite" },
+        role: { type: "string", description: "Role: admin, member, or viewer" },
+      },
+      required: ["email", "role"],
     },
     execute: (input: InviteMemberInput) => {
       // TypeScript knows input has email and role

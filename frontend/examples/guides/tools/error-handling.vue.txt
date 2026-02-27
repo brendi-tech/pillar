@@ -6,16 +6,10 @@ usePillarTool({
   type: "trigger_tool",
   description: "Export all data as CSV",
   execute: async () => {
-    try {
-      await exportData();
-      return { success: true };
-    } catch (error) {
-      console.error("Export failed:", error);
-      return {
-        success: false,
-        message: "Export failed. Please try again.",
-      };
-    }
+    await exportData();
+    return { message: "Export complete" };
+    // If exportData() throws, the SDK catches it and
+    // reports the error to the agent automatically.
   },
 });
 </script>

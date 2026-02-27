@@ -72,8 +72,20 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
               </div>
             );
           }
+          const isExternal =
+            !!href &&
+            (href.startsWith('http://') || href.startsWith('https://')) &&
+            !href.startsWith('https://trypillar.com') &&
+            !href.startsWith('http://trypillar.com');
           return (
-            <a href={href} className="text-primary hover:underline" {...props}>
+            <a
+              href={href}
+              className="text-primary hover:underline"
+              {...(isExternal
+                ? { target: '_blank', rel: 'noopener noreferrer' }
+                : {})}
+              {...props}
+            >
               {children}
             </a>
           );

@@ -6,8 +6,12 @@ usePillarTool({
   type: "trigger_tool",
   description: "Invite a team member",
   inputSchema: {
-    email: { type: "string", description: "Email address to invite" },
-    role: { type: "string", description: "Role: admin, member, or viewer" },
+    type: "object",
+    properties: {
+      email: { type: "string", description: "Email address to invite" },
+      role: { type: "string", description: "Role: admin, member, or viewer" },
+    },
+    required: ["email", "role"],
   },
   execute: ({ email, role }) => {
     // email and role are populated from the conversation

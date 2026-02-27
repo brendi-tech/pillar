@@ -5,7 +5,7 @@ export const tools = {
   create_project: {
     description: 'Create a new project with the given name',
     type: 'trigger_tool' as const,
-    dataSchema: {
+    inputSchema: {
       type: 'object',
       properties: {
         name: { type: 'string', description: 'Project name' },
@@ -17,7 +17,7 @@ export const tools = {
   invite_user: {
     description: 'Invite a user to the workspace',
     type: 'trigger_tool' as const,
-    dataSchema: {
+    inputSchema: {
       type: 'object',
       properties: {
         email: { type: 'string', description: 'User email address' },

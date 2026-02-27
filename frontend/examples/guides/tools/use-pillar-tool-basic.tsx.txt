@@ -21,7 +21,11 @@ export function usePillarTools() {
     type: "navigate",
     description: "View a specific user's profile page",
     inputSchema: {
-      userId: { type: "string", description: "The user ID to view" },
+      type: "object",
+      properties: {
+        userId: { type: "string", description: "The user ID to view" },
+      },
+      required: ["userId"],
     },
     examples: ["show user 123's profile", "view profile for john@example.com"],
     execute: ({ userId }) => {

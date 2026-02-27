@@ -1,4 +1,4 @@
-dataSchema: {
+inputSchema: {
   type: 'object',
   properties: {
     url: {

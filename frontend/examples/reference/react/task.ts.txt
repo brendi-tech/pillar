@@ -5,7 +5,7 @@ interface Task {
   /** The action name that triggered this task */
   name: string;
   
-  /** Data extracted by the AI, matching the action's dataSchema */
+  /** Data extracted by the AI, matching the action's inputSchema */
   data: Record<string, unknown>;
   
   /** Complete the task and report the result */

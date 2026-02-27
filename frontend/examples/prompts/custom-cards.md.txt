@@ -1,6 +1,6 @@
-# Create Pillar Custom Cards for My Actions
+# Create Pillar Custom Cards for My Tools
 
-Look at my existing Pillar actions and create custom confirmation card components.
+Look at my existing Pillar tools and create custom confirmation card components.
 
 ## What Custom Cards Do
 
@@ -12,11 +12,11 @@ Instead of a generic confirmation dialog, cards let you:
 
 ## Your Task
 
-### 1. Find My Existing Actions
-Look for my Pillar actions definition (usually in lib/pillar/actions.ts or similar).
+### 1. Find My Existing Tools
+Look for my Pillar tool definitions (usually in hooks/usePillarTools.ts or similar).
 
-### 2. Identify Actions That Need Cards
-Focus on actions that:
+### 2. Identify Tools That Need Cards
+Focus on tools that:
 - Modify data (create, update, delete)
 - Have multiple parameters the user might want to edit
 - Would benefit from a preview (e.g., "Invite 3 members as Admin")
@@ -31,15 +31,15 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
-interface ActionData {
-  // Match the dataSchema from my action
+interface ToolData {
+  // Match the inputSchema from my tool
 }
 
 export function ActionNameCard({
   data,
   onConfirm,
   onCancel,
-}: CardComponentProps<ActionData>) {
+}: CardComponentProps<ToolData>) {
   const [formData, setFormData] = useState(data);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -93,7 +93,7 @@ import { ConfirmDeleteCard } from '@/components/cards/ConfirmDeleteCard';
 
 ## Start Here
 
-1. Find my Pillar actions definition
+1. Find my Pillar tool definitions
 2. Look at my design system (components/ui/ or similar)
-3. Identify which actions would benefit from custom cards
+3. Identify which tools would benefit from custom cards
 4. Generate card components using my design patterns

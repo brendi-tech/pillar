@@ -3,7 +3,7 @@
     description: 'Invite team members with confirmation',
     type: 'inline_ui',
     card_type: 'invite_members', // Maps to registered card component
-    dataSchema: {
+    inputSchema: {
       type: 'object',
       properties: {
         emails: { type: 'array', items: { type: 'string' } },

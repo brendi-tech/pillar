@@ -17,18 +17,15 @@ export function PillarActionHandlers() {
     const handlers = [
       pillar.onTask('navigate', ({ path }) => {
         router.push(path);
-        return { success: true };
       }),
 
       pillar.onTask('open_modal', ({ modalId }) => {
         openModal(modalId);
-        return { success: true };
       }),
 
       pillar.onTask('start_tour', () => {
-        pillar.close(); // Close panel before starting
+        pillar.close();
         startOnboardingTour();
-        return { success: true };
       }),
     ];
 

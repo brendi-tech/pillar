@@ -8,7 +8,6 @@ function TaskHandlers() {
     // TypeScript knows the exact data shape for each action
     const unsub = onTask('add_source', (data) => {
       console.log(data.url); // Typed as string
-      return { success: true };
     });
 
     return unsub;

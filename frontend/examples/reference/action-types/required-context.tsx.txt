@@ -5,6 +5,6 @@
     requiredContext: {
       userRole: 'admin',
     },
-    handler: ({ userId }) => deleteUser(userId),
+    execute: ({ userId }) => deleteUser(userId),
   },
 }

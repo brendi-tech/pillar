@@ -68,3 +68,5 @@ True integration means the chat interface is woven into the fabric of your front
 If you treat the chat bubble as a support channel, you are ignoring the most powerful interface paradigm shift in a generation. Pillar lets you claim that territory, turning your product from a static tool into an intelligent agent.  
 
 It's time for Product to take back the bubble.
+
+If you want a quick way to assess whether your product has the “tool layer” needed for this, start with the [agent tool score](/tools/agent-score).

@@ -10,12 +10,10 @@ function ActionHandlers() {
     const handlers = [
       pillar.onTask('navigate', ({ path }) => {
         router.push(path);
-        return { success: true };
       }),
 
       pillar.onTask('invite_member', ({ email, role }) => {
         openInviteModal({ email, role });
-        return { success: true };
       }),
     ];
 

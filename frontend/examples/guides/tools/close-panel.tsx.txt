@@ -8,9 +8,8 @@ export function useTourTool() {
     type: "trigger_tool",
     description: "Start the onboarding tour",
     execute: () => {
-      close(); // Close panel first
+      close();
       startOnboardingTour();
-      return { success: true };
     },
   });
 }
