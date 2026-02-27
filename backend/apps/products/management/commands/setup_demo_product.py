@@ -11,6 +11,7 @@ Usage:
         --email demo-twenty@trypillar.com \\
         --output ../../demos/twenty-copilot/.env
 """
+import json
 import secrets
 from pathlib import Path
 
@@ -44,6 +45,11 @@ class Command(BaseCommand):
             '--output',
             default='',
             help='Path to write .env file with PILLAR_SLUG and PILLAR_SECRET',
+        )
+        parser.add_argument(
+            '--questions',
+            default='',
+            help='JSON array of suggested questions, e.g. \'["How do I create an order?"]\'',
         )
 
     def handle(self, *args, **options) -> None:
@@ -94,6 +100,15 @@ class Command(BaseCommand):
             self.stdout.write(f'  Created product: {product.name} (slug={slug})')
         else:
             self.stdout.write(f'  Reusing product: {product.name} (slug={slug})')
+
+        # 3b. Suggested questions (optional)
+        if options['questions']:
+            questions = json.loads(options['questions'])
+            config = product.config or {}
+            config.setdefault('ai', {})['suggestedQuestions'] = questions
+            product.config = config
+            product.save(update_fields=['config'])
+            self.stdout.write(f'  Set {len(questions)} suggested questions')
 
         # 4. Sync secret — always append a new one (up to 10 per product)
         existing = product.sync_secrets.count()
