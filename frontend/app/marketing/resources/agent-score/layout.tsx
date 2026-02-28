@@ -11,18 +11,9 @@ export const metadata: Metadata = {
     description:
       "Free tool that scores any website's readiness for AI agents. Checks 25+ factors across discovery, readability, interactability, permissions, and accessibility.",
     url: "https://trypillar.com/resources/agent-score",
-    images: [
-      {
-        url: "/og-agent-score.png",
-        width: 1280,
-        height: 640,
-        alt: "Agent Readiness Score - Free tool that scores any website's readiness for AI agents",
-      },
-    ],
   },
   twitter: {
     card: "summary_large_image",
-    images: ["/og-agent-score.png"],
   },
 };
 

@@ -33,7 +33,7 @@ const resourcesDropdownItems = [
   },
   {
     name: "Build vs Buy",
-    description: "What it takes to build a copilot yourself vs one SDK.",
+    description: "Build a copilot yourself vs one SDK.",
     href: "/resources/build-vs-buy",
     icon: Scale,
   },

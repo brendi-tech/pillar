@@ -17,7 +17,7 @@ function ToolLink({
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="inline-flex items-center gap-1.5 text-sm text-[#6B6B6B] hover:text-[#1A1A1A] transition-colors"
+      className="inline-flex items-center gap-2 text-sm text-[#6B6B6B] hover:text-[#1A1A1A] transition-colors duration-200 py-0.5 hover:translate-x-0.5"
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
@@ -25,7 +25,7 @@ function ToolLink({
         alt=""
         width={14}
         height={14}
-        className="rounded-sm"
+        className="rounded-sm opacity-70 group-hover:opacity-100 transition-opacity"
       />
       {name}
     </a>
@@ -34,7 +34,7 @@ function ToolLink({
 
 function Pullquote({ children }: { children: React.ReactNode }) {
   return (
-    <blockquote className="border-l-[3px] border-[#FF6E00] pl-6 my-10 md:my-12">
+    <blockquote className="border-l-[3px] border-[#FF6E00] pl-6 pr-4 py-5 my-10 md:my-14 bg-[#FFF8F2] rounded-r-lg">
       <p className="font-editorial text-xl md:text-2xl lg:text-[1.75rem] lg:leading-[1.35] text-[#1A1A1A]">
         {children}
       </p>
@@ -46,14 +46,17 @@ export function BuildVsBuyPage() {
   return (
     <div className="py-12 sm:py-16 md:py-20">
       {/* Hero */}
-      <div className="max-w-3xl mx-auto mb-6 md:mb-8">
-        <p className="text-xs font-mono uppercase tracking-[0.2em] text-[#FF6E00] mb-6">
-          Build vs Buy
-        </p>
+      <div className="max-w-3xl mx-auto mb-8 md:mb-10">
+        <div className="flex items-center gap-3 mb-6">
+          <p className="text-xs font-mono uppercase tracking-[0.2em] text-[#FF6E00]">
+            Build vs Buy
+          </p>
+          <div className="flex-1 h-px bg-gradient-to-r from-[#FF6E00]/20 to-transparent" />
+        </div>
         <h1 className="font-editorial text-3xl md:text-5xl lg:text-[3.5rem] lg:leading-[1.1] text-[#1A1A1A] mb-6">
           Build vs. buy your AI copilot
         </h1>
-        <p className="text-lg md:text-xl text-[#4A4A4A] leading-relaxed">
+        <p className="text-lg md:text-xl text-[#4A4A4A] leading-relaxed max-w-2xl">
           What it actually takes to build a copilot yourself, and when it makes
           sense to buy one instead.
         </p>
@@ -88,62 +91,62 @@ export function BuildVsBuyPage() {
           . Three layers, each its own project.
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-0 border border-[#E5E0D8] rounded-lg overflow-hidden mb-6 not-prose">
-          <div className="p-5 border-b md:border-b-0 md:border-r border-[#E5E0D8] flex flex-col">
-            <div className="flex items-center gap-2.5 mb-2">
-              <span className="text-sm font-mono text-[#FF6E00]">01</span>
-              <h3 className="text-lg font-semibold text-[#1A1A1A]">
-                Knowledge layer
-              </h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 not-prose">
+          {[
+            {
+              num: "01",
+              title: "Knowledge layer",
+              desc: "A vector database, ingestion pipeline, embedding generation, retrieval API with re-ranking, and sync jobs to keep the index fresh.",
+              tools: [
+                { name: "Pinecone", href: "https://www.pinecone.io", domain: "pinecone.io" },
+                { name: "pgvector", href: "https://github.com/pgvector/pgvector", domain: "github.com" },
+                { name: "Weaviate", href: "https://weaviate.io", domain: "weaviate.io" },
+              ],
+            },
+            {
+              num: "02",
+              title: "Backend agent",
+              desc: "A server-side service for planning, a tool registry, a streaming bridge to the browser, and auth forwarding so the agent acts as the user.",
+              tools: [
+                { name: "LangChain", href: "https://www.langchain.com", domain: "langchain.com" },
+                { name: "LangGraph", href: "https://www.langchain.com/langgraph", domain: "langchain.com" },
+                { name: "Mastra", href: "https://mastra.ai", domain: "mastra.ai" },
+              ],
+            },
+            {
+              num: "03",
+              title: "Frontend chat UI",
+              desc: "Chat panel, streaming display, tool call rendering, confirmation flows, and client state serialization for the backend.",
+              tools: [
+                { name: "CopilotKit", href: "https://www.copilotkit.ai", domain: "copilotkit.ai" },
+                { name: "Vercel AI SDK", href: "https://sdk.vercel.ai", domain: "vercel.com" },
+                { name: "OpenAI ChatKit", href: "https://github.com/openai/chatkit-js", domain: "openai.com" },
+              ],
+            },
+          ].map((card) => (
+            <div
+              key={card.num}
+              className="group relative rounded-xl border border-[#E5E0D8] bg-white p-5 flex flex-col transition-all duration-300 hover:shadow-lg hover:shadow-black/[0.04] hover:-translate-y-0.5 hover:border-[#D5CFC6]"
+            >
+              <div className="absolute inset-x-0 top-0 h-[3px] rounded-t-xl bg-gradient-to-r from-[#FF6E00] to-[#FF9A40] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+              <div className="flex items-center gap-2.5 mb-2">
+                <span className="inline-flex items-center justify-center w-7 h-7 rounded-md bg-[#FFF3E8] text-xs font-mono font-semibold text-[#FF6E00]">
+                  {card.num}
+                </span>
+                <h3 className="text-lg font-semibold text-[#1A1A1A]">
+                  {card.title}
+                </h3>
+              </div>
+              <p className="text-sm text-[#4A4A4A] leading-relaxed mb-4">
+                {card.desc}
+              </p>
+              <div className="flex flex-col gap-1.5 mt-auto pt-4 border-t border-[#E5E0D8]">
+                {card.tools.map((tool) => (
+                  <ToolLink key={tool.name} {...tool} />
+                ))}
+              </div>
             </div>
-            <p className="text-sm text-[#4A4A4A] leading-relaxed mb-4">
-              A vector database, ingestion pipeline, embedding generation,
-              retrieval API with re-ranking, and sync jobs to keep the index
-              fresh.
-            </p>
-            <div className="flex flex-col gap-1.5 mt-auto pt-4 border-t border-[#E5E0D8]">
-              <ToolLink name="Pinecone" href="https://www.pinecone.io" domain="pinecone.io" />
-              <ToolLink name="pgvector" href="https://github.com/pgvector/pgvector" domain="github.com" />
-              <ToolLink name="Weaviate" href="https://weaviate.io" domain="weaviate.io" />
-            </div>
-          </div>
-
-          <div className="p-5 border-b md:border-b-0 md:border-r border-[#E5E0D8] flex flex-col">
-            <div className="flex items-center gap-2.5 mb-2">
-              <span className="text-sm font-mono text-[#FF6E00]">02</span>
-              <h3 className="text-lg font-semibold text-[#1A1A1A]">
-                Backend agent
-              </h3>
-            </div>
-            <p className="text-sm text-[#4A4A4A] leading-relaxed mb-4">
-              A server-side service for planning, a tool registry, a streaming
-              bridge to the browser, and auth forwarding so the agent acts as
-              the user.
-            </p>
-            <div className="flex flex-col gap-1.5 mt-auto pt-4 border-t border-[#E5E0D8]">
-              <ToolLink name="LangChain" href="https://www.langchain.com" domain="langchain.com" />
-              <ToolLink name="LangGraph" href="https://www.langchain.com/langgraph" domain="langchain.com" />
-              <ToolLink name="Mastra" href="https://mastra.ai" domain="mastra.ai" />
-            </div>
-          </div>
-
-          <div className="p-5 flex flex-col">
-            <div className="flex items-center gap-2.5 mb-2">
-              <span className="text-sm font-mono text-[#FF6E00]">03</span>
-              <h3 className="text-lg font-semibold text-[#1A1A1A]">
-                Frontend chat UI
-              </h3>
-            </div>
-            <p className="text-sm text-[#4A4A4A] leading-relaxed mb-4">
-              Chat panel, streaming display, tool call rendering, confirmation
-              flows, and client state serialization for the backend.
-            </p>
-            <div className="flex flex-col gap-1.5 mt-auto pt-4 border-t border-[#E5E0D8]">
-              <ToolLink name="CopilotKit" href="https://www.copilotkit.ai" domain="copilotkit.ai" />
-              <ToolLink name="Vercel AI SDK" href="https://sdk.vercel.ai" domain="vercel.com" />
-              <ToolLink name="OpenAI ChatKit" href="https://github.com/openai/chatkit-js" domain="openai.com" />
-            </div>
-          </div>
+          ))}
         </div>
 
         <Pullquote>
@@ -204,7 +207,7 @@ export function BuildVsBuyPage() {
         <p className="mb-6">
           Instead of building a chat UI with streaming, tool cards, and
           confirmation flows, the SDK ships them.{" "}
-          <code className="text-sm bg-[#F3EFE8] px-1.5 py-0.5 rounded text-[#1A1A1A]">
+          <code className="text-[0.8125rem] bg-[#F3EFE8] px-2 py-1 rounded-md text-[#1A1A1A] font-mono border border-[#E5E0D8]">
             npm install @pillar-ai/react
           </code>
           , wrap your app in the provider, and register your tools in a hook.
@@ -316,7 +319,7 @@ export function BuildVsBuyPage() {
             WebMCP
           </a>{" "}
           is a W3C proposal that adds{" "}
-          <code className="text-sm bg-[#F3EFE8] px-1.5 py-0.5 rounded text-[#1A1A1A]">
+          <code className="text-[0.8125rem] bg-[#F3EFE8] px-2 py-1 rounded-md text-[#1A1A1A] font-mono border border-[#E5E0D8]">
             navigator.modelContext
           </code>{" "}
           to the browser, letting external AI agents discover and call tools
@@ -333,7 +336,7 @@ export function BuildVsBuyPage() {
         </Pullquote>
 
         {/* CTA */}
-        <div className="mt-14 mb-4 pt-10 border-t border-[#E5E0D8]">
+        <div className="mt-14 mb-4 rounded-2xl bg-gradient-to-br from-[#FFFAF5] to-[#FFF3E8] border border-[#F0E6D8] p-8 md:p-10">
           <h2 className="font-editorial text-2xl md:text-3xl text-[#1A1A1A] mb-4">
             Try it
           </h2>
@@ -374,7 +377,7 @@ export function BuildVsBuyPage() {
           </p>
           <Link
             href="/signup"
-            className="group/btn inline-flex items-center justify-center rounded-lg bg-[#FF6E00] hover:bg-[#E06200] text-white px-7 py-3 text-sm font-medium transition-colors"
+            className="group/btn inline-flex items-center justify-center rounded-lg bg-[#FF6E00] hover:bg-[#E06200] text-white px-7 py-3.5 text-sm font-medium transition-all duration-200 shadow-sm hover:shadow-md"
           >
             <span className="translate-x-[9px] group-hover/btn:translate-x-0 transition-transform duration-200 ease-out">
               Get Started
