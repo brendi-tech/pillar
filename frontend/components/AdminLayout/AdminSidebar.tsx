@@ -26,6 +26,7 @@ import {
   BookOpen,
   CreditCard,
   FileText,
+  Key,
   MessageSquare,
   Rocket,
   Search,
@@ -92,6 +93,12 @@ const navigationItems: NavItem[] = [
     title: "Configure",
     href: "/configure",
     icon: Sliders,
+    category: "settings",
+  },
+  {
+    title: "API Keys",
+    href: "/api-keys",
+    icon: Key,
     category: "settings",
   },
   {

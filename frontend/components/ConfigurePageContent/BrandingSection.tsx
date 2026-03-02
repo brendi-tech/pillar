@@ -13,10 +13,6 @@ export function BrandingSection() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(branding.logoUrl || null);
 
-  const handleNameChange = (value: string) => {
-    updateBranding({ name: value });
-  };
-
   const handleColorChange = (value: string) => {
     updateBranding({ primaryColor: value });
   };
@@ -51,20 +47,6 @@ export function BrandingSection() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Assistant Name */}
-        <div className="space-y-2">
-          <Label htmlFor="assistant-name">Assistant Name</Label>
-          <Input
-            id="assistant-name"
-            value={branding.name}
-            onChange={(e) => handleNameChange(e.target.value)}
-            placeholder="Product Assistant"
-          />
-          <p className="text-xs text-muted-foreground">
-            Displayed in the help panel header
-          </p>
-        </div>
-
         {/* Logo Upload */}
         <div className="space-y-3">
           <Label>Logo</Label>

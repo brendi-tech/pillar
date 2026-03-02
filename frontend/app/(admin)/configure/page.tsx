@@ -20,7 +20,6 @@ export default function ConfigurePage() {
   
   // Extract branding (simplified)
   const branding: AssistantBrandingConfig | undefined = currentProduct?.config?.branding ? {
-    name: currentProduct.config.branding.name || 'Product Assistant',
     logoUrl: currentProduct.config.branding.logoLightUrl,
     primaryColor: currentProduct.config.branding.colors?.primary,
   } : undefined;
@@ -32,6 +31,9 @@ export default function ConfigurePage() {
 
     // Transform back to the expected API format
     // Include both config updates and top-level fields like default_language and agent_guidance
+    // Exclude panel settings from embedConfig (managed by SDK init, not admin dashboard)
+    const { panel: _panel, ...embedConfigWithoutPanel } = payload.embedConfig;
+    
     await adminPatch(`/configs/${currentProduct.id}/`, {
       default_language: payload.defaultLanguage,
       agent_guidance: payload.agentGuidance,
@@ -39,7 +41,6 @@ export default function ConfigurePage() {
         ...currentProduct.config,
         branding: {
           ...currentProduct.config?.branding,
-          name: payload.branding.name,
           logoLightUrl: payload.branding.logoUrl,
           colors: {
             ...currentProduct.config?.branding?.colors,
@@ -47,7 +48,10 @@ export default function ConfigurePage() {
           },
         },
         ai: payload.aiConfig,
-        embed: payload.embedConfig,
+        embed: {
+          ...currentProduct.config?.embed,
+          ...embedConfigWithoutPanel,
+        },
       },
     });
     

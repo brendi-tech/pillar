@@ -6,8 +6,12 @@
  */
 
 import { analyticsAPI } from "@/lib/admin/analytics-api";
-import type { AnalyticsDateRange, ConversationFilters } from "@/types/admin";
-import { queryOptions } from "@tanstack/react-query";
+import type {
+  AnalyticsDateRange,
+  ConversationFilters,
+  ConversationsListResponse,
+} from "@/types/admin";
+import { infiniteQueryOptions, queryOptions } from "@tanstack/react-query";
 
 // =============================================================================
 // Query Keys Factory
@@ -66,6 +70,21 @@ export const conversationsListQuery = (filters: ConversationFilters = {}) =>
   queryOptions({
     queryKey: analyticsKeys.conversationsList(filters),
     queryFn: () => analyticsAPI.listConversations(filters),
+  });
+
+/**
+ * Infinite query for conversations list with scroll pagination
+ */
+export const conversationsListInfiniteQuery = (
+  filters: Omit<ConversationFilters, "page"> = {}
+) =>
+  infiniteQueryOptions({
+    queryKey: [...analyticsKeys.conversationsList(filters), "infinite"] as const,
+    queryFn: ({ pageParam }) =>
+      analyticsAPI.listConversations({ ...filters, page: pageParam }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage: ConversationsListResponse, allPages) =>
+      lastPage.next ? allPages.length + 1 : undefined,
   });
 
 /**

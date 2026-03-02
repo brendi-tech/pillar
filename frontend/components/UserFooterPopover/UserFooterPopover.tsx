@@ -115,7 +115,7 @@ export function UserFooterPopover({
                   Assistant
                 </span>
               </div>
-              <div>
+              <div className="max-h-48 sm:max-h-40 overflow-y-auto space-y-1">
                 {availableProducts.map((hc) => (
                   <div key={hc.id} className="flex items-center rounded-md">
                     <button
@@ -160,7 +160,7 @@ export function UserFooterPopover({
                   setFooterPopoverOpen(false);
                   setNewProductDialogOpen(true);
                 }}
-                className="flex w-full items-center gap-3 sm:gap-2 rounded-md px-3 py-3 sm:px-2 sm:py-1.5 text-base sm:text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground"
+                className="flex mt-1 w-full items-center gap-3 sm:gap-2 rounded-md px-3 py-3 sm:px-2 sm:py-1.5 text-base sm:text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground"
               >
                 <div className="flex h-7 w-7 sm:h-5 sm:w-5 items-center justify-center rounded border border-dashed border-muted-foreground/50">
                   <Plus className="h-4 w-4 sm:h-3 sm:w-3" />

@@ -1236,10 +1236,21 @@ class EmbedConfigView(APIView):
         config = product.config or {}
         embed = config.get('embed', {})
         branding = config.get('branding', {})
+        ai_config = config.get('ai', {})
         security = embed.get('security', {})
         
         # Build response with only SDK-relevant settings
         response_data = {}
+        
+        # Assistant display name (from AI config)
+        assistant_name = ai_config.get('assistantName')
+        if assistant_name:
+            response_data['assistantDisplayName'] = assistant_name
+        
+        # Input placeholder (from AI config)
+        input_placeholder = ai_config.get('inputPlaceholder')
+        if input_placeholder:
+            response_data['inputPlaceholder'] = input_placeholder
         
         # Panel settings
         if embed.get('panel'):

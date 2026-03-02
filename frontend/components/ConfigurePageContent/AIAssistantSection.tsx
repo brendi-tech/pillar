@@ -20,7 +20,7 @@ export function AIAssistantSection() {
   };
 
   const handleChange = (
-    key: 'assistantName' | 'welcomeMessage' | 'inputPlaceholder' | 'fallbackMessage',
+    key: 'assistantName' | 'welcomeMessage' | 'inputPlaceholder',
     value: string
   ) => {
     updateAIConfig({ [key]: value });
@@ -73,10 +73,10 @@ export function AIAssistantSection() {
               id="ai-name"
               value={aiConfig.assistantName}
               onChange={(e) => handleChange('assistantName', e.target.value)}
-              placeholder="AI Assistant"
+              placeholder="Assistant"
             />
             <p className="text-xs text-muted-foreground">
-              Name shown in the chat interface
+              Label used for Chat button
             </p>
           </div>
 
@@ -99,7 +99,7 @@ export function AIAssistantSection() {
               id="ai-placeholder"
               value={aiConfig.inputPlaceholder}
               onChange={(e) => handleChange('inputPlaceholder', e.target.value)}
-              placeholder="Type your question..."
+              placeholder="Ask anything..."
             />
           </div>
 
@@ -191,20 +191,6 @@ export function AIAssistantSection() {
               />
               <span className="text-sm">Open assistant by default on page load</span>
             </label>
-
-            <div className="space-y-2">
-              <Label htmlFor="ai-fallback">Fallback Message</Label>
-              <Textarea
-                id="ai-fallback"
-                value={aiConfig.fallbackMessage}
-                onChange={(e) => handleChange('fallbackMessage', e.target.value)}
-                placeholder="I couldn't find an answer. Would you like to contact support?"
-                rows={2}
-              />
-              <p className="text-xs text-muted-foreground">
-                Shown when the AI can&apos;t find an answer
-              </p>
-            </div>
           </div>
 
           <Separator />

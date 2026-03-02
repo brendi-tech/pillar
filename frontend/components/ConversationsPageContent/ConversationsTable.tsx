@@ -1,51 +1,48 @@
-'use client';
+"use client";
 
-import { format } from 'date-fns';
-import {
-  AlertCircle,
-  ChevronLeft,
-  ChevronRight,
-  MessageSquare,
-  ThumbsDown,
-} from 'lucide-react';
-import { Spinner } from '@/components/ui/spinner';
+import { Spinner } from "@/components/ui/spinner";
+import { format } from "date-fns";
+import { AlertCircle, MessageSquare, ThumbsDown } from "lucide-react";
+import { useEffect, useRef } from "react";
 
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Badge } from "@/components/ui/badge";
 import {
-  Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import type { ChatConversationListItem, ConversationStatus } from '@/types/admin';
+} from "@/components/ui/table";
+import { cn } from "@/lib/utils";
+import type {
+  ChatConversationListItem,
+  ConversationStatus,
+} from "@/types/admin";
 
 interface ConversationsTableProps {
   conversations: ChatConversationListItem[];
   isLoading: boolean;
   isError: boolean;
   onRowClick: (conversation: ChatConversationListItem) => void;
-  page: number;
-  totalPages: number;
-  onPageChange: (page: number) => void;
+  hasNextPage: boolean | undefined;
+  isFetchingNextPage: boolean;
+  onLoadMore: () => void;
 }
 
 function getStatusBadgeVariant(
   status: ConversationStatus
-): 'default' | 'secondary' | 'destructive' | 'outline' {
+): "default" | "secondary" | "destructive" | "outline" {
   switch (status) {
-    case 'resolved':
-      return 'default';
-    case 'escalated':
-      return 'destructive';
-    case 'active':
-      return 'secondary';
-    case 'abandoned':
-      return 'outline';
+    case "resolved":
+      return "default";
+    case "escalated":
+      return "destructive";
+    case "active":
+      return "secondary";
+    case "abandoned":
+      return "outline";
     default:
-      return 'secondary';
+      return "secondary";
   }
 }
 
@@ -58,10 +55,30 @@ export function ConversationsTable({
   isLoading,
   isError,
   onRowClick,
-  page,
-  totalPages,
-  onPageChange,
+  hasNextPage,
+  isFetchingNextPage,
+  onLoadMore,
 }: ConversationsTableProps) {
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  // Intersection observer for infinite scroll
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && hasNextPage && !isFetchingNextPage) {
+          onLoadMore();
+        }
+      },
+      { rootMargin: "100px" }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, onLoadMore]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -90,82 +107,65 @@ export function ConversationsTable({
   }
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[140px]">Started</TableHead>
-              <TableHead className="w-[100px]">Status</TableHead>
-              <TableHead className="w-[80px] text-center">Messages</TableHead>
-              <TableHead>First Question</TableHead>
-              <TableHead className="w-[60px] text-center">Feedback</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {conversations.map((conversation) => (
-              <TableRow
-                key={conversation.id}
-                className="cursor-pointer hover:bg-muted/50"
-                onClick={() => onRowClick(conversation)}
-              >
-                <TableCell className="text-muted-foreground">
-                  {format(new Date(conversation.started_at), 'MMM d, h:mm a')}
-                </TableCell>
-                <TableCell>
-                  <Badge variant={getStatusBadgeVariant(conversation.status)}>
-                    {getStatusLabel(conversation.status)}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-center text-muted-foreground">
-                  {conversation.message_count}
-                </TableCell>
-                <TableCell className="max-w-[400px]">
-                  <p className="truncate text-sm">
-                    {conversation.first_user_message || (
-                      <span className="text-muted-foreground italic">
-                        No message
-                      </span>
-                    )}
-                  </p>
-                </TableCell>
-                <TableCell className="text-center">
-                  {conversation.has_negative_feedback && (
-                    <ThumbsDown className="mx-auto h-4 w-4 text-orange-500" />
+    <div className="overflow-auto rounded-md border h-full">
+      <table className={cn("w-full caption-bottom text-xs md:text-sm")}>
+        <TableHeader className="sticky top-0 z-10">
+          <TableRow className="bg-background hover:bg-background">
+            <TableHead className="w-[140px] bg-background">Started</TableHead>
+            <TableHead className="w-[100px] bg-background">Status</TableHead>
+            <TableHead className="w-[80px] bg-background text-center">
+              Messages
+            </TableHead>
+            <TableHead className="bg-background">First Question</TableHead>
+            <TableHead className="w-[72px] bg-background text-center pr-4">
+              Feedback
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {conversations.map((conversation) => (
+            <TableRow
+              key={conversation.id}
+              className="cursor-pointer hover:bg-muted/50"
+              onClick={() => onRowClick(conversation)}
+            >
+              <TableCell className="text-muted-foreground">
+                {format(new Date(conversation.started_at), "MMM d, h:mm a")}
+              </TableCell>
+              <TableCell>
+                <Badge variant={getStatusBadgeVariant(conversation.status)}>
+                  {getStatusLabel(conversation.status)}
+                </Badge>
+              </TableCell>
+              <TableCell className="text-center text-muted-foreground">
+                {conversation.message_count}
+              </TableCell>
+              <TableCell className="max-w-[400px]">
+                <p className="truncate">
+                  {conversation.first_user_message || (
+                    <span className="text-muted-foreground italic">
+                      No message
+                    </span>
                   )}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+                </p>
+              </TableCell>
+              <TableCell className="text-center">
+                {conversation.has_negative_feedback && (
+                  <ThumbsDown className="mx-auto h-4 w-4 text-orange-500" />
+                )}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </table>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            Page {page} of {totalPages}
-          </p>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onPageChange(page - 1)}
-              disabled={page === 1}
-            >
-              <ChevronLeft className="mr-1 h-4 w-4" />
-              Previous
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onPageChange(page + 1)}
-              disabled={page === totalPages}
-            >
-              Next
-              <ChevronRight className="ml-1 h-4 w-4" />
-            </Button>
-          </div>
+      {/* Sentinel element for infinite scroll */}
+      <div ref={sentinelRef} className="h-1" />
+
+      {/* Loading more indicator */}
+      {isFetchingNextPage && (
+        <div className="flex items-center justify-center py-4">
+          <Spinner size="sm" />
         </div>
       )}
     </div>

@@ -61,7 +61,7 @@ export function PillarSDKProvider({ children }: PillarSDKProviderProps) {
       productKey={productKey}
       config={{
         apiBaseUrl,
-        debug: process.env.NODE_ENV === "development",
+        debug: false,
         sidebarTabs,
         zIndex: {
           push: 49,

@@ -52,7 +52,8 @@ export interface AIConfig {
   inputPlaceholder: string;
   suggestedQuestions: string[];
   openOnLoad: boolean;
-  fallbackMessage: string;
+  /** @deprecated Not used by the SDK */
+  fallbackMessage?: string;
   usageLimit?: number;
   usageCurrent?: number;
 }

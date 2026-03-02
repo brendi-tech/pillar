@@ -7,7 +7,6 @@ import type { LanguageCode } from '@/types/v2/products';
 
 // Simplified branding config for product assistant
 export interface AssistantBrandingConfig {
-  name: string;
   logoUrl?: string;
   primaryColor?: string;
 }
@@ -52,16 +51,14 @@ const ConfigureContext = createContext<ConfigureContextValue | undefined>(undefi
 
 const DEFAULT_AI_CONFIG: AIConfig = {
   enabled: true,
-  assistantName: 'AI Assistant',
+  assistantName: 'Assistant',
   welcomeMessage: 'Hi! How can I help you today?',
-  inputPlaceholder: 'Ask a question...',
+  inputPlaceholder: 'Ask anything...',
   suggestedQuestions: [],
   openOnLoad: false,
-  fallbackMessage: "I couldn't find an answer to that. Would you like to contact support?",
 };
 
 const DEFAULT_BRANDING: AssistantBrandingConfig = {
-  name: 'Product Assistant',
   primaryColor: '#6366f1',
 };
 

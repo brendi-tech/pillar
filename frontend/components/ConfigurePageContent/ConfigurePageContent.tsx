@@ -6,7 +6,6 @@ import type { AIConfig, EmbedConfig } from "@/types/config";
 import type { LanguageCode } from "@/types/v2/products";
 import { Save, Undo2 } from "lucide-react";
 import { useState } from "react";
-import { ActionSyncSection } from "./ActionSyncSection";
 import { AIAssistantSection } from "./AIAssistantSection";
 import { BrandingSection } from "./BrandingSection";
 import {
@@ -14,9 +13,6 @@ import {
   useConfigure,
   type AssistantBrandingConfig,
 } from "./ConfigureContext";
-import { FeaturesSection } from "./FeaturesSection";
-import { PanelSection } from "./PanelSection";
-import { QuickStartSection } from "./QuickStartSection";
 import { SecuritySection } from "./SecuritySection";
 
 export interface ConfigureSavePayload {
@@ -86,26 +82,14 @@ function ConfigureContent({
 
   return (
     <div className="space-y-6">
-      {/* Quick Start & Installation */}
-      <QuickStartSection />
-
       {/* Branding */}
       <BrandingSection />
 
       {/* AI Assistant */}
       <AIAssistantSection />
 
-      {/* Help Panel */}
-      <PanelSection />
-
-      {/* SDK Features */}
-      <FeaturesSection />
-
       {/* Security / Domains */}
       <SecuritySection />
-
-      {/* Action Sync */}
-      <ActionSyncSection />
 
       {/* Error Message */}
       {error && (
