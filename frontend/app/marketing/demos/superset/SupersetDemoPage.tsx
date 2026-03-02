@@ -35,8 +35,8 @@ export function SupersetDemoPage() {
           </Link>
         </div>
 
-        <div className="relative flex-1 min-h-[75vh] overflow-hidden bg-white">
-          <div className="absolute top-0 left-0 right-0 h-9 bg-[#1A1A1A] flex items-center px-4 z-10">
+        <div className="h-[80vh]">
+          <div className="h-9 bg-[#1A1A1A] flex items-center px-4">
             <div className="flex items-center gap-1.5">
               <div className="w-2.5 h-2.5 rounded-full bg-[#FF5F57]" />
               <div className="w-2.5 h-2.5 rounded-full bg-[#FFBD2E]" />
@@ -59,7 +59,8 @@ export function SupersetDemoPage() {
 
           <iframe
             src={SUPERSET_DEMO_URL}
-            className="w-full h-full border-0 pt-9"
+            className="w-full border-0"
+            style={{ height: "calc(100% - 2.25rem)" }}
             title="Superset Copilot Demo"
             allow="clipboard-write"
             loading="lazy"
