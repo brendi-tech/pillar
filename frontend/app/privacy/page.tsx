@@ -39,8 +39,8 @@ export default function PrivacyPage() {
               Last Updated: {doc.frontmatter.lastUpdated}
             </p>
           </header>
-          <div className="prose-hc">
-            <MarkdownRenderer content={doc.content} className="text-foreground" />
+          <div className="prose dark:prose-invert max-w-none">
+            <MarkdownRenderer content={doc.content} />
           </div>
         </article>
       </main>

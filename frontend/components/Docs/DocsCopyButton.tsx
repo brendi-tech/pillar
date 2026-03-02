@@ -16,7 +16,7 @@ export function DocsCopyButton() {
 
   const getPageContent = useCallback(() => {
     // Extract text content from the article element on the page
-    const article = document.querySelector("article.prose-hc");
+    const article = document.querySelector("article.prose");
     if (!article) return "";
     // Get the page title from the first h1, or from the document title
     const h1 = article.querySelector("h1");

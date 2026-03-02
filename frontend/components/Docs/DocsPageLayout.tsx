@@ -44,7 +44,7 @@ export function DocsPageLayout({ children }: DocsPageLayoutProps) {
       </div>
 
       {/* Doc Content */}
-      <article className="prose-hc text-foreground">{children}</article>
+      <article className="prose dark:prose-invert max-w-none text-foreground">{children}</article>
 
       {/* Prev/Next Navigation */}
       <footer className="mt-12 pt-6 border-t border-border">

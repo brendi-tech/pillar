@@ -21,6 +21,9 @@ interface MarkdownRendererProps {
 /**
  * Renders markdown content with GitHub Flavored Markdown support,
  * syntax highlighting, and heading anchors.
+ *
+ * Expects a parent element with Tailwind Typography `prose` classes
+ * to handle spacing, sizes, and colors.
  */
 export function MarkdownRenderer({ content, className }: MarkdownRendererProps) {
   if (!content) {
@@ -28,7 +31,7 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
   }
 
   return (
-    <div className={cn('prose-hc', className)}>
+    <div className={cn(className)}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeHighlight, rehypeSlug]}
@@ -36,7 +39,7 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
         h1: ({ children, ...props }) => {
           const id = typeof children === 'string' ? generateSlug(children) : undefined;
           return (
-            <h1 id={id} className="text-2xl font-bold mt-8 mb-4 scroll-mt-20" {...props}>
+            <h1 id={id} className="scroll-mt-20" {...props}>
               {children}
             </h1>
           );
@@ -44,7 +47,7 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
         h2: ({ children, ...props }) => {
           const id = typeof children === 'string' ? generateSlug(children) : undefined;
           return (
-            <h2 id={id} className="text-xl font-semibold mt-6 mb-3 scroll-mt-20" {...props}>
+            <h2 id={id} className="scroll-mt-20" {...props}>
               {children}
             </h2>
           );
@@ -52,7 +55,7 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
         h3: ({ children, ...props }) => {
           const id = typeof children === 'string' ? generateSlug(children) : undefined;
           return (
-            <h3 id={id} className="text-lg font-semibold mt-4 mb-2 scroll-mt-20" {...props}>
+            <h3 id={id} className="scroll-mt-20" {...props}>
               {children}
             </h3>
           );
@@ -80,7 +83,6 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
           return (
             <a
               href={href}
-              className="text-primary hover:underline"
               {...(isExternal
                 ? { target: '_blank', rel: 'noopener noreferrer' }
                 : {})}
@@ -91,7 +93,6 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
           );
         },
         code: ({ className: codeClassName, children, ...props }) => {
-          // Check if this is inline code (no language class) vs code block
           const isInline = !codeClassName;
           if (isInline) {
             return (
@@ -124,50 +125,6 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
             {...props}
           />
         ),
-        table: ({ children, ...props }) => (
-          <div className="overflow-x-auto my-4">
-            <table className="min-w-full divide-y divide-border" {...props}>
-              {children}
-            </table>
-          </div>
-        ),
-        th: ({ children, ...props }) => (
-          <th
-            className="px-4 py-2 text-left text-sm font-semibold bg-muted"
-            {...props}
-          >
-            {children}
-          </th>
-        ),
-        td: ({ children, ...props }) => (
-          <td className="px-4 py-2 text-sm border-b border-border" {...props}>
-            {children}
-          </td>
-        ),
-        ul: ({ children, ...props }) => (
-          <ul className="list-disc pl-6 my-4 space-y-2" {...props}>
-            {children}
-          </ul>
-        ),
-        ol: ({ children, ...props }) => (
-          <ol className="list-decimal pl-6 my-4 space-y-2" {...props}>
-            {children}
-          </ol>
-        ),
-        blockquote: ({ children, ...props }) => (
-          <blockquote
-            className="border-l-4 border-primary pl-4 my-4 italic text-muted-foreground"
-            {...props}
-          >
-            {children}
-          </blockquote>
-        ),
-        hr: (props) => <hr className="my-8 border-border" {...props} />,
-        p: ({ children, ...props }) => (
-          <p className="my-4 leading-7" {...props}>
-            {children}
-          </p>
-        ),
       }}
       >
         {content}
@@ -175,4 +132,3 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
     </div>
   );
 }
-
