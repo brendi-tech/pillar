@@ -45,35 +45,6 @@ export function StackSection() {
             ]}
           />
 
-          <div className="max-w-[1050px] mx-auto relative z-10">
-            {/* Heading */}
-            <div className="text-center px-4 md:px-9 pb-8 md:pb-12">
-              <h2 className="font-editorial text-3xl md:text-5xl lg:text-[4.75rem] lg:leading-[1.05]">
-                The Copilot Stack,{" "}
-                <span className="underline decoration-[#FF6E00] decoration-[3px] underline-offset-[6px]">
-                  Already Built
-                </span>
-              </h2>
-              <p className="text-base sm:text-lg md:text-xl max-w-3xl mx-auto mt-4 md:mt-6">
-                Ask any LLM how to add a copilot to your app. It&apos;ll say
-                three tools. We ship one.
-              </p>
-            </div>
-
-            {/* Video */}
-            <div className="relative px-4 md:px-8 pb-8">
-              <div className="max-w-[880px] mx-auto rounded-[8px] overflow-hidden border border-marketing shadow-[0_4px_24px_rgba(0,0,0,0.08)]">
-                <video
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  className="w-full h-auto block"
-                  src="/marketing/StackMerge.mp4"
-                />
-              </div>
-            </div>
-          </div>
         </div>
       </section>
 
