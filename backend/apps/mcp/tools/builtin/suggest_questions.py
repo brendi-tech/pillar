@@ -96,13 +96,28 @@ class SuggestQuestionsTool(Tool):
             saved_questions = ai_config.get('suggestedQuestions', [])
             
             # Format manual questions with 'manual' flag for SDK prioritization
+            # Supports both legacy string[] format and new {text, pathPattern}[] format
             manual_questions = []
             if saved_questions and isinstance(saved_questions, list):
-                manual_questions = [
-                    {'id': f'manual_{i+1}', 'text': q, 'manual': True}
-                    for i, q in enumerate(saved_questions)
-                    if isinstance(q, str) and q.strip()
-                ]
+                for i, q in enumerate(saved_questions):
+                    if isinstance(q, str) and q.strip():
+                        # Legacy format: plain string
+                        manual_questions.append({
+                            'id': f'manual_{i+1}',
+                            'text': q,
+                            'manual': True
+                        })
+                    elif isinstance(q, dict) and q.get('text', '').strip():
+                        # New format: {text, pathPattern?}
+                        question = {
+                            'id': f'manual_{i+1}',
+                            'text': q['text'],
+                            'manual': True
+                        }
+                        if q.get('pathPattern'):
+                            question['pathPattern'] = q['pathPattern']
+                        manual_questions.append(question)
+                
                 if manual_questions:
                     logger.debug(f"[SuggestQuestions] Found {len(manual_questions)} admin-configured questions for site {site_id}")
             

@@ -45,12 +45,17 @@ export interface BrandingConfig {
 
 // --- AI Config ---
 
+export interface SuggestedQuestionConfig {
+  text: string;
+  pathPattern?: string; // Path pattern for filtering, e.g. "/pricing", "/blog/*", "/docs/**"
+}
+
 export interface AIConfig {
   enabled: boolean;
   assistantName: string;
   welcomeMessage: string;
   inputPlaceholder: string;
-  suggestedQuestions: string[];
+  suggestedQuestions: SuggestedQuestionConfig[];
   openOnLoad: boolean;
   /** @deprecated Not used by the SDK */
   fallbackMessage?: string;

@@ -5,7 +5,7 @@ import { Spinner } from "@/components/ui/spinner";
 import type { AIConfig, EmbedConfig } from "@/types/config";
 import type { LanguageCode } from "@/types/v2/products";
 import { Save, Undo2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AIAssistantSection } from "./AIAssistantSection";
 import { BrandingSection } from "./BrandingSection";
 import {
@@ -55,8 +55,32 @@ function ConfigureContent({
   } = useConfigure();
   const [saveSuccess, setSaveSuccess] = useState(false);
 
+  // Clear validation error when suggested questions are fixed
+  useEffect(() => {
+    if (error && error.includes("Suggested questions")) {
+      const hasEmptyQuestions = aiConfig.suggestedQuestions.some((q) => {
+        const text = typeof q === "string" ? q : q.text;
+        return !text.trim();
+      });
+      if (!hasEmptyQuestions) {
+        setError(null);
+      }
+    }
+  }, [aiConfig.suggestedQuestions, error, setError]);
+
   const handleSave = async () => {
     if (!onSave) return;
+
+    // Validate suggested questions - text cannot be empty
+    const emptyQuestions = aiConfig.suggestedQuestions.filter((q) => {
+      const text = typeof q === "string" ? q : q.text;
+      return !text.trim();
+    });
+
+    if (emptyQuestions.length > 0) {
+      setError("Suggested questions cannot be empty. Please fill in or remove empty questions.");
+      return;
+    }
 
     setSaving(true);
     setError(null);
@@ -91,16 +115,15 @@ function ConfigureContent({
       {/* Security / Domains */}
       <SecuritySection />
 
-      {/* Error Message */}
-      {error && (
-        <div className="rounded-lg border border-destructive bg-destructive/10 p-4">
-          <p className="text-sm text-destructive">{error}</p>
-        </div>
-      )}
-
       {/* Save Button - Sticky Footer */}
       {hasChanges && onSave && (
         <div className="sticky bottom-0 z-10 border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-4">
+          {/* Error Message */}
+          {error && (
+            <div className="rounded-lg border border-destructive bg-destructive/10 p-3 mb-3">
+              <p className="text-sm text-destructive">{error}</p>
+            </div>
+          )}
           <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground">
               You have unsaved changes
