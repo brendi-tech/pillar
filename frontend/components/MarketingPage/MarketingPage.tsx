@@ -9,7 +9,6 @@ import { FinalCTA } from "./FinalCTA";
 import { MarketingFooter } from "./MarketingFooter";
 import { MarketingNavbar } from "./MarketingNavbar";
 import { PricingSection } from "./PricingSection";
-import { StackSection } from "./StackSection";
 import { TopHeroSection } from "./TopHeroSection";
 
 /**
@@ -79,7 +78,6 @@ export function MarketingPage() {
         <main className="flex-1 w-full mx-auto ">
           <TopHeroSection />
           <DemoSection />
-          <StackSection />
           <EngineersSection />
           <ClientSideSection />
           <DeploySection />

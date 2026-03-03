@@ -43,7 +43,7 @@ export const ClientSideSection = () => {
       <section className=" border-x border-marketing max-w-marketingSection mx-auto bg-white">
         <div className="flex justify-center">
           <NumberedHeading className="bg-[#14314B] text-[#00CCFF]">
-            [04] SAFE BY DESIGN
+            [03] SAFE BY DESIGN
           </NumberedHeading>
         </div>
         <div className="pt-8 pb-12">
