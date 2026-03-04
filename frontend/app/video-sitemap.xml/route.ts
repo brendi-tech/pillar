@@ -5,6 +5,7 @@ import {
 } from "@/app/marketing/demos/[demo]/demos.data";
 import { fetchYouTubeVideos, getVideoSlug } from "@/lib/youtube";
 
+export const dynamic = "force-dynamic";
 export const revalidate = 86400;
 
 const BASE_URL = "https://trypillar.com";
