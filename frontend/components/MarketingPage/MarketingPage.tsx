@@ -9,6 +9,7 @@ import { FinalCTA } from "./FinalCTA";
 import { MarketingFooter } from "./MarketingFooter";
 import { MarketingNavbar } from "./MarketingNavbar";
 import { PricingSection } from "./PricingSection";
+import { StackSection } from "./StackSection";
 import { TopHeroSection } from "./TopHeroSection";
 
 /**
@@ -52,9 +53,9 @@ export function MarketingPage() {
                   />
                 </svg>
               </span>
-              <span className="text-white/80 font-medium">YC</span>
+              <span className="text-white/80 font-medium"></span>
             </a>
-            <span>,</span>
+            <span> </span>
             <a
               href="https://www.matrixpartners.com"
               target="_blank"
@@ -69,7 +70,7 @@ export function MarketingPage() {
                 className="h-4 w-auto opacity-80"
               />
             </a>
-            <span>and other great entrepreneurs & founders</span>
+            <span>and many more</span>
           </div>
         </div>
         <MarketingNavbar />
@@ -77,9 +78,10 @@ export function MarketingPage() {
         {/* Main content */}
         <main className="flex-1 w-full mx-auto ">
           <TopHeroSection />
-          <DemoSection />
+          <StackSection />
           <EngineersSection />
           <ClientSideSection />
+          <DemoSection />
           <DeploySection />
           <PricingSection />
           <FinalCTA />

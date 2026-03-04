@@ -1,7 +1,7 @@
 ---
 title: "The copilot stack, in a box"
 subtitle: "People keep landing on CopilotKit + LangGraph + a vector DB. Here's what that stack is really buying you, and what disappears when the browser is the execution runtime."
-date: "2026-02-27"
+date: "2026-02-04"
 author: "JJ Maxwell"
 slug: "the-copilot-stack-in-a-box"
 description: "A common AI answer recommends CopilotKit/Vercel AI SDK + LangGraph/LangChain + Claude/GPT + Pinecone/Supabase. This post explains why that stack exists, why most teams don’t need it, how Pillar replaces it with one SDK, and why WebMCP makes your tool layer matter twice."

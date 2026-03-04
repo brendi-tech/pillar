@@ -100,7 +100,7 @@ export function PricingSection({ hideNumberedHeading }: PricingSectionProps) {
       <section className="bg-[#000622] py-16 md:py-24 max-w-marketingSection mx-auto border-x border-marketing relative">
         {!hideNumberedHeading && (
           <NumberedHeading className="bg-[#0F253D] text-[#58A6FF] absolute top-0 lg:left-[64px] left-1/2 -translate-x-1/2 lg:translate-x-0 z-10">
-            [05] PRICING
+            [06] PRICING
           </NumberedHeading>
         )}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

@@ -54,6 +54,11 @@ import { analyticsDemo } from "./videos/data/analytics";
 import { pmDemo } from "./videos/data/pm";
 import { hrDemo } from "./videos/data/hr";
 import type { DemoConfig } from "./videos/types";
+import {
+  SecretRevealAnimation,
+  SECRET_REVEAL_DIMENSIONS,
+  SECRET_REVEAL_DURATION,
+} from "./videos/components/secret-reveal/SecretRevealAnimation";
 
 // Import pre-compiled Tailwind v4 CSS (for docs components)
 // Generated with: npx @tailwindcss/cli -i app/globals.css -o remotion/compiled-styles.css
@@ -383,6 +388,15 @@ export const RemotionRoot: React.FC = () => {
         fps={30}
         width={STACK_MERGE_DIMENSIONS.width}
         height={STACK_MERGE_DIMENSIONS.height}
+      />
+
+      <Composition
+        id="SecretReveal"
+        component={SecretRevealAnimation}
+        durationInFrames={SECRET_REVEAL_DURATION}
+        fps={30}
+        width={SECRET_REVEAL_DIMENSIONS.width}
+        height={SECRET_REVEAL_DIMENSIONS.height}
       />
 
       {/* ============================================

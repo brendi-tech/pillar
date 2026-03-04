@@ -31,7 +31,7 @@ export function DemoSection() {
       <section className="max-w-marketingSection mx-auto border-x bg-white">
         <div className="flex justify-center">
           <NumberedHeading className="text-[#1a1472] bg-[#001AFF]/15">
-            [01] HOW IT WORKS
+            [04] HOW IT WORKS
           </NumberedHeading>
         </div>
         <div className="pt-16 md:pt-[100px] pb-8 relative">

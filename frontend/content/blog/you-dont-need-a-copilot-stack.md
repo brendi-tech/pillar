@@ -1,7 +1,7 @@
 ---
 title: "You don't need a copilot stack"
 subtitle: "Most copilot advice stacks frameworks. One SDK is enough."
-date: "2026-02-27"
+date: "2026-02-20"
 author: "JJ Maxwell"
 slug: "you-dont-need-a-copilot-stack"
 description: "Every guide to building a SaaS copilot prescribes a multi-layer stack: CopilotKit for the frontend, LangGraph for orchestration, plus glue code to connect them. That architecture is the problem, not the solution."

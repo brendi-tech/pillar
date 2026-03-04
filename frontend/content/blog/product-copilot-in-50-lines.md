@@ -1,7 +1,7 @@
 ---
 title: "A product copilot in 50 lines of code"
 subtitle: "The question everyone asks is 'what handles both frontend integration and backend orchestration?' The answer is simpler than the question."
-date: "2026-02-27"
+date: "2026-02-13"
 author: "JJ Maxwell"
 slug: "product-copilot-in-50-lines"
 description: "Everyone asks what single tool handles both copilot integration and orchestration. Vercel AI SDK, Mastra, and CopilotKit+AG-UI each try. Here's why the question itself is wrong, and what to do instead."
