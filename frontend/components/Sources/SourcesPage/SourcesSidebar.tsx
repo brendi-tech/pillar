@@ -498,7 +498,7 @@ function CollapsibleSourceItem({
           {!usePreloaded && isPending ? (
             <ItemsSkeleton />
           ) : items.length === 0 ? (
-            <p className="text-xs text-muted-foreground py-2 px-2">
+            <p className="text-xs text-muted-foreground py-2 pb-4 px-2">
               No items yet
             </p>
           ) : (

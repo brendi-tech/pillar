@@ -7,16 +7,13 @@ import type { LanguageCode } from "@/types/v2/products";
 import { Save, Undo2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { AIAssistantSection } from "./AIAssistantSection";
-import { BrandingSection } from "./BrandingSection";
 import {
   ConfigureProvider,
   useConfigure,
-  type AssistantBrandingConfig,
 } from "./ConfigureContext";
 import { SecuritySection } from "./SecuritySection";
 
 export interface ConfigureSavePayload {
-  branding: AssistantBrandingConfig;
   aiConfig: AIConfig;
   embedConfig: EmbedConfig;
   defaultLanguage: LanguageCode;
@@ -26,7 +23,6 @@ export interface ConfigureSavePayload {
 interface ConfigurePageContentProps {
   helpCenterId: string;
   helpCenterSlug: string;
-  initialBranding?: AssistantBrandingConfig;
   initialAIConfig?: AIConfig;
   initialEmbedConfig?: EmbedConfig;
   initialDefaultLanguage?: LanguageCode;
@@ -40,7 +36,6 @@ function ConfigureContent({
   onSave?: (payload: ConfigureSavePayload) => Promise<void>;
 }) {
   const {
-    branding,
     aiConfig,
     embedConfig,
     defaultLanguage,
@@ -88,7 +83,6 @@ function ConfigureContent({
 
     try {
       await onSave({
-        branding,
         aiConfig,
         embedConfig,
         defaultLanguage,
@@ -106,9 +100,6 @@ function ConfigureContent({
 
   return (
     <div className="space-y-6">
-      {/* Branding */}
-      <BrandingSection />
-
       {/* AI Assistant */}
       <AIAssistantSection />
 
@@ -170,7 +161,6 @@ function ConfigureContent({
 export function ConfigurePageContent({
   helpCenterId,
   helpCenterSlug,
-  initialBranding,
   initialAIConfig,
   initialEmbedConfig,
   initialDefaultLanguage,
@@ -181,7 +171,6 @@ export function ConfigurePageContent({
     <ConfigureProvider
       helpCenterId={helpCenterId}
       helpCenterSlug={helpCenterSlug}
-      initialBranding={initialBranding}
       initialAIConfig={initialAIConfig}
       initialEmbedConfig={initialEmbedConfig}
       initialDefaultLanguage={initialDefaultLanguage}

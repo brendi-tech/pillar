@@ -10,14 +10,18 @@ import {
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Spinner } from "@/components/ui/spinner";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useWebSocketEvent } from "@/hooks/use-websocket-event";
 import { cn } from "@/lib/utils";
 import { useProduct } from "@/providers";
-import { actionKeys, actionListQuery } from "@/queries/actions.queries";
-import type { Action, ActionType } from "@/types/actions";
+import {
+  actionKeys,
+  actionListInfiniteOptions,
+} from "@/queries/actions.queries";
+import type { Action, ActionListResponse, ActionType } from "@/types/actions";
 import { ACTION_TYPE_LABELS, deriveActionLabel } from "@/types/actions";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowRight,
   ChevronRight,
@@ -38,7 +42,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 interface ActionsSidebarProps {
@@ -95,16 +99,16 @@ function parsePathname(pathname: string): { actionId: string | null } {
  */
 function groupActionsByType(actions: Action[]): Record<ActionType, Action[]> {
   const groups: Record<ActionType, Action[]> = {
-    navigate: [],
-    open_modal: [],
-    fill_form: [],
-    trigger_tool: [],
-    trigger_action: [], // @deprecated alias
-    query: [],
     copy_text: [],
     external_link: [],
-    start_tutorial: [],
+    fill_form: [],
     inline_ui: [],
+    navigate: [],
+    open_modal: [],
+    query: [],
+    start_tutorial: [],
+    trigger_action: [], // @deprecated alias
+    trigger_tool: [],
   };
 
   for (const action of actions) {
@@ -128,12 +132,28 @@ export function ActionsSidebar({
 
   const queryClient = useQueryClient();
 
-  const { data, isLoading, refetch } = useQuery(
-    actionListQuery({
-      product: currentProduct?.id,
-      page_size: 100,
-    })
-  );
+  const isSearchActive = debouncedSearch.length >= 2;
+
+  const {
+    data,
+    isPending,
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery<ActionListResponse>({
+    ...actionListInfiniteOptions(
+      {
+        product: currentProduct?.id,
+        search: isSearchActive ? debouncedSearch : undefined,
+        ordering: "action_type,name",
+      },
+      50
+    ),
+    enabled: !!currentProduct?.id,
+  });
+
+  const isLoading = !currentProduct?.id || isPending;
 
   const handleSyncCompleted = useCallback(
     (event: CustomEvent) => {
@@ -148,22 +168,37 @@ export function ActionsSidebar({
 
   useWebSocketEvent("websocket:actions.sync_completed", handleSyncCompleted);
 
-  const actions = useMemo(() => data?.results ?? [], [data?.results]);
+  const actions = useMemo(
+    () => data?.pages.flatMap((page) => page.results) ?? [],
+    [data?.pages]
+  );
+
+  // Total count from first page (for header display)
+  const totalCount = data?.pages[0]?.count ?? 0;
 
   // Parse current selection from pathname
   const { actionId: currentActionId } = parsePathname(pathname);
 
-  // Filter actions by search term
-  const filteredActions = useMemo(() => {
-    if (!debouncedSearch) return actions;
-    const lower = debouncedSearch.toLowerCase();
-    return actions.filter(
-      (action) =>
-        action.name.toLowerCase().includes(lower) ||
-        deriveActionLabel(action.name).toLowerCase().includes(lower) ||
-        action.description.toLowerCase().includes(lower)
+  // Sentinel for loading more results on scroll
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { rootMargin: "200px" }
     );
-  }, [actions, debouncedSearch]);
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  const filteredActions = actions;
 
   // Group filtered actions by type
   const groupedActions = useMemo(
@@ -197,7 +232,7 @@ export function ActionsSidebar({
             <div>
               <h2 className="text-lg font-semibold">Tools</h2>
               <p className="text-xs text-muted-foreground">
-                {actions.length} tool{actions.length !== 1 ? "s" : ""}
+                {totalCount} tool{totalCount !== 1 ? "s" : ""}
               </p>
             </div>
             <div className="flex items-center gap-1">
@@ -312,53 +347,61 @@ export function ActionsSidebar({
             <ActionsSkeleton />
           ) : filteredActions.length === 0 ? (
             <EmptyState
-              searchTerm={debouncedSearch}
-              hasAnyActions={actions.length > 0}
+              searchTerm={isSearchActive ? debouncedSearch : ""}
+              hasAnyActions={totalCount > 0}
             />
           ) : (
-            Object.entries(groupedActions).map(([type, typeActions]) => {
-              if (typeActions.length === 0) return null;
+            <>
+              {Object.entries(groupedActions).map(([type, typeActions]) => {
+                if (typeActions.length === 0) return null;
 
-              const actionType = type as ActionType;
-              const Icon = ACTION_TYPE_ICON_COMPONENTS[actionType];
-              const isExpanded = expandedGroups.has(actionType);
+                const actionType = type as ActionType;
+                const Icon = ACTION_TYPE_ICON_COMPONENTS[actionType];
+                const isExpanded = expandedGroups.has(actionType);
 
-              return (
-                <Collapsible
-                  key={type}
-                  open={isExpanded}
-                  onOpenChange={() => toggleGroup(actionType)}
-                >
-                  <CollapsibleTrigger className="flex w-full items-center gap-2 rounded-md px-3 py-3 sm:px-2 sm:py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground">
-                    <ChevronRight
-                      className={cn(
-                        "h-4 w-4 shrink-0 transition-transform",
-                        isExpanded && "rotate-90"
-                      )}
-                    />
-                    <Icon className="h-4 w-4 shrink-0" />
-                    <span className="flex-1 text-left truncate">
-                      {ACTION_TYPE_LABELS[actionType]}
-                    </span>
-                    <span className="text-xs tabular-nums">
-                      {typeActions.length}
-                    </span>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <div className="ml-4 space-y-0.5 py-1">
-                      {typeActions.map((action) => (
-                        <ActionListItem
-                          key={action.id}
-                          action={action}
-                          isSelected={action.id === currentActionId}
-                          onNavigate={onNavigate}
-                        />
-                      ))}
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
-              );
-            })
+                return (
+                  <Collapsible
+                    key={type}
+                    open={isExpanded}
+                    onOpenChange={() => toggleGroup(actionType)}
+                  >
+                    <CollapsibleTrigger className="flex w-full items-center gap-2 rounded-md px-3 py-3 sm:px-2 sm:py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground">
+                      <ChevronRight
+                        className={cn(
+                          "h-4 w-4 shrink-0 transition-transform",
+                          isExpanded && "rotate-90"
+                        )}
+                      />
+                      <Icon className="h-4 w-4 shrink-0" />
+                      <span className="flex-1 text-left truncate">
+                        {ACTION_TYPE_LABELS[actionType]}
+                      </span>
+                      <span className="text-xs tabular-nums">
+                        {typeActions.length}
+                      </span>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <div className="ml-4 space-y-0.5 py-1">
+                        {typeActions.map((action) => (
+                          <ActionListItem
+                            key={action.id}
+                            action={action}
+                            isSelected={action.id === currentActionId}
+                            onNavigate={onNavigate}
+                          />
+                        ))}
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                );
+              })}
+              <div ref={sentinelRef} className="h-1" />
+              {isFetchingNextPage && (
+                <div className="flex w-full items-center justify-center py-2">
+                  <Spinner size="xs" />
+                </div>
+              )}
+            </>
           )}
         </div>
       </ScrollArea>

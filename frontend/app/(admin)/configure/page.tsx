@@ -6,7 +6,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useProduct } from "@/providers";
 import { adminPatch } from "@/lib/admin/api-client";
 import type { EmbedConfig, AIConfig } from "@/types/config";
-import type { AssistantBrandingConfig } from "@/components/ConfigurePageContent";
 import type { LanguageCode } from "@/types/v2/products";
 
 export default function ConfigurePage() {
@@ -17,12 +16,6 @@ export default function ConfigurePage() {
   const aiConfig = currentProduct?.config?.ai as AIConfig | undefined;
   const defaultLanguage = (currentProduct?.default_language || 'auto') as LanguageCode;
   const agentGuidance = currentProduct?.agent_guidance || '';
-  
-  // Extract branding (simplified)
-  const branding: AssistantBrandingConfig | undefined = currentProduct?.config?.branding ? {
-    logoUrl: currentProduct.config.branding.logoLightUrl,
-    primaryColor: currentProduct.config.branding.colors?.primary,
-  } : undefined;
   
   const handleSave = async (payload: ConfigureSavePayload) => {
     if (!currentProduct?.id) {
@@ -39,14 +32,6 @@ export default function ConfigurePage() {
       agent_guidance: payload.agentGuidance,
       config: {
         ...currentProduct.config,
-        branding: {
-          ...currentProduct.config?.branding,
-          logoLightUrl: payload.branding.logoUrl,
-          colors: {
-            ...currentProduct.config?.branding?.colors,
-            primary: payload.branding.primaryColor,
-          },
-        },
         ai: payload.aiConfig,
         embed: {
           ...currentProduct.config?.embed,
@@ -95,12 +80,11 @@ export default function ConfigurePage() {
     <div className="space-y-6 p-page">
       <PageHeader
         title="Configure"
-        description="Set up your product assistant's branding, AI behavior, and SDK settings"
+        description="Set up your product assistant's AI behavior and SDK settings"
       />
       <ConfigurePageContent
         helpCenterId={currentProduct.id}
         helpCenterSlug={currentProduct.subdomain || 'demo'}
-        initialBranding={branding}
         initialAIConfig={aiConfig}
         initialEmbedConfig={embedConfig}
         initialDefaultLanguage={defaultLanguage}

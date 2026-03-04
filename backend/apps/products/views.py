@@ -16,6 +16,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import OrderingFilter, SearchFilter
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 from pydantic import BaseModel, field_validator
@@ -497,16 +498,19 @@ class PlatformViewSet(viewsets.ModelViewSet):
 
 class ActionViewSet(viewsets.ModelViewSet):
     """ViewSet for managing Actions."""
-    
+
     permission_classes = [IsAuthenticatedAdmin]
     serializer_class = ActionSerializer
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
     filterset_fields = ['product', 'action_type', 'status', 'implementation_status']
-    
+    ordering_fields = ['action_type', 'name', 'created_at', 'updated_at', 'status']
+    ordering = ['-created_at']
+    search_fields = ['name', 'description']
+
     def get_queryset(self):
         return Action.objects.filter(
             organization__in=self.request.user.organizations.all()
-        ).order_by('-created_at')
+        )
     
     def perform_create(self, serializer):
         serializer.save(organization=self.request.user.primary_organization)
@@ -1251,6 +1255,11 @@ class EmbedConfigView(APIView):
         input_placeholder = ai_config.get('inputPlaceholder')
         if input_placeholder:
             response_data['inputPlaceholder'] = input_placeholder
+        
+        # Welcome message (from AI config)
+        welcome_message = ai_config.get('welcomeMessage')
+        if welcome_message:
+            response_data['welcomeMessage'] = welcome_message
         
         # Panel settings
         if embed.get('panel'):

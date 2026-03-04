@@ -5,17 +5,7 @@ import type { EmbedConfig, AIConfig } from '@/types/config';
 import { DEFAULT_EMBED_CONFIG } from '@/types/config';
 import type { LanguageCode } from '@/types/v2/products';
 
-// Simplified branding config for product assistant
-export interface AssistantBrandingConfig {
-  logoUrl?: string;
-  primaryColor?: string;
-}
-
 export interface ConfigureContextValue {
-  // Branding
-  branding: AssistantBrandingConfig;
-  updateBranding: (updates: Partial<AssistantBrandingConfig>) => void;
-  
   // AI Config
   aiConfig: AIConfig;
   updateAIConfig: (updates: Partial<AIConfig>) => void;
@@ -58,15 +48,10 @@ const DEFAULT_AI_CONFIG: AIConfig = {
   openOnLoad: false,
 };
 
-const DEFAULT_BRANDING: AssistantBrandingConfig = {
-  primaryColor: '#6366f1',
-};
-
 interface ConfigureProviderProps {
   children: React.ReactNode;
   helpCenterId: string;
   helpCenterSlug: string;
-  initialBranding?: AssistantBrandingConfig;
   initialAIConfig?: AIConfig;
   initialEmbedConfig?: EmbedConfig;
   initialDefaultLanguage?: LanguageCode;
@@ -77,20 +62,12 @@ export function ConfigureProvider({
   children,
   helpCenterId,
   helpCenterSlug,
-  initialBranding,
   initialAIConfig,
   initialEmbedConfig,
   initialDefaultLanguage,
   initialAgentGuidance,
 }: ConfigureProviderProps) {
   // Initialize state with defaults or initial values
-  const [branding, setBranding] = useState<AssistantBrandingConfig>(
-    initialBranding || DEFAULT_BRANDING
-  );
-  const [originalBranding, setOriginalBranding] = useState<AssistantBrandingConfig>(
-    initialBranding || DEFAULT_BRANDING
-  );
-  
   const [aiConfig, setAIConfig] = useState<AIConfig>(
     initialAIConfig || DEFAULT_AI_CONFIG
   );
@@ -126,17 +103,12 @@ export function ConfigureProvider({
   // Check if any config has changed
   const hasChanges = useMemo(() => {
     return (
-      JSON.stringify(branding) !== JSON.stringify(originalBranding) ||
       JSON.stringify(aiConfig) !== JSON.stringify(originalAIConfig) ||
       JSON.stringify(embedConfig) !== JSON.stringify(originalEmbedConfig) ||
       defaultLanguage !== originalDefaultLanguage ||
       agentGuidance !== originalAgentGuidance
     );
-  }, [branding, originalBranding, aiConfig, originalAIConfig, embedConfig, originalEmbedConfig, defaultLanguage, originalDefaultLanguage, agentGuidance, originalAgentGuidance]);
-
-  const updateBranding = useCallback((updates: Partial<AssistantBrandingConfig>) => {
-    setBranding((prev) => ({ ...prev, ...updates }));
-  }, []);
+  }, [aiConfig, originalAIConfig, embedConfig, originalEmbedConfig, defaultLanguage, originalDefaultLanguage, agentGuidance, originalAgentGuidance]);
 
   const updateAIConfig = useCallback((updates: Partial<AIConfig>) => {
     setAIConfig((prev) => ({ ...prev, ...updates }));
@@ -159,25 +131,21 @@ export function ConfigureProvider({
   }, []);
 
   const resetChanges = useCallback(() => {
-    setBranding(originalBranding);
     setAIConfig(originalAIConfig);
     setEmbedConfig(originalEmbedConfig);
     setDefaultLanguage(originalDefaultLanguage);
     setAgentGuidance(originalAgentGuidance);
-  }, [originalBranding, originalAIConfig, originalEmbedConfig, originalDefaultLanguage, originalAgentGuidance]);
+  }, [originalAIConfig, originalEmbedConfig, originalDefaultLanguage, originalAgentGuidance]);
 
   const markAsSaved = useCallback(() => {
-    setOriginalBranding(branding);
     setOriginalAIConfig(aiConfig);
     setOriginalEmbedConfig(embedConfig);
     setOriginalDefaultLanguage(defaultLanguage);
     setOriginalAgentGuidance(agentGuidance);
-  }, [branding, aiConfig, embedConfig, defaultLanguage, agentGuidance]);
+  }, [aiConfig, embedConfig, defaultLanguage, agentGuidance]);
 
   const value: ConfigureContextValue = useMemo(
     () => ({
-      branding,
-      updateBranding,
       aiConfig,
       updateAIConfig,
       embedConfig,
@@ -198,8 +166,6 @@ export function ConfigureProvider({
       helpCenterSlug,
     }),
     [
-      branding,
-      updateBranding,
       aiConfig,
       updateAIConfig,
       embedConfig,

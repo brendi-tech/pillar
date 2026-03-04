@@ -5,7 +5,7 @@
  */
 import { queryOptions } from '@tanstack/react-query';
 import { actionsAPI, type ActionListParams } from '@/lib/admin/actions-api';
-import type { ActionCreateRequest, ActionUpdateRequest } from '@/types/actions';
+import type { ActionCreateRequest, ActionUpdateRequest, ActionListResponse } from '@/types/actions';
 
 // =============================================================================
 // Query Keys Factory
@@ -41,6 +41,29 @@ export const actionListQuery = (params?: ActionListParams) =>
     queryKey: actionKeys.list(params),
     queryFn: () => actionsAPI.list(params),
   });
+
+/**
+ * Infinite query options for paginated action list with optional search.
+ * Search is enabled when params.search is >= 2 characters.
+ */
+export const actionListInfiniteOptions = (
+  params?: ActionListParams,
+  pageSize = 50
+) => ({
+  queryKey: actionKeys.list(params),
+  queryFn: ({ pageParam }: { pageParam: unknown }) =>
+    actionsAPI.list({
+      ...params,
+      page: pageParam as number,
+      page_size: pageSize,
+    }),
+  getNextPageParam: (
+    lastPage: ActionListResponse,
+    allPages: ActionListResponse[]
+  ) => (lastPage.next ? allPages.length + 1 : undefined),
+  initialPageParam: 1 as unknown,
+  enabled: params?.search ? params.search.length >= 2 : true,
+});
 
 /**
  * Get a single action by ID
