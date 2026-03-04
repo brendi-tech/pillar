@@ -1,0 +1,1 @@
+export { ToolDetailPage } from "./ToolDetailPage";

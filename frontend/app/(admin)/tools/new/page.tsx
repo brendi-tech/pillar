@@ -1,20 +1,20 @@
-'use client';
+"use client";
 
-import { ActionSyncModal } from '@/components/ActionsPageContent';
-import { Button } from '@/components/ui/button';
+import { ToolsSyncModal } from "@/components/ToolsSyncModal";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Code2, ExternalLink, Rocket } from 'lucide-react';
-import Link from 'next/link';
+} from "@/components/ui/card";
+import { Code2, ExternalLink, Rocket } from "lucide-react";
+import Link from "next/link";
 
 /**
  * Create new action page - Now displays code-first workflow info.
- * 
+ *
  * Code-First Actions: All actions must be defined in client code
  * and synced via CI/CD. Direct creation through the admin UI is disabled.
  */
@@ -22,7 +22,6 @@ export default function CreateActionPage() {
   return (
     <div className="h-full overflow-auto">
       <div className="mx-auto max-w-2xl space-y-6 p-6">
-
         {/* Main Card */}
         <Card>
           <CardHeader className="text-center">
@@ -44,10 +43,11 @@ export default function CreateActionPage() {
                     1
                   </span>
                   <span>
-                    Export actions from a barrel file (e.g.,{' '}
+                    Export actions from a barrel file (e.g.,{" "}
                     <code className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono">
                       lib/pillar/actions/index.ts
-                    </code>)
+                    </code>
+                    )
                   </span>
                 </li>
                 <li className="flex gap-3">
@@ -55,10 +55,10 @@ export default function CreateActionPage() {
                     2
                   </span>
                   <span>
-                    Run{' '}
+                    Run{" "}
                     <code className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono">
                       npx pillar-sync --actions ./lib/pillar/actions/index.ts
-                    </code>{' '}
+                    </code>{" "}
                     in your CI/CD pipeline
                   </span>
                 </li>
@@ -67,7 +67,7 @@ export default function CreateActionPage() {
                     3
                   </span>
                   <span>
-                    Register handlers at runtime via{' '}
+                    Register handlers at runtime via{" "}
                     <code className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono">
                       pillar.onTask()
                     </code>
@@ -80,7 +80,7 @@ export default function CreateActionPage() {
             <div className="space-y-2">
               <h3 className="font-medium">Example:</h3>
               <pre className="overflow-x-auto rounded-lg bg-muted p-4 text-xs">
-{`// lib/pillar/actions/index.ts
+                {`// lib/pillar/actions/index.ts
 import type { SyncActionDefinitions } from '@pillar-ai/sdk';
 
 export const actions = {
@@ -102,7 +102,7 @@ export default actions;`}
 
             {/* Actions */}
             <div className="flex flex-col gap-3 pt-2 sm:flex-row">
-              <ActionSyncModal
+              <ToolsSyncModal
                 trigger={
                   <Button variant="default" className="w-full flex-1">
                     <Code2 className="mr-2 h-4 w-4" />

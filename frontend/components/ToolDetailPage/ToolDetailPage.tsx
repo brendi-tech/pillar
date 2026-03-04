@@ -45,8 +45,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-interface ActionDetailPageProps {
-  actionId: string;
+interface ToolDetailPageProps {
+  toolId: string;
 }
 
 const ICON_COMPONENTS: Record<string, LucideIcon> = {
@@ -99,13 +99,13 @@ function getImplementationStatusDisplay(status: ImplementationStatus) {
  *
  * Single-column layout using shared detail page components.
  */
-export function ActionDetailPage({ actionId }: ActionDetailPageProps) {
+export function ToolDetailPage({ toolId }: ToolDetailPageProps) {
   const {
     data: action,
     isLoading,
     error,
     refetch,
-  } = useQuery(actionDetailQuery(actionId));
+  } = useQuery(actionDetailQuery(toolId));
 
   const actionIconName = action
     ? getActionTypeIcon(action.action_type)

@@ -1,6 +1,6 @@
 "use client";
 
-import { ActionsSidebar } from "@/components/Actions";
+import { ToolsSidebar } from "@/components/ToolsSidebar";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { PanelLeftIcon } from "lucide-react";
@@ -17,7 +17,7 @@ export default function ActionsLayout({ children }: ActionsLayoutProps) {
     <div className="relative flex h-full overflow-hidden">
       {/* Desktop sidebar - visible on large containers */}
       <div className="hidden @[800px]/content:flex">
-        <ActionsSidebar />
+        <ToolsSidebar />
       </div>
 
       {/* Mobile sidebar (Sheet) - visible on small containers */}
@@ -29,7 +29,7 @@ export default function ActionsLayout({ children }: ActionsLayoutProps) {
             onOpenAutoFocus={(e) => e.preventDefault()}
           >
             <SheetTitle className="sr-only">Actions Navigation</SheetTitle>
-            <ActionsSidebar
+            <ToolsSidebar
               onNavigate={() => setSidebarOpen(false)}
               hideHeader
             />
