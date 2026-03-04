@@ -24,6 +24,7 @@ export const actionKeys = {
 
   // Stats
   stats: (id: string) => [...actionKeys.detail(id), 'stats'] as const,
+  executionStats: (id: string) => [...actionKeys.detail(id), 'execution-stats'] as const,
 
   // Templates
   templates: () => [...actionKeys.all, 'templates'] as const,
@@ -82,6 +83,16 @@ export const actionStatsQuery = (id: string) =>
   queryOptions({
     queryKey: actionKeys.stats(id),
     queryFn: () => actionsAPI.getStats(id),
+    enabled: !!id,
+  });
+
+/**
+ * Get aggregated execution statistics from ActionExecutionLog
+ */
+export const actionExecutionStatsQuery = (id: string) =>
+  queryOptions({
+    queryKey: actionKeys.executionStats(id),
+    queryFn: () => actionsAPI.getExecutionStats(id),
     enabled: !!id,
   });
 

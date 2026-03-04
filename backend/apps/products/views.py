@@ -519,7 +519,7 @@ class ActionViewSet(viewsets.ModelViewSet):
     def execute(self, request, pk=None):
         """
         Execute an action.
-        
+
         Note: Action execution happens client-side in the SDK.
         This endpoint is reserved for future server-side execution use cases.
         """
@@ -527,6 +527,32 @@ class ActionViewSet(viewsets.ModelViewSet):
             {'error': 'Action execution happens client-side in the SDK'},
             status=status.HTTP_501_NOT_IMPLEMENTED
         )
+
+    @action(detail=True, methods=['get'], url_path='execution-stats')
+    def execution_stats(self, request, pk=None):
+        """
+        Get aggregated execution statistics for an action.
+        
+        Returns success/failure counts from ActionExecutionLog.
+        """
+        from django.db.models import Count, Q, Avg
+        
+        action = self.get_object()
+        
+        stats = ActionExecutionLog.objects.filter(action=action).aggregate(
+            total_executions=Count('id'),
+            success_count=Count('id', filter=Q(status='success')),
+            failure_count=Count('id', filter=Q(status='failure')),
+            avg_duration_ms=Avg('duration_ms'),
+        )
+        
+        return Response({
+            'action_id': str(action.id),
+            'total_executions': stats['total_executions'] or 0,
+            'success_count': stats['success_count'] or 0,
+            'failure_count': stats['failure_count'] or 0,
+            'avg_duration_ms': round(stats['avg_duration_ms'] or 0, 2),
+        })
 
 
 class ActionExecutionLogViewSet(viewsets.ReadOnlyModelViewSet):

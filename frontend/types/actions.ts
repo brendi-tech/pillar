@@ -240,6 +240,17 @@ export interface ActionStatsResponse {
   status: ActionStatus;
 }
 
+/**
+ * Execution stats response from ActionExecutionLog aggregation.
+ */
+export interface ExecutionStatsResponse {
+  action_id: string;
+  total_executions: number;
+  success_count: number;
+  failure_count: number;
+  avg_duration_ms: number;
+}
+
 // ============================================================================
 // Action Suggestion Types (AI-generated suggestions from content)
 // ============================================================================

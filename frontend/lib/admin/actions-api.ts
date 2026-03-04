@@ -12,6 +12,7 @@ import type {
   ActionUpdateRequest,
   ActionListResponse,
   ActionStatsResponse,
+  ExecutionStatsResponse,
   ActionStatus,
   ActionType,
   ActionGenerationSuggestion,
@@ -130,6 +131,13 @@ export const actionsAPI = {
    */
   getStats: async (id: string): Promise<ActionStatsResponse> => {
     return adminFetch<ActionStatsResponse>(`/products/actions/${id}/stats/`);
+  },
+
+  /**
+   * Get aggregated execution statistics from ActionExecutionLog.
+   */
+  getExecutionStats: async (id: string): Promise<ExecutionStatsResponse> => {
+    return adminFetch<ExecutionStatsResponse>(`/products/actions/${id}/execution-stats/`);
   },
 
   /**

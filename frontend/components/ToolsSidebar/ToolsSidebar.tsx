@@ -200,11 +200,8 @@ export function ToolsSidebar({
                         )}
                       />
                       <Icon className="h-4 w-4 shrink-0" />
-                      <span className="flex-1 text-left truncate">
+                      <span className="truncate">
                         {ACTION_TYPE_LABELS[toolType]}
-                      </span>
-                      <span className="text-xs tabular-nums">
-                        {typeTools.length}
                       </span>
                     </CollapsibleTrigger>
                     <CollapsibleContent>
