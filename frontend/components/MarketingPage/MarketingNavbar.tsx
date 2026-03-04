@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu, X, ChevronDown, Gauge, LayoutDashboard, BarChart3, Scale } from "lucide-react";
+import { Menu, X, ChevronDown, Gauge, LayoutDashboard, BarChart3, Scale, PlayCircle } from "lucide-react";
 
 function GitHubIcon({ className }: { className?: string }) {
   return (
@@ -36,6 +36,12 @@ const resourcesDropdownItems = [
     description: "Build a copilot yourself vs one SDK.",
     href: "/resources/build-vs-buy",
     icon: Scale,
+  },
+  {
+    name: "Videos",
+    description: "Demos, tutorials, and deep dives.",
+    href: "/resources/videos",
+    icon: PlayCircle,
   },
 ];
 

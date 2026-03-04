@@ -14,7 +14,7 @@
   <a href="https://github.com/pillarhq/pillar/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-AGPL--3.0-blue" alt="License" /></a>
   <a href="https://www.npmjs.com/package/@pillar-ai/sdk"><img src="https://img.shields.io/npm/v/@pillar-ai/sdk" alt="npm version" /></a>
   <a href="https://www.npmjs.com/package/@pillar-ai/sdk"><img src="https://img.shields.io/npm/dm/@pillar-ai/sdk" alt="npm downloads" /></a>
-  <a href="https://discord.gg/uhVFmGMW"><img src="https://img.shields.io/discord/1470491094847324538?logo=discord&label=Discord" alt="Discord" /></a>
+  <a href="https://discord.gg/5aWZe8b884"><img src="https://img.shields.io/discord/1470491094847324538?logo=discord&label=Discord" alt="Discord" /></a>
   <a href="https://github.com/pillarhq/pillar/commits/main"><img src="https://img.shields.io/github/last-commit/pillarhq/pillar" alt="Last Commit" /></a>
 </p>
 
@@ -22,7 +22,7 @@
   <a href="https://trypillar.com/docs">Docs</a> ·
   <a href="https://trypillar.com/blog">Blog</a> ·
   <a href="https://trypillar.com">Website</a> ·
-  <a href="https://discord.gg/uhVFmGMW">Discord</a> ·
+  <a href="https://discord.gg/5aWZe8b884">Discord</a> ·
   <a href="https://x.com/trypillar_ai">Twitter</a>
 </p>
 
@@ -259,7 +259,7 @@ For enterprises that need to self-host without AGPL obligations, commercial lice
 - [Guides](https://trypillar.com/docs/guides)
 - [API Reference](https://trypillar.com/docs/reference/core)
 - [Blog](https://trypillar.com/blog)
-- [Discord](https://discord.gg/uhVFmGMW)
+- [Discord](https://discord.gg/5aWZe8b884)
 - [GitHub Discussions](https://github.com/pillarhq/pillar/discussions)
 
 ---

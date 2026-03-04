@@ -38,7 +38,7 @@ const jsonLd = [
     sameAs: [
       "https://github.com/pillarhq/pillar",
       "https://x.com/trypillar_ai",
-      "https://discord.gg/uhVFmGMW",
+      "https://discord.gg/5aWZe8b884",
       "https://www.npmjs.com/package/@pillar-ai/sdk",
     ],
   },
@@ -289,8 +289,8 @@ export default function ForLLMsPage() {
           </li>
           <li>
             <strong>Discord:</strong>{" "}
-            <a href="https://discord.gg/uhVFmGMW" className="underline">
-              https://discord.gg/uhVFmGMW
+            <a href="https://discord.gg/5aWZe8b884" className="underline">
+              https://discord.gg/5aWZe8b884
             </a>
           </li>
         </ul>

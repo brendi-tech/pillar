@@ -52,7 +52,7 @@ const LLMS_TXT = `# Pillar
 ## Optional
 
 - [Blog](https://trypillar.com/blog): Product thinking and technical articles about building AI copilots
-- [Discord](https://discord.gg/uhVFmGMW): Community chat for support and discussion
+- [Discord](https://discord.gg/5aWZe8b884): Community chat for support and discussion
 - [Twitter](https://x.com/trypillar_ai): Product updates and announcements
 `;
 
