@@ -621,14 +621,18 @@ export function StackSection() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [stickyTop, setStickyTop] = useState(80);
   const [mobile, setMobile] = useState(false);
+  const [stickyHeight, setStickyHeight] = useState("calc(100vh - 80px)");
 
   useEffect(() => {
     const update = () => {
       const w = window.innerWidth;
-      if (w >= 1024) setStickyTop(80);
-      else if (w >= 640) setStickyTop(64);
-      else setStickyTop(56);
+      let top: number;
+      if (w >= 1024) top = 80;
+      else if (w >= 640) top = 64;
+      else top = 56;
+      setStickyTop(top);
       setMobile(w < 768);
+      setStickyHeight(`calc(100dvh - ${top}px)`);
     };
     update();
     window.addEventListener("resize", update);
@@ -644,10 +648,10 @@ export function StackSection() {
     <div>
       <SectionSeparator />
 
-      <div ref={containerRef} className="relative h-[500vh]">
+      <div ref={containerRef} className="relative h-[500vh] bg-white">
         <div
-          className="sticky z-10 overflow-hidden"
-          style={{ top: stickyTop, height: `calc(100vh - ${stickyTop}px)` }}
+          className="sticky z-10 overflow-hidden bg-white"
+          style={{ top: stickyTop, height: stickyHeight }}
         >
           <div className="relative h-full max-w-marketingSection mx-auto border-x border-marketing bg-white">
             <GridBackground
