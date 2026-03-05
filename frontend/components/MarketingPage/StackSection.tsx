@@ -265,7 +265,7 @@ function SearchPrompt() {
 const TITLE_TOP = "top-[24%] md:top-[28%]";
 
 function OldWayDivider({ progress }: { progress: MotionValue<number> }) {
-  const opacity = useTransform(progress, [0.02, 0.06, 0.38, 0.42], [0, 1, 1, 0]);
+  const opacity = useTransform(progress, [0.02, 0.06], [0, 1]);
   const scaleX = useTransform(progress, [0.02, 0.06], [0, 1]);
 
   return (
@@ -286,7 +286,7 @@ function OldWayDivider({ progress }: { progress: MotionValue<number> }) {
 }
 
 function OldWayTitle({ progress }: { progress: MotionValue<number> }) {
-  const opacity = useTransform(progress, [0.03, 0.07, 0.38, 0.42], [0, 1, 1, 0]);
+  const opacity = useTransform(progress, [0.03, 0.07], [0, 1]);
   const y = useTransform(progress, [0.03, 0.07], [30, 0]);
 
   return (
@@ -316,17 +316,15 @@ function ToolCard({
 
   const opacity = useTransform(
     progress,
-    [entryStart, entryEnd, 0.38, 0.43],
-    [0, 1, 1, 0]
+    [entryStart, entryEnd],
+    [0, 1]
   );
 
   const xSlide = useTransform(
     progress,
-    [entryStart, entryEnd, 0.38, 0.43],
-    [100, 0, 0, 0]
+    [entryStart, entryEnd],
+    [100, 0]
   );
-
-  const collapseScale = useTransform(progress, [0.38, 0.43], [1, 0.7]);
 
   const offsetX = mobile ? index * -20 : index * -100;
   const offsetY = mobile ? index * 90 : index * 150;
@@ -339,7 +337,6 @@ function ToolCard({
         opacity,
         x: useTransform(xSlide, (v) => v + offsetX - cardHalfW),
         y: offsetY,
-        scale: collapseScale,
       }}
     >
       <div
@@ -392,38 +389,74 @@ function ToolCard({
 }
 
 function ToolCardsContainer({ progress, mobile }: { progress: MotionValue<number>; mobile: boolean }) {
+  const captionOpacity = useTransform(progress, [0.22, 0.25], [0, 1]);
+  const captionY = useTransform(progress, [0.22, 0.25], [12, 0]);
+  const lastCardBottom = mobile ? 330 : 480;
+
   return (
     <div className="absolute left-1/2 top-[32%] md:top-[36%]">
       {TOOL_BOXES.map((_, i) => (
         <ToolCard key={i} index={i} progress={progress} mobile={mobile} />
       ))}
+      <motion.div
+        className="absolute left-1/2 z-10 w-screen max-w-md px-4 md:px-0"
+        style={{ opacity: captionOpacity, y: captionY, x: "-50%", top: lastCardBottom }}
+      >
+        <div className="flex items-center justify-center gap-3 text-[10px] font-medium uppercase tracking-[0.06em] text-[#86868B] md:gap-6 md:text-sm md:tracking-[0.08em]">
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block h-1 w-1 rounded-full bg-[#C4C4C4]" />
+            Fragile glue code
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block h-1 w-1 rounded-full bg-[#C4C4C4]" />
+            3+ vendors to manage
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block h-1 w-1 rounded-full bg-[#C4C4C4]" />
+            Endless edge cases
+          </span>
+        </div>
+      </motion.div>
     </div>
   );
 }
 
-function OldWayCaption({ progress }: { progress: MotionValue<number> }) {
-  const opacity = useTransform(progress, [0.22, 0.25, 0.38, 0.42], [0, 1, 1, 0]);
-  const y = useTransform(progress, [0.22, 0.25], [12, 0]);
+function OldWayGroup({
+  progress,
+  mobile,
+  children,
+}: {
+  progress: MotionValue<number>;
+  mobile: boolean;
+  children: React.ReactNode;
+}) {
+  const groupScale = useTransform(
+    progress,
+    [0.35, 0.45],
+    mobile ? [1, 1] : [1, 0.55]
+  );
+  const groupOpacity = useTransform(
+    progress,
+    [0.35, 0.45],
+    mobile ? [1, 0] : [1, 0.3]
+  );
+  const groupX = useTransform(
+    progress,
+    [0.35, 0.45],
+    mobile ? ["0%", "0%"] : ["0%", "-33%"]
+  );
 
   return (
     <motion.div
-      className="absolute bottom-[3%] left-1/2 z-10 w-full max-w-md px-4 md:bottom-[10%] md:px-0"
-      style={{ opacity, y, x: "-50%" }}
+      className="absolute inset-0"
+      style={{
+        scale: groupScale,
+        opacity: groupOpacity,
+        x: groupX,
+        transformOrigin: "center center",
+      }}
     >
-      <div className="flex items-center justify-center gap-3 text-[10px] font-medium uppercase tracking-[0.06em] text-[#86868B] md:gap-6 md:text-sm md:tracking-[0.08em]">
-        <span className="flex items-center gap-1.5">
-          <span className="inline-block h-1 w-1 rounded-full bg-[#C4C4C4]" />
-          Fragile glue code
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="inline-block h-1 w-1 rounded-full bg-[#C4C4C4]" />
-          3+ vendors to manage
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="inline-block h-1 w-1 rounded-full bg-[#C4C4C4]" />
-          Endless edge cases
-        </span>
-      </div>
+      {children}
     </motion.div>
   );
 }
@@ -481,6 +514,8 @@ function PillarContainer({ progress }: { progress: MotionValue<number> }) {
   const containerOpacity = useTransform(progress, [0.49, 0.54], [0, 1]);
   const containerScale = useTransform(progress, [0.49, 0.54], [0.92, 1]);
   const containerY = useTransform(progress, [0.49, 0.54], [20, 0]);
+  const logosOpacity = useTransform(progress, [0.66, 0.70], [0, 1]);
+  const logosY = useTransform(progress, [0.66, 0.70], [16, 0]);
 
   return (
     <motion.div
@@ -507,6 +542,29 @@ function PillarContainer({ progress }: { progress: MotionValue<number> }) {
           );
         })}
       </div>
+      <motion.div className="mt-6 md:mt-8" style={{ opacity: logosOpacity, y: logosY }}>
+        <p className="mb-3 text-center text-xs font-medium uppercase tracking-[0.08em] text-[#86868B]">
+          Works with every major model
+        </p>
+        <div className="flex items-center justify-center gap-5 md:gap-7">
+          {MODEL_PROVIDERS.map((provider) => (
+            <span
+              key={provider.name}
+              className="flex items-center gap-1.5 text-xs text-[#6B6B6B] md:text-sm"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={`https://www.google.com/s2/favicons?domain=${provider.domain}&sz=32`}
+                alt={provider.name}
+                width={18}
+                height={18}
+                className="rounded-sm opacity-60 grayscale"
+              />
+              <span className="hidden sm:inline">{provider.name}</span>
+            </span>
+          ))}
+        </div>
+      </motion.div>
     </motion.div>
   );
 }
@@ -568,39 +626,6 @@ const MODEL_PROVIDERS = [
   { name: "Groq", domain: "groq.com" },
 ];
 
-function ModelProviderLogos({ progress }: { progress: MotionValue<number> }) {
-  const opacity = useTransform(progress, [0.66, 0.70], [0, 1]);
-  const y = useTransform(progress, [0.66, 0.70], [16, 0]);
-
-  return (
-    <motion.div
-      className="absolute left-1/2 top-[82%] z-10 w-full max-w-lg px-4 md:top-[80%] md:px-0"
-      style={{ opacity, y, x: "-50%" }}
-    >
-      <p className="mb-3 text-center text-xs font-medium uppercase tracking-[0.08em] text-[#86868B]">
-        Works with every major model
-      </p>
-      <div className="flex items-center justify-center gap-5 md:gap-7">
-        {MODEL_PROVIDERS.map((provider) => (
-          <span
-            key={provider.name}
-            className="flex items-center gap-1.5 text-xs text-[#6B6B6B] md:text-sm"
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={`https://www.google.com/s2/favicons?domain=${provider.domain}&sz=32`}
-              alt={provider.name}
-              width={18}
-              height={18}
-              className="rounded-sm opacity-60 grayscale"
-            />
-            <span className="hidden sm:inline">{provider.name}</span>
-          </span>
-        ))}
-      </div>
-    </motion.div>
-  );
-}
 
 // ---------------------------------------------------------------------------
 // Main Section
@@ -651,7 +676,7 @@ export function StackSection() {
       <div ref={containerRef} className="relative h-[500vh] bg-white">
         <div
           className="sticky z-10 overflow-hidden bg-white"
-          style={{ top: stickyTop, height: stickyHeight }}
+          style={{ top: stickyTop, height: stickyHeight, minHeight: 780 }}
         >
           <div className="relative h-full max-w-marketingSection mx-auto border-x border-marketing bg-white">
             <GridBackground
@@ -668,14 +693,14 @@ export function StackSection() {
             </div>
 
             <SearchPrompt />
-            <OldWayDivider progress={scrollYProgress} />
-            <OldWayTitle progress={scrollYProgress} />
-            <ToolCardsContainer progress={scrollYProgress} mobile={mobile} />
-            <OldWayCaption progress={scrollYProgress} />
+            <OldWayGroup progress={scrollYProgress} mobile={mobile}>
+              <OldWayDivider progress={scrollYProgress} />
+              <OldWayTitle progress={scrollYProgress} />
+              <ToolCardsContainer progress={scrollYProgress} mobile={mobile} />
+            </OldWayGroup>
             <DividerWithLogo progress={scrollYProgress} />
             <PillarWayTitle progress={scrollYProgress} />
             <PillarContainer progress={scrollYProgress} />
-            <ModelProviderLogos progress={scrollYProgress} />
           </div>
         </div>
       </div>
