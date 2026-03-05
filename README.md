@@ -163,15 +163,15 @@ The API runs on port 8000, the admin dashboard on port 3000. See [Self-Hosting](
 
 | Feature | Description | |
 |---------|-------------|-|
-| **Tools** | Navigate pages, pre-fill forms, call APIs — the assistant executes, not just explains | [Docs](https://trypillar.com/docs/features/tools) |
+| **Tools** | Navigate pages, pre-fill forms, call APIs — the assistant executes, not just explains | [Docs](https://trypillar.com/docs/core-concepts/tools) |
 | **Knowledge Base** | Ingest from websites, files, cloud storage (S3/GCS), and snippets | [Docs](https://trypillar.com/docs/knowledge-base/overview) |
-| **AI Chat** | Streaming, context-aware responses grounded in your documentation | [Docs](https://trypillar.com/docs/features/chat) |
-| **Custom Cards** | Render interactive UI for confirmations and data input inline in chat | [Docs](https://trypillar.com/docs/features/custom-cards) |
-| **Human Escalation** | Hand off to Intercom, Zendesk, Freshdesk, or a custom support flow | [Docs](https://trypillar.com/docs/features/human-escalation) |
+| **AI Chat** | Streaming, context-aware responses grounded in your documentation | [Docs](https://trypillar.com/docs/get-started/what-is-pillar) |
+| **Custom Cards** | Render interactive UI for confirmations and data input inline in chat | [Docs](https://trypillar.com/docs/core-concepts/custom-cards) |
+| **Human Escalation** | Hand off to Intercom, Zendesk, Freshdesk, or a custom support flow | [Docs](https://trypillar.com/docs/core-concepts/human-escalation) |
 | **MCP Server** | Let Claude, ChatGPT, Cursor, and other AI tools query your knowledge base | |
 | **Admin Dashboard** | Manage sources, review analytics, configure agent behavior and theming | |
 
-Explore all features in the [documentation](https://trypillar.com/docs/overview/introduction).
+Explore all features in the [documentation](https://trypillar.com/docs/get-started/what-is-pillar).
 
 ---
 
@@ -181,10 +181,10 @@ All SDK packages are MIT-licensed — embed freely in proprietary applications. 
 
 | Framework | Package | Install | Guide |
 |-----------|---------|---------|-------|
-| React | `@pillar-ai/react` | `npm install @pillar-ai/react` | [React Quickstart](https://trypillar.com/docs/quickstarts/react) |
-| Vue | `@pillar-ai/vue` | `npm install @pillar-ai/vue` | Coming soon |
-| Angular | `@pillar-ai/angular` | `npm install @pillar-ai/angular` | Coming soon |
-| Vanilla JS | `@pillar-ai/sdk` | `npm install @pillar-ai/sdk` | [Vanilla JS Quickstart](https://trypillar.com/docs/quickstarts/vanilla) |
+| React | `@pillar-ai/react` | `npm install @pillar-ai/react` | [React Quickstart](https://trypillar.com/docs/get-started/quickstart?framework=react) |
+| Vue | `@pillar-ai/vue` | `npm install @pillar-ai/vue` | [Vue Quickstart](https://trypillar.com/docs/get-started/quickstart?framework=vue) |
+| Angular | `@pillar-ai/angular` | `npm install @pillar-ai/angular` | [Angular Quickstart](https://trypillar.com/docs/get-started/quickstart?framework=angular) |
+| Vanilla JS | `@pillar-ai/sdk` | `npm install @pillar-ai/sdk` | [Vanilla JS Quickstart](https://trypillar.com/docs/get-started/quickstart?framework=vanilla) |
 
 Or load via CDN with no build step:
 

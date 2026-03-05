@@ -1,3 +1,0 @@
-useEffect(() => {
-  pillar?.setContext({ currentPage: pathname });
-}, [pathname, pillar]);

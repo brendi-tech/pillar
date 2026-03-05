@@ -1,0 +1,15 @@
+import { Pillar } from '@pillar-ai/sdk';
+
+const pillar = Pillar.getInstance();
+
+pillar.defineTool({
+  name: 'open_settings',
+  type: 'navigate', // navigate | trigger_tool | query | external_link | copy_text
+                    // Full reference: https://trypillar.com/docs/guides/tools
+  description: 'Navigate to the settings page',
+  examples: ['open settings', 'go to settings'],
+  autoRun: true,
+  execute: () => {
+    window.location.href = '/settings';
+  },
+});

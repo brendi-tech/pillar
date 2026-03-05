@@ -1,19 +1,33 @@
-// lib/pillar/tools/index.ts
-import type { SyncToolDefinitions } from '@pillar-ai/sdk';
+import { usePillarTool } from '@pillar-ai/react';
+import { useRouter } from 'next/navigation';
 
-export const tools = {
-  invite_member: {
+export function usePillarTools() {
+  const router = useRouter();
+
+  usePillarTool({
+    name: 'invite_member',
     description: 'Open the invite team member modal',
+    type: 'trigger_tool',
     examples: ['invite someone', 'add a user', 'how do I add teammates?'],
-    type: 'trigger_tool' as const,
-  },
+    inputSchema: {
+      type: 'object',
+      properties: {
+        email: { type: 'string', description: 'Email address to invite' },
+      },
+      required: ['email'],
+    },
+    execute: ({ email }) => {
+      openInviteModal({ email });
+    },
+  });
 
-  view_settings: {
+  usePillarTool({
+    name: 'view_settings',
     description: 'Navigate to the settings page',
-    type: 'navigate' as const,
-    path: '/settings',
+    type: 'navigate',
     autoRun: true,
-  },
-} as const satisfies SyncToolDefinitions;
-
-export default tools;
+    execute: () => {
+      router.push('/settings');
+    },
+  });
+}

@@ -2,14 +2,11 @@
 
 import { ArrowRight } from "lucide-react";
 
-import { AIPromptBlock } from "@/components/mdx/AIPromptBlock";
 import { SyntaxHighlightedPre } from "@/components/mdx/SyntaxHighlightedPre";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import {
-  AI_PROMPT_SOURCES,
-  AI_PROMPT_TITLES,
   FRAMEWORKS,
   TOOL_EXAMPLES,
 } from "../InlineOnboardingSteps.constants";
@@ -63,10 +60,6 @@ export function CreateToolStepContent({
                 language={toolConfig.language}
                 filePath={toolConfig.filePath}
                 docsUrl="https://trypillar.com/docs/guides/tools"
-              />
-              <AIPromptBlock
-                title={AI_PROMPT_TITLES[framework.id]}
-                src={AI_PROMPT_SOURCES[framework.id]}
               />
             </TabsContent>
           );

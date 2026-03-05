@@ -323,6 +323,11 @@ POSTHOG_API_KEY = os.environ.get('POSTHOG_API_KEY', '')
 POSTHOG_HOST = os.environ.get('POSTHOG_HOST', 'https://us.i.posthog.com')
 POSTHOG_ENABLED = os.environ.get('POSTHOG_ENABLED', 'true').lower() == 'true'
 
+# ==============================================================================
+# AGNOST AI CONFIGURATION (Conversation Analytics)
+# ==============================================================================
+AGNOST_ORG_ID = os.environ.get('AGNOST_ORG_ID', '')
+
 # Local override for master flag
 HATCHET_ENABLE_ALL_TASKS_LOCAL = os.environ.get('HATCHET_ENABLE_ALL_TASKS_LOCAL', 'false').lower() == 'true'
 

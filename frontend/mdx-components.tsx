@@ -10,7 +10,6 @@ import type { MDXComponents } from "mdx/types";
 
 // Custom MDX components
 import {
-  AIPromptBlock,
   Callout,
   InfoCallout,
   WarningCallout,
@@ -40,7 +39,10 @@ import {
   SyntaxHighlightedPre,
   CodeSnippet,
   CodeSnippetTabs,
+  FrameworkBar,
+  PackageInstall,
   TypeDocs,
+  FrameworkContent,
 } from "@/components/mdx";
 
 /**
@@ -49,7 +51,6 @@ import {
 export function useMDXComponents(components: MDXComponents): MDXComponents {
   return {
     // Custom MDX components
-    AIPromptBlock,
     Callout,
     InfoCallout,
     WarningCallout,
@@ -77,7 +78,10 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
     ConfigReference,
     CodeSnippet,
     CodeSnippetTabs,
+    FrameworkBar,
+    PackageInstall,
     TypeDocs,
+    FrameworkContent,
 
     // HTML element overrides (matching MarkdownRenderer styling)
     h1: ({ children, ...props }) => {

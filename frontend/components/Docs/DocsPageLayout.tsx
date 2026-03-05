@@ -4,7 +4,8 @@ import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { findNavContext, getPrevNext } from "@/lib/docs-navigation";
-import { DocsCopyButton } from "./DocsCopyButton";
+import { DocsToolbar } from "./DocsToolbar";
+import { DocsSDKPicker, shouldShowSDKPicker } from "./DocsSDKPicker";
 
 interface DocsPageLayoutProps {
   children: React.ReactNode;
@@ -18,12 +19,13 @@ export function DocsPageLayout({ children }: DocsPageLayoutProps) {
   const pathname = usePathname();
   const { section, item } = findNavContext(pathname);
   const { prev, next } = getPrevNext(pathname);
+  const showSDKPicker = shouldShowSDKPicker(pathname);
 
   return (
     <div>
-      {/* Breadcrumb + Copy Page */}
-      <div className="flex items-center justify-between mb-6">
-        <nav className="flex items-center gap-2 text-sm text-muted-foreground">
+      {/* Breadcrumb + toolbar — sticky below the header */}
+      <div className="mb-5">
+        <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
           <Link href="/docs" className="hover:text-foreground transition-colors">
             Docs
           </Link>
@@ -40,8 +42,11 @@ export function DocsPageLayout({ children }: DocsPageLayoutProps) {
             </>
           )}
         </nav>
-        <DocsCopyButton />
+
+        <DocsToolbar />
       </div>
+
+      {showSDKPicker && <DocsSDKPicker />}
 
       {/* Doc Content */}
       <article className="prose dark:prose-invert max-w-none text-foreground">{children}</article>

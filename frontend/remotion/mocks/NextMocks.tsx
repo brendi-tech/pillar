@@ -6,7 +6,7 @@
 import React, { createContext, useContext } from "react";
 
 // Mock pathname context
-const PathnameContext = createContext<string>("/docs/features/chat");
+const PathnameContext = createContext<string>("/docs/get-started/what-is-pillar");
 
 /**
  * Mock usePathname hook - returns the pathname from context

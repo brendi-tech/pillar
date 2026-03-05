@@ -83,7 +83,7 @@ export default function BlogIndexPage() {
           <Link href="/demos/grafana" className="text-sm text-foreground hover:text-primary transition-colors">
             Grafana demo
           </Link>
-          <Link href="/docs/overview/introduction" className="text-sm text-foreground hover:text-primary transition-colors">
+          <Link href="/docs/get-started/what-is-pillar" className="text-sm text-foreground hover:text-primary transition-colors">
             Docs
           </Link>
         </div>

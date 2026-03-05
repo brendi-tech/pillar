@@ -22,10 +22,10 @@ const LLMS_TXT = `# Pillar
 
 ## Docs
 
-- [Introduction](https://trypillar.com/docs/overview/introduction): Overview of what Pillar is and the problems it solves
-- [How It Works](https://trypillar.com/docs/overview/how-it-works): Architecture and client-side execution model
-- [React Quickstart](https://trypillar.com/docs/quickstarts/react): Get started with React or Next.js in 5 minutes
-- [Vanilla JS Quickstart](https://trypillar.com/docs/quickstarts/vanilla): Get started without a framework
+- [Introduction](https://trypillar.com/docs/get-started/what-is-pillar): Overview of what Pillar is and the problems it solves
+- [How It Works](https://trypillar.com/docs/get-started/what-is-pillar): Architecture and client-side execution model
+- [React Quickstart](https://trypillar.com/docs/get-started/quickstart): Get started with React or Next.js in 5 minutes
+- [Vanilla JS Quickstart](https://trypillar.com/docs/get-started/quickstart): Get started without a framework
 - [Tools Guide](https://trypillar.com/docs/guides/tools): Define what the copilot can do in your app
 - [Context Guide](https://trypillar.com/docs/guides/context): Provide runtime context to the copilot
 - [Knowledge Base](https://trypillar.com/docs/knowledge-base/overview): Provide your existing docs and content as context for the copilot

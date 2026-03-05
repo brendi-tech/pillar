@@ -21,6 +21,8 @@ from asgiref.sync import sync_to_async
 from opentelemetry import trace, context as otel_context
 from opentelemetry.trace import StatusCode
 
+import agnost
+
 from apps.mcp.services.jsonrpc_handler import JSONRPCHandler, JSONRPCError
 from apps.mcp.services.mcp_server import MCPServer
 from apps.mcp.services.mcp_server.utils import get_effective_language
@@ -413,6 +415,18 @@ async def stream_event_generator(mcp_server: MCPServer, request_data: dict, sess
     if otel_ctx is not None:
         _otel_token = otel_context.attach(otel_ctx)
 
+    # Begin Agnost tracking for ask tool calls
+    agnost_interaction = None
+    if tool_name == 'ask':
+        visitor_id = request.META.get('HTTP_X_VISITOR_ID', '') if request else ''
+        external_user_id = request.META.get('HTTP_X_EXTERNAL_USER_ID', '') if request else ''
+        agnost_interaction = agnost.begin(
+            user_id=external_user_id or visitor_id,
+            input=arguments.get('query', ''),
+            conversation_id=arguments.get('conversation_id', ''),
+            agent_name='pillar-assistant',
+        )
+
     try:
         # Stream tool execution
         import time
@@ -709,6 +723,15 @@ async def stream_event_generator(mcp_server: MCPServer, request_data: dict, sess
                     latency_ms = int((time.time() - stream_start_time) * 1000)
                     await mark_completed(flush_state["assistant_message_id"], latency_ms=latency_ms)
                 
+                # Track successful completion in Agnost
+                if agnost_interaction:
+                    agnost_interaction.set_properties({
+                        'model_used': flush_state.get('model_used', ''),
+                        'prompt_tokens': flush_state.get('prompt_tokens'),
+                        'completion_tokens': flush_state.get('completion_tokens'),
+                    })
+                    agnost_interaction.end(output=final_text)
+
                 logger.debug(f"[Streamable HTTP] Stream complete. Events sent: {event_count + 1}")
                 return
 
@@ -747,6 +770,8 @@ async def stream_event_generator(mcp_server: MCPServer, request_data: dict, sess
                         }
                     }
                     yield f"data: {json.dumps(error_response)}\n\n"
+                    if agnost_interaction:
+                        agnost_interaction.end(output=error_message, success=False)
                     return
 
             elif event_type == 'result':
@@ -783,6 +808,8 @@ async def stream_event_generator(mcp_server: MCPServer, request_data: dict, sess
             await _flush_all(flush_state["assistant_message_id"], collected_text, flush_state)
             await mark_disconnected(flush_state["assistant_message_id"])
             flush_state["stream_completed"] = True
+            if agnost_interaction:
+                agnost_interaction.end(output='disconnected', success=False)
             logger.info(f"[Streamable HTTP] Stream {stream_id} ended without complete -- flushed + marked disconnected")
 
     except asyncio.CancelledError:
@@ -793,6 +820,8 @@ async def stream_event_generator(mcp_server: MCPServer, request_data: dict, sess
                 await _flush_task
             await _flush_all(flush_state["assistant_message_id"], collected_text, flush_state)
             await mark_disconnected(flush_state["assistant_message_id"])
+        if agnost_interaction:
+            agnost_interaction.end(output='cancelled', success=False)
         raise
         
     except Exception as e:
@@ -805,6 +834,9 @@ async def stream_event_generator(mcp_server: MCPServer, request_data: dict, sess
             await _flush_all(flush_state["assistant_message_id"], collected_text, flush_state)
             await mark_disconnected(flush_state["assistant_message_id"])
         
+        if agnost_interaction:
+            agnost_interaction.end(output=str(e), success=False)
+
         error_response = {
             'jsonrpc': '2.0',
             'id': request_id,

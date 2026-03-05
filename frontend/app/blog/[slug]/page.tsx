@@ -167,7 +167,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                 Watch the Grafana demo
               </Link>
               <Link
-                href="/docs/overview/introduction"
+                href="/docs/get-started/what-is-pillar"
                 className="inline-flex items-center justify-center rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
               >
                 Read the docs

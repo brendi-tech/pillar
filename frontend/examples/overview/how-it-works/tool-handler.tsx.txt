@@ -1,8 +1,20 @@
-invite_member: {
+import { Pillar } from '@pillar-ai/sdk';
+
+const pillar = await Pillar.init({ productKey: 'your-product-key' });
+
+pillar.defineTool({
+  name: 'invite_member',
   description: 'Invite a team member',
   type: 'trigger_tool',
-  execute: (data) => {
-    // This runs when the user triggers the tool
-    openInviteModal({ email: data.email });
+  inputSchema: {
+    type: 'object',
+    properties: {
+      email: { type: 'string', description: 'Email address to invite' },
+      role: { type: 'string', description: 'Role: admin, member, or viewer' },
+    },
+    required: ['email', 'role'],
   },
-}
+  execute: ({ email, role }) => {
+    openInviteModal({ email, role });
+  },
+});

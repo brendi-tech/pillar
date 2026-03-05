@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = "==3.12.*"
 
 [[package]]
@@ -26,6 +26,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/67/bb/5a5ec893eea5805fb9a3db76a9888c3429710dfb6f24bbb37568f2cf7320/ag_ui_protocol-0.1.10.tar.gz", hash = "sha256:3213991c6b2eb24bb1a8c362ee270c16705a07a4c5962267a083d0959ed894f4", size = 6945, upload-time = "2025-11-06T15:17:17.068Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/8f/78/eb55fabaab41abc53f52c0918a9a8c0f747807e5306273f51120fd695957/ag_ui_protocol-0.1.10-py3-none-any.whl", hash = "sha256:c81e6981f30aabdf97a7ee312bfd4df0cd38e718d9fc10019c7d438128b93ab5", size = 7889, upload-time = "2025-11-06T15:17:15.325Z" },
+]
+
+[[package]]
+name = "agnost"
+version = "0.1.13"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/e6/2a/1ad9782e7120806c8321d3c409fd9f90a852fcb39fcb24799eaa35774400/agnost-0.1.13.tar.gz", hash = "sha256:dac877e06f3ce897786d62cde781d7e14a6ec3f879d514a19b1165e4b286235c", size = 13977, upload-time = "2026-02-17T18:56:29.395Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f7/37/6b22a5089f2c658ad936bf81c33c71c2e5ac8a05f6e657ea5a9623a7d587/agnost-0.1.13-py3-none-any.whl", hash = "sha256:4c93045b8273da7d4533b112c0cd67670accbe28d375899c3a7f8e1ebb83a08b", size = 15619, upload-time = "2026-02-17T18:56:28.184Z" },
 ]
 
 [[package]]
@@ -1153,6 +1165,7 @@ source = { editable = "." }
 dependencies = [
     { name = "adrf" },
     { name = "ag-ui-protocol" },
+    { name = "agnost" },
     { name = "asgiref" },
     { name = "beautifulsoup4" },
     { name = "boto3" },
@@ -1242,6 +1255,7 @@ dev = [
 requires-dist = [
     { name = "adrf", specifier = ">=0.1.6" },
     { name = "ag-ui-protocol", specifier = ">=0.1.10" },
+    { name = "agnost", specifier = ">=0.1.13" },
     { name = "asgiref", specifier = ">=3.7.0" },
     { name = "beautifulsoup4", specifier = ">=4.12.2" },
     { name = "boto3", specifier = ">=1.35.0" },

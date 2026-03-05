@@ -1,0 +1,24 @@
+import { Component } from '@angular/core';
+import { Router } from '@angular/router';
+import { injectPillarTool } from '@pillar-ai/angular';
+
+@Component({
+  selector: 'app-pillar-tools',
+  standalone: true,
+  template: '',
+})
+export class PillarToolsComponent {
+  constructor(private router: Router) {
+    injectPillarTool({
+      name: 'open_settings',
+      type: 'navigate', // navigate | trigger_tool | query | external_link | copy_text
+                        // Full reference: https://trypillar.com/docs/guides/tools
+      description: 'Navigate to the settings page',
+      examples: ['open settings', 'go to settings'],
+      autoRun: true,
+      execute: () => this.router.navigate(['/settings']),
+    });
+  }
+}
+
+// Add PillarToolsComponent to your app module or include it in your layout

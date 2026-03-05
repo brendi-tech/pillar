@@ -110,6 +110,7 @@ dependencies = [
     "opentelemetry-resourcedetector-gcp>=1.6.0",
     "opentelemetry-exporter-otlp-proto-http>=1.26.0",
     "sentry-sdk[django]>=2.52.0",
+    "agnost>=0.1.13",
 ]
 
 [build-system]

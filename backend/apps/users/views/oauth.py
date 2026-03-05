@@ -539,21 +539,23 @@ def _create_default_product(organization: Organization, user) -> Product:
     This mirrors the logic in UserViewSet.create() to ensure OAuth signups
     get the same default product setup as regular email signups.
     """
-    import re
-    import uuid
-    
-    # Generate a subdomain from the org name (lowercase, alphanumeric, hyphens)
-    org_name = organization.name
-    base_subdomain = re.sub(r'[^a-z0-9-]', '', org_name.lower().replace(' ', '-').replace("'", ''))
-    base_subdomain = re.sub(r'-+', '-', base_subdomain).strip('-')  # Remove duplicate/leading/trailing hyphens
+    from common.services.subdomain_generator import SubdomainGeneratorService
+
+    raw_name = user.full_name or user.email.split('@')[0]
+    base_subdomain = SubdomainGeneratorService.sanitize_subdomain(raw_name)
     if len(base_subdomain) < 3:
         base_subdomain = f"org-{base_subdomain}" if base_subdomain else "org"
-    # Add a short unique suffix to avoid subdomain conflicts
-    subdomain = f"{base_subdomain[:40]}-{uuid.uuid4().hex[:6]}"
-    
+
+    existing = set(
+        Product.objects.values_list('subdomain', flat=True)
+    )
+    subdomain = SubdomainGeneratorService.ensure_unique_subdomain(
+        base_subdomain, existing
+    )
+
     product = Product.objects.create(
         organization=organization,
-        name=f"{user.full_name or user.email.split('@')[0]}",
+        name=raw_name,
         subdomain=subdomain,
         is_default=True,
     )

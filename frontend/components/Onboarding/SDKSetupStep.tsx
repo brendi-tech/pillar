@@ -14,10 +14,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 
-import { AIPromptBlock } from "@/components/mdx/AIPromptBlock";
 import {
-  AI_PROMPT_SOURCES,
-  AI_PROMPT_TITLES,
   DOCS_URLS,
   FRAMEWORKS,
   getProviderCode,
@@ -175,10 +172,6 @@ function ActionsStep({
                 language={toolConfig.language}
                 filePath={toolConfig.filePath}
                 docsUrl="https://trypillar.com/docs/guides/tools"
-              />
-              <AIPromptBlock
-                title={AI_PROMPT_TITLES[framework.id]}
-                src={AI_PROMPT_SOURCES[framework.id]}
               />
             </TabsContent>
           );

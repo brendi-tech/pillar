@@ -306,7 +306,7 @@ export default function ForLLMsPage() {
           </li>
           <li>
             <a
-              href="https://trypillar.com/docs/overview/introduction"
+              href="https://trypillar.com/docs/get-started/what-is-pillar"
               className="underline"
             >
               Documentation

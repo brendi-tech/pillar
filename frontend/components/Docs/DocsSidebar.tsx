@@ -15,11 +15,11 @@ import {
 } from "@/components/ui/sheet";
 import type { NavGroup, NavSection } from "@/lib/docs-navigation";
 import { cn } from "@/lib/utils";
-import { ChevronRight, Menu, Search } from "lucide-react";
+import { ChevronRight, Menu, Search, Settings } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { useDocsSearch } from "./DocsLayoutClient";
+import { useDocsPreferencesDialog, useDocsSearch } from "./DocsLayoutClient";
 
 interface DocsSidebarProps {
   navigation: NavSection[];
@@ -151,6 +151,7 @@ function NavItems({
 export function DocsMobileHeader({ navigation }: DocsSidebarProps) {
   const [open, setOpen] = useState(false);
   const openSearch = useDocsSearch();
+  const openPreferences = useDocsPreferencesDialog();
 
   return (
     <div className="lg:hidden sticky top-0 z-40 bg-background border-b border-border">
@@ -159,6 +160,13 @@ export function DocsMobileHeader({ navigation }: DocsSidebarProps) {
           <PillarLogoWithName className="h-6" />
         </Link>
         <div className="flex items-center gap-1">
+          <button
+            onClick={openPreferences}
+            className="p-2 text-muted-foreground hover:text-foreground transition-colors"
+            aria-label="Docs preferences"
+          >
+            <Settings className="h-5 w-5" />
+          </button>
           <button
             onClick={openSearch}
             className="p-2 text-muted-foreground hover:text-foreground transition-colors"

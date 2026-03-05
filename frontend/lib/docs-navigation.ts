@@ -31,41 +31,30 @@ export interface NavSection {
 /**
  * Documentation navigation structure
  *
- * Organized by user goals following the Diátaxis framework:
- * - Overview: Introduction and concepts
- * - Quickstarts: Framework-specific getting started guides
+ * Follows the Hatchet-style progression:
+ * - Get Started: What is Pillar? + Quickstart
+ * - Core Concepts: Brief overviews of each concept
  * - Guides: Task-oriented how-to documentation
- * - Reference: API specifications and type definitions
  * - Knowledge Base: Content sources and configuration
+ * - Reference: API specifications and type definitions
  */
 export const docsNavigation: NavSection[] = [
   {
-    title: "Overview",
-    slug: "overview",
+    title: "Get Started",
+    slug: "get-started",
     items: [
-      { title: "Introduction", href: "/docs/overview/introduction" },
-      { title: "How It Works", href: "/docs/overview/how-it-works" },
+      { title: "What is Pillar?", href: "/docs/get-started/what-is-pillar" },
+      { title: "Quickstart", href: "/docs/get-started/quickstart" },
     ],
   },
   {
-    title: "Quickstarts",
-    slug: "quickstarts",
+    title: "Core Concepts",
+    slug: "core-concepts",
     items: [
-      { title: "React", href: "/docs/quickstarts/react" },
-      { title: "Vue", href: "/docs/quickstarts/vue" },
-      { title: "Angular", href: "/docs/quickstarts/angular" },
-      { title: "Vanilla JavaScript", href: "/docs/quickstarts/vanilla" },
-    ],
-  },
-  {
-    title: "Features",
-    slug: "features",
-    items: [
-      { title: "Co-Pilot Chat", href: "/docs/features/chat" },
-      { title: "Knowledge Base", href: "/docs/features/knowledge-base" },
-      { title: "Tools", href: "/docs/features/tools" },
-      { title: "Custom Cards", href: "/docs/features/custom-cards" },
-      { title: "Human Escalation", href: "/docs/features/human-escalation" },
+      { title: "Tools", href: "/docs/core-concepts/tools" },
+      { title: "Knowledge Base", href: "/docs/core-concepts/knowledge-base" },
+      { title: "Custom Cards", href: "/docs/core-concepts/custom-cards" },
+      { title: "Human Escalation", href: "/docs/core-concepts/human-escalation" },
     ],
   },
   {
@@ -100,7 +89,7 @@ export const docsNavigation: NavSection[] = [
   {
     title: "Reference",
     slug: "reference",
-    items: [], // Individual items are inside groups
+    items: [],
     groups: referenceManifest.navigation as NavGroup[],
   },
 ];
@@ -162,5 +151,5 @@ export function findNavContext(pathname: string): {
  * Get the first doc path (for redirecting from /docs)
  */
 export function getFirstDocPath(): string {
-  return docsNavigation[0]?.items[0]?.href ?? "/docs/overview/introduction";
+  return docsNavigation[0]?.items[0]?.href ?? "/docs/get-started/what-is-pillar";
 }

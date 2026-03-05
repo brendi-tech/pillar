@@ -1,40 +1,12 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
+import { useDocsPreferences, type Framework } from '@/components/Docs/DocsPreferencesProvider';
+import { useDocsUser, replaceSlugPlaceholders } from '@/components/Docs/DocsUserProvider';
 import { SyntaxHighlightedPre } from './SyntaxHighlightedPre';
 import { cn } from '@/lib/utils';
 
-// localStorage key for persisting language preference
-const LANGUAGE_PREFERENCE_KEY = 'pillar-docs-code-language';
-
-// Custom event name for syncing across components
-const LANGUAGE_CHANGE_EVENT = 'pillar-docs-language-change';
-
-/**
- * Get the stored language preference from localStorage
- */
-function getStoredLanguage(): string | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    return localStorage.getItem(LANGUAGE_PREFERENCE_KEY);
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Store language preference and broadcast to other components
- */
-function setStoredLanguage(label: string): void {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(LANGUAGE_PREFERENCE_KEY, label);
-    // Dispatch custom event for other components on the same page
-    window.dispatchEvent(new CustomEvent(LANGUAGE_CHANGE_EVENT, { detail: label }));
-  } catch {
-    // Ignore storage errors
-  }
-}
+const FRAMEWORK_VALUES: Framework[] = ['React', 'Vue', 'Angular', 'Vanilla JS'];
 
 /**
  * Dynamic loading of code examples using webpack's require.context.
@@ -126,9 +98,10 @@ export function CodeSnippet({
   language,
   className,
 }: CodeSnippetProps) {
-  const code = CODE_EXAMPLES[src];
+  const rawCode = CODE_EXAMPLES[src];
+  const { slug } = useDocsUser();
   
-  if (!code) {
+  if (!rawCode) {
     console.warn(`CodeSnippet: No example found for "${src}"`);
     return (
       <div className="bg-red-900/20 text-red-400 p-4 rounded-lg my-3 text-sm">
@@ -137,12 +110,13 @@ export function CodeSnippet({
     );
   }
 
+  const code = replaceSlugPlaceholders(rawCode.trim(), slug);
   const displayPath = title || `examples/${src}`;
   const detectedLanguage = language || getLanguageFromPath(src);
 
   return (
     <SyntaxHighlightedPre
-      code={code.trim()}
+      code={code}
       language={detectedLanguage}
       filePath={displayPath}
       className={className}
@@ -174,7 +148,7 @@ interface CodeSnippetTabsProps {
 
 /**
  * Display multiple code snippets with language tabs.
- * Language preference is synced across all CodeSnippetTabs and persisted in localStorage.
+ * Framework preference is synced via DocsPreferencesContext.
  * 
  * Usage in MDX:
  * <CodeSnippetTabs
@@ -190,63 +164,29 @@ export function CodeSnippetTabs({
   defaultTab = 0,
   className,
 }: CodeSnippetTabsProps) {
-  // Validate snippets first to get labels
+  const { framework, setFramework } = useDocsPreferences();
+  const { slug } = useDocsUser();
+
   const validSnippets = (snippets || []).map((snippet) => {
-    const code = CODE_EXAMPLES[snippet.src];
+    const rawCode = CODE_EXAMPLES[snippet.src];
+    const code = rawCode ? replaceSlugPlaceholders(rawCode, slug) : rawCode;
     const label = snippet.label || getLabelFromPath(snippet.src);
     const language = snippet.language || getLanguageFromPath(snippet.src);
     return { ...snippet, code, label, language };
   });
 
-  // Always start with defaultTab for SSR, then sync with localStorage after hydration
-  const [activeTab, setActiveTab] = useState(defaultTab);
+  // Derive active tab from global framework preference
+  const preferredIndex = validSnippets.findIndex((s) => s.label === framework);
+  const activeTab = preferredIndex !== -1 ? preferredIndex : defaultTab;
 
-  // Sync with stored preference after hydration (avoids SSR mismatch)
-  useEffect(() => {
-    const storedLabel = getStoredLanguage();
-    if (storedLabel) {
-      const matchingIndex = validSnippets.findIndex((s) => s.label === storedLabel);
-      if (matchingIndex !== -1 && matchingIndex !== activeTab) {
-        setActiveTab(matchingIndex);
+  const handleTabClick = useCallback(
+    (index: number, label: string) => {
+      if (FRAMEWORK_VALUES.includes(label as Framework)) {
+        setFramework(label as Framework);
       }
-    }
-  }, []); // Run once on mount
-
-  // Sync with other components when language changes
-  useEffect(() => {
-    const handleLanguageChange = (event: CustomEvent<string>) => {
-      const newLabel = event.detail;
-      const matchingIndex = validSnippets.findIndex((s) => s.label === newLabel);
-      if (matchingIndex !== -1 && matchingIndex !== activeTab) {
-        setActiveTab(matchingIndex);
-      }
-    };
-
-    // Listen for changes from other components
-    window.addEventListener(LANGUAGE_CHANGE_EVENT, handleLanguageChange as EventListener);
-
-    // Also listen for storage changes from other tabs/windows
-    const handleStorageChange = (event: StorageEvent) => {
-      if (event.key === LANGUAGE_PREFERENCE_KEY && event.newValue) {
-        const matchingIndex = validSnippets.findIndex((s) => s.label === event.newValue);
-        if (matchingIndex !== -1 && matchingIndex !== activeTab) {
-          setActiveTab(matchingIndex);
-        }
-      }
-    };
-    window.addEventListener('storage', handleStorageChange);
-
-    return () => {
-      window.removeEventListener(LANGUAGE_CHANGE_EVENT, handleLanguageChange as EventListener);
-      window.removeEventListener('storage', handleStorageChange);
-    };
-  }, [validSnippets, activeTab]);
-
-  // Handle tab click - update local state and broadcast
-  const handleTabClick = useCallback((index: number, label: string) => {
-    setActiveTab(index);
-    setStoredLanguage(label);
-  }, []);
+    },
+    [setFramework]
+  );
 
   if (!snippets || snippets.length === 0) {
     return (

@@ -1,16 +1,20 @@
 "use client";
 
 import { PillarLogoWithName } from "@/components/marketing/LandingPage/PillarLogoWithName";
-import { Search } from "lucide-react";
+import { Search, Settings } from "lucide-react";
 import Link from "next/link";
 
 interface DocsHeaderProps {
   onOpenSearch: () => void;
+  onOpenPreferences: () => void;
 }
 
-export function DocsHeader({ onOpenSearch }: DocsHeaderProps) {
+export function DocsHeader({
+  onOpenSearch,
+  onOpenPreferences,
+}: DocsHeaderProps) {
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-background">
       {/* Full-width container with centered search */}
       <div className="relative flex h-14 items-center px-4">
         {/* Left: Logo aligned with sidebar (inside max-width container) */}
@@ -33,12 +37,21 @@ export function DocsHeader({ onOpenSearch }: DocsHeaderProps) {
               </kbd>
             </button>
           </div>
-          <Link
-            href="/login"
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Dashboard
-          </Link>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={onOpenPreferences}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Docs preferences"
+            >
+              <Settings className="h-4 w-4" />
+            </button>
+            <Link
+              href="/login"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Dashboard
+            </Link>
+          </div>
         </div>
       </div>
     </header>

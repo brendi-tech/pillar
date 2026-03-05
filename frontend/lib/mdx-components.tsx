@@ -10,7 +10,6 @@ import type { MDXComponents } from 'mdx/types';
 
 // Custom MDX components
 import {
-  AIPromptBlock,
   Callout,
   InfoCallout,
   WarningCallout,
@@ -36,7 +35,6 @@ import {
  */
 export const mdxComponents: MDXComponents = {
   // Custom MDX components
-  AIPromptBlock,
   Callout,
   InfoCallout,
   WarningCallout,

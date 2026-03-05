@@ -251,7 +251,7 @@ export function ConfigureCloudStorage({
                 Your credentials are encrypted and stored securely.
               </p>
               <a
-                href="/docs/knowledge/s3-setup"
+                href="/docs/knowledge-base/cloud-storage"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
@@ -280,7 +280,7 @@ export function ConfigureCloudStorage({
               Paste your service account JSON credentials. They are encrypted and stored securely.
             </p>
             <a
-              href="/docs/knowledge/gcs-setup"
+              href="/docs/knowledge-base/cloud-storage"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"

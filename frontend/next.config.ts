@@ -171,35 +171,35 @@ const nextConfig: NextConfig = {
       // Docs index redirect
       {
         source: "/docs",
-        destination: "/docs/overview/introduction",
+        destination: "/docs/get-started/what-is-pillar",
         permanent: false,
       },
       // Overview section
       {
         source: "/docs/getting-started/introduction",
-        destination: "/docs/overview/introduction",
+        destination: "/docs/get-started/what-is-pillar",
         permanent: true,
       },
       {
         source: "/docs/getting-started/quick-start",
-        destination: "/docs/quickstarts/react",
+        destination: "/docs/get-started/quickstart",
         permanent: true,
       },
-      // Old quickstart paths -> new React quickstart
+      // Old quickstart paths -> new quickstart (with framework hint)
       {
         source: "/docs/quickstarts/nextjs",
-        destination: "/docs/quickstarts/react",
+        destination: "/docs/get-started/quickstart?framework=react",
         permanent: true,
       },
       {
         source: "/docs/quickstarts/vite",
-        destination: "/docs/quickstarts/react",
+        destination: "/docs/get-started/quickstart?framework=react",
         permanent: true,
       },
       // React section -> Reference
       {
         source: "/docs/react/installation",
-        destination: "/docs/quickstarts/react",
+        destination: "/docs/get-started/quickstart",
         permanent: true,
       },
       {
@@ -215,7 +215,7 @@ const nextConfig: NextConfig = {
       // Vanilla section -> Quickstarts
       {
         source: "/docs/vanilla/installation",
-        destination: "/docs/quickstarts/vanilla",
+        destination: "/docs/get-started/quickstart",
         permanent: true,
       },
       // Configuration section -> Guides
@@ -234,6 +234,12 @@ const nextConfig: NextConfig = {
         destination: "/docs/guides/theme",
         permanent: true,
       },
+      // Configuration section -> Guides (bare path catch-all)
+      {
+        source: "/docs/configuration",
+        destination: "/docs/guides/panel",
+        permanent: true,
+      },
       // Legacy knowledge/data-sources redirects -> Knowledge Base
       {
         source: "/docs/knowledge/gcs-setup",
@@ -246,14 +252,103 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
+        source: "/docs/knowledge",
+        destination: "/docs/knowledge-base/overview",
+        permanent: true,
+      },
+      {
+        source: "/docs/knowledge/:path*",
+        destination: "/docs/knowledge-base/overview",
+        permanent: true,
+      },
+      {
         source: "/docs/data-sources/:path*",
         destination: "/docs/knowledge-base/overview",
+        permanent: true,
+      },
+      // Old overview section → Get Started
+      {
+        source: "/docs/overview",
+        destination: "/docs/get-started/what-is-pillar",
+        permanent: true,
+      },
+      {
+        source: "/docs/overview/introduction",
+        destination: "/docs/get-started/what-is-pillar",
+        permanent: true,
+      },
+      {
+        source: "/docs/overview/how-it-works",
+        destination: "/docs/get-started/what-is-pillar",
+        permanent: true,
+      },
+      // Old quickstarts section → unified quickstart (with framework query param)
+      {
+        source: "/docs/quickstarts",
+        destination: "/docs/get-started/quickstart",
+        permanent: true,
+      },
+      {
+        source: "/docs/quickstarts/react",
+        destination: "/docs/get-started/quickstart?framework=react",
+        permanent: true,
+      },
+      {
+        source: "/docs/quickstarts/vue",
+        destination: "/docs/get-started/quickstart?framework=vue",
+        permanent: true,
+      },
+      {
+        source: "/docs/quickstarts/angular",
+        destination: "/docs/get-started/quickstart?framework=angular",
+        permanent: true,
+      },
+      {
+        source: "/docs/quickstarts/vanilla",
+        destination: "/docs/get-started/quickstart?framework=vanilla",
+        permanent: true,
+      },
+      // Old features section → Core Concepts
+      {
+        source: "/docs/features",
+        destination: "/docs/core-concepts/tools",
+        permanent: true,
+      },
+      {
+        source: "/docs/features/chat",
+        destination: "/docs/get-started/what-is-pillar",
+        permanent: true,
+      },
+      {
+        source: "/docs/features/tools",
+        destination: "/docs/core-concepts/tools",
+        permanent: true,
+      },
+      {
+        source: "/docs/features/knowledge-base",
+        destination: "/docs/core-concepts/knowledge-base",
+        permanent: true,
+      },
+      {
+        source: "/docs/features/custom-cards",
+        destination: "/docs/core-concepts/custom-cards",
+        permanent: true,
+      },
+      {
+        source: "/docs/features/human-escalation",
+        destination: "/docs/core-concepts/human-escalation",
+        permanent: true,
+      },
+      // Old getting-started catch-all
+      {
+        source: "/docs/getting-started",
+        destination: "/docs/get-started/what-is-pillar",
         permanent: true,
       },
       // Actions -> Tools rename
       {
         source: "/docs/features/actions",
-        destination: "/docs/features/tools",
+        destination: "/docs/core-concepts/tools",
         permanent: true,
       },
       {

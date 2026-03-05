@@ -1,0 +1,18 @@
+import { usePillarTool } from '@pillar-ai/react';
+import { useRouter } from 'next/navigation';
+
+export function usePillarTools() {
+  const router = useRouter();
+
+  usePillarTool({
+    name: 'open_settings',
+    type: 'navigate', // navigate | trigger_tool | query | external_link | copy_text
+                      // Full reference: https://trypillar.com/docs/guides/tools
+    description: 'Navigate to the settings page',
+    examples: ['open settings', 'go to settings'],
+    autoRun: true,
+    execute: () => router.push('/settings'),
+  });
+}
+
+// Call usePillarTools() inside PillarProvider (e.g. in app/layout.tsx)

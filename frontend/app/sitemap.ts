@@ -47,6 +47,12 @@ const EXCLUDED_PREFIXES = [
   "/api",
   // Legacy redirect sources (redirects configured in next.config.ts)
   "/docs/getting-started",
+  "/docs/overview",
+  "/docs/quickstarts",
+  "/docs/features",
+  "/docs/configuration",
+  "/docs/knowledge",
+  "/docs/data-sources",
   "/docs/react",
   "/docs/vanilla",
 ];
@@ -80,8 +86,8 @@ function getMetadata(urlPath: string): {
     return { priority: 0.6, changeFrequency: "monthly" };
   if (urlPath === "/pricing")
     return { priority: 0.7, changeFrequency: "monthly" };
-  // Docs: overview/quickstarts are discovery pages, guides/reference serve existing users
-  if (urlPath.startsWith("/docs/overview/") || urlPath.startsWith("/docs/quickstarts/") || urlPath.startsWith("/docs/features/"))
+  // Docs: get-started/core-concepts are discovery pages, guides/reference serve existing users
+  if (urlPath.startsWith("/docs/get-started/") || urlPath.startsWith("/docs/core-concepts/"))
     return { priority: 0.6, changeFrequency: "monthly" };
   if (urlPath.startsWith("/docs/"))
     return { priority: 0.5, changeFrequency: "monthly" };

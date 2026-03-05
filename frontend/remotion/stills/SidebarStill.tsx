@@ -9,7 +9,7 @@ import { MockNextProvider } from "../mocks/NextMocks";
  */
 export const SidebarStill: React.FC = () => {
   return (
-    <MockNextProvider pathname="/docs/features/chat">
+    <MockNextProvider pathname="/docs/get-started/what-is-pillar">
       <AbsoluteFill
         style={{
           backgroundColor: "white",

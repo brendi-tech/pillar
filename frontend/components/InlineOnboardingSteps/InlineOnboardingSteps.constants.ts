@@ -105,10 +105,10 @@ export const PROVIDER_LABELS: Record<FrameworkId, string> = {
 };
 
 export const DOCS_URLS: Record<FrameworkId, string> = {
-  react: "https://trypillar.com/docs/quickstarts/react",
-  vue: "https://trypillar.com/docs/quickstarts/vue",
-  angular: "https://trypillar.com/docs/quickstarts/angular",
-  vanilla: "https://trypillar.com/docs/quickstarts/vanilla",
+  react: "https://trypillar.com/docs/get-started/quickstart",
+  vue: "https://trypillar.com/docs/get-started/quickstart",
+  angular: "https://trypillar.com/docs/get-started/quickstart",
+  vanilla: "https://trypillar.com/docs/get-started/quickstart",
 };
 
 export const TOOL_EXAMPLES: Record<

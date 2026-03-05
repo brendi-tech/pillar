@@ -1,12 +1,10 @@
-// app.config.ts
 import { ApplicationConfig, APP_INITIALIZER, inject } from '@angular/core';
 import { PillarService } from '@pillar-ai/angular';
-import { environment } from '../environments/environment';
 
 function initPillar() {
   const pillarService = inject(PillarService);
   return () => pillarService.init({
-    productKey: environment.pillarProductKey,
+    productKey: 'your-product-key',
   });
 }
 
