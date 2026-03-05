@@ -3,7 +3,8 @@
 import { SourcesSidebar } from "@/components/Sources/SourcesPage/SourcesSidebar";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
-import { PanelLeftIcon } from "lucide-react";
+import { PanelLeftIcon, Plus } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 
 interface KnowledgeLayoutProps {
@@ -50,15 +51,22 @@ export default function KnowledgeLayout({ children }: KnowledgeLayoutProps) {
                 Manage your knowledge sources
               </p>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setSidebarOpen(true)}
-              aria-label="Open sources list"
-            >
-              <PanelLeftIcon className="mr-1.5 h-4 w-4" />
-              Sources
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button asChild size="sm">
+                <Link href="/knowledge/new" aria-label="Add source">
+                  <Plus className="h-4 w-4" />
+                </Link>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSidebarOpen(true)}
+                aria-label="Open sources list"
+              >
+                <PanelLeftIcon className="mr-1.5 h-4 w-4" />
+                Sources
+              </Button>
+            </div>
           </div>
         </div>
 
