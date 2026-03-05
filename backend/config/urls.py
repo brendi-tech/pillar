@@ -12,7 +12,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from rest_framework.routers import DefaultRouter
 from .admin_views import (
     AdminSpectacularAPIView,
@@ -56,9 +56,15 @@ def root_view(request):
     })
 
 
+def robots_txt(request):
+    """Disallow all crawling on the API subdomain."""
+    return HttpResponse("User-agent: *\nDisallow: /\n", content_type="text/plain")
+
+
 urlpatterns = [
     # Root welcome endpoint
     path('', root_view, name='root'),
+    path('robots.txt', robots_txt, name='robots-txt'),
 
     # Admin
     path('admin/redis/', redis_manager_view, name='admin-redis-manager'),

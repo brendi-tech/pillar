@@ -32,6 +32,7 @@ const EXCLUDED_PREFIXES = [
   "/setup",
   "/team",
   "/tools",
+  "/api-keys",
   // Auth
   "/login",
   "/signup",
