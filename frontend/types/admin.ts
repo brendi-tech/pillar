@@ -664,6 +664,14 @@ export interface ChatMessage {
   cluster_confidence?: number | null;
 }
 
+export interface VisitorSummary {
+  id: string;
+  visitor_id: string;
+  external_user_id: string | null;
+  name: string;
+  email: string;
+}
+
 export interface ChatConversationListItem {
   id: string;
   status: ConversationStatus;
@@ -682,6 +690,7 @@ export interface ChatConversationListItem {
   title?: string;
   external_session_id?: string;
   logging_enabled?: boolean;
+  visitor?: VisitorSummary | null;
 }
 
 export interface ChatConversationDetail {
@@ -707,6 +716,7 @@ export interface ChatConversationDetail {
   external_session_id?: string;
   logging_enabled?: boolean;
   metadata?: Record<string, unknown>;
+  visitor?: VisitorSummary | null;
 }
 
 export interface ConversationsListResponse {

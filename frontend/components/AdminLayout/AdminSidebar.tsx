@@ -90,6 +90,12 @@ const navigationItems: NavItem[] = [
     category: "insights",
   },
   {
+    title: "Users",
+    href: "/users",
+    icon: Users,
+    category: "insights",
+  },
+  {
     title: "Configure",
     href: "/configure",
     icon: Sliders,

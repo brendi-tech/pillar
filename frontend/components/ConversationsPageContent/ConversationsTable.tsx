@@ -1,6 +1,10 @@
 "use client";
 
 import { Spinner } from "@/components/ui/spinner";
+import {
+  TableSkeleton,
+  type TableSkeletonColumn,
+} from "@/components/ui/table-skeleton";
 import { format } from "date-fns";
 import { AlertCircle, MessageSquare, ThumbsDown } from "lucide-react";
 import { useEffect, useRef } from "react";
@@ -18,6 +22,14 @@ import type {
   ChatConversationListItem,
   ConversationStatus,
 } from "@/types/admin";
+
+const CONVERSATIONS_TABLE_COLUMNS: TableSkeletonColumn[] = [
+  { header: "Started", width: "w-[140px]", cellWidth: "w-24" },
+  { header: "Status", width: "w-[100px]", cellWidth: "w-16" },
+  { header: "Messages", width: "w-[80px]", cellWidth: "w-8", centered: true },
+  { header: "First Question", cellWidth: "w-64" },
+  { header: "Feedback", width: "w-[72px]", cellWidth: "w-6", centered: true },
+];
 
 interface ConversationsTableProps {
   conversations: ChatConversationListItem[];
@@ -80,11 +92,7 @@ export function ConversationsTable({
   }, [hasNextPage, isFetchingNextPage, onLoadMore]);
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Spinner size="lg" />
-      </div>
-    );
+    return <TableSkeleton columns={CONVERSATIONS_TABLE_COLUMNS} />;
   }
 
   if (isError) {

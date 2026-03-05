@@ -13,13 +13,13 @@ import django_filters
 
 from apps.analytics.models import (
     Search, WidgetSession,
-    ChatConversation, ChatMessage
+    ChatConversation, ChatMessage, Visitor
 )
 from apps.analytics.serializers import (
     SearchSerializer,
     WidgetSessionSerializer, ChatConversationSerializer, ChatMessageSerializer,
     ChatConversationListSerializer, ChatConversationDetailSerializer,
-    ChatMessageDetailSerializer,
+    ChatMessageDetailSerializer, VisitorSerializer,
 )
 from apps.users.permissions import IsAuthenticatedAdmin
 
@@ -134,7 +134,7 @@ class ChatConversationViewSet(viewsets.ReadOnlyModelViewSet):
         """
         queryset = ChatConversation.objects.filter(
             organization__in=self.request.user.organizations.all()
-        )
+        ).select_related('visitor')
         
         if self.action == 'list':
             # Annotate with message count for list view
@@ -169,3 +169,40 @@ class ChatMessageViewSet(viewsets.ReadOnlyModelViewSet):
         return ChatMessage.objects.filter(
             organization__in=self.request.user.organizations.all()
         ).order_by('conversation', 'timestamp')
+
+
+class VisitorFilter(FilterSet):
+    """Filter for Visitor queries."""
+    search = django_filters.CharFilter(method='filter_search')
+
+    class Meta:
+        model = Visitor
+        fields = ['external_user_id', 'search']
+
+    def filter_search(self, queryset, name, value):
+        """Search across visitor_id, external_user_id, name, and email."""
+        if value:
+            return queryset.filter(
+                Q(visitor_id__icontains=value) |
+                Q(external_user_id__icontains=value) |
+                Q(name__icontains=value) |
+                Q(email__icontains=value)
+            )
+        return queryset
+
+
+class VisitorViewSet(viewsets.ReadOnlyModelViewSet):
+    """ViewSet for viewing Visitors (SDK identified users)."""
+    
+    permission_classes = [IsAuthenticatedAdmin]
+    serializer_class = VisitorSerializer
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = VisitorFilter
+    
+    def get_queryset(self):
+        return Visitor.objects.filter(
+            organization__in=self.request.user.organizations.all()
+        ).annotate(
+            conversation_count=Count('conversations')
+        ).order_by('-last_seen_at')

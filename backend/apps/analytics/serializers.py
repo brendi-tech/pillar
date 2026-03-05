@@ -4,7 +4,7 @@ Serializers for the analytics app.
 from rest_framework import serializers
 from apps.analytics.models import (
     Search, WidgetSession,
-    ChatConversation, ChatMessage
+    ChatConversation, ChatMessage, Visitor
 )
 from apps.knowledge.models import KnowledgeItem, KnowledgeChunk
 
@@ -67,6 +67,15 @@ class ChatConversationSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at', 'updated_at']
 
 
+class VisitorSummarySerializer(serializers.ModelSerializer):
+    """Minimal visitor info for embedding in conversation responses."""
+    
+    class Meta:
+        model = Visitor
+        fields = ['id', 'visitor_id', 'external_user_id', 'name', 'email']
+        read_only_fields = fields
+
+
 class ChatConversationListSerializer(serializers.ModelSerializer):
     """
     Lightweight serializer for listing conversations.
@@ -76,6 +85,7 @@ class ChatConversationListSerializer(serializers.ModelSerializer):
     first_user_message = serializers.SerializerMethodField()
     last_assistant_message = serializers.SerializerMethodField()
     has_negative_feedback = serializers.SerializerMethodField()
+    visitor = VisitorSummarySerializer(read_only=True)
     
     class Meta:
         model = ChatConversation
@@ -83,7 +93,7 @@ class ChatConversationListSerializer(serializers.ModelSerializer):
             'id', 'status', 'page_url', 'started_at', 'last_message_at',
             'message_count', 'first_user_message', 'last_assistant_message',
             'has_negative_feedback', 'escalation_reason', 'escalated_to',
-            'created_at', 'updated_at'
+            'created_at', 'updated_at', 'visitor'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
     
@@ -194,6 +204,7 @@ class ChatConversationDetailSerializer(serializers.ModelSerializer):
     messages = ChatMessageDetailSerializer(many=True, read_only=True)
     message_count = serializers.SerializerMethodField()
     has_negative_feedback = serializers.SerializerMethodField()
+    visitor = VisitorSummarySerializer(read_only=True)
     
     class Meta:
         model = ChatConversation
@@ -201,7 +212,7 @@ class ChatConversationDetailSerializer(serializers.ModelSerializer):
             'id', 'session', 'status', 'page_url', 'product_context',
             'escalation_reason', 'escalated_to', 'started_at', 'last_message_at',
             'messages', 'message_count', 'has_negative_feedback',
-            'created_at', 'updated_at'
+            'created_at', 'updated_at', 'visitor'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
     
@@ -213,3 +224,45 @@ class ChatConversationDetailSerializer(serializers.ModelSerializer):
             role=ChatMessage.Role.ASSISTANT,
             feedback=ChatMessage.Feedback.DOWN
         ).exists()
+
+
+class VisitorConversationSerializer(serializers.ModelSerializer):
+    """Lightweight serializer for visitor's recent conversations."""
+    message_count = serializers.SerializerMethodField()
+    first_user_message = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = ChatConversation
+        fields = [
+            'id', 'title', 'status', 'started_at', 'last_message_at',
+            'message_count', 'first_user_message'
+        ]
+    
+    def get_message_count(self, obj) -> int:
+        if hasattr(obj, '_message_count'):
+            return obj._message_count
+        return obj.messages.count()
+    
+    def get_first_user_message(self, obj) -> str | None:
+        first_msg = obj.messages.filter(role=ChatMessage.Role.USER).first()
+        return first_msg.content if first_msg else None
+
+
+class VisitorSerializer(serializers.ModelSerializer):
+    """Serializer for Visitor model (SDK identified users)."""
+    conversation_count = serializers.IntegerField(read_only=True)
+    recent_conversations = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Visitor
+        fields = [
+            'id', 'visitor_id', 'external_user_id',
+            'name', 'email', 'metadata',
+            'first_seen_at', 'last_seen_at',
+            'conversation_count', 'recent_conversations'
+        ]
+        read_only_fields = ['id', 'first_seen_at', 'last_seen_at']
+    
+    def get_recent_conversations(self, obj) -> list[dict]:
+        conversations = obj.conversations.order_by('-started_at')[:5]
+        return VisitorConversationSerializer(conversations, many=True).data

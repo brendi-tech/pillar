@@ -73,6 +73,7 @@ interface ConversationDetailDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCorrectionCreated?: () => void;
+  onVisitorClick?: (visitorId: string) => void;
 }
 
 /** A quote selected from the conversation or reasoning timeline */
@@ -932,6 +933,7 @@ export function ConversationDetailDrawer({
   open,
   onOpenChange,
   onCorrectionCreated,
+  onVisitorClick,
 }: ConversationDetailDrawerProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
@@ -1053,6 +1055,17 @@ export function ConversationDetailDrawer({
             {conversation && (
               <div className="flex items-center gap-4 text-sm text-muted-foreground">
                 <span>{conversation.message_count} messages</span>
+                {conversation.visitor && (
+                  <button
+                    onClick={() => onVisitorClick?.(conversation.visitor!.id)}
+                    className="flex items-center gap-1.5 hover:text-foreground transition-colors"
+                  >
+                    <User className="h-3.5 w-3.5" />
+                    <span className="underline underline-offset-2">
+                      {conversation.visitor.name || conversation.visitor.email || 'Unknown User'}
+                    </span>
+                  </button>
+                )}
                 {conversation.has_negative_feedback && (
                   <span className="flex items-center gap-1 text-orange-600">
                     <ThumbsDown className="h-3.5 w-3.5" />

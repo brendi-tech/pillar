@@ -7,6 +7,7 @@ import { useMemo, useState } from "react";
 
 import { DateRangePicker } from "@/components/DateRangePicker";
 import { PageHeader } from "@/components/shared";
+import { UserDetailModal } from "@/components/UserDetailModal";
 import {
   getDateRangeFromPreset,
   getDefaultDateRange,
@@ -41,6 +42,12 @@ export function ConversationsPageContent() {
     string | null
   >(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  // User detail modal state
+  const [selectedVisitorId, setSelectedVisitorId] = useState<string | null>(
+    null
+  );
+  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
 
   // Filter state
   const [filters, setFilters] = useState<ConversationsFiltersState>({
@@ -99,6 +106,12 @@ export function ConversationsPageContent() {
   // Handle correction created - refetch the list
   const handleCorrectionCreated = () => {
     refetch();
+  };
+
+  // Handle visitor click - open user detail modal
+  const handleVisitorClick = (visitorId: string) => {
+    setSelectedVisitorId(visitorId);
+    setIsUserModalOpen(true);
   };
 
   return (
@@ -160,6 +173,14 @@ export function ConversationsPageContent() {
           if (!open) handleDrawerClose();
         }}
         onCorrectionCreated={handleCorrectionCreated}
+        onVisitorClick={handleVisitorClick}
+      />
+
+      {/* User Detail Modal */}
+      <UserDetailModal
+        visitorId={selectedVisitorId}
+        open={isUserModalOpen}
+        onOpenChange={setIsUserModalOpen}
       />
     </div>
   );
