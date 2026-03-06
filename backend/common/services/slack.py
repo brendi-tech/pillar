@@ -243,6 +243,96 @@ def notify_new_signup(
             return False
 
 
+def notify_actions_synced(
+    product_name: str,
+    organization_name: str,
+    created_count: int,
+    updated_count: int,
+    deleted_count: int,
+    platform: str = "",
+    version: str = "",
+) -> bool:
+    """
+    Send a notification when new actions are synced to a product.
+
+    Only sends when created_count > 0 (new actions, not just updates).
+
+    Args:
+        product_name: Name of the product being synced
+        organization_name: Name of the organization
+        created_count: Number of newly created actions
+        updated_count: Number of updated actions
+        deleted_count: Number of deleted actions
+        platform: Deployment platform (e.g. "vercel", "node")
+        version: Deployment version string
+
+    Returns:
+        True if notification was sent successfully, False otherwise
+    """
+    if created_count <= 0:
+        return False
+
+    try:
+        text = (
+            f"⚡ {created_count} new action{'s' if created_count != 1 else ''} "
+            f"synced for {product_name} ({organization_name})"
+        )
+
+        fields = [
+            {"type": "mrkdwn", "text": f"*Product:*\n{product_name}"},
+            {"type": "mrkdwn", "text": f"*Organization:*\n{organization_name}"},
+            {"type": "mrkdwn", "text": f"*New:*\n{created_count}"},
+            {"type": "mrkdwn", "text": f"*Updated:*\n{updated_count}"},
+        ]
+
+        if deleted_count > 0:
+            fields.append(
+                {"type": "mrkdwn", "text": f"*Deleted:*\n{deleted_count}"}
+            )
+
+        blocks = [
+            {
+                "type": "header",
+                "text": {
+                    "type": "plain_text",
+                    "text": "⚡ New Actions Synced",
+                    "emoji": True,
+                },
+            },
+            {
+                "type": "section",
+                "fields": fields,
+            },
+        ]
+
+        context_parts = [
+            datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC'),
+        ]
+        if platform:
+            context_parts.append(f"Platform: {platform}")
+        if version:
+            context_parts.append(f"Version: {version}")
+
+        blocks.append({
+            "type": "context",
+            "elements": [
+                {"type": "mrkdwn", "text": " | ".join(context_parts)}
+            ],
+        })
+
+        return send_message(text, blocks)
+
+    except Exception as e:
+        logger.error(f"Error building actions synced notification: {e}", exc_info=True)
+        try:
+            return send_message(
+                f"New actions synced: {created_count} created for "
+                f"{product_name} ({organization_name})"
+            )
+        except Exception:
+            return False
+
+
 def notify_agent_score_complete(
     domain: str,
     overall_score: int,

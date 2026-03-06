@@ -1,0 +1,101 @@
+import { useRef, useCallback } from "react";
+import { usePillarTool, usePillar } from "@pillar-ai/react";
+import { useNavigate } from "react-router-dom";
+
+// Step 1: Create a queue hook that serializes form-opening tools
+
+interface QueuedForm {
+  toolName: string;
+  data: Record<string, unknown>;
+  open: () => void;
+}
+
+export function useFormQueue() {
+  const queue = useRef<QueuedForm[]>([]);
+  const active = useRef<QueuedForm | null>(null);
+  const { completeTool } = usePillar();
+
+  const processNext = useCallback(() => {
+    if (queue.current.length === 0) {
+      active.current = null;
+      return;
+    }
+    const next = queue.current.shift()!;
+    active.current = next;
+    next.open();
+  }, []);
+
+  const enqueue = useCallback(
+    (toolName: string, data: Record<string, unknown>, open: () => void) => {
+      const item: QueuedForm = { toolName, data, open };
+      if (!active.current) {
+        active.current = item;
+        item.open();
+      } else {
+        queue.current.push(item);
+      }
+    },
+    []
+  );
+
+  const onSubmit = useCallback(
+    (resultData?: Record<string, unknown>) => {
+      if (!active.current) return;
+      completeTool(active.current.toolName, true, resultData);
+      processNext();
+    },
+    [completeTool, processNext]
+  );
+
+  const onCancel = useCallback(() => {
+    if (!active.current) return;
+    completeTool(active.current.toolName, false);
+    processNext();
+  }, [completeTool, processNext]);
+
+  return { enqueue, onSubmit, onCancel };
+}
+
+// Step 2: Register tools that enqueue instead of navigating directly
+
+export function useSetupTools() {
+  const navigate = useNavigate();
+  const { enqueue } = useFormQueue();
+
+  usePillarTool([
+    {
+      name: "open_create_trigger",
+      type: "trigger_tool",
+      description: "Open the trigger creation form pre-filled with the given data.",
+      execute: (data) => {
+        enqueue("open_create_trigger", data, () => {
+          navigate(`/triggers/new?prefill=${encodeURIComponent(JSON.stringify(data))}`);
+        });
+        // No return — completion is deferred to form submit
+      },
+    },
+    {
+      name: "open_create_macro",
+      type: "trigger_tool",
+      description: "Open the macro creation form pre-filled with the given data.",
+      execute: (data) => {
+        enqueue("open_create_macro", data, () => {
+          navigate(`/macros/new?prefill=${encodeURIComponent(JSON.stringify(data))}`);
+        });
+      },
+    },
+  ]);
+}
+
+// Step 3: Wire form submit/cancel to the queue
+
+function CreateTriggerPage() {
+  const { onSubmit, onCancel } = useFormQueue();
+
+  const handleSubmit = (formData: Record<string, unknown>) => {
+    const trigger = saveTrigger(formData);
+    onSubmit({ id: trigger.id, name: trigger.name });
+  };
+
+  return <TriggerForm onSubmit={handleSubmit} onCancel={onCancel} />;
+}

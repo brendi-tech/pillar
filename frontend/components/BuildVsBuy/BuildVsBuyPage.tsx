@@ -324,8 +324,8 @@ export function BuildVsBuyPage() {
           </code>{" "}
           to the browser, letting external AI agents discover and call tools
           your app registers. When you define tools with Pillar, they
-          automatically become your WebMCP surface — available to Claude,
-          ChatGPT, Cursor, and any agent your users bring. If you built the
+          can become your WebMCP surface in supported environments — available to
+          compatible browser agents and top-model workflows through Pillar. If you built the
           three-system stack yourself, you&apos;d need to build that integration
           separately. With Pillar, it ships when the spec ships.
         </p>

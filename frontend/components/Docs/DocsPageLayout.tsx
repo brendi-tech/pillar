@@ -24,8 +24,8 @@ export function DocsPageLayout({ children }: DocsPageLayoutProps) {
   return (
     <div>
       {/* Breadcrumb + toolbar — sticky below the header */}
-      <div className="mb-5">
-        <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+      <div className="sticky top-14 z-20 bg-background pt-3 pb-2 border-b border-border">
+        <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-1.5">
           <Link href="/docs" className="hover:text-foreground transition-colors">
             Docs
           </Link>
@@ -46,10 +46,14 @@ export function DocsPageLayout({ children }: DocsPageLayoutProps) {
         <DocsToolbar />
       </div>
 
-      {showSDKPicker && <DocsSDKPicker />}
+      <div className="mt-5">
+        {showSDKPicker && <DocsSDKPicker />}
 
-      {/* Doc Content */}
-      <article className="prose dark:prose-invert max-w-none text-foreground">{children}</article>
+        {/* Doc Content */}
+        <article className="prose dark:prose-invert max-w-none text-foreground [&_code::before]:content-none [&_code::after]:content-none">
+          {children}
+        </article>
+      </div>
 
       {/* Prev/Next Navigation */}
       <footer className="mt-12 pt-6 border-t border-border">

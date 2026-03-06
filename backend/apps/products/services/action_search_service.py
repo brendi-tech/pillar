@@ -222,7 +222,7 @@ class ActionSearchService:
             if context:
                 filtered_scored = []
                 for score, action in all_scored:
-                    if action.check_context_requirements(context):
+                    if action.matches_context(context):
                         filtered_scored.append((score, action))
                     else:
                         logger.debug(

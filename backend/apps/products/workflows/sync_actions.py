@@ -20,6 +20,7 @@ from pydantic import BaseModel
 
 from common.hatchet_client import get_hatchet_client
 from common.services import push
+from common.services import slack
 
 logger = logging.getLogger(__name__)
 
@@ -133,6 +134,21 @@ async def sync_actions_workflow(workflow_input: SyncActionsInput, context: Conte
         # Step 7 & 8: Verify and finalize (atomic)
         await finalize_job(job_id, str(deployment.id), len(actions_data))
         
+        # Notify Slack when new actions are created
+        if created_count > 0:
+            try:
+                slack.notify_actions_synced(
+                    product_name=product.name,
+                    organization_name=product.organization.name,
+                    created_count=created_count,
+                    updated_count=updated_count,
+                    deleted_count=deleted_count,
+                    platform=platform or "",
+                    version=version or "",
+                )
+            except Exception as e:
+                logger.error(f"[ActionSync] Failed to send Slack notification: {e}")
+
         # Send WebSocket notification for sync completion
         try:
             push.send(

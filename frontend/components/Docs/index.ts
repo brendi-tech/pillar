@@ -1,5 +1,7 @@
 export { DocsAskAI } from "./DocsAskAI";
 export { DocsUserProvider, useDocsUser } from "./DocsUserProvider";
+export type { DocsProduct } from "./DocsUserProvider";
+export { DocsLoginModal } from "./DocsLoginModal";
 export { DocsToolbar } from "./DocsToolbar";
 export { DocsHeader } from "./DocsHeader";
 export { DocsLayoutClient } from "./DocsLayoutClient";

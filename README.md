@@ -60,7 +60,7 @@ Pillar understands the intent, builds a multi-step plan, and executes it using y
 - **Actions, not just answers**: Navigate pages, pre-fill forms, call APIs. The assistant does things on behalf of users, not just explains how.
 - **Client-side execution**: Runs in the user's browser with their session. Same auth, no proxy servers, no token forwarding.
 - **Managed knowledge**: Crawls your docs and integrates with your content sources — websites, files, cloud storage, and snippets. RAG that stays fresh automatically.
-- **MCP server included**: Claude, ChatGPT, and other AI tools can query your product's knowledge base out of the box.
+- **MCP server included**: Standards-compliant MCP plus WebMCP support let you connect top models and agent workflows through Pillar.
 - **Multi-framework SDKs**: React, Vue, Angular, and vanilla JS. All MIT-licensed, embed freely in proprietary apps.
 
 ---
@@ -168,7 +168,7 @@ The API runs on port 8000, the admin dashboard on port 3000. See [Self-Hosting](
 | **AI Chat** | Streaming, context-aware responses grounded in your documentation | [Docs](https://trypillar.com/docs/get-started/what-is-pillar) |
 | **Custom Cards** | Render interactive UI for confirmations and data input inline in chat | [Docs](https://trypillar.com/docs/core-concepts/custom-cards) |
 | **Human Escalation** | Hand off to Intercom, Zendesk, Freshdesk, or a custom support flow | [Docs](https://trypillar.com/docs/core-concepts/human-escalation) |
-| **MCP Server** | Let Claude, ChatGPT, Cursor, and other AI tools query your knowledge base | |
+| **MCP Server** | Standards-compliant MCP and WebMCP support for top-model and agent workflows through Pillar | |
 | **Admin Dashboard** | Manage sources, review analytics, configure agent behavior and theming | |
 
 Explore all features in the [documentation](https://trypillar.com/docs/get-started/what-is-pillar).

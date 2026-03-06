@@ -176,7 +176,7 @@ If you're building an autonomous data pipeline or a multi-day research workflow,
 
 ## These tools are about to matter twice
 
-There's a W3C proposal called [WebMCP](https://webmcp.org) that adds `navigator.modelContext` to the browser. It lets AI agents, including Claude, ChatGPT, and custom workflows, discover and call tools that web apps register. It uses the same MCP protocol that's already standard on the server side.
+There's a W3C proposal called [WebMCP](https://webmcp.org) that adds `navigator.modelContext` to the browser. In supported environments, it lets AI agents and custom workflows discover and call tools that web apps register. It uses the same MCP protocol that's already standard on the server side.
 
 Today, when an external agent wants to use your product, it screen-scrapes or drives a headless browser. A CSS change breaks the integration. A redesign breaks it again.
 

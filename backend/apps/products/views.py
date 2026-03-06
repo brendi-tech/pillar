@@ -24,6 +24,7 @@ from pydantic import BaseModel, field_validator
 from django.utils import timezone
 
 from common.utils.cors import add_cors_headers, is_origin_allowed
+from common.services import slack
 from apps.products.models import (
     Product, Platform, Action, ActionExecutionLog, ActionDeployment,
     ActionSyncJob, ActionSyncJobStatus, SyncSecret, validate_subdomain, RESERVED_SUBDOMAINS
@@ -929,6 +930,20 @@ class ActionSyncView(APIView):
             f"{sync_request.platform}@{sync_request.version}: "
             f"{created_count} created, {updated_count} updated, {deleted_count} deleted"
         )
+
+        if created_count > 0:
+            try:
+                slack.notify_actions_synced(
+                    product_name=product.name,
+                    organization_name=product.organization.name,
+                    created_count=created_count,
+                    updated_count=updated_count,
+                    deleted_count=deleted_count,
+                    platform=sync_request.platform or "",
+                    version=sync_request.version or "",
+                )
+            except Exception as e:
+                logger.error(f"[ActionSync] Failed to send Slack notification: {e}")
 
         return Response({
             'status': 'created',

@@ -1,0 +1,76 @@
+// Step 1: Create a form queue that serializes form-opening tools
+
+const formQueue = [];
+let activeForm = null;
+
+function processNext() {
+  if (formQueue.length === 0) {
+    activeForm = null;
+    return;
+  }
+  activeForm = formQueue.shift();
+  activeForm.open();
+}
+
+function enqueueForm(toolName, data, openFn) {
+  const item = { toolName, data, open: openFn };
+  if (!activeForm) {
+    activeForm = item;
+    item.open();
+  } else {
+    formQueue.push(item);
+  }
+}
+
+function onFormSubmit(resultData) {
+  if (!activeForm) return;
+  pillar.completeTool(activeForm.toolName, true, resultData);
+  processNext();
+}
+
+function onFormCancel() {
+  if (!activeForm) return;
+  pillar.completeTool(activeForm.toolName, false);
+  processNext();
+}
+
+// Step 2: Register tools that enqueue instead of navigating directly
+
+pillar.defineTool({
+  name: "open_create_trigger",
+  type: "trigger_tool",
+  description: "Open the trigger creation form pre-filled with the given data.",
+  execute: (data) => {
+    enqueueForm("open_create_trigger", data, () => {
+      window.location.href = `/triggers/new?prefill=${encodeURIComponent(
+        JSON.stringify(data)
+      )}`;
+    });
+    // No return — completion is deferred to form submit
+  },
+});
+
+pillar.defineTool({
+  name: "open_create_macro",
+  type: "trigger_tool",
+  description: "Open the macro creation form pre-filled with the given data.",
+  execute: (data) => {
+    enqueueForm("open_create_macro", data, () => {
+      window.location.href = `/macros/new?prefill=${encodeURIComponent(
+        JSON.stringify(data)
+      )}`;
+    });
+  },
+});
+
+// Step 3: Wire form submit/cancel to the queue
+
+document.querySelector("#trigger-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const formData = Object.fromEntries(new FormData(e.target));
+  onFormSubmit(formData);
+});
+
+document.querySelector("#cancel-btn").addEventListener("click", () => {
+  onFormCancel();
+});

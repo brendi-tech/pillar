@@ -36,7 +36,7 @@ export function SectionIndexPage({
 
   if (!section) {
     return (
-      <div className="prose dark:prose-invert max-w-none">
+      <div className="prose dark:prose-invert max-w-none [&_code::before]:content-none [&_code::after]:content-none">
         <h1>Section Not Found</h1>
         <p>The requested documentation section could not be found.</p>
       </div>
@@ -46,7 +46,7 @@ export function SectionIndexPage({
   const hasGroups = section.groups && section.groups.length > 0;
 
   return (
-    <div className="prose dark:prose-invert max-w-none">
+    <div className="prose dark:prose-invert max-w-none [&_code::before]:content-none [&_code::after]:content-none">
       <h1>{section.title}</h1>
       {description && <p className="lead text-muted-foreground">{description}</p>}
 

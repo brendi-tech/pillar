@@ -5,14 +5,14 @@ subtitle: "Your app already has the tools. WebMCP makes them available to every 
 date: "2026-04-01"
 author: "JJ Maxwell"
 slug: "webmcp-let-any-ai-agent-use-your-product"
-description: "WebMCP is a browser API that lets AI agents discover and call tools registered by web apps. When you register tools with Pillar, they're automatically available to any agent that speaks MCP."
+description: "WebMCP is a browser API that lets AI agents discover and call tools registered by web apps in supported environments. With Pillar, you can expose your tools through this standard when available."
 ---
 
 ## Outline
 
 ### Users aren't the only ones using your product anymore
 
-- AI agents (Claude, ChatGPT, custom workflows) are starting to interact with web apps on behalf of users.
+- AI agents and custom workflows are starting to interact with web apps on behalf of users.
 - Today, that means screen-scraping, browser automation, or building custom API integrations per product.
 - This is brittle. A CSS change breaks the agent. A redesign kills the integration.
 
@@ -27,12 +27,12 @@ description: "WebMCP is a browser API that lets AI agents discover and call tool
 
 - You already defined your tools for your own copilot. WebMCP means those same tools work for any agent.
 - Your product becomes a platform without building a new API. The tools are already there.
-- Users can bring their preferred AI tool (Claude, ChatGPT, a custom agent) and it can operate your product with the user's permissions.
+- Users can bring their preferred AI tool or custom agent, and in supported WebMCP environments it can operate your product with the user's permissions.
 
 ### How it works with Pillar
 
 - Register tools with `usePillarTool`. They work in the Pillar copilot.
-- The same tools are exposed via WebMCP automatically. No extra code.
+- The same tools can be exposed via WebMCP in compatible browser environments, with no separate tool implementation.
 - External agents call the tools through the browser API. Execution happens client-side with the user's session.
 
 ### Where this is going

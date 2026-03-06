@@ -432,17 +432,17 @@ function OldWayGroup({
 }) {
   const groupScale = useTransform(
     progress,
-    [0.35, 0.45],
+    [0.38, 0.48],
     mobile ? [1, 1] : [1, 0.55]
   );
   const groupOpacity = useTransform(
     progress,
-    [0.35, 0.45],
+    [0.38, 0.48],
     mobile ? [1, 0] : [1, 0.3]
   );
   const groupX = useTransform(
     progress,
-    [0.35, 0.45],
+    [0.38, 0.48],
     mobile ? ["0%", "0%"] : ["0%", "-33%"]
   );
 

@@ -390,6 +390,11 @@ async def _wait_for_result_redis(
                 result_data = redis_client.get(result_key)
                 if result_data:
                     result = json.loads(result_data)
+                    # json.loads("null") → None when the client sent a void/null
+                    # result.  Wrap it so the caller doesn't confuse it with
+                    # "no result received" (which is also None).
+                    if result is None:
+                        result = {"success": True}
                     logger.info(f"[QueryResult] Received result for {action_name} (Redis)")
                     return result
             except Exception as e:
@@ -450,6 +455,8 @@ async def _wait_for_result_memory(
             # Check if we got the result or were cancelled
             if wait_task in done and wait_task.result():
                 result = _query_results.get(session_id, {}).get(tool_call_id)
+                if result is None:
+                    result = {"success": True}
                 logger.info(f"[QueryResult] Received result for {action_name} (memory)")
                 return result
             elif cancel_task in done:
@@ -475,6 +482,8 @@ async def _wait_for_result_memory(
             # Simple wait with timeout
             await asyncio.wait_for(event.wait(), timeout=timeout)
             result = _query_results.get(session_id, {}).get(tool_call_id)
+            if result is None:
+                result = {"success": True}
             logger.info(f"[QueryResult] Received result for {action_name} (memory)")
             return result
             

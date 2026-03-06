@@ -150,6 +150,7 @@ class Product(TenantAwareModel):
     # Configuration stored as JSON
     config = models.JSONField(
         default=dict,
+        blank=True,
         help_text="Product configuration (branding, layout, features, etc.)"
     )
 

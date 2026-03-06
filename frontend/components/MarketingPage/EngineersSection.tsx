@@ -11,7 +11,7 @@ const features = [
     icon: Zap,
     title: "One Install, MCP Included",
     description:
-      "npm install and go. Ships with a standards-compliant MCP server—Claude, ChatGPT, Cursor, and any MCP client connect out of the box.",
+      "npm install and go. Ships with a standards-compliant MCP server and WebMCP support so you can power top models and agent workflows through Pillar.",
   },
   {
     icon: Layers,

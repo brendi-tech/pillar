@@ -59,6 +59,7 @@ import {
   SECRET_REVEAL_DIMENSIONS,
   SECRET_REVEAL_DURATION,
 } from "./videos/components/secret-reveal/SecretRevealAnimation";
+import { ConfigGrindSlide } from "./stills/ConfigGrindSlide";
 
 // Import pre-compiled Tailwind v4 CSS (for docs components)
 // Generated with: npx @tailwindcss/cli -i app/globals.css -o remotion/compiled-styles.css
@@ -397,6 +398,17 @@ export const RemotionRoot: React.FC = () => {
         fps={30}
         width={SECRET_REVEAL_DIMENSIONS.width}
         height={SECRET_REVEAL_DIMENSIONS.height}
+      />
+
+      {/* ============================================
+          Configuration Grind — ICP contrast slide
+          ============================================ */}
+
+      <Still
+        id="config-grind"
+        component={ConfigGrindSlide}
+        width={1920}
+        height={1080}
       />
 
       {/* ============================================

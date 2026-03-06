@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { useDocsPreferences, type Framework } from "./DocsPreferencesProvider";
 import { cn } from "@/lib/utils";
 
