@@ -60,6 +60,7 @@ import {
   SECRET_REVEAL_DURATION,
 } from "./videos/components/secret-reveal/SecretRevealAnimation";
 import { ConfigGrindSlide } from "./stills/ConfigGrindSlide";
+import { ArcAdsStepper } from "./stills/ArcAdsStepper";
 
 // Import pre-compiled Tailwind v4 CSS (for docs components)
 // Generated with: npx @tailwindcss/cli -i app/globals.css -o remotion/compiled-styles.css
@@ -409,6 +410,17 @@ export const RemotionRoot: React.FC = () => {
         component={ConfigGrindSlide}
         width={1920}
         height={1080}
+      />
+
+      {/* ============================================
+          ArcAds — Talking Actors stepper layout
+          ============================================ */}
+
+      <Still
+        id="arcads-stepper"
+        component={ArcAdsStepper}
+        width={960}
+        height={640}
       />
 
       {/* ============================================

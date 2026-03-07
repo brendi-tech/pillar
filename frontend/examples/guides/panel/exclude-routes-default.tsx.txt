@@ -1,0 +1,5 @@
+// No config needed — /login and /signup are excluded by default.
+// The SDK automatically hides on these routes.
+<PillarProvider productKey="your-product-key">
+  {children}
+</PillarProvider>

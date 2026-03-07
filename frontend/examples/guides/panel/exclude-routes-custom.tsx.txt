@@ -1,0 +1,8 @@
+<PillarProvider
+  productKey="your-product-key"
+  config={{
+    excludeRoutes: ['/login', '/signup', '/onboarding', '/maintenance'],
+  }}
+>
+  {children}
+</PillarProvider>
