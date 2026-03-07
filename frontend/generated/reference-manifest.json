@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-02-27T19:04:07.182Z",
+  "generatedAt": "2026-03-07T00:41:59.416Z",
   "pages": [
     {
       "slug": "react/PillarProvider",
@@ -760,9 +760,16 @@
               "required": false,
               "default": "true",
               "description": "Whether the panel can be resized by dragging its edge.\nA drag handle appears on the content-facing edge of the panel when enabled.\nThe resized width is persisted to localStorage."
+            },
+            {
+              "name": "pushTarget",
+              "type": "string | HTMLElement",
+              "required": false,
+              "default": "undefined (document.documentElement)",
+              "description": "Target element for push mode padding.\nIn push mode, padding is applied to this element to make room for the panel.\n- CSS selector string (e.g., '#main-content', 'body')\n- HTMLElement reference\n- undefined (default) applies padding to document.documentElement (html)"
             }
           ],
-          "typeDefinition": "interface PanelConfig {\n  /**\n   * Whether the panel is enabled.\n   * @default true\n   */\n  enabled?: boolean;\n  /**\n   * Which side of the screen the panel appears on.\n   * @default 'right'\n   */\n  position?: PanelPosition;\n  /**\n   * Panel mode: 'overlay' slides over content, 'push' shifts content aside.\n   * @default 'push'\n   */\n  mode?: PanelMode;\n  /**\n   * Panel width in pixels.\n   * @default 380\n   */\n  width?: number;\n  /** \n   * Custom mount point for the panel.\n   * - CSS selector string (e.g., '#pillar-panel')\n   * - HTMLElement reference\n   * - 'manual' for React component-based mounting\n   * - undefined (default) mounts to document.body\n   */\n  container?: string | HTMLElement | 'manual';\n  /**\n   * Whether to use Shadow DOM for style isolation.\n   * - false (default): Panel renders in regular DOM, inherits host app CSS.\n   *   Custom cards can use the host app's design system (Tailwind, etc.)\n   * - true: Panel renders in Shadow DOM, fully isolated from host CSS.\n   *   Use this if you need style isolation on third-party sites.\n   * @default false\n   */\n  useShadowDOM?: boolean;\n  /**\n   * Viewport width below which the panel switches from 'push' mode to 'hover' mode.\n   * In hover mode, the panel floats over content instead of pushing it aside.\n   * - number: The breakpoint in pixels (default: 1200)\n   * - false: Disable responsive behavior, always use push mode\n   * @default 1200\n   */\n  hoverBreakpoint?: number | false;\n  /**\n   * Whether to show a backdrop overlay when the panel is in hover mode.\n   * Only applies when viewport is below hoverBreakpoint.\n   * @default true\n   */\n  hoverBackdrop?: boolean;\n  /**\n   * Viewport width below which the panel takes full screen width.\n   * @default 500\n   */\n  fullWidthBreakpoint?: number;\n  /**\n   * Whether to open the panel automatically on initialization.\n   * Takes priority over localStorage persisted state.\n   * @default false\n   */\n  initialOpen?: boolean;\n  /**\n   * Whether the panel can be resized by dragging its edge.\n   * A drag handle appears on the content-facing edge of the panel when enabled.\n   * The resized width is persisted to localStorage.\n   * @default true\n   */\n  resizable?: boolean;\n}"
+          "typeDefinition": "interface PanelConfig {\n  /**\n   * Whether the panel is enabled.\n   * @default true\n   */\n  enabled?: boolean;\n  /**\n   * Which side of the screen the panel appears on.\n   * @default 'right'\n   */\n  position?: PanelPosition;\n  /**\n   * Panel mode: 'overlay' slides over content, 'push' shifts content aside.\n   * @default 'push'\n   */\n  mode?: PanelMode;\n  /**\n   * Panel width in pixels.\n   * @default 380\n   */\n  width?: number;\n  /** \n   * Custom mount point for the panel.\n   * - CSS selector string (e.g., '#pillar-panel')\n   * - HTMLElement reference\n   * - 'manual' for React component-based mounting\n   * - undefined (default) mounts to document.body\n   */\n  container?: string | HTMLElement | 'manual';\n  /**\n   * Whether to use Shadow DOM for style isolation.\n   * - false (default): Panel renders in regular DOM, inherits host app CSS.\n   *   Custom cards can use the host app's design system (Tailwind, etc.)\n   * - true: Panel renders in Shadow DOM, fully isolated from host CSS.\n   *   Use this if you need style isolation on third-party sites.\n   * @default false\n   */\n  useShadowDOM?: boolean;\n  /**\n   * Viewport width below which the panel switches from 'push' mode to 'hover' mode.\n   * In hover mode, the panel floats over content instead of pushing it aside.\n   * - number: The breakpoint in pixels (default: 1200)\n   * - false: Disable responsive behavior, always use push mode\n   * @default 1200\n   */\n  hoverBreakpoint?: number | false;\n  /**\n   * Whether to show a backdrop overlay when the panel is in hover mode.\n   * Only applies when viewport is below hoverBreakpoint.\n   * @default true\n   */\n  hoverBackdrop?: boolean;\n  /**\n   * Viewport width below which the panel takes full screen width.\n   * @default 500\n   */\n  fullWidthBreakpoint?: number;\n  /**\n   * Whether to open the panel automatically on initialization.\n   * Takes priority over localStorage persisted state.\n   * @default false\n   */\n  initialOpen?: boolean;\n  /**\n   * Whether the panel can be resized by dragging its edge.\n   * A drag handle appears on the content-facing edge of the panel when enabled.\n   * The resized width is persisted to localStorage.\n   * @default true\n   */\n  resizable?: boolean;\n  /**\n   * Target element for push mode padding.\n   * In push mode, padding is applied to this element to make room for the panel.\n   * - CSS selector string (e.g., '#main-content', 'body')\n   * - HTMLElement reference\n   * - undefined (default) applies padding to document.documentElement (html)\n   * @default undefined (document.documentElement)\n   */\n  pushTarget?: string | HTMLElement;\n}"
         },
         {
           "name": "PanelPosition",
@@ -1821,6 +1828,27 @@
           "description": "Your product key from the Pillar app.\nGet it at app.trypillar.com"
         },
         {
+          "name": "assistantDisplayName",
+          "type": "string",
+          "required": false,
+          "default": "'Assistant'",
+          "description": "Display name for the assistant shown in the sidebar tab."
+        },
+        {
+          "name": "inputPlaceholder",
+          "type": "string",
+          "required": false,
+          "default": "'Ask anything...'",
+          "description": "Placeholder text shown in the chat input field."
+        },
+        {
+          "name": "welcomeMessage",
+          "type": "string",
+          "required": false,
+          "default": "'Hi! How can I help you today?'",
+          "description": "Welcome message shown in the home view."
+        },
+        {
           "name": "platform",
           "type": "Platform",
           "required": false,
@@ -1921,6 +1949,13 @@
           "description": "Z-index configuration for the SDK root container.\nControls stacking order relative to host app content."
         },
         {
+          "name": "excludeRoutes",
+          "type": "string[]",
+          "required": false,
+          "default": "['/login', '/signup']",
+          "description": "Route prefixes where the SDK UI is hidden.\nWhen the current pathname matches any entry (exact match or starts with\nthe entry followed by `/`), the panel, edge trigger, mobile trigger,\nand text selection popover are all hidden. UI is restored when the user\nnavigates to a non-excluded route.\n\nPass an empty array to show the SDK on every route."
+        },
+        {
           "name": "onReady",
           "type": "() => void",
           "required": false,
@@ -1933,7 +1968,7 @@
           "description": "Called when the SDK encounters an error."
         }
       ],
-      "typeDefinition": "interface PillarConfig {\n  /**\n   * Your product key from the Pillar app.\n   * Get it at app.trypillar.com\n   */\n  productKey?: string;\n  \n  /**\n   * Platform identifier for code-first actions.\n   * Used to filter actions by deployment platform.\n   * @default 'web'\n   */\n  platform?: Platform;\n  \n  /**\n   * App version for code-first actions.\n   * Used to match actions to the correct deployment version.\n   * @example '1.2.3' or git commit SHA\n   */\n  version?: string;\n  \n  /**\n   * Enable debug mode for verbose logging and debug panel.\n   * When enabled:\n   * - All SDK events are logged to console\n   * - A debug panel shows real-time execution flow\n   * - Network requests/responses are captured\n   * @default false\n   */\n  debug?: boolean;\n  \n  /** Panel layout and behavior settings. */\n  panel?: PanelConfig;\n  \n  /** Edge trigger (sidebar tab that opens the panel). */\n  edgeTrigger?: EdgeTriggerConfig;\n  \n  /** Mobile trigger (floating button on small screens). */\n  mobileTrigger?: MobileTriggerConfig;\n  \n  /** URL params for auto-opening the panel. */\n  urlParams?: UrlParamsConfig;\n  \n  /** Text selection \"Ask AI\" popover. */\n  textSelection?: TextSelectionConfig;\n  \n  /**\n   * DOM scanning for page context.\n   * @internal DOM scanning is currently disabled.\n   * @deprecated This feature is not available.\n   */\n  domScanning?: DOMScanningConfig;\n  \n  /** Page-aware suggestions. */\n  suggestions?: SuggestionsConfig;\n  \n  /** Sidebar tabs configuration. */\n  sidebarTabs?: SidebarTabConfig[];\n  \n  /** API base URL. Defaults to Pillar's production API. */\n  apiBaseUrl?: string;\n  \n  /**\n   * Enable OpenTelemetry tracing. Browser spans are exported to the server's\n   * Cloud Trace project via the OTLP proxy endpoint. Also enabled when debug\n   * is true.\n   * @default false\n   */\n  tracing?: boolean;\n  \n  /** Theme customization. */\n  theme?: ThemeConfig;\n  \n  /** \n   * Custom CSS to inject into the panel's Shadow DOM.\n   * Use public class names (pillar-*) to override default styles.\n   * @example\n   * ```css\n   * .pillar-header { padding: 24px; }\n   * .pillar-message-user { border-radius: 8px; }\n   * ```\n   */\n  customCSS?: string;\n  \n  /**\n   * Z-index configuration for the SDK root container.\n   * Controls stacking order relative to host app content.\n   */\n  zIndex?: ZIndexConfig;\n  \n  /** Called when the SDK is initialized and ready. */\n  onReady?: () => void;\n  /** Called when the SDK encounters an error. */\n  onError?: (error: Error) => void;\n}",
+      "typeDefinition": "interface PillarConfig {\n  /**\n   * Your product key from the Pillar app.\n   * Get it at app.trypillar.com\n   */\n  productKey?: string;\n  \n  /**\n   * Display name for the assistant shown in the sidebar tab.\n   * @default 'Assistant'\n   */\n  assistantDisplayName?: string;\n  \n  /**\n   * Placeholder text shown in the chat input field.\n   * @default 'Ask anything...'\n   */\n  inputPlaceholder?: string;\n  \n  /**\n   * Welcome message shown in the home view.\n   * @default 'Hi! How can I help you today?'\n   */\n  welcomeMessage?: string;\n  \n  /**\n   * Platform identifier for code-first actions.\n   * Used to filter actions by deployment platform.\n   * @default 'web'\n   */\n  platform?: Platform;\n  \n  /**\n   * App version for code-first actions.\n   * Used to match actions to the correct deployment version.\n   * @example '1.2.3' or git commit SHA\n   */\n  version?: string;\n  \n  /**\n   * Enable debug mode for verbose logging and debug panel.\n   * When enabled:\n   * - All SDK events are logged to console\n   * - A debug panel shows real-time execution flow\n   * - Network requests/responses are captured\n   * @default false\n   */\n  debug?: boolean;\n  \n  /** Panel layout and behavior settings. */\n  panel?: PanelConfig;\n  \n  /** Edge trigger (sidebar tab that opens the panel). */\n  edgeTrigger?: EdgeTriggerConfig;\n  \n  /** Mobile trigger (floating button on small screens). */\n  mobileTrigger?: MobileTriggerConfig;\n  \n  /** URL params for auto-opening the panel. */\n  urlParams?: UrlParamsConfig;\n  \n  /** Text selection \"Ask AI\" popover. */\n  textSelection?: TextSelectionConfig;\n  \n  /**\n   * DOM scanning for page context.\n   * @internal DOM scanning is currently disabled.\n   * @deprecated This feature is not available.\n   */\n  domScanning?: DOMScanningConfig;\n  \n  /** Page-aware suggestions. */\n  suggestions?: SuggestionsConfig;\n  \n  /** Sidebar tabs configuration. */\n  sidebarTabs?: SidebarTabConfig[];\n  \n  /** API base URL. Defaults to Pillar's production API. */\n  apiBaseUrl?: string;\n  \n  /**\n   * Enable OpenTelemetry tracing. Browser spans are exported to the server's\n   * Cloud Trace project via the OTLP proxy endpoint. Also enabled when debug\n   * is true.\n   * @default false\n   */\n  tracing?: boolean;\n  \n  /** Theme customization. */\n  theme?: ThemeConfig;\n  \n  /** \n   * Custom CSS to inject into the panel's Shadow DOM.\n   * Use public class names (pillar-*) to override default styles.\n   * @example\n   * ```css\n   * .pillar-header { padding: 24px; }\n   * .pillar-message-user { border-radius: 8px; }\n   * ```\n   */\n  customCSS?: string;\n  \n  /**\n   * Z-index configuration for the SDK root container.\n   * Controls stacking order relative to host app content.\n   */\n  zIndex?: ZIndexConfig;\n  \n  /**\n   * Route prefixes where the SDK UI is hidden.\n   * When the current pathname matches any entry (exact match or starts with\n   * the entry followed by `/`), the panel, edge trigger, mobile trigger,\n   * and text selection popover are all hidden. UI is restored when the user\n   * navigates to a non-excluded route.\n   *\n   * Pass an empty array to show the SDK on every route.\n   * @default ['/login', '/signup']\n   * @example ['/login', '/signup', '/onboarding']\n   */\n  excludeRoutes?: string[];\n  \n  /** Called when the SDK is initialized and ready. */\n  onReady?: () => void;\n  /** Called when the SDK encounters an error. */\n  onError?: (error: Error) => void;\n}",
       "examples": [],
       "relatedTypes": [
         "PanelConfig",

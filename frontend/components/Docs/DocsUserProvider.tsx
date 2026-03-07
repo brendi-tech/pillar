@@ -87,23 +87,27 @@ export function DocsUserProvider({ children }: DocsUserProviderProps) {
         if (cancelled) return;
         const results = response.data?.results;
         if (results?.length > 0) {
-          const mapped: DocsProduct[] = results.map((p: Record<string, unknown>) => ({
-            id: p.id as string,
-            name: (p.name as string) || (p.subdomain as string) || '',
-            subdomain: (p.subdomain as string) || '',
-            organization_id: p.organization_id as string | undefined,
-            organization_name: p.organization_name as string | undefined,
-          }));
+          const mapped: DocsProduct[] = results
+            .filter((p: Record<string, unknown>) => p.subdomain)
+            .map((p: Record<string, unknown>) => ({
+              id: p.id as string,
+              name: (p.name as string) || (p.subdomain as string) || '',
+              subdomain: p.subdomain as string,
+              organization_id: p.organization_id as string | undefined,
+              organization_name: p.organization_name as string | undefined,
+            }));
           setProducts(mapped);
 
-          const storedId = typeof window !== 'undefined'
-            ? localStorage.getItem(DOCS_SELECTED_PRODUCT_KEY)
-            : null;
-          const storedExists = storedId && mapped.some((p) => p.id === storedId);
-          if (!storedExists) {
-            setSelectedProductIdState(mapped[0].id);
-            if (typeof window !== 'undefined') {
-              localStorage.setItem(DOCS_SELECTED_PRODUCT_KEY, mapped[0].id);
+          if (mapped.length > 0) {
+            const storedId = typeof window !== 'undefined'
+              ? localStorage.getItem(DOCS_SELECTED_PRODUCT_KEY)
+              : null;
+            const storedExists = storedId && mapped.some((p) => p.id === storedId);
+            if (!storedExists) {
+              setSelectedProductIdState(mapped[0].id);
+              if (typeof window !== 'undefined') {
+                localStorage.setItem(DOCS_SELECTED_PRODUCT_KEY, mapped[0].id);
+              }
             }
           }
         } else {

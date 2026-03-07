@@ -89,29 +89,30 @@ function App() {
 }
 ```
 
-**2. Register tools from any component using `usePillarTool`:**
+**2. Register tools using `usePillarTool`:**
+
+Tools let the AI assistant perform tasks in your app — navigating to a page, opening a modal, calling an API. Create a hook file for your tool definitions:
 
 ```tsx
+// hooks/usePillarTools.ts
 import { usePillarTool } from '@pillar-ai/react';
+import { useRouter } from 'next/navigation';
 
-function SettingsButton() {
+export function usePillarTools() {
   const router = useRouter();
 
   usePillarTool({
-    name: 'go_to_settings',
+    name: 'open_settings',
+    type: 'navigate',
     description: 'Navigate to the settings page',
-    execute: async () => {
-      router.push('/settings');
-      return { content: [{ type: 'text', text: 'Navigated to settings' }] };
-    },
+    examples: ['open settings', 'go to settings'],
+    autoRun: true,
+    execute: () => router.push('/settings'),
   });
 
-  return <button onClick={() => router.push('/settings')}>Settings</button>;
-}
-
-function AddToCartButton({ productId }: { productId: string }) {
   usePillarTool({
     name: 'add_to_cart',
+    type: 'trigger_tool',
     description: 'Add a product to the shopping cart',
     inputSchema: {
       type: 'object',
@@ -123,27 +124,35 @@ function AddToCartButton({ productId }: { productId: string }) {
     },
     execute: async ({ productId, quantity }) => {
       await cartApi.addItem(productId, quantity);
-      return { content: [{ type: 'text', text: `Added ${quantity} item(s) to cart` }] };
     },
   });
-
-  return <button>Add to Cart</button>;
 }
 ```
 
-Tools are automatically registered when the component mounts and unregistered when it unmounts. This co-locates tool definitions with the UI they control.
+Call the hook from a component inside your `PillarProvider`:
+
+```tsx
+import { usePillarTools } from './hooks/usePillarTools';
+
+function App() {
+  usePillarTools();
+  return <div>{/* your app */}</div>;
+}
+```
+
+Tools are automatically registered when the component mounts and unregistered when it unmounts.
 
 **3. Sync tools to Pillar:**
 
 The CLI scans your codebase for `usePillarTool` calls and syncs the tool definitions to Pillar. Run this in CI/CD after building your app:
 
 ```bash
-PILLAR_SLUG=your-slug PILLAR_SECRET=your-secret npx pillar-sync --scan ./src
+PILLAR_SLUG=your-product-slug PILLAR_SECRET=your-secret-token npx pillar-sync --scan ./src
 ```
 
-This tells Pillar what tools are available so the AI can plan and execute tasks. The `execute` functions run client-side in your app.
+Replace the slug and secret placeholders with the values from your [dashboard](https://admin.trypillar.com/settings/api-keys). Point `--scan` at the directory containing your tool definitions.
 
-Users can now ask the copilot to navigate to settings or add items to their cart, and it executes using your code.
+The `execute` functions run client-side in your app. Users can now ask the copilot to navigate to settings or add items to their cart, and it executes using your code.
 
 ### Self-Hosted
 

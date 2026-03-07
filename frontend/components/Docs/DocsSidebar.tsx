@@ -16,6 +16,7 @@ import {
 import type { NavGroup, NavSection } from "@/lib/docs-navigation";
 import { cn } from "@/lib/utils";
 import { ChevronRight, Menu, Search, Settings } from "lucide-react";
+import { getAdminSubdomainUrl } from "@/lib/admin/redirect";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -188,12 +189,12 @@ export function DocsMobileHeader({ navigation }: DocsSidebarProps) {
                 </SheetTitle>
               </SheetHeader>
               <div className="p-4 overflow-y-auto h-[calc(100vh-65px)] space-y-4">
-                <Link
-                  href="/login"
+                <a
+                  href={getAdminSubdomainUrl('/login')}
                   className="text-sm text-muted-foreground hover:text-foreground transition-colors block"
                 >
                   Dashboard
-                </Link>
+                </a>
                 <NavItems
                   navigation={navigation}
                   onItemClick={() => setOpen(false)}

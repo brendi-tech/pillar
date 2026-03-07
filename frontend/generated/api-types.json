@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-02-27T19:04:07.135Z",
+  "generatedAt": "2026-03-07T00:41:59.352Z",
   "interfaces": {
     "PillarConfig": {
       "name": "PillarConfig",
@@ -11,6 +11,27 @@
           "type": "string",
           "required": false,
           "description": "Your product key from the Pillar app.\nGet it at app.trypillar.com"
+        },
+        {
+          "name": "assistantDisplayName",
+          "type": "string",
+          "required": false,
+          "default": "'Assistant'",
+          "description": "Display name for the assistant shown in the sidebar tab."
+        },
+        {
+          "name": "inputPlaceholder",
+          "type": "string",
+          "required": false,
+          "default": "'Ask anything...'",
+          "description": "Placeholder text shown in the chat input field."
+        },
+        {
+          "name": "welcomeMessage",
+          "type": "string",
+          "required": false,
+          "default": "'Hi! How can I help you today?'",
+          "description": "Welcome message shown in the home view."
         },
         {
           "name": "platform",
@@ -113,6 +134,13 @@
           "description": "Z-index configuration for the SDK root container.\nControls stacking order relative to host app content."
         },
         {
+          "name": "excludeRoutes",
+          "type": "string[]",
+          "required": false,
+          "default": "['/login', '/signup']",
+          "description": "Route prefixes where the SDK UI is hidden.\nWhen the current pathname matches any entry (exact match or starts with\nthe entry followed by `/`), the panel, edge trigger, mobile trigger,\nand text selection popover are all hidden. UI is restored when the user\nnavigates to a non-excluded route.\n\nPass an empty array to show the SDK on every route."
+        },
+        {
           "name": "onReady",
           "type": "() => void",
           "required": false,
@@ -206,6 +234,13 @@
           "required": false,
           "default": "true",
           "description": "Whether the panel can be resized by dragging its edge.\nA drag handle appears on the content-facing edge of the panel when enabled.\nThe resized width is persisted to localStorage."
+        },
+        {
+          "name": "pushTarget",
+          "type": "string | HTMLElement",
+          "required": false,
+          "default": "undefined (document.documentElement)",
+          "description": "Target element for push mode padding.\nIn push mode, padding is applied to this element to make room for the panel.\n- CSS selector string (e.g., '#main-content', 'body')\n- HTMLElement reference\n- undefined (default) applies padding to document.documentElement (html)"
         }
       ]
     },

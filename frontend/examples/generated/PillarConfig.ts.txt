@@ -6,6 +6,24 @@ interface PillarConfig {
   productKey?: string;
   
   /**
+   * Display name for the assistant shown in the sidebar tab.
+   * @default 'Assistant'
+   */
+  assistantDisplayName?: string;
+  
+  /**
+   * Placeholder text shown in the chat input field.
+   * @default 'Ask anything...'
+   */
+  inputPlaceholder?: string;
+  
+  /**
+   * Welcome message shown in the home view.
+   * @default 'Hi! How can I help you today?'
+   */
+  welcomeMessage?: string;
+  
+  /**
    * Platform identifier for code-first actions.
    * Used to filter actions by deployment platform.
    * @default 'web'
@@ -87,6 +105,19 @@ interface PillarConfig {
    * Controls stacking order relative to host app content.
    */
   zIndex?: ZIndexConfig;
+  
+  /**
+   * Route prefixes where the SDK UI is hidden.
+   * When the current pathname matches any entry (exact match or starts with
+   * the entry followed by `/`), the panel, edge trigger, mobile trigger,
+   * and text selection popover are all hidden. UI is restored when the user
+   * navigates to a non-excluded route.
+   *
+   * Pass an empty array to show the SDK on every route.
+   * @default ['/login', '/signup']
+   * @example ['/login', '/signup', '/onboarding']
+   */
+  excludeRoutes?: string[];
   
   /** Called when the SDK is initialized and ready. */
   onReady?: () => void;

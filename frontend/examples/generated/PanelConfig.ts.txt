@@ -68,4 +68,13 @@ interface PanelConfig {
    * @default true
    */
   resizable?: boolean;
+  /**
+   * Target element for push mode padding.
+   * In push mode, padding is applied to this element to make room for the panel.
+   * - CSS selector string (e.g., '#main-content', 'body')
+   * - HTMLElement reference
+   * - undefined (default) applies padding to document.documentElement (html)
+   * @default undefined (document.documentElement)
+   */
+  pushTarget?: string | HTMLElement;
 }

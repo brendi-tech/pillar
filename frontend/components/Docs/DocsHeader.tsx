@@ -1,6 +1,7 @@
 "use client";
 
 import { PillarLogoWithName } from "@/components/marketing/LandingPage/PillarLogoWithName";
+import { getAdminSubdomainUrl } from "@/lib/admin/redirect";
 import { Search, Settings } from "lucide-react";
 import Link from "next/link";
 
@@ -45,12 +46,12 @@ export function DocsHeader({
             >
               <Settings className="h-4 w-4" />
             </button>
-            <Link
-              href="/login"
+            <a
+              href={getAdminSubdomainUrl('/login')}
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               Dashboard
-            </Link>
+            </a>
           </div>
         </div>
       </div>
