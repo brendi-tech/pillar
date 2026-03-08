@@ -1,6 +1,8 @@
 """
 Snippet serializers - convenience wrappers for KnowledgeItem with item_type='snippet'.
 """
+import uuid
+
 from rest_framework import serializers
 from apps.knowledge.models import KnowledgeItem, KnowledgeSource
 
@@ -115,6 +117,7 @@ class SnippetCreateSerializer(serializers.Serializer):
             product=product,  # Denormalized from source
             source=snippets_source,
             item_type=KnowledgeItem.ItemType.SNIPPET,
+            external_id=str(uuid.uuid4()),
             title=validated_data['title'],
             raw_content=validated_data['content'],
             optimized_content=validated_data['content'],  # No LLM processing for snippets

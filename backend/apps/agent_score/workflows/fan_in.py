@@ -19,6 +19,7 @@ import asyncio
 import logging
 
 from asgiref.sync import sync_to_async
+from django.db import close_old_connections
 from django.db.models import F
 
 logger = logging.getLogger(__name__)
@@ -60,6 +61,8 @@ async def complete_layer(report_id: str) -> bool:
     """
     from apps.agent_score.models import AgentScoreReport
     from common.task_router import TaskRouter
+
+    await sync_to_async(close_old_connections)()
 
     # Atomic increment — UPDATE SET completed_layers = completed_layers + 1
     await AgentScoreReport.objects.filter(id=report_id).aupdate(

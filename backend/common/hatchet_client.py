@@ -105,9 +105,12 @@ class DjangoHatchetClient:
     restart, etc.). Django's request/response cycle normally calls
     close_old_connections(), but Hatchet tasks bypass that cycle entirely.
 
-    This wrapper intercepts @hatchet.task() so every decorated function
-    gets close_old_connections() called before it runs — no workflow
-    author ever has to remember to add it manually.
+    For async tasks, close_old_connections() is dispatched via
+    sync_to_async so it runs on the same thread-sensitive thread that
+    Django's ORM uses. A bare call on the async event-loop thread would
+    miss the thread-local connections that sync_to_async actually queries.
+    Combined with CONN_HEALTH_CHECKS=True, this resets the health-check
+    flag so the first ORM call validates the connection is still alive.
     """
 
     def __init__(self, hatchet):
@@ -123,8 +126,14 @@ class DjangoHatchetClient:
             if asyncio.iscoroutinefunction(fn):
                 @wraps(fn)
                 async def wrapped(*args, **inner_kwargs):
+                    from asgiref.sync import sync_to_async
                     from django.db import close_old_connections
-                    close_old_connections()
+                    # Must run via sync_to_async so it executes on the same
+                    # thread-sensitive thread that Django's ORM will use.
+                    # A bare close_old_connections() here would only close
+                    # connections on the async event-loop thread, which is
+                    # not where sync_to_async dispatches ORM queries.
+                    await sync_to_async(close_old_connections)()
                     return await fn(*args, **inner_kwargs)
             else:
                 @wraps(fn)

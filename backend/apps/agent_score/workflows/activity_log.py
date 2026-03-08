@@ -6,6 +6,9 @@ INSERT-only: safe for concurrent calls from parallel Hatchet tasks.
 """
 import logging
 
+from asgiref.sync import sync_to_async
+from django.db import close_old_connections
+
 logger = logging.getLogger(__name__)
 
 
@@ -30,6 +33,7 @@ async def log_activity(
     try:
         from apps.agent_score.models import AgentScoreLogEntry
 
+        await sync_to_async(close_old_connections)()
         await AgentScoreLogEntry.objects.acreate(
             report_id=report_id,
             workflow=workflow,

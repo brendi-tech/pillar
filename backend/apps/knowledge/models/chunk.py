@@ -44,8 +44,7 @@ class KnowledgeChunk(TenantAwareModel):
     )
 
     # Content
-    title = models.CharField(
-        max_length=500,
+    title = models.TextField(
         help_text="Chunk title (usually the heading)"
     )
     content = models.TextField(

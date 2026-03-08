@@ -92,6 +92,12 @@ async def sync_actions_workflow(workflow_input: SyncActionsInput, context: Conte
         job = await ActionSyncJob.objects.select_related('product', 'organization').aget(id=job_id)
         product = await Product.objects.select_related('organization').aget(id=product_id)
         
+        # Check if this is the first sync for the product (before we complete this one)
+        is_first_sync = not await ActionSyncJob.objects.filter(
+            product=product,
+            status=ActionSyncJobStatus.COMPLETED,
+        ).aexists()
+        
         # Step 2: Update job status to processing
         await update_job_status(job_id, ActionSyncJobStatus.PROCESSING, started_at=timezone.now())
         
@@ -134,8 +140,8 @@ async def sync_actions_workflow(workflow_input: SyncActionsInput, context: Conte
         # Step 7 & 8: Verify and finalize (atomic)
         await finalize_job(job_id, str(deployment.id), len(actions_data))
         
-        # Notify Slack when new actions are created
-        if created_count > 0:
+        # Notify Slack on first-ever sync for this product
+        if is_first_sync:
             try:
                 slack.notify_actions_synced(
                     product_name=product.name,

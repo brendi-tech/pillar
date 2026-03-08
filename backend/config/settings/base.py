@@ -124,7 +124,7 @@ DATABASES = {
         'PORT': os.environ.get('HC_POSTGRES_PORT', '5432'),
         # CONN_MAX_AGE=0 for Cloud SQL compatibility
         'CONN_MAX_AGE': int(os.environ.get('DB_CONN_MAX_AGE', '0')),
-        'CONN_HEALTH_CHECKS': False,
+        'CONN_HEALTH_CHECKS': True,
         'DISABLE_SERVER_SIDE_CURSORS': True,
         'OPTIONS': {
             'connect_timeout': 10,
