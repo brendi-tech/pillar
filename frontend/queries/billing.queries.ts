@@ -16,6 +16,7 @@ export interface SubscriptionData {
   is_one_time: boolean;
   has_payg: boolean;
   stripe_subscription_id: string | null;
+  billing_interval?: "monthly" | "yearly";
   current_period_start?: number;
   current_period_end?: number;
   cancel_at_period_end?: boolean;
