@@ -760,13 +760,18 @@ async def stream_event_generator(mcp_server: MCPServer, request_data: dict, sess
                             await _flush_task
                         await _flush_all(flush_state["assistant_message_id"], collected_text, flush_state)
                         await mark_disconnected(flush_state["assistant_message_id"])
+                    error_data = event.get('data') or {}
+                    if 'upgrade_url' in event:
+                        error_data['upgrade_url'] = event['upgrade_url']
+                    if 'limit_type' in event:
+                        error_data['limit_type'] = event['limit_type']
                     error_response = {
                         'jsonrpc': '2.0',
                         'id': request_id,
                         'error': {
                             'code': JSONRPCError.INTERNAL_ERROR,
                             'message': error_message,
-                            'data': event.get('data')
+                            'data': error_data or None,
                         }
                     }
                     yield f"data: {json.dumps(error_response)}\n\n"

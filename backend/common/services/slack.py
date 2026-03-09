@@ -333,6 +333,97 @@ def notify_actions_synced(
             return False
 
 
+def notify_payment_completed(
+    organization_name: str,
+    plan: str,
+    amount: int,
+    currency: str = "usd",
+    customer_email: str = "",
+    invoice_url: str = "",
+    is_recurring: bool = True,
+) -> bool:
+    """
+    Send a notification when a Stripe payment succeeds.
+
+    Args:
+        organization_name: Name of the paying organization
+        plan: Current plan name (hobby, pro, growth, etc.)
+        amount: Amount paid in cents (Stripe smallest currency unit)
+        currency: Three-letter ISO currency code
+        customer_email: Email on the Stripe customer
+        invoice_url: Hosted invoice URL from Stripe
+        is_recurring: Whether this is a recurring vs first payment
+
+    Returns:
+        True if notification was sent successfully, False otherwise
+    """
+    try:
+        amount_display = f"${amount / 100:,.2f} {currency.upper()}"
+        payment_type = "Recurring Payment" if is_recurring else "New Subscription Payment"
+        text = f"💰 {payment_type}: {amount_display} from {organization_name} ({plan.title()})"
+
+        fields = [
+            {"type": "mrkdwn", "text": f"*Organization:*\n{organization_name}"},
+            {"type": "mrkdwn", "text": f"*Plan:*\n{plan.title()}"},
+            {"type": "mrkdwn", "text": f"*Amount:*\n{amount_display}"},
+        ]
+
+        if customer_email:
+            fields.append({"type": "mrkdwn", "text": f"*Email:*\n{customer_email}"})
+
+        blocks = [
+            {
+                "type": "header",
+                "text": {
+                    "type": "plain_text",
+                    "text": f"💰 {payment_type}",
+                    "emoji": True,
+                },
+            },
+            {
+                "type": "section",
+                "fields": fields,
+            },
+        ]
+
+        if invoice_url:
+            blocks.append({
+                "type": "actions",
+                "elements": [
+                    {
+                        "type": "button",
+                        "text": {
+                            "type": "plain_text",
+                            "text": "View Invoice",
+                            "emoji": True,
+                        },
+                        "url": invoice_url,
+                    }
+                ],
+            })
+
+        blocks.append({
+            "type": "context",
+            "elements": [
+                {
+                    "type": "mrkdwn",
+                    "text": datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC'),
+                }
+            ],
+        })
+
+        return send_message(text, blocks)
+
+    except Exception as e:
+        logger.error(f"Error building payment notification: {e}", exc_info=True)
+        try:
+            return send_message(
+                f"Payment received: ${amount / 100:,.2f} from {organization_name}"
+            )
+        except Exception:
+            return False
+
+
 def notify_agent_score_complete(
     domain: str,
     overall_score: int,

@@ -10,6 +10,7 @@ import {
 } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useProduct } from './ProductProvider';
+import { useOrganization } from './OrganizationProvider';
 import { knowledgeSourceListQuery } from '@/queries/sources.queries';
 import { productIntegrationStatusQuery } from '@/queries/v2/products.queries';
 import {
@@ -131,6 +132,7 @@ export function SystemNotificationProvider({
   children,
 }: SystemNotificationProviderProps) {
   const { currentProductId, currentProduct, isLoading: isProductLoading } = useProduct();
+  const { currentOrganization } = useOrganization();
 
   // Dismissed notifications state (persisted in localStorage)
   const [dismissed, setDismissed] = useState<DismissedNotifications>(() =>
@@ -163,6 +165,7 @@ export function SystemNotificationProvider({
       integrationStatus: integrationStatus || null,
       productCreatedAt: (currentProduct?.config?.created_at as string) || null,
       isLoading: isProductLoading || isSourcesLoading || isIntegrationLoading,
+      organizationPlan: currentOrganization?.plan ?? null,
     };
 
     // Evaluate each rule in the registry
@@ -197,6 +200,7 @@ export function SystemNotificationProvider({
     sourcesData,
     integrationStatus,
     currentProduct,
+    currentOrganization,
     isProductLoading,
     isSourcesLoading,
     isIntegrationLoading,

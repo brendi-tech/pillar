@@ -34,6 +34,7 @@ from common.views import early_access_form
 
 # Import webhook views
 from apps.knowledge.views import firecrawl_webhook_view
+from apps.billing.webhooks import stripe_webhook_view
 
 # Import views for top-level routes
 from apps.products.views import ProductViewSet, ActionSyncView, ActionSyncStatusView, EmbedConfigView
@@ -114,6 +115,9 @@ urlpatterns = [
     # Configs endpoint (alias for products - for frontend compatibility)
     path('api/admin/configs/', include(configs_router.urls)),
 
+    # Billing API
+    path('api/admin/billing/', include('apps.billing.urls')),
+
     # Debug session logs (for admin panel debugging)
     path('api/admin/debug/sessions/', DebugSessionListView.as_view(), name='debug-session-list'),
     path('api/admin/debug/sessions/latest/', DebugSessionLatestView.as_view(), name='debug-session-latest'),
@@ -130,6 +134,7 @@ urlpatterns = [
     
     # Webhooks (no auth - signature verified)
     path('api/v1/webhooks/firecrawl/', firecrawl_webhook_view, name='firecrawl-webhook'),
+    path('api/v1/webhooks/stripe/', stripe_webhook_view, name='stripe-webhook'),
 ]
 
 # Development-only endpoints

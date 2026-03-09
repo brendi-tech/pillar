@@ -370,6 +370,20 @@ class AskTool(Tool):
             yield {'type': 'error', 'message': 'conversation_id is required for resume'}
             return
 
+        # Plan enforcement: check usage quota before proceeding
+        from apps.billing.enforcement import check_usage_allowed
+        from common.exceptions import PlanLimitExceeded
+        try:
+            await check_usage_allowed(organization)
+        except PlanLimitExceeded as exc:
+            yield {
+                'type': 'error',
+                'message': exc.message,
+                'upgrade_url': '/billing',
+                'limit_type': exc.limit_type,
+            }
+            return
+
         if not query and not images:
             yield {'type': 'error', 'message': 'A message or image is required'}
             return

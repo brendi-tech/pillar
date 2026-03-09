@@ -57,6 +57,14 @@ export const organizationInvitationsQuery = (id: string) =>
 // =============================================================================
 
 /**
+ * Mutation to update organization fields (e.g. billing_email).
+ */
+export const updateOrganizationMutation = () => ({
+  mutationFn: ({ id, data }: { id: string; data: Record<string, unknown> }) =>
+    organizationAPI.update(id, data),
+});
+
+/**
  * Mutation to bulk invite members to an organization.
  */
 export const bulkInviteMembersMutation = () => ({

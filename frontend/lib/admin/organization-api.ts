@@ -13,6 +13,20 @@ import { apiClient } from "./api-client";
 
 export const organizationAPI = {
   /**
+   * Partially update an organization (e.g. billing_email).
+   */
+  update: async (
+    id: string,
+    data: Record<string, unknown>
+  ): Promise<Record<string, unknown>> => {
+    const response = await apiClient.patch(
+      `/api/users/organizations/${id}/`,
+      data
+    );
+    return response.data;
+  },
+
+  /**
    * Get all members of an organization.
    */
   getMembers: async (id: string): Promise<OrganizationMembership[]> => {

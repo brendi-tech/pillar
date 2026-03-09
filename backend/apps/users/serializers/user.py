@@ -3,6 +3,8 @@ User serializers for authentication and profile management.
 """
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
+
+from apps.billing.constants import get_plan_limits
 from apps.users.models import User
 
 
@@ -47,17 +49,21 @@ class UserSerializer(serializers.ModelSerializer):
             return None
 
         org = membership.organization
-        # Count members in organization
         member_count = org.memberships.count()
+        plan_limits = get_plan_limits(org.plan)
 
         return {
             'id': org.id,
             'name': org.name,
             'plan': org.plan,
             'subscription_status': org.subscription_status,
+            'billing_email': org.billing_email,
             'member_count': member_count,
             'user_role': membership.role,
             'onboarding_completed_at': org.onboarding_completed_at.isoformat() if org.onboarding_completed_at else None,
+            'monthly_responses': plan_limits.monthly_responses,
+            'is_one_time': plan_limits.is_one_time,
+            'has_payg': plan_limits.has_payg,
         }
 
     @extend_schema_field(serializers.ListField(child=serializers.DictField()))

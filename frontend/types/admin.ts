@@ -275,6 +275,7 @@ export interface AdminOrganization {
   role: 'admin' | 'member';
   plan?: string;
   subscription_status?: string;
+  billing_email?: string;
 }
 
 export interface AdminProduct {

@@ -9,10 +9,17 @@ logger = logging.getLogger(__name__)
 async def mark_completed(message_id: str, latency_ms: int = None):
     """Set streaming_status='completed'. Data already flushed."""
     from apps.analytics.models import ChatMessage
+    from apps.billing.metering import report_usage
+
     updates = {"streaming_status": "completed"}
     if latency_ms is not None:
         updates["latency_ms"] = latency_ms
     await ChatMessage.objects.filter(id=message_id, role='assistant').aupdate(**updates)
+
+    try:
+        await report_usage(message_id)
+    except Exception:
+        logger.exception("Failed to report billing usage for message %s", message_id)
 
 
 async def mark_disconnected(message_id: str):

@@ -67,6 +67,9 @@ INSTALLED_APPS = [
 
     # Public tools
     'apps.agent_score',                 # Agent Readiness Score (public free tool)
+
+    # Billing
+    'apps.billing',                     # Stripe billing, usage metering, plan enforcement
 ]
 
 MIDDLEWARE = [
@@ -315,6 +318,32 @@ HATCHET_NAMESPACE = os.environ.get('HC_HATCHET_NAMESPACE', os.environ.get('HATCH
 
 # Task Execution Backend
 TASK_EXECUTION_BACKEND = os.environ.get('TASK_EXECUTION_BACKEND', 'hatchet')
+
+# ==============================================================================
+# STRIPE BILLING CONFIGURATION
+# ==============================================================================
+_stripe_live = os.environ.get('STRIPE_LIVE_MODE', 'False').lower() in ('true', '1')
+STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY') or os.environ.get(
+    'STRIPE_LIVE_SECRET_KEY' if _stripe_live else 'STRIPE_TEST_SECRET_KEY', ''
+)
+STRIPE_PUBLISHABLE_KEY = os.environ.get('STRIPE_PUBLISHABLE_KEY') or os.environ.get(
+    'STRIPE_LIVE_PUBLISHABLE_KEY' if _stripe_live else 'STRIPE_TEST_PUBLISHABLE_KEY', ''
+)
+STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET', '')
+STRIPE_PRICE_IDS = {
+    'hobby_monthly': os.environ.get('STRIPE_PRICE_HOBBY_MONTHLY', ''),
+    'hobby_yearly': os.environ.get('STRIPE_PRICE_HOBBY_YEARLY', ''),
+    'pro_monthly': os.environ.get('STRIPE_PRICE_PRO_MONTHLY', ''),
+    'pro_yearly': os.environ.get('STRIPE_PRICE_PRO_YEARLY', ''),
+    'growth_monthly': os.environ.get('STRIPE_PRICE_GROWTH_MONTHLY', ''),
+    'growth_yearly': os.environ.get('STRIPE_PRICE_GROWTH_YEARLY', ''),
+}
+STRIPE_OVERAGE_PRICE_IDS = {
+    'hobby': os.environ.get('STRIPE_PRICE_HOBBY_OVERAGE', ''),
+    'pro': os.environ.get('STRIPE_PRICE_PRO_OVERAGE', ''),
+    'growth': os.environ.get('STRIPE_PRICE_GROWTH_OVERAGE', ''),
+}
+STRIPE_METER_EVENT_NAME = os.environ.get('STRIPE_METER_EVENT_NAME', 'agent_response')
 
 # ==============================================================================
 # POSTHOG CONFIGURATION (Feature Flags & Analytics)

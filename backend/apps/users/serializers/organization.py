@@ -17,6 +17,7 @@ class OrganizationSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'name', 'domain',
             'plan', 'subscription_status', 'trial_ends_at',
+            'billing_email',
             'member_count', 'is_active', 'is_trial',
             'onboarding_completed_at',
             'created_at', 'updated_at'

@@ -22,6 +22,8 @@ export interface NotificationContext {
   productCreatedAt: string | null;
   /** Whether data is still loading */
   isLoading: boolean;
+  /** Current organization's billing plan */
+  organizationPlan: string | null;
 }
 
 // ============================================================================
@@ -186,6 +188,27 @@ export const NOTIFICATION_REGISTRY: NotificationRule[] = [
       }
 
       return true;
+    },
+  },
+
+  // -------------------------------------------------------------------------
+  // Free Plan Upgrade (Info - persistent, cannot dismiss)
+  // -------------------------------------------------------------------------
+  {
+    config: {
+      type: 'free_plan_upgrade',
+      severity: 'info',
+      title: "You're on the Free plan",
+      message: 'Upgrade to unlock more responses and advanced features.',
+      action: {
+        label: 'Upgrade',
+        href: '/billing',
+      },
+      dismissible: false,
+    },
+    condition: ({ organizationPlan, isLoading }) => {
+      if (isLoading) return false;
+      return organizationPlan === 'free';
     },
   },
 

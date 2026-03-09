@@ -111,6 +111,8 @@ dependencies = [
     "opentelemetry-exporter-otlp-proto-http>=1.26.0",
     "sentry-sdk[django]>=2.52.0",
     "agnost>=0.1.13",
+    # Billing
+    "stripe>=12.0.0",
 ]
 
 [build-system]

@@ -1,96 +1,30 @@
 "use client";
 
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { ArrowRight, Check } from "lucide-react";
 import Link from "next/link";
 import { NumberedHeading } from "./NumberedHeading";
-
-interface PricingTier {
-  name: string;
-  badge: { text: string; bg: string; color: string };
-  description: string;
-  price: string;
-  priceSubtext?: string;
-  responseLimit: string;
-  ctaText: string;
-  ctaSubtext: string;
-  features: string[];
-  highlighted?: boolean;
-}
-
-const pricingTiers: PricingTier[] = [
-  {
-    name: "free",
-    badge: { text: "FREE", bg: "rgba(11, 35, 142, 0.32)", color: "#95B7FF" },
-    description: "Try Pillar risk-free",
-    price: "$0",
-    responseLimit: "50 responses",
-    ctaText: "Get Started Free",
-    ctaSubtext: "No card required",
-    features: [
-      "Actions (execute, pre-fill)",
-      "Analytics dashboard",
-      "Widget customization",
-    ],
-  },
-  {
-    name: "hobby",
-    badge: { text: "HOBBY", bg: "rgba(11, 142, 64, 0.32)", color: "#4EE479" },
-    description: "For side projects",
-    price: "$19",
-    priceSubtext: "per month",
-    responseLimit: "100 responses/mo",
-    ctaText: "Get Started",
-    ctaSubtext: "Then $0.25/response",
-    features: [
-      "Actions (execute, pre-fill)",
-      "Analytics dashboard",
-      "Widget customization",
-    ],
-  },
-  {
-    name: "pro",
-    badge: { text: "PRO", bg: "#954509", color: "#FF6E00" },
-    description: "For production apps",
-    price: "$99",
-    priceSubtext: "per month",
-    responseLimit: "400 responses/mo",
-    ctaText: "Get Started",
-    ctaSubtext: "Then $0.20/response",
-    highlighted: true,
-    features: [
-      "Everything in Hobby",
-      "Priority support",
-    ],
-  },
-  {
-    name: "growth",
-    badge: { text: "GROWTH", bg: "rgba(142, 11, 84, 0.32)", color: "#FF78CB" },
-    description: "For scaling apps",
-    price: "$249",
-    priceSubtext: "per month",
-    responseLimit: "1,500 responses/mo",
-    ctaText: "Get Started",
-    ctaSubtext: "Then $0.15/response",
-    features: [
-      "Everything in Pro",
-      "Custom integrations",
-    ],
-  },
-];
+import { PLAN_TIERS, getTierForInterval } from "@/lib/billing/plans";
+import type { BillingInterval, PlanTier } from "@/lib/billing/plans";
+import { BillingIntervalToggle } from "@/components/BillingIntervalToggle";
 
 /**
  * PricingSection - Usage-based pricing display with 4 tiers
  *
  * Features responsive grid layout, highlighted PRO tier,
- * and decorative dashed dividers between cards.
+ * monthly/yearly toggle, and decorative dashed dividers between cards.
  */
 interface PricingSectionProps {
   /** Hide the "[05] PRICING" numbered heading (used on standalone pricing page) */
   hideNumberedHeading?: boolean;
+  /** Currently active plan name - highlights that card for signed-in users */
+  activePlan?: string;
 }
 
-export function PricingSection({ hideNumberedHeading }: PricingSectionProps) {
+export function PricingSection({ hideNumberedHeading, activePlan }: PricingSectionProps) {
+  const [interval, setInterval] = useState<BillingInterval>("yearly");
+
   return (
     <div className="relative">
       {/* Gradient line outside, solid blue inside container */}
@@ -112,164 +46,201 @@ export function PricingSection({ hideNumberedHeading }: PricingSectionProps) {
                 Pricing
               </span>
             </h2>
-            <p className="text-white text-lg">
-              Pay for what you use. Start free, scale as you grow.
-            </p>
-            <p className="text-white/50 text-sm mt-2">
-              Only substantive AI responses count — greetings and simple acknowledgments are free.
-            </p>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <p className="text-white text-lg">
+                  Pay for what you use. Start free, scale as you grow.
+                </p>
+                <p className="text-white/50 text-sm mt-2">
+                  Only substantive AI responses count — greetings and simple acknowledgments are free.
+                </p>
+              </div>
+              <BillingIntervalToggle
+                interval={interval}
+                onChange={setInterval}
+                variant="dark"
+              />
+            </div>
           </div>
 
           {/* Pricing Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-0">
-            {pricingTiers.map((tier, index) => (
-              <div key={tier.name} className="relative flex">
-                {/* Dashed divider - between all cards, skip around highlighted (Pro) section */}
-                {index !== 2 && index !== 3 && (
-                  <div className="hidden lg:block absolute left-0 top-0 bottom-0 w-px">
-                    <div 
-                      className="absolute inset-0"
-                      style={{
-                        backgroundImage: "linear-gradient(to bottom, rgba(255,255,255,0.3) 50%, transparent 50%)",
-                        backgroundSize: "1px 8px",
-                        maskImage: "linear-gradient(to bottom, transparent 0%, white 50%, transparent 100%)",
-                        WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, white 50%, transparent 100%)"
-                      }}
-                    />
-                  </div>
-                )}
-                {/* Right side dashed divider for last card */}
-                {index === 3 && (
-                  <div className="hidden lg:block absolute right-0 top-0 bottom-0 w-px">
-                    <div 
-                      className="absolute inset-0"
-                      style={{
-                        backgroundImage: "linear-gradient(to bottom, rgba(255,255,255,0.3) 50%, transparent 50%)",
-                        backgroundSize: "1px 8px",
-                        maskImage: "linear-gradient(to bottom, transparent 0%, white 50%, transparent 100%)",
-                        WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, white 50%, transparent 100%)"
-                      }}
-                    />
-                  </div>
-                )}
+            {PLAN_TIERS.map((rawTier, index) => {
+              const tier = getTierForInterval(rawTier, interval);
+              const isYearly = interval === "yearly" && !!rawTier.yearly;
+              const isCurrent = activePlan === tier.name;
+              const isHighlighted = isCurrent || (tier.highlighted && !activePlan);
 
-                {/* Card */}
-                <div
-                  className={cn(
-                    "flex-1 p-6 md:p-8 flex flex-col",
-                    tier.highlighted
-                      ? "bg-[#FF6E00] border-2 border-[#FF6E00] overflow-hidden"
-                      : "bg-transparent"
+              return (
+                <div key={tier.name} className="relative flex">
+                  {/* Dashed divider - between all cards, skip around highlighted section */}
+                  {!isHighlighted && !(index > 0 && (activePlan === PLAN_TIERS[index - 1]?.name || (!activePlan && PLAN_TIERS[index - 1]?.highlighted))) && index !== 0 && (
+                    <div className="hidden lg:block absolute left-0 top-0 bottom-0 w-px">
+                      <div
+                        className="absolute inset-0"
+                        style={{
+                          backgroundImage: "linear-gradient(to bottom, rgba(255,255,255,0.3) 50%, transparent 50%)",
+                          backgroundSize: "1px 8px",
+                          maskImage: "linear-gradient(to bottom, transparent 0%, white 50%, transparent 100%)",
+                          WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, white 50%, transparent 100%)"
+                        }}
+                      />
+                    </div>
                   )}
-                >
-                  {/* Badge */}
-                  <div
-                    className="inline-flex w-fit px-2 py-1 text-xs font-mono tracking-wider mb-3"
-                    style={{
-                      backgroundColor: tier.badge.bg,
-                      color: tier.badge.color,
-                    }}
-                  >
-                    {tier.badge.text}
-                  </div>
+                  {/* Right side dashed divider for last non-highlighted card */}
+                  {index === 3 && !isHighlighted && (
+                    <div className="hidden lg:block absolute right-0 top-0 bottom-0 w-px">
+                      <div
+                        className="absolute inset-0"
+                        style={{
+                          backgroundImage: "linear-gradient(to bottom, rgba(255,255,255,0.3) 50%, transparent 50%)",
+                          backgroundSize: "1px 8px",
+                          maskImage: "linear-gradient(to bottom, transparent 0%, white 50%, transparent 100%)",
+                          WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, white 50%, transparent 100%)"
+                        }}
+                      />
+                    </div>
+                  )}
 
-                  {/* Description */}
-                  <p
+                  {/* Card */}
+                  <div
                     className={cn(
-                      "text-sm mb-6",
-                      tier.highlighted ? "text-white" : "text-white/70"
+                      "flex-1 p-6 md:p-8 flex flex-col",
+                      isHighlighted
+                        ? "bg-[#FF6E00] border-2 border-[#FF6E00] overflow-hidden"
+                        : "bg-transparent"
                     )}
                   >
-                    {tier.description}
-                  </p>
+                    {/* Badge */}
+                    <div
+                      className="inline-flex w-fit px-2 py-1 text-xs font-mono tracking-wider mb-3"
+                      style={{
+                        backgroundColor: tier.badge.bg,
+                        color: tier.badge.color,
+                      }}
+                    >
+                      {tier.badge.text}
+                    </div>
 
-                  {/* Price */}
-                  <div className="mb-1">
-                    <span
+                    {/* Description */}
+                    <p
                       className={cn(
-                        "text-4xl md:text-[2.625rem]  font-editorial",
-                        tier.highlighted ? "text-white" : "text-white"
+                        "text-sm mb-6",
+                        isHighlighted ? "text-white" : "text-white/70"
                       )}
                     >
-                      {tier.price}
-                    </span>
-                    {tier.priceSubtext && (
+                      {tier.description}
+                    </p>
+
+                    {/* Price */}
+                    <div className="mb-1">
                       <span
                         className={cn(
-                          "text-sm ml-2",
-                          tier.highlighted ? "text-white/80" : "text-white/50"
+                          "text-4xl md:text-[2.625rem] font-editorial",
+                          "text-white"
                         )}
                       >
-                        {tier.priceSubtext}
+                        {tier.priceLabel}
                       </span>
-                    )}
-                  </div>
-
-                  {/* Response limit */}
-                  <p
-                    className={cn(
-                      "text-sm mb-6",
-                      tier.highlighted ? "text-white" : "text-white/70"
-                    )}
-                  >
-                    {tier.responseLimit}
-                  </p>
-
-                  {/* CTA Button */}
-                  <Link
-                    href="/signup"
-                    className={cn(
-                      "group relative w-full py-3 px-4 text-sm font-medium transition-colors mb-2 rounded-[6px] text-center",
-                      tier.highlighted
-                        ? "bg-white text-[#1A1A1A] hover:bg-[#000622] hover:text-white"
-                        : "bg-transparent border border-white/30 text-white hover:bg-white hover:text-[#000622] hover:border-white"
-                    )}
-                  >
-                    {tier.ctaText}
-                    <ArrowRight className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" />
-                  </Link>
-
-                  {/* CTA Subtext */}
-                  <p
-                    className={cn(
-                      "text-[10px] font-mono tracking-wider text-center mb-4",
-                      tier.highlighted ? "text-white/70" : "text-white/40"
-                    )}
-                  >
-                    {tier.ctaSubtext}
-                  </p>
-
-                  {/* Features List */}
-                  <div
-                    className={cn(
-                      "pt-4 mt-2 space-y-3",
-                      tier.highlighted
-                        ? "border-t border-white/20"
-                        : "border-t border-white/10"
-                    )}
-                  >
-                    {tier.features.map((feature) => (
-                      <div key={feature} className="flex items-center gap-3">
-                        <Check
-                          className={cn(
-                            "w-4 h-4 flex-shrink-0",
-                            tier.highlighted ? "text-white" : "text-[#4EE479]"
-                          )}
-                        />
+                      {tier.priceSubtext && (
                         <span
                           className={cn(
-                            "text-sm",
-                            tier.highlighted ? "text-white/90" : "text-white/70"
+                            "text-sm ml-2",
+                            isHighlighted ? "text-white/80" : "text-white/50"
                           )}
                         >
-                          {feature}
+                          {tier.priceSubtext}
                         </span>
+                      )}
+                    </div>
+
+                    {/* Response limit */}
+                    <p
+                      className={cn(
+                        "text-sm mb-6",
+                        isHighlighted ? "text-white" : "text-white/70"
+                      )}
+                    >
+                      {tier.responseLimit}
+                      {isYearly && (
+                        <span
+                          className={cn(
+                            "ml-1 text-xs",
+                            isHighlighted ? "text-white/60" : "text-white/40"
+                          )}
+                        >
+                          · billed yearly
+                        </span>
+                      )}
+                    </p>
+
+                    {/* CTA Button */}
+                    {isCurrent ? (
+                      <div
+                        className="w-full py-3 px-4 text-sm font-medium mb-2 rounded-[6px] text-center bg-white text-[#FF6E00]"
+                      >
+                        Current Plan
                       </div>
-                    ))}
+                    ) : (
+                      <Link
+                        href={activePlan ? "/billing" : "/signup"}
+                        className={cn(
+                          "group relative w-full py-3 px-4 text-sm font-medium transition-colors mb-2 rounded-[6px] text-center",
+                          isHighlighted
+                            ? "bg-white text-[#1A1A1A] hover:bg-[#000622] hover:text-white"
+                            : "bg-transparent border border-white/30 text-white hover:bg-white hover:text-[#000622] hover:border-white"
+                        )}
+                      >
+                        {tier.ctaText}
+                        <ArrowRight className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" />
+                      </Link>
+                    )}
+
+                    {/* CTA Subtext */}
+                    {!isCurrent && (
+                      <p
+                        className={cn(
+                          "text-[10px] font-mono tracking-wider text-center mb-4",
+                          isHighlighted ? "text-white/70" : "text-white/40"
+                        )}
+                      >
+                        {tier.ctaSubtext}
+                      </p>
+                    )}
+                    {isCurrent && <div className="mb-4" />}
+
+                    {/* Features List */}
+                    <div
+                      className={cn(
+                        "pt-4 mt-2 space-y-3",
+                        isHighlighted
+                          ? "border-t border-white/20"
+                          : "border-t border-white/10"
+                      )}
+                    >
+                      {tier.features.map((feature) => (
+                        <div key={feature} className="flex items-center gap-3">
+                          <Check
+                            className={cn(
+                              "w-4 h-4 flex-shrink-0",
+                              isHighlighted ? "text-white" : "text-[#4EE479]"
+                            )}
+                          />
+                          <span
+                            className={cn(
+                              "text-sm",
+                              isHighlighted ? "text-white/90" : "text-white/70"
+                            )}
+                          >
+                            {feature}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Enterprise CTA */}

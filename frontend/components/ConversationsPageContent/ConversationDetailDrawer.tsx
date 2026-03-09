@@ -10,6 +10,7 @@ import {
   ChevronRight,
   ExternalLink,
   FileText,
+  Languages,
   MessageSquare,
   Plus,
   Search,
@@ -58,6 +59,7 @@ import type {
 import { cn } from '@/lib/utils';
 
 import './ConversationDetailDrawer.css';
+import { useConversationTranslation } from './useConversationTranslation';
 // Configure marked for GFM
 marked.setOptions({
   gfm: true,
@@ -576,6 +578,7 @@ interface ChatMessageItemProps {
   isHighlighted?: boolean;
   onClick?: () => void;
   onTextSelect?: (position: PopoverPosition) => void;
+  displayContent?: string;
 }
 
 function ChatMessageItem({ 
@@ -583,6 +586,7 @@ function ChatMessageItem({
   isHighlighted,
   onClick,
   onTextSelect,
+  displayContent,
 }: ChatMessageItemProps) {
   const isUser = message.role === 'user';
   const isAssistant = message.role === 'assistant';
@@ -653,12 +657,12 @@ function ChatMessageItem({
         {/* Message bubble/content */}
         {isUser ? (
           <div className="conversation-user-bubble">
-            {message.content}
+            {displayContent ?? message.content}
           </div>
         ) : (
           <div className="conversation-assistant-wrapper">
             <AssistantContent 
-              content={message.content} 
+              content={displayContent ?? message.content} 
               latencyMs={message.latency_ms}
               modelUsed={message.model_used}
             />
@@ -951,6 +955,8 @@ export function ConversationDetailDrawer({
     enabled: !!conversationId && open,
   });
 
+  const translation = useConversationTranslation(conversation?.messages);
+
   // Scroll to bottom on load
   useEffect(() => {
     if (conversation?.messages && messagesEndRef.current) {
@@ -1126,6 +1132,41 @@ export function ConversationDetailDrawer({
             <div className="conversation-drawer-layout">
               {/* Left Panel: Chat Messages (25%) */}
               <div className="conversation-chat-panel">
+                {translation.hasNonEnglishContent && (
+                  <div className="conversation-translate-banner">
+                    <div className="conversation-translate-banner-content">
+                      <Languages className="h-3.5 w-3.5 shrink-0" />
+                      <span>
+                        {translation.languageName
+                          ? `Conversation in ${translation.languageName}`
+                          : 'Non-English conversation'}
+                      </span>
+                    </div>
+                    {translation.isTranslating ? (
+                      <div className="conversation-translate-banner-loading">
+                        <Spinner size="sm" />
+                        <span>Translating...</span>
+                      </div>
+                    ) : translation.isTranslated ? (
+                      <button
+                        className="conversation-translate-btn conversation-translate-btn--active"
+                        onClick={translation.untranslate}
+                      >
+                        Show original
+                      </button>
+                    ) : (
+                      <button
+                        className="conversation-translate-btn"
+                        onClick={translation.translate}
+                      >
+                        Translate to English
+                      </button>
+                    )}
+                    {translation.error && (
+                      <p className="conversation-translate-error">{translation.error}</p>
+                    )}
+                  </div>
+                )}
                 <ScrollArea className="h-full">
                   <div className="conversation-messages-container">
                     {conversation.messages.map((message) => (
@@ -1135,6 +1176,11 @@ export function ConversationDetailDrawer({
                         isHighlighted={highlightedMessageId === message.id}
                         onClick={message.role === 'assistant' ? () => handleMessageClick(message.id) : undefined}
                         onTextSelect={handleTextSelect}
+                        displayContent={
+                          translation.isTranslated
+                            ? translation.getTranslatedContent(message.id, message.content)
+                            : undefined
+                        }
                       />
                     ))}
                     <div ref={messagesEndRef} />

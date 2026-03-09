@@ -297,7 +297,8 @@ def oauth_callback(request: Request) -> Response:
             
             organization = Organization.objects.create(
                 name=org_name,
-                plan=default_plan
+                plan=default_plan,
+                billing_email=email,
             )
             
             OrganizationMembership.objects.create(
@@ -338,7 +339,8 @@ def oauth_callback(request: Request) -> Response:
         
         organization = Organization.objects.create(
             name=org_name,
-            plan=default_plan
+            plan=default_plan,
+            billing_email=email,
         )
         
         OrganizationMembership.objects.create(
@@ -443,6 +445,7 @@ def select_organization(request: Request) -> Response:
                 name=organization_name,
                 domain=org_domain,  # NULL if unverified or duplicate
                 plan=default_plan,
+                billing_email=user.email,
             )
             
             # Add user as admin

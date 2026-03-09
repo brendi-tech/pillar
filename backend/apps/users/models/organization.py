@@ -50,6 +50,31 @@ class Organization(BaseModel):
         null=True,
         help_text="Email address for billing communications"
     )
+    stripe_customer_id = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        unique=True,
+        db_index=True,
+        help_text="Stripe Customer ID (cus_...)"
+    )
+    stripe_subscription_id = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text="Active Stripe Subscription ID (sub_...)"
+    )
+    stripe_price_id = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text="Current Stripe Price ID for the active subscription"
+    )
+    usage_alert_last_threshold = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        help_text="Last usage threshold percentage notified (80 or 100). Reset each billing period."
+    )
     onboarding_completed_at = models.DateTimeField(
         null=True,
         blank=True,

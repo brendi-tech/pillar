@@ -153,6 +153,12 @@ class TestAskResumeHappyPath:
         """Build the set of patches needed for the happy path."""
         patches = {}
 
+        # 0. Bypass billing enforcement (not under test)
+        patches["check_usage"] = patch(
+            "apps.billing.enforcement.check_usage_allowed",
+            new_callable=AsyncMock,
+        )
+
         # 1. get_resumable_session returns our fake session
         patches["get_session"] = patch(
             "apps.mcp.services.session_resumption.get_resumable_session",
@@ -215,6 +221,7 @@ class TestAskResumeHappyPath:
         patches = self._build_patches()
 
         with (
+            patches["check_usage"],
             patches["get_session"],
             patches["clear_status"] as mock_clear,
             patches["metadata"],
@@ -268,6 +275,7 @@ class TestAskResumeHappyPath:
         patches = self._build_patches()
 
         with (
+            patches["check_usage"],
             patches["get_session"],
             patches["clear_status"],
             patches["metadata"],
@@ -301,6 +309,7 @@ class TestAskResumeHappyPath:
         patches = self._build_patches()
 
         with (
+            patches["check_usage"],
             patches["get_session"],
             patches["clear_status"],
             patches["metadata"],
@@ -357,6 +366,7 @@ class TestAskResumeHappyPath:
         )
 
         with (
+            patches["check_usage"],
             patches["get_session"],
             patches["clear_status"],
             patches["metadata"],

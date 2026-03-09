@@ -158,7 +158,7 @@ class UserViewSet(viewsets.ModelViewSet):
             org_name = user.full_name or user.email.split('@')[0]
             org_name = f"{org_name}'s Organization"
 
-            organization = Organization.objects.create(name=org_name)
+            organization = Organization.objects.create(name=org_name, billing_email=user.email)
             OrganizationMembership.objects.create(
                 organization=organization,
                 user=user,
