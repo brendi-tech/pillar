@@ -19,6 +19,10 @@ export interface SubscriptionData {
   current_period_start?: number;
   current_period_end?: number;
   cancel_at_period_end?: boolean;
+  pending_downgrade?: {
+    plan: string;
+    effective_date: number;
+  };
 }
 
 export interface UsageData {
@@ -32,8 +36,12 @@ export interface UsageData {
 
 export interface CheckoutResponse {
   url?: string;
-  /** Present when the backend updated an existing subscription in-place */
+  /** Present when the backend updated an existing subscription in-place (upgrade) */
   updated?: boolean;
+  /** Present when a downgrade has been scheduled for end of billing period */
+  scheduled?: boolean;
+  /** Unix timestamp when the scheduled change takes effect */
+  effective_date?: number;
   plan?: string;
   subscription_status?: string;
   monthly_responses?: number | null;
@@ -99,4 +107,14 @@ export const verifyCheckoutSessionMutation = () => ({
     adminPost<SubscriptionData>("/billing/verify-session/", {
       session_id: sessionId,
     }),
+});
+
+export const cancelSubscriptionMutation = () => ({
+  mutationFn: () =>
+    adminPost<{ canceled: boolean }>("/billing/cancel/", {}),
+});
+
+export const cancelDowngradeMutation = () => ({
+  mutationFn: () =>
+    adminPost<{ canceled: boolean }>("/billing/cancel-downgrade/", {}),
 });

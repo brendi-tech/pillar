@@ -51,6 +51,8 @@ class SubscriptionView(APIView):
                 "current_period_end": details["current_period_end"],
                 "cancel_at_period_end": details["cancel_at_period_end"],
             })
+            if details.get("pending_downgrade"):
+                data["pending_downgrade"] = details["pending_downgrade"]
 
         return Response(data)
 
@@ -101,15 +103,22 @@ class CheckoutView(APIView):
         return self._create_new(request, org, price_id)
 
     def _update_existing(self, request, org, price_id: str):
-        """Modify the existing subscription's price in-place."""
+        """Modify the existing subscription's price in-place (upgrade) or schedule at period end (downgrade)."""
         try:
-            billing_service.update_subscription_plan(org, price_id)
+            result = billing_service.update_subscription_plan(org, price_id)
         except Exception:
             logger.exception("Failed to update subscription for org %s", org.id)
             return Response(
                 {"error": "Failed to update subscription"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+        if isinstance(result, dict) and result.get("scheduled"):
+            return Response({
+                "scheduled": True,
+                "effective_date": result["effective_date"],
+                "plan": result["plan"],
+            })
 
         org.refresh_from_db()
         plan_limits = get_plan_limits(org.plan)
@@ -237,6 +246,62 @@ class VerifySessionView(APIView):
             "has_payg": plan_limits.has_payg,
             "stripe_subscription_id": org.stripe_subscription_id,
         })
+
+
+class CancelDowngradeView(APIView):
+    """POST to cancel a pending scheduled downgrade."""
+
+    permission_classes = [IsAuthenticatedAdmin]
+
+    def post(self, request):
+        org = request.user.primary_organization
+        if not org:
+            return Response(
+                {"error": "No organization found"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            billing_service.cancel_pending_downgrade(org)
+        except Exception:
+            logger.exception("Failed to cancel pending downgrade for org %s", org.id)
+            return Response(
+                {"error": "Failed to cancel pending downgrade"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        return Response({"canceled": True})
+
+
+class CancelSubscriptionView(APIView):
+    """POST to cancel the org's subscription at end of billing period (downgrade to free)."""
+
+    permission_classes = [IsAuthenticatedAdmin]
+
+    def post(self, request):
+        org = request.user.primary_organization
+        if not org:
+            return Response(
+                {"error": "No organization found"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not org.stripe_subscription_id:
+            return Response(
+                {"error": "No active subscription to cancel"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            billing_service.cancel_subscription(org)
+        except Exception:
+            logger.exception("Failed to cancel subscription for org %s", org.id)
+            return Response(
+                {"error": "Failed to cancel subscription"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        return Response({"canceled": True})
 
 
 class UsageView(APIView):

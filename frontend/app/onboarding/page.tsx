@@ -26,7 +26,11 @@ export default function OnboardingPage() {
       },
       {
         onSuccess: (data) => {
-          window.location.href = data.url;
+          if (data.updated) {
+            router.push("/setup?upgraded=true");
+          } else if (data.url) {
+            window.location.href = data.url;
+          }
         },
       }
     );

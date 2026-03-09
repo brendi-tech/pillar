@@ -224,21 +224,50 @@ def sync_subscription(stripe_subscription: stripe.Subscription) -> None:
     )
 
 
-def update_subscription_plan(org, new_price_id: str) -> stripe.Subscription:
+def update_subscription_plan(
+    org, new_price_id: str
+) -> stripe.Subscription | dict:
     """
-    Change an existing subscription to a different price (plan upgrade/downgrade).
+    Change an existing subscription to a different price.
 
-    Swaps the flat-rate line item and the overage item in a single modify call
-    so the customer never has two active subscriptions.
+    Upgrades are applied immediately with proration.
+    Downgrades are scheduled for the end of the billing period via
+    Subscription Schedules so the customer keeps their current plan
+    until the period ends.
 
-    Returns the updated Stripe Subscription object.
+    Returns the updated Stripe Subscription (upgrade) or a dict with
+    scheduling info (downgrade).
     """
+    from apps.billing.constants import is_downgrade as _is_downgrade
+
     _init_stripe()
 
     if not org.stripe_subscription_id:
         raise ValueError("Organization has no active subscription to update")
 
+    plan_map = _build_price_id_to_plan_map()
+    target_plan = plan_map.get(new_price_id)
+    current_plan = org.plan
+
+    if target_plan and current_plan and _is_downgrade(current_plan, target_plan):
+        effective_date = schedule_downgrade(org, new_price_id)
+        return {
+            "scheduled": True,
+            "effective_date": effective_date,
+            "plan": target_plan,
+        }
+
+    # Upgrade path: apply immediately with proration.
+    # If a downgrade was previously scheduled, release it first.
     sub = stripe.Subscription.retrieve(org.stripe_subscription_id)
+    if sub.get("schedule"):
+        try:
+            stripe.SubscriptionSchedule.release(sub["schedule"])
+            logger.info("Released schedule %s before upgrade", sub["schedule"])
+            sub = stripe.Subscription.retrieve(org.stripe_subscription_id)
+        except stripe.StripeError:
+            logger.warning("Failed to release schedule %s", sub["schedule"])
+
     overage_ids = set((settings.STRIPE_OVERAGE_PRICE_IDS or {}).values())
 
     flat_item_id = None
@@ -271,12 +300,157 @@ def update_subscription_plan(org, new_price_id: str) -> stripe.Subscription:
         proration_behavior="create_prorations",
     )
     logger.info(
-        "Updated subscription %s to price %s for org %s",
+        "Upgraded subscription %s to price %s for org %s",
         org.stripe_subscription_id, new_price_id, org.id,
     )
 
     sync_subscription(updated_sub)
     return updated_sub
+
+
+def schedule_downgrade(org, new_price_id: str) -> int:
+    """
+    Schedule a plan downgrade at the end of the current billing period
+    using Stripe Subscription Schedules.
+
+    Creates a two-phase schedule: current plan until period end, then
+    the new (lower) plan ongoing. Stripe handles the transition
+    automatically and fires customer.subscription.updated when it happens.
+
+    Returns the effective_date as a unix timestamp (current_period_end).
+    """
+    _init_stripe()
+
+    if not org.stripe_subscription_id:
+        raise ValueError("Organization has no active subscription to downgrade")
+
+    sub = stripe.Subscription.retrieve(org.stripe_subscription_id)
+    overage_ids = set((settings.STRIPE_OVERAGE_PRICE_IDS or {}).values())
+
+    current_flat_price = None
+    current_overage_price = None
+    for item in sub["items"]["data"]:
+        pid = item["price"]["id"]
+        if pid in overage_ids:
+            current_overage_price = pid
+        else:
+            current_flat_price = pid
+
+    if not current_flat_price:
+        raise ValueError("Could not find flat-rate item on subscription")
+
+    new_overage_price = _get_overage_price_for_plan(new_price_id)
+
+    # If subscription is already on a schedule, release it first
+    if sub.get("schedule"):
+        try:
+            stripe.SubscriptionSchedule.release(sub["schedule"])
+        except stripe.StripeError:
+            logger.warning("Failed to release existing schedule %s", sub["schedule"])
+
+    schedule = stripe.SubscriptionSchedule.create(
+        from_subscription=sub.id,
+    )
+
+    current_phase_items: list[dict] = [{"price": current_flat_price, "quantity": 1}]
+    if current_overage_price:
+        current_phase_items.append({"price": current_overage_price})
+
+    new_phase_items: list[dict] = [{"price": new_price_id, "quantity": 1}]
+    if new_overage_price:
+        new_phase_items.append({"price": new_overage_price})
+
+    period_end = sub["items"]["data"][0].get("current_period_end") or sub.get("current_period_end")
+
+    stripe.SubscriptionSchedule.modify(
+        schedule.id,
+        end_behavior="release",
+        phases=[
+            {
+                "items": current_phase_items,
+                "start_date": schedule.phases[0].start_date,
+                "end_date": period_end,
+            },
+            {
+                "items": new_phase_items,
+            },
+        ],
+    )
+    logger.info(
+        "Scheduled downgrade for subscription %s to price %s at %s for org %s",
+        org.stripe_subscription_id, new_price_id, period_end, org.id,
+    )
+    return period_end
+
+
+def cancel_pending_downgrade(org) -> None:
+    """
+    Cancel a pending scheduled downgrade by releasing the subscription schedule.
+
+    The subscription continues on its current plan as a regular subscription.
+    """
+    _init_stripe()
+
+    if not org.stripe_subscription_id:
+        return
+
+    sub = stripe.Subscription.retrieve(org.stripe_subscription_id)
+    schedule_id = sub.get("schedule")
+    if not schedule_id:
+        logger.debug("No schedule to cancel for subscription %s", org.stripe_subscription_id)
+        return
+
+    stripe.SubscriptionSchedule.release(schedule_id)
+    logger.info("Released schedule %s for subscription %s", schedule_id, org.stripe_subscription_id)
+
+
+def get_pending_schedule(org) -> dict | None:
+    """
+    Check if the subscription has a pending scheduled plan change.
+
+    Returns {plan, effective_date} if a future phase transition is scheduled,
+    or None if no schedule exists.
+    """
+    _init_stripe()
+
+    if not org.stripe_subscription_id:
+        return None
+
+    try:
+        sub = stripe.Subscription.retrieve(org.stripe_subscription_id)
+    except stripe.StripeError:
+        return None
+
+    schedule_id = sub.get("schedule")
+    if not schedule_id:
+        return None
+
+    try:
+        schedule = stripe.SubscriptionSchedule.retrieve(schedule_id)
+    except stripe.StripeError:
+        return None
+
+    if schedule.status not in ("active", "not_started"):
+        return None
+
+    if len(schedule.phases) < 2:
+        return None
+
+    next_phase = schedule.phases[1]
+    overage_ids = set((settings.STRIPE_OVERAGE_PRICE_IDS or {}).values())
+    plan_map = _build_price_id_to_plan_map()
+
+    for item in next_phase["items"]:
+        price_id = item.get("price") or item.get("plan")
+        if price_id and price_id not in overage_ids:
+            plan_name = plan_map.get(price_id)
+            if plan_name:
+                return {
+                    "plan": plan_name,
+                    "effective_date": next_phase["start_date"],
+                }
+
+    return None
 
 
 def cancel_subscription(org) -> None:
@@ -328,7 +502,7 @@ def get_subscription_details(org) -> dict | None:
         period_start = first_item.get("current_period_start")
         period_end = first_item.get("current_period_end")
 
-    return {
+    result = {
         "id": sub.id,
         "status": sub.status,
         "current_period_start": period_start,
@@ -336,3 +510,9 @@ def get_subscription_details(org) -> dict | None:
         "cancel_at_period_end": sub.get("cancel_at_period_end"),
         "price_id": flat_price_id,
     }
+
+    pending = get_pending_schedule(org)
+    if pending:
+        result["pending_downgrade"] = pending
+
+    return result

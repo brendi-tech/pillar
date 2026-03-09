@@ -95,3 +95,11 @@ def get_payg_rate(plan: str) -> Decimal | None:
         The rate per response in dollars, or None if PAYG not available
     """
     return PLAN_LIMITS[plan].payg_rate
+
+
+PLAN_ORDER: list[str] = ["free", "hobby", "pro", "growth", "enterprise"]
+
+
+def is_downgrade(current_plan: str, target_plan: str) -> bool:
+    """Check whether switching from current_plan to target_plan is a downgrade."""
+    return PLAN_ORDER.index(target_plan) < PLAN_ORDER.index(current_plan)

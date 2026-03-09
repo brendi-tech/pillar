@@ -10,12 +10,21 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import {
   Activity,
+  ArrowDownRight,
   ArrowUpRight,
   Check,
   CheckCircle2,
@@ -29,6 +38,8 @@ import {
   billingKeys,
   billingSubscriptionQuery,
   billingUsageQuery,
+  cancelDowngradeMutation,
+  cancelSubscriptionMutation,
   createCheckoutMutation,
   createPortalMutation,
   verifyCheckoutSessionMutation,
@@ -43,6 +54,18 @@ import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
+const PLAN_ORDER = PLAN_TIERS.map((t) => t.name);
+
+function getPlanChangeAction(
+  currentPlan: string | undefined,
+  targetPlan: string
+): "upgrade" | "downgrade" | "cancel" {
+  if (targetPlan === "free") return "cancel";
+  const currentIdx = currentPlan ? PLAN_ORDER.indexOf(currentPlan) : -1;
+  const targetIdx = PLAN_ORDER.indexOf(targetPlan);
+  return targetIdx > currentIdx ? "upgrade" : "downgrade";
+}
+
 export function BillingPageContent() {
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
@@ -53,6 +76,10 @@ export function BillingPageContent() {
   const didVerify = useRef(false);
   const [isEditingEmail, setIsEditingEmail] = useState(false);
   const [emailDraft, setEmailDraft] = useState("");
+  const [pendingChange, setPendingChange] = useState<{
+    tier: PlanTier;
+    action: "upgrade" | "downgrade" | "cancel";
+  } | null>(null);
 
   const verify = useMutation({
     ...verifyCheckoutSessionMutation(),
@@ -80,6 +107,8 @@ export function BillingPageContent() {
   } = useQuery(billingUsageQuery());
 
   const checkout = useMutation(createCheckoutMutation());
+  const cancelSub = useMutation(cancelSubscriptionMutation());
+  const cancelDowngrade = useMutation(cancelDowngradeMutation());
   const portal = useMutation(createPortalMutation());
   const updateOrg = useMutation({
     ...updateOrganizationMutation(),
@@ -90,30 +119,96 @@ export function BillingPageContent() {
     },
   });
 
-  const handleUpgrade = (priceId: string) => {
+  const handleSelectPlan = (tier: PlanTier) => {
+    if (subscription?.pending_downgrade) {
+      toast.error("Cancel the pending downgrade before making another change");
+      return;
+    }
+    const action = getPlanChangeAction(subscription?.plan, tier.name);
+    setPendingChange({ tier, action });
+  };
+
+  const handleConfirmChange = () => {
+    if (!pendingChange) return;
+
+    const { tier, action } = pendingChange;
+
+    if (action === "cancel") {
+      cancelSub.mutate(undefined, {
+        onSuccess: () => {
+          setPendingChange(null);
+          queryClient.invalidateQueries({ queryKey: billingKeys.all });
+          refreshUser();
+          toast.success("Subscription will be canceled at end of billing period");
+        },
+        onError: (error) => {
+          toast.error(error.message || "Failed to cancel subscription");
+        },
+      });
+      return;
+    }
+
+    if (!tier.stripePriceKey) return;
+
     checkout.mutate(
-      { priceId },
+      { priceId: tier.stripePriceKey },
       {
         onSuccess: (data) => {
+          setPendingChange(null);
+
+          if (data.scheduled) {
+            queryClient.invalidateQueries({ queryKey: billingKeys.all });
+            const dateStr = data.effective_date
+              ? new Date(data.effective_date * 1000).toLocaleDateString("en-US", {
+                  month: "long",
+                  day: "numeric",
+                  year: "numeric",
+                })
+              : "end of billing period";
+            toast.success(`Downgrade scheduled for ${dateStr}`);
+            return;
+          }
+
           if (data.updated) {
             queryClient.invalidateQueries({ queryKey: billingKeys.all });
             refreshUser();
-            toast.success("Plan updated successfully");
-          } else if (data.url) {
-            window.location.href = data.url;
+            toast.success("Plan upgraded successfully");
+            return;
           }
+
+          if (data.url) {
+            window.location.href = data.url;
+            return;
+          }
+
+          queryClient.invalidateQueries({ queryKey: billingKeys.all });
+          refreshUser();
         },
         onError: (error) => {
-          toast.error(error.message || "Failed to start checkout");
+          toast.error(error.message || "Failed to change plan");
         },
       }
     );
   };
 
+  const handleCancelDowngrade = () => {
+    cancelDowngrade.mutate(undefined, {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: billingKeys.all });
+        toast.success("Scheduled downgrade canceled");
+      },
+      onError: (error) => {
+        toast.error(error.message || "Failed to cancel downgrade");
+      },
+    });
+  };
+
   const handleManage = () => {
     portal.mutate(undefined, {
       onSuccess: (data) => {
-        window.location.href = data.url;
+        if (data.url) {
+          window.location.href = data.url;
+        }
       },
       onError: (error) => {
         toast.error(error.message || "Failed to open billing portal");
@@ -134,6 +229,7 @@ export function BillingPageContent() {
   const isFreePlan = subscription?.plan === "free";
   const usagePercent =
     usage && usage.limit ? Math.min((usage.used / usage.limit) * 100, 100) : 0;
+  const isChangePending = checkout.isPending || cancelSub.isPending || cancelDowngrade.isPending;
 
   return (
     <div className="space-y-6">
@@ -161,6 +257,50 @@ export function BillingPageContent() {
                 </div>
               </>
             )}
+          </CardContent>
+        </Card>
+      )}
+
+      {subscription?.pending_downgrade && (
+        <Card className="border-amber-500/30 bg-amber-500/5">
+          <CardContent className="flex items-center justify-between py-4">
+            <div className="flex items-center gap-3">
+              <ArrowDownRight className="h-5 w-5 text-amber-500" />
+              <div>
+                <p className="font-medium text-amber-700 dark:text-amber-400">
+                  Downgrade scheduled
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Your plan will change to{" "}
+                  <span className="font-medium">
+                    {getPlanTier(subscription.pending_downgrade.plan)?.label ??
+                      subscription.pending_downgrade.plan}
+                  </span>{" "}
+                  on{" "}
+                  {new Date(
+                    subscription.pending_downgrade.effective_date * 1000
+                  ).toLocaleDateString("en-US", {
+                    month: "long",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                  . You keep {plan?.label ?? "your current plan"} features
+                  until then.
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCancelDowngrade}
+              disabled={cancelDowngrade.isPending}
+            >
+              {cancelDowngrade.isPending ? (
+                <Spinner size="sm" />
+              ) : (
+                "Cancel Downgrade"
+              )}
+            </Button>
           </CardContent>
         </Card>
       )}
@@ -214,12 +354,10 @@ export function BillingPageContent() {
                     );
                     if (proTier) {
                       const adjusted = getTierForInterval(proTier, "yearly");
-                      if (adjusted.stripePriceKey) {
-                        handleUpgrade(adjusted.stripePriceKey);
-                      }
+                      handleSelectPlan(adjusted);
                     }
                   }}
-                  disabled={checkout.isPending}
+                  disabled={isChangePending}
                 >
                   <ArrowUpRight className="mr-1 h-4 w-4" />
                   Upgrade
@@ -359,12 +497,8 @@ export function BillingPageContent() {
         </h3>
         <PlanTierGrid
           tiers={PLAN_TIERS}
-          onSelectPlan={(tier: PlanTier) => {
-            if (tier.stripePriceKey) {
-              handleUpgrade(tier.stripePriceKey);
-            }
-          }}
-          disabled={checkout.isPending}
+          onSelectPlan={handleSelectPlan}
+          disabled={isChangePending}
           activePlan={subscription?.plan}
         />
       </div>
@@ -392,6 +526,119 @@ export function BillingPageContent() {
           </CardContent>
         </Card>
       )}
+
+      {/* Plan Change Confirmation Dialog */}
+      <PlanChangeDialog
+        pendingChange={pendingChange}
+        currentPlan={plan}
+        isPending={isChangePending}
+        onConfirm={handleConfirmChange}
+        onCancel={() => setPendingChange(null)}
+      />
     </div>
+  );
+}
+
+function PlanChangeDialog({
+  pendingChange,
+  currentPlan,
+  isPending,
+  onConfirm,
+  onCancel,
+}: {
+  pendingChange: { tier: PlanTier; action: "upgrade" | "downgrade" | "cancel" } | null;
+  currentPlan: PlanTier | undefined;
+  isPending: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  if (!pendingChange) return null;
+
+  const { tier, action } = pendingChange;
+  const isUpgrade = action === "upgrade";
+  const isCancel = action === "cancel";
+
+  const title = isCancel
+    ? "Cancel Subscription"
+    : isUpgrade
+      ? `Upgrade to ${tier.label}`
+      : `Downgrade to ${tier.label}`;
+
+  const description = isCancel
+    ? "Your subscription will remain active until the end of your current billing period, then revert to the Free plan."
+    : isUpgrade
+      ? "You'll be charged the prorated difference for the remainder of your billing period."
+      : `Your plan will change to ${tier.label} at the end of your current billing period. You'll keep your current plan's features until then.`;
+
+  return (
+    <Dialog open={!!pendingChange} onOpenChange={(open) => !open && onCancel()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-3 py-2">
+          <div className="flex items-center justify-between rounded-lg border px-4 py-3">
+            <div className="text-sm">
+              <p className="font-medium text-muted-foreground">Current</p>
+              <p className="text-lg font-semibold">
+                {currentPlan?.label || "Free"}{" "}
+                <span className="text-sm font-normal text-muted-foreground">
+                  {currentPlan?.priceLabel || "$0"}
+                  {currentPlan?.priceSubtext && currentPlan.priceSubtext !== "one-time"
+                    ? "/mo"
+                    : ""}
+                </span>
+              </p>
+            </div>
+            <div className="text-muted-foreground">
+              {isUpgrade ? (
+                <ArrowUpRight className="h-5 w-5 text-emerald-500" />
+              ) : (
+                <ArrowDownRight className="h-5 w-5 text-amber-500" />
+              )}
+            </div>
+            <div className="text-sm text-right">
+              <p className="font-medium text-muted-foreground">New</p>
+              <p className="text-lg font-semibold">
+                {tier.label}{" "}
+                <span className="text-sm font-normal text-muted-foreground">
+                  {tier.priceLabel}
+                  {tier.priceSubtext && tier.priceSubtext !== "one-time"
+                    ? "/mo"
+                    : ""}
+                </span>
+              </p>
+            </div>
+          </div>
+
+          {!isCancel && (
+            <p className="text-xs text-muted-foreground text-center">
+              {tier.responseLimit}
+              {tier.ctaSubtext ? ` · ${tier.ctaSubtext}` : ""}
+            </p>
+          )}
+        </div>
+
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button variant="outline" onClick={onCancel} disabled={isPending}>
+            Keep Current Plan
+          </Button>
+          <Button
+            variant={isCancel ? "destructive" : "default"}
+            onClick={onConfirm}
+            disabled={isPending}
+          >
+            {isPending && <Spinner size="sm" className="mr-2" />}
+            {isCancel
+              ? "Cancel Subscription"
+              : isUpgrade
+                ? "Confirm Upgrade"
+                : "Confirm Downgrade"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
