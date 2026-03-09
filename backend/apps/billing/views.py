@@ -187,6 +187,11 @@ class VerifySessionView(APIView):
                 status=status.HTTP_502_BAD_GATEWAY,
             )
 
+        try:
+            billing_service.add_overage_item_to_subscription(subscription_id)
+        except Exception:
+            logger.exception("Failed to add overage item to subscription %s", subscription_id)
+
         org.refresh_from_db()
         plan_limits = get_plan_limits(org.plan)
 

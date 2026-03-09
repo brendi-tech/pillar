@@ -440,9 +440,12 @@ export async function adminFetch<T>(
       
       // Check for field-level validation errors (DRF format: { field: [errors] })
       if (errorData && typeof errorData === 'object') {
-        // If it has detail or message, use that
+        // If it has detail, error, or message, use that
         if (typeof errorData.detail === 'string') {
           throw new Error(errorData.detail);
+        }
+        if (typeof errorData.error === 'string') {
+          throw new Error(errorData.error);
         }
         if (typeof errorData.message === 'string') {
           throw new Error(errorData.message);

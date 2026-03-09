@@ -388,10 +388,12 @@ function ToolCard({
   );
 }
 
-function ToolCardsContainer({ progress, mobile }: { progress: MotionValue<number>; mobile: boolean }) {
+function ToolCardsContainer({ progress, mobile, tallScreen }: { progress: MotionValue<number>; mobile: boolean; tallScreen: boolean }) {
   const captionOpacity = useTransform(progress, [0.22, 0.25], [0, 1]);
   const captionY = useTransform(progress, [0.22, 0.25], [12, 0]);
-  const lastCardBottom = mobile ? 330 : 480;
+  const lastCardBottom = mobile
+    ? (tallScreen ? 370 : 330)
+    : (tallScreen ? 530 : 480);
 
   return (
     <div className="absolute left-1/2 top-[32%] md:top-[36%]">
@@ -510,7 +512,7 @@ function PillarWayTitle({ progress }: { progress: MotionValue<number> }) {
   );
 }
 
-function PillarContainer({ progress }: { progress: MotionValue<number> }) {
+function PillarContainer({ progress, tallScreen }: { progress: MotionValue<number>; tallScreen: boolean }) {
   const containerOpacity = useTransform(progress, [0.49, 0.54], [0, 1]);
   const containerScale = useTransform(progress, [0.49, 0.54], [0.92, 1]);
   const containerY = useTransform(progress, [0.49, 0.54], [20, 0]);
@@ -542,7 +544,7 @@ function PillarContainer({ progress }: { progress: MotionValue<number> }) {
           );
         })}
       </div>
-      <motion.div className="mt-6 md:mt-8" style={{ opacity: logosOpacity, y: logosY }}>
+      <motion.div className={tallScreen ? "mt-10 md:mt-14" : "mt-6 md:mt-8"} style={{ opacity: logosOpacity, y: logosY }}>
         <p className="mb-3 text-center text-xs font-medium uppercase tracking-[0.08em] text-[#86868B]">
           Works with every major model
         </p>
@@ -646,6 +648,7 @@ export function StackSection() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [stickyTop, setStickyTop] = useState(80);
   const [mobile, setMobile] = useState(false);
+  const [tallScreen, setTallScreen] = useState(false);
   const [stickyHeight, setStickyHeight] = useState("calc(100vh - 80px)");
 
   useEffect(() => {
@@ -657,6 +660,7 @@ export function StackSection() {
       else top = 56;
       setStickyTop(top);
       setMobile(w < 768);
+      setTallScreen(window.innerHeight >= 900);
       setStickyHeight(`calc(100dvh - ${top}px)`);
     };
     update();
@@ -696,11 +700,11 @@ export function StackSection() {
             <OldWayGroup progress={scrollYProgress} mobile={mobile}>
               <OldWayDivider progress={scrollYProgress} />
               <OldWayTitle progress={scrollYProgress} />
-              <ToolCardsContainer progress={scrollYProgress} mobile={mobile} />
+              <ToolCardsContainer progress={scrollYProgress} mobile={mobile} tallScreen={tallScreen} />
             </OldWayGroup>
             <DividerWithLogo progress={scrollYProgress} />
             <PillarWayTitle progress={scrollYProgress} />
-            <PillarContainer progress={scrollYProgress} />
+            <PillarContainer progress={scrollYProgress} tallScreen={tallScreen} />
           </div>
         </div>
       </div>

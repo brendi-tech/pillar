@@ -60,7 +60,7 @@ def stripe_webhook_view(request):
 
 
 def _handle_checkout_completed(session, event):
-    """Handle checkout.session.completed — activate the new subscription."""
+    """Handle checkout.session.completed — activate the new subscription and attach overage."""
     subscription_id = session.get("subscription")
     if not subscription_id:
         return
@@ -68,6 +68,11 @@ def _handle_checkout_completed(session, event):
     stripe.api_key = settings.STRIPE_SECRET_KEY
     subscription = stripe.Subscription.retrieve(subscription_id)
     billing_service.sync_subscription(subscription)
+
+    try:
+        billing_service.add_overage_item_to_subscription(subscription_id)
+    except Exception:
+        logger.exception("Failed to add overage item to subscription %s", subscription_id)
 
 
 def _handle_subscription_updated(subscription, event):

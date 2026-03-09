@@ -72,8 +72,10 @@ def create_checkout_session(
     """
     Create a Stripe Checkout Session for subscription signup.
 
-    Includes both the flat-rate subscription price and the metered
-    overage price so Stripe can bill PAYG usage automatically.
+    Only the flat-rate subscription price is included in the checkout.
+    The metered overage price is added to the subscription after checkout
+    completes (in the webhook handler) to avoid Stripe's restriction on
+    mixing prices with different billing intervals.
 
     Returns the checkout session URL.
     """
@@ -83,10 +85,6 @@ def create_checkout_session(
     frontend_url = settings.FRONTEND_URL
 
     line_items = [{"price": price_id, "quantity": 1}]
-
-    overage_price_id = _get_overage_price_for_plan(price_id)
-    if overage_price_id:
-        line_items.append({"price": overage_price_id})
 
     resolved_success = success_url or f"{frontend_url}/billing?success=true"
     separator = "&" if "?" in resolved_success else "?"
@@ -103,6 +101,46 @@ def create_checkout_session(
     )
     logger.info("Created checkout session %s for org %s", session.id, org.id)
     return session.url
+
+
+def add_overage_item_to_subscription(subscription_id: str) -> None:
+    """
+    Add the metered overage price to an existing subscription.
+
+    Called after checkout completes so the customer gets PAYG billing
+    without hitting Stripe's mixed-interval restriction in Checkout.
+    """
+    _init_stripe()
+
+    sub = stripe.Subscription.retrieve(subscription_id)
+
+    overage_ids = set((settings.STRIPE_OVERAGE_PRICE_IDS or {}).values())
+    existing_prices = {item["price"]["id"] for item in sub["items"]["data"]}
+    if existing_prices & overage_ids:
+        logger.debug("Subscription %s already has an overage item", subscription_id)
+        return
+
+    flat_price_id = None
+    for item in sub["items"]["data"]:
+        pid = item["price"]["id"]
+        if pid not in overage_ids:
+            flat_price_id = pid
+            break
+
+    overage_price_id = _get_overage_price_for_plan(flat_price_id) if flat_price_id else None
+    if not overage_price_id:
+        logger.debug("No overage price configured for subscription %s", subscription_id)
+        return
+
+    stripe.Subscription.modify(
+        subscription_id,
+        items=[
+            *[{"id": item["id"]} for item in sub["items"]["data"]],
+            {"price": overage_price_id},
+        ],
+        proration_behavior="none",
+    )
+    logger.info("Added overage item %s to subscription %s", overage_price_id, subscription_id)
 
 
 def create_portal_session(org) -> str:

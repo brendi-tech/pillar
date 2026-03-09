@@ -17,11 +17,13 @@ import { Spinner } from "@/components/ui/spinner";
 import {
   Activity,
   ArrowUpRight,
+  Check,
   CheckCircle2,
   CreditCard,
   Mail,
   Pencil,
   Sparkles,
+  X,
 } from "lucide-react";
 import {
   billingKeys,
@@ -95,6 +97,9 @@ export function BillingPageContent() {
         onSuccess: (data) => {
           window.location.href = data.url;
         },
+        onError: (error) => {
+          toast.error(error.message || "Failed to start checkout");
+        },
       }
     );
   };
@@ -103,6 +108,9 @@ export function BillingPageContent() {
     portal.mutate(undefined, {
       onSuccess: (data) => {
         window.location.href = data.url;
+      },
+      onError: (error) => {
+        toast.error(error.message || "Failed to open billing portal");
       },
     });
   };
@@ -272,68 +280,71 @@ export function BillingPageContent() {
       </div>
 
       {/* Billing Email */}
-      <Card>
-        <CardHeader className="flex-row items-center justify-between">
-          <CardTitle className="text-base">Billing Email</CardTitle>
-          {!isEditingEmail && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setEmailDraft(currentOrganization?.billing_email || "");
-                setIsEditingEmail(true);
-              }}
-            >
-              <Pencil className="mr-1 h-3 w-3" />
-              Edit
-            </Button>
-          )}
-        </CardHeader>
-        <CardContent>
-          {isEditingEmail ? (
-            <div className="flex items-center gap-2">
-              <Input
-                type="email"
-                value={emailDraft}
-                onChange={(e) => setEmailDraft(e.target.value)}
-                placeholder="billing@company.com"
-                className="max-w-sm"
-              />
-              <Button
-                size="sm"
-                disabled={updateOrg.isPending}
-                onClick={() => {
+      <div className="flex items-center justify-between rounded-lg border px-4 py-3">
+        <div className="flex items-center gap-2 text-sm">
+          <Mail className="h-4 w-4 text-muted-foreground" />
+          <span className="font-medium">Billing Email</span>
+        </div>
+        {isEditingEmail ? (
+          <div className="flex items-center gap-1.5">
+            <Input
+              type="email"
+              value={emailDraft}
+              onChange={(e) => setEmailDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
                   if (!currentOrganization) return;
                   updateOrg.mutate({
                     id: currentOrganization.id,
                     data: { billing_email: emailDraft || null },
                   });
-                }}
-              >
-                Save
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsEditingEmail(false)}
-              >
-                Cancel
-              </Button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2 text-sm">
-              <Mail className="h-4 w-4 text-muted-foreground" />
-              {currentOrganization?.billing_email ? (
-                <span>{currentOrganization.billing_email}</span>
-              ) : (
-                <span className="text-muted-foreground">
-                  Not set — usage alerts will be sent to organization admins
-                </span>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                }
+                if (e.key === "Escape") setIsEditingEmail(false);
+              }}
+              placeholder="billing@company.com"
+              className="h-7 w-56 text-sm"
+              autoFocus
+            />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              disabled={updateOrg.isPending}
+              onClick={() => {
+                if (!currentOrganization) return;
+                updateOrg.mutate({
+                  id: currentOrganization.id,
+                  data: { billing_email: emailDraft || null },
+                });
+              }}
+            >
+              <Check className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={() => setIsEditingEmail(false)}
+            >
+              <X className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            className="group flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+            onClick={() => {
+              setEmailDraft(currentOrganization?.billing_email || "");
+              setIsEditingEmail(true);
+            }}
+          >
+            <span>
+              {currentOrganization?.billing_email || "Not set"}
+            </span>
+            <Pencil className="h-3 w-3 opacity-0 transition-opacity group-hover:opacity-100" />
+          </button>
+        )}
+      </div>
 
       {/* Plan tiers */}
       <div>
