@@ -210,9 +210,6 @@ export function CodeSnippetTabs({
     );
   }
 
-  const activeSnippet = validSnippets[activeTab];
-  const displayPath = title || `examples/${activeSnippet.src}`;
-
   return (
     <div className={cn('relative group rounded-lg overflow-hidden my-3', className)}>
       {/* Tabs header */}
@@ -234,13 +231,27 @@ export function CodeSnippetTabs({
         ))}
       </div>
 
-      {/* Active code snippet */}
-      <SyntaxHighlightedPre
-        code={activeSnippet.code!.trim()}
-        language={activeSnippet.language}
-        filePath={displayPath}
-        className="!my-0 !rounded-none"
-      />
+      {/* All snippets stacked via CSS Grid - prevents layout shift on tab switch */}
+      <div className="grid">
+        {validSnippets.map((snippet, index) => (
+          <div
+            key={snippet.src}
+            className={cn(
+              '[grid-area:1/1]',
+              activeTab !== index && 'invisible'
+            )}
+            aria-hidden={activeTab !== index}
+          >
+            <SyntaxHighlightedPre
+              code={snippet.code!.trim()}
+              language={snippet.language}
+              filePath={title || `examples/${snippet.src}`}
+              className="!my-0 !rounded-none h-full"
+              fillHeight
+            />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

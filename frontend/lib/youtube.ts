@@ -218,9 +218,10 @@ export function getVideoSlug(video: YouTubeVideo): string {
 }
 
 export function parseVideoSlug(slug: string): string | null {
-  const lastDash = slug.lastIndexOf("-");
-  if (lastDash === -1) return slug;
-  return slug.slice(lastDash + 1);
+  // YouTube video IDs are always 11 characters, so extract from the end
+  // This handles video IDs that contain dashes (e.g., "Xy3-AbC7890")
+  if (slug.length < 11) return null;
+  return slug.slice(-11);
 }
 
 export function getMaxResThumbnail(videoId: string): string {
