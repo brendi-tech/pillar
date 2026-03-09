@@ -17,10 +17,8 @@ export interface YouTubeVideo {
   tags: string[];
 }
 
-function getApiKey(): string {
-  const key = process.env.YOUTUBE_API_KEY;
-  if (!key) throw new Error("YOUTUBE_API_KEY env var is not set");
-  return key;
+function getApiKey(): string | null {
+  return process.env.YOUTUBE_API_KEY || null;
 }
 
 /**
@@ -166,51 +164,63 @@ async function fetchVideoDetails(
 }
 
 export async function fetchYouTubeVideos(): Promise<YouTubeVideo[]> {
-  const apiKey = getApiKey();
-  const videoIds = await fetchAllVideoIds(apiKey);
-  return fetchVideoDetails(videoIds, apiKey);
+  try {
+    const apiKey = getApiKey();
+    if (!apiKey) return [];
+    const videoIds = await fetchAllVideoIds(apiKey);
+    return fetchVideoDetails(videoIds, apiKey);
+  } catch (e) {
+    console.error("fetchYouTubeVideos error:", e);
+    return [];
+  }
 }
 
 export async function fetchYouTubeVideo(
   videoId: string,
 ): Promise<YouTubeVideo | null> {
-  const apiKey = getApiKey();
-  const params = new URLSearchParams({
-    part: "snippet,contentDetails,statistics",
-    id: videoId,
-    key: apiKey,
-  });
+  try {
+    const apiKey = getApiKey();
+    if (!apiKey) return null;
+    const params = new URLSearchParams({
+      part: "snippet,contentDetails,statistics",
+      id: videoId,
+      key: apiKey,
+    });
 
-  const res = await fetch(`${API_BASE}/videos?${params}`, {
-    next: { revalidate: 3600 },
-  });
-  if (!res.ok) return null;
+    const res = await fetch(`${API_BASE}/videos?${params}`, {
+      next: { revalidate: 3600 },
+    });
+    if (!res.ok) return null;
 
-  const data: VideosResponse = await res.json();
-  const item = data.items?.[0];
-  if (!item) return null;
+    const data: VideosResponse = await res.json();
+    const item = data.items?.[0];
+    if (!item) return null;
 
-  const thumbs = item.snippet.thumbnails;
-  return {
-    videoId: item.id,
-    title: item.snippet.title,
-    description: item.snippet.description,
-    publishedAt: item.snippet.publishedAt,
-    thumbnailUrl:
-      thumbs.high?.url ??
-      thumbs.medium?.url ??
-      `https://i.ytimg.com/vi/${item.id}/hqdefault.jpg`,
-    thumbnailHigh:
-      thumbs.maxres?.url ??
-      thumbs.high?.url ??
-      `https://i.ytimg.com/vi/${item.id}/maxresdefault.jpg`,
-    channelName: item.snippet.channelTitle || "Pillar",
-    durationISO: item.contentDetails.duration,
-    durationSec: parseDuration(item.contentDetails.duration),
-    viewCount: parseInt(item.statistics.viewCount ?? "0", 10),
-    likeCount: parseInt(item.statistics.likeCount ?? "0", 10),
-    tags: item.snippet.tags ?? [],
-  };
+    const thumbs = item.snippet.thumbnails;
+    return {
+      videoId: item.id,
+      title: item.snippet.title,
+      description: item.snippet.description,
+      publishedAt: item.snippet.publishedAt,
+      thumbnailUrl:
+        thumbs.high?.url ??
+        thumbs.medium?.url ??
+        `https://i.ytimg.com/vi/${item.id}/hqdefault.jpg`,
+      thumbnailHigh:
+        thumbs.maxres?.url ??
+        thumbs.high?.url ??
+        `https://i.ytimg.com/vi/${item.id}/maxresdefault.jpg`,
+      channelName: item.snippet.channelTitle || "Pillar",
+      durationISO: item.contentDetails.duration,
+      durationSec: parseDuration(item.contentDetails.duration),
+      viewCount: parseInt(item.statistics.viewCount ?? "0", 10),
+      likeCount: parseInt(item.statistics.likeCount ?? "0", 10),
+      tags: item.snippet.tags ?? [],
+    };
+  } catch (e) {
+    console.error("fetchYouTubeVideo error:", e);
+    return null;
+  }
 }
 
 export function getVideoSlug(video: YouTubeVideo): string {

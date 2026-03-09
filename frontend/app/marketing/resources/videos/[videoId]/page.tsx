@@ -2,7 +2,6 @@ import {
   fetchYouTubeVideo,
   fetchYouTubeVideos,
   formatDuration,
-  getMaxResThumbnail,
   getVideoSlug,
   parseVideoSlug,
 } from "@/lib/youtube";
@@ -20,50 +19,54 @@ interface PageProps {
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
-  const { videoId: slug } = await params;
-  const videoId = parseVideoSlug(slug);
-  if (!videoId) return {};
+  try {
+    const { videoId: slug } = await params;
+    const videoId = parseVideoSlug(slug);
+    if (!videoId) return {};
 
-  const video = await fetchYouTubeVideo(videoId);
-  if (!video) return {};
+    const video = await fetchYouTubeVideo(videoId);
+    if (!video) return {};
 
-  const description = video.description.slice(0, 160);
+    const description = video.description.slice(0, 160);
 
-  return {
-    title: `${video.title} | Pillar`,
-    description,
-    openGraph: {
-      title: video.title,
+    return {
+      title: `${video.title} | Pillar`,
       description,
-      type: "video.other",
-      url: `https://trypillar.com/resources/videos/${getVideoSlug(video)}`,
-      images: [
-        {
-          url: video.thumbnailHigh,
-          width: 1280,
-          height: 720,
-          alt: video.title,
-        },
-      ],
-      videos: [
-        {
-          url: `https://www.youtube.com/embed/${video.videoId}`,
-          width: 1280,
-          height: 720,
-          type: "text/html",
-        },
-      ],
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: video.title,
-      description,
-      images: [video.thumbnailHigh],
-    },
-    alternates: {
-      canonical: `https://trypillar.com/resources/videos/${getVideoSlug(video)}`,
-    },
-  };
+      openGraph: {
+        title: video.title,
+        description,
+        type: "video.other",
+        url: `https://trypillar.com/resources/videos/${getVideoSlug(video)}`,
+        images: [
+          {
+            url: video.thumbnailHigh,
+            width: 1280,
+            height: 720,
+            alt: video.title,
+          },
+        ],
+        videos: [
+          {
+            url: `https://www.youtube.com/embed/${video.videoId}`,
+            width: 1280,
+            height: 720,
+            type: "text/html",
+          },
+        ],
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: video.title,
+        description,
+        images: [video.thumbnailHigh],
+      },
+      alternates: {
+        canonical: `https://trypillar.com/resources/videos/${getVideoSlug(video)}`,
+      },
+    };
+  } catch {
+    return {};
+  }
 }
 
 export async function generateStaticParams() {
