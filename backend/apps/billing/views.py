@@ -42,6 +42,7 @@ class SubscriptionView(APIView):
             "is_one_time": plan_limits.is_one_time,
             "has_payg": plan_limits.has_payg,
             "stripe_subscription_id": org.stripe_subscription_id,
+            "billing_interval": billing_service.get_billing_interval(org.stripe_price_id),
         }
 
         details = billing_service.get_subscription_details(org)

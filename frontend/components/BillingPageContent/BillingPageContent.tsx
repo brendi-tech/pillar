@@ -53,6 +53,7 @@ import { useOrganization } from "@/providers/OrganizationProvider";
 import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { format } from "date-fns";
 
 const PLAN_ORDER = PLAN_TIERS.map((t) => t.name);
 
@@ -225,7 +226,11 @@ export function BillingPageContent() {
     );
   }
 
-  const plan = subscription ? getPlanTier(subscription.plan) : undefined;
+  const basePlan = subscription ? getPlanTier(subscription.plan) : undefined;
+  const plan =
+    basePlan && subscription?.billing_interval === "yearly"
+      ? getTierForInterval(basePlan, "yearly")
+      : basePlan;
   const isFreePlan = subscription?.plan === "free";
   const usagePercent =
     usage && usage.limit ? Math.min((usage.used / usage.limit) * 100, 100) : 0;
@@ -315,6 +320,11 @@ export function BillingPageContent() {
             <div className="mb-3 flex items-center gap-2">
               <span className="text-2xl font-bold">
                 {plan?.label || subscription?.plan}
+                {subscription?.billing_interval && (
+                  <span className="ml-1.5 text-base font-medium text-muted-foreground">
+                    {subscription.billing_interval === "yearly" ? "Yearly" : "Monthly"}
+                  </span>
+                )}
               </span>
               <Badge
                 variant="secondary"
@@ -343,7 +353,45 @@ export function BillingPageContent() {
               {plan?.ctaSubtext && plan.name !== "free"
                 ? ` · ${plan.ctaSubtext}`
                 : ""}
+              {subscription?.billing_interval === "yearly" && (
+                <span className="ml-1.5 text-xs text-muted-foreground/60">
+                  · billed yearly
+                </span>
+              )}
             </p>
+            {!isFreePlan && subscription?.current_period_end && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                {subscription.cancel_at_period_end ? (
+                  <>
+                    Cancels on{" "}
+                    <span className="font-medium text-foreground/70">
+                      {format(new Date(subscription.current_period_end * 1000), "MMM d, yyyy")}
+                    </span>
+                  </>
+                ) : subscription.pending_downgrade ? (
+                  <>
+                    Switches to{" "}
+                    <span className="font-medium text-foreground/70">
+                      {getPlanTier(subscription.pending_downgrade.plan)?.label ??
+                        subscription.pending_downgrade.plan}
+                    </span>{" "}
+                    on{" "}
+                    <span className="font-medium text-foreground/70">
+                      {format(new Date(subscription.pending_downgrade.effective_date * 1000), "MMM d, yyyy")}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    Renews{" "}
+                    <span className="font-medium text-foreground/70">
+                      {format(new Date(subscription.current_period_end * 1000), "MMM d, yyyy")}
+                    </span>
+                    {" "}at {plan?.priceLabel}
+                    {subscription.billing_interval === "yearly" ? "/mo (billed yearly)" : "/mo"}
+                  </>
+                )}
+              </p>
+            )}
             <div className="mt-4 flex gap-2">
               {isFreePlan ? (
                 <Button
@@ -500,6 +548,7 @@ export function BillingPageContent() {
           onSelectPlan={handleSelectPlan}
           disabled={isChangePending}
           activePlan={subscription?.plan}
+          defaultInterval={subscription?.billing_interval === "monthly" ? "monthly" : "yearly"}
         />
       </div>
 
@@ -621,7 +670,7 @@ function PlanChangeDialog({
           )}
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-0">
+        <DialogFooter className="flex justify-between sm:justify-between">
           <Button variant="outline" onClick={onCancel} disabled={isPending}>
             Keep Current Plan
           </Button>

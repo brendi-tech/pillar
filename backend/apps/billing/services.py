@@ -32,6 +32,36 @@ def _build_price_id_to_plan_map() -> dict[str, str]:
     return PRICE_ID_TO_PLAN
 
 
+PRICE_ID_TO_KEY: dict[str, str] = {}
+
+
+def _build_price_id_to_key_map() -> dict[str, str]:
+    """Build a reverse mapping from Stripe Price ID to the full settings key (e.g. 'growth_monthly')."""
+    global PRICE_ID_TO_KEY
+    if PRICE_ID_TO_KEY:
+        return PRICE_ID_TO_KEY
+    for key, price_id in settings.STRIPE_PRICE_IDS.items():
+        if not price_id:
+            continue
+        PRICE_ID_TO_KEY[price_id] = key
+    return PRICE_ID_TO_KEY
+
+
+def get_billing_interval(stripe_price_id: str | None) -> str | None:
+    """Derive 'monthly' or 'yearly' from a Stripe Price ID."""
+    if not stripe_price_id:
+        return None
+    key_map = _build_price_id_to_key_map()
+    key = key_map.get(stripe_price_id)
+    if not key:
+        return None
+    if key.endswith("_yearly"):
+        return "yearly"
+    if key.endswith("_monthly"):
+        return "monthly"
+    return None
+
+
 def get_or_create_customer(org) -> str:
     """
     Get or create a Stripe Customer for the given organization.
