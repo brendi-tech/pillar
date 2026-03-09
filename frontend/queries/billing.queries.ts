@@ -31,7 +31,12 @@ export interface UsageData {
 }
 
 export interface CheckoutResponse {
-  url: string;
+  url?: string;
+  /** Present when the backend updated an existing subscription in-place */
+  updated?: boolean;
+  plan?: string;
+  subscription_status?: string;
+  monthly_responses?: number | null;
 }
 
 export interface PortalResponse {

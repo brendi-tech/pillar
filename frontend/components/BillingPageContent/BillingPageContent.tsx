@@ -95,7 +95,13 @@ export function BillingPageContent() {
       { priceId },
       {
         onSuccess: (data) => {
-          window.location.href = data.url;
+          if (data.updated) {
+            queryClient.invalidateQueries({ queryKey: billingKeys.all });
+            refreshUser();
+            toast.success("Plan updated successfully");
+          } else if (data.url) {
+            window.location.href = data.url;
+          }
         },
         onError: (error) => {
           toast.error(error.message || "Failed to start checkout");

@@ -12,7 +12,7 @@ const monorepoRoot = path.resolve(process.cwd(), "..");
 const envLocalPath = path.join(monorepoRoot, ".env.local");
 
 if (fs.existsSync(envLocalPath)) {
-  const envContent = fs.readFileSync(envLocalPath, "utf-8");
+  const envContent = fs.readFileSync(envLocalPath, "utf-8"); 
   const lines = envContent.split("\n");
 
   for (const line of lines) {

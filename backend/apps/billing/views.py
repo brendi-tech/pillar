@@ -56,9 +56,23 @@ class SubscriptionView(APIView):
 
 
 class CheckoutView(APIView):
-    """POST to create a Stripe Checkout Session."""
+    """POST to create a Stripe Checkout Session or modify an existing subscription.
+
+    If the org already has an active subscription, the existing subscription's
+    price is updated in-place (no new checkout). Otherwise a new Checkout
+    Session is created.
+    """
 
     permission_classes = [IsAuthenticatedAdmin]
+
+    def _resolve_price_id(self, price_key: str) -> str | None:
+        price_id = settings.STRIPE_PRICE_IDS.get(price_key)
+        if price_id:
+            return price_id
+        valid_prices = {pid for pid in settings.STRIPE_PRICE_IDS.values() if pid}
+        if price_key in valid_prices:
+            return price_key
+        return None
 
     def post(self, request):
         org = request.user.primary_organization
@@ -75,19 +89,39 @@ class CheckoutView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        price_id = settings.STRIPE_PRICE_IDS.get(price_key)
+        price_id = self._resolve_price_id(price_key)
         if not price_id:
-            valid_prices = set(
-                pid for pid in settings.STRIPE_PRICE_IDS.values() if pid
+            return Response(
+                {"error": f"Invalid price_id: {price_key}"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
-            if price_key in valid_prices:
-                price_id = price_key
-            else:
-                return Response(
-                    {"error": f"Invalid price_id: {price_key}"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
 
+        if org.stripe_subscription_id and org.subscription_status in ("active", "trialing"):
+            return self._update_existing(request, org, price_id)
+        return self._create_new(request, org, price_id)
+
+    def _update_existing(self, request, org, price_id: str):
+        """Modify the existing subscription's price in-place."""
+        try:
+            billing_service.update_subscription_plan(org, price_id)
+        except Exception:
+            logger.exception("Failed to update subscription for org %s", org.id)
+            return Response(
+                {"error": "Failed to update subscription"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        org.refresh_from_db()
+        plan_limits = get_plan_limits(org.plan)
+        return Response({
+            "plan": org.plan,
+            "subscription_status": org.subscription_status,
+            "monthly_responses": plan_limits.monthly_responses,
+            "updated": True,
+        })
+
+    def _create_new(self, request, org, price_id: str):
+        """Create a new Stripe Checkout Session for first-time subscribers."""
         try:
             checkout_url = billing_service.create_checkout_session(
                 org,

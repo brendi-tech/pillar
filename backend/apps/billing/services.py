@@ -82,11 +82,11 @@ def create_checkout_session(
     _init_stripe()
 
     customer_id = get_or_create_customer(org)
-    frontend_url = settings.FRONTEND_URL
+    admin_url = settings.ADMIN_URL
 
     line_items = [{"price": price_id, "quantity": 1}]
 
-    resolved_success = success_url or f"{frontend_url}/billing?success=true"
+    resolved_success = success_url or f"{admin_url}/billing?success=true"
     separator = "&" if "?" in resolved_success else "?"
     resolved_success += f"{separator}session_id={{CHECKOUT_SESSION_ID}}"
 
@@ -95,7 +95,7 @@ def create_checkout_session(
         mode="subscription",
         line_items=line_items,
         success_url=resolved_success,
-        cancel_url=cancel_url or f"{frontend_url}/billing?canceled=true",
+        cancel_url=cancel_url or f"{admin_url}/billing?canceled=true",
         metadata={"organization_id": str(org.id)},
         subscription_data={"metadata": {"organization_id": str(org.id)}},
     )
@@ -152,11 +152,11 @@ def create_portal_session(org) -> str:
     _init_stripe()
 
     customer_id = get_or_create_customer(org)
-    frontend_url = settings.FRONTEND_URL
+    admin_url = settings.ADMIN_URL
 
     session = stripe.billing_portal.Session.create(
         customer=customer_id,
-        return_url=f"{frontend_url}/billing",
+        return_url=f"{admin_url}/billing",
     )
     return session.url
 
@@ -222,6 +222,61 @@ def sync_subscription(stripe_subscription: stripe.Subscription) -> None:
         "Synced subscription %s -> org %s (plan=%s, status=%s)",
         stripe_subscription.id, org.id, plan, subscription_status,
     )
+
+
+def update_subscription_plan(org, new_price_id: str) -> stripe.Subscription:
+    """
+    Change an existing subscription to a different price (plan upgrade/downgrade).
+
+    Swaps the flat-rate line item and the overage item in a single modify call
+    so the customer never has two active subscriptions.
+
+    Returns the updated Stripe Subscription object.
+    """
+    _init_stripe()
+
+    if not org.stripe_subscription_id:
+        raise ValueError("Organization has no active subscription to update")
+
+    sub = stripe.Subscription.retrieve(org.stripe_subscription_id)
+    overage_ids = set((settings.STRIPE_OVERAGE_PRICE_IDS or {}).values())
+
+    flat_item_id = None
+    overage_item_id = None
+    for item in sub["items"]["data"]:
+        pid = item["price"]["id"]
+        if pid in overage_ids:
+            overage_item_id = item["id"]
+        else:
+            flat_item_id = item["id"]
+
+    if not flat_item_id:
+        raise ValueError("Could not find flat-rate item on subscription")
+
+    new_overage_price_id = _get_overage_price_for_plan(new_price_id)
+
+    items: list[dict] = [
+        {"id": flat_item_id, "price": new_price_id},
+    ]
+    if overage_item_id and new_overage_price_id:
+        items.append({"id": overage_item_id, "price": new_overage_price_id})
+    elif overage_item_id and not new_overage_price_id:
+        items.append({"id": overage_item_id, "deleted": True})
+    elif not overage_item_id and new_overage_price_id:
+        items.append({"price": new_overage_price_id})
+
+    updated_sub = stripe.Subscription.modify(
+        org.stripe_subscription_id,
+        items=items,
+        proration_behavior="create_prorations",
+    )
+    logger.info(
+        "Updated subscription %s to price %s for org %s",
+        org.stripe_subscription_id, new_price_id, org.id,
+    )
+
+    sync_subscription(updated_sub)
+    return updated_sub
 
 
 def cancel_subscription(org) -> None:
