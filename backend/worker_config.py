@@ -33,6 +33,12 @@ def get_all_workflows():
     from apps.products.workflows.sync_actions import sync_actions_workflow
     
     
+    # Import billing workflows (cron jobs for billing automation)
+    from apps.billing.workflows import (
+        early_adopter_bonus_workflow,
+        free_tier_early_adopter_bonus_workflow,
+    )
+
     # Import demos workflows
     from apps.demos.workflows import superset_reset_workflow
     
@@ -61,6 +67,9 @@ def get_all_workflows():
         cleanup_pending_uploads_workflow,
         # Products app workflows
         sync_actions_workflow,
+        # Billing app workflows (cron jobs)
+        early_adopter_bonus_workflow,
+        free_tier_early_adopter_bonus_workflow,
         # Demos app workflows
         superset_reset_workflow,
         # Agent Score workflows (public scoring tool)

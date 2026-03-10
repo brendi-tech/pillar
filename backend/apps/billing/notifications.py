@@ -172,6 +172,118 @@ def _send_threshold_email(
         )
 
 
+def send_early_adopter_bonus_email(
+    org, bonus_amount: int, expires_at: "datetime"
+) -> None:
+    """Notify billing recipients that bonus responses were granted."""
+    recipients = _get_billing_recipients(org)
+    if not recipients:
+        logger.warning(
+            "No billing recipients for org %s — skipping early adopter bonus email",
+            org.id,
+        )
+        return
+
+    billing_url = (
+        f"{getattr(settings, 'ADMIN_URL', 'https://admin.trypillar.com')}/billing"
+    )
+    expires_str = expires_at.strftime("%B %d, %Y")
+    subject = f"You've got {bonus_amount} extra responses on us!"
+    body = (
+        f"Hi,\n\n"
+        f"We noticed your team at \"{org.name}\" is off to a great start, "
+        f"so we've added {bonus_amount} bonus responses to your account.\n\n"
+        f"They're available right now and valid through {expires_str}.\n\n"
+        f"View your usage:\n{billing_url}\n\n"
+        f"— Pillar"
+    )
+    html = (
+        f'<p>Hi,</p>'
+        f'<p>We noticed your team at <strong>{org.name}</strong> is off to a '
+        f'great start, so we\'ve added <strong>{bonus_amount} bonus responses'
+        f'</strong> to your account.</p>'
+        f'<p>They\'re available right now and valid through '
+        f'<strong>{expires_str}</strong>.</p>'
+        f'<p><a href="{billing_url}">View your usage</a></p>'
+        f'<p>— Pillar</p>'
+    )
+
+    try:
+        msg = EmailMultiAlternatives(
+            subject=subject,
+            body=body,
+            from_email=NOREPLY_FROM,
+            to=recipients,
+        )
+        msg.attach_alternative(html, "text/html")
+        msg.send()
+        logger.info(
+            "Sent early adopter bonus email for org %s to %s",
+            org.id,
+            recipients,
+        )
+    except Exception:
+        logger.exception(
+            "Failed to send early adopter bonus email for org %s", org.id
+        )
+
+
+def send_free_tier_early_adopter_bonus_email(
+    org, bonus_amount: int, expires_at: "datetime"
+) -> None:
+    """Notify free-tier billing recipients that bonus responses were granted."""
+    recipients = _get_billing_recipients(org)
+    if not recipients:
+        logger.warning(
+            "No billing recipients for org %s — skipping free tier early adopter bonus email",
+            org.id,
+        )
+        return
+
+    billing_url = (
+        f"{getattr(settings, 'ADMIN_URL', 'https://admin.trypillar.com')}/billing"
+    )
+    expires_str = expires_at.strftime("%B %d, %Y")
+    subject = f"Here's {bonus_amount} extra responses on us!"
+    body = (
+        f"Hi,\n\n"
+        f"Your team at \"{org.name}\" has been putting Pillar to good use, "
+        f"so we've added {bonus_amount} bonus responses to your account.\n\n"
+        f"They're available right now and valid through {expires_str}.\n\n"
+        f"View your usage:\n{billing_url}\n\n"
+        f"— Pillar"
+    )
+    html = (
+        f'<p>Hi,</p>'
+        f'<p>Your team at <strong>{org.name}</strong> has been putting Pillar '
+        f'to good use, so we\'ve added <strong>{bonus_amount} bonus responses'
+        f'</strong> to your account.</p>'
+        f'<p>They\'re available right now and valid through '
+        f'<strong>{expires_str}</strong>.</p>'
+        f'<p><a href="{billing_url}">View your usage</a></p>'
+        f'<p>— Pillar</p>'
+    )
+
+    try:
+        msg = EmailMultiAlternatives(
+            subject=subject,
+            body=body,
+            from_email=NOREPLY_FROM,
+            to=recipients,
+        )
+        msg.attach_alternative(html, "text/html")
+        msg.send()
+        logger.info(
+            "Sent free tier early adopter bonus email for org %s to %s",
+            org.id,
+            recipients,
+        )
+    except Exception:
+        logger.exception(
+            "Failed to send free tier early adopter bonus email for org %s", org.id
+        )
+
+
 async def check_and_notify_threshold(org, message_id: str) -> None:
     """
     Check if org just crossed a usage threshold and send an email if so.
