@@ -79,7 +79,7 @@ export default function DeploymentsPage() {
   const deployments = deploymentsData?.results || [];
 
   return (
-    <div className="h-full overflow-auto">
+    <div className="h-full">
       <div className="space-y-6 p-6">
         {/* Header */}
         <div>

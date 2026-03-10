@@ -2,7 +2,6 @@
 
 import { AddSourceWizard } from "@/components/Sources";
 import { PageHeader } from "@/components/shared";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Spinner } from "@/components/ui/spinner";
 import { useSources } from "@/providers";
 import { useRouter } from "next/navigation";
@@ -26,7 +25,7 @@ export default function KnowledgePage() {
 
   if (isLoading || sources.length > 0) {
     return (
-      <div className="h-full grid place-items-center">
+      <div className="h-dvh grid place-items-center">
         <Spinner size="lg" />
       </div>
     );
@@ -34,15 +33,13 @@ export default function KnowledgePage() {
 
   // Show AddSourceWizard when no sources exist
   return (
-    <div className="h-full overflow-hidden">
-      <ScrollArea className="h-full p-page">
-        <PageHeader
-          className="pb-4"
-          title="Add Knowledge Source"
-          description="Add a new knowledge source to provide context for the AI."
-        />
-        <AddSourceWizard />
-      </ScrollArea>
+    <div>
+      <PageHeader
+        className="pb-4"
+        title="Add Knowledge Source"
+        description="Add a new knowledge source to provide context for the AI."
+      />
+      <AddSourceWizard />
     </div>
   );
 }

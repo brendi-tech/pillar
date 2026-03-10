@@ -2,6 +2,7 @@
 
 import { ToolsSidebar } from "@/components/ToolsSidebar";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { PanelLeftIcon } from "lucide-react";
 import { useState } from "react";
@@ -29,10 +30,7 @@ export default function ActionsLayout({ children }: ActionsLayoutProps) {
             onOpenAutoFocus={(e) => e.preventDefault()}
           >
             <SheetTitle className="sr-only">Actions Navigation</SheetTitle>
-            <ToolsSidebar
-              onNavigate={() => setSidebarOpen(false)}
-              hideHeader
-            />
+            <ToolsSidebar onNavigate={() => setSidebarOpen(false)} hideHeader />
           </SheetContent>
         </Sheet>
       </div>
@@ -59,7 +57,13 @@ export default function ActionsLayout({ children }: ActionsLayoutProps) {
         </div>
 
         {/* Content Panel */}
-        <div className="flex-1 overflow-hidden bg-muted/30">{children}</div>
+        <div className="flex-1 overflow-hidden bg-muted/30">
+          <ScrollArea className="h-full px-page">
+            <div className="h-full overflow-hidden max-w-page mx-auto w-full">
+              {children}
+            </div>
+          </ScrollArea>
+        </div>
       </div>
     </div>
   );

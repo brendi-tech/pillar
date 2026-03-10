@@ -16,6 +16,7 @@ import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 import { PageHeader } from "@/components/shared";
+import { ScrollArea } from "../ui/scroll-area";
 import { AIMetricsOverview } from "./AIMetricsOverview";
 import { FeedbackSummary } from "./FeedbackSummary";
 import { TopQuestions } from "./TopQuestions";
@@ -51,35 +52,46 @@ export function AnalyticsPageContent() {
   const conversationsTrend = conversationsTrendData?.data ?? [];
 
   return (
-    <div className="space-y-6 p-page  @container/analytics-page-content">
-      {/* Header */}
-      <PageHeader
-        title="Insights"
-        description="Understand how your product copilot is performing"
-        actions={<DateRangePicker value={dateRange} onChange={setDateRange} />}
-      />
+    <div className="h-full overflow-hidden">
+      <ScrollArea className="h-full">
+        <div className="max-w-page mx-auto">
+          <div className="space-y-6 p-page  @container/analytics-page-content">
+            {/* Header */}
+            <PageHeader
+              title="Insights"
+              description="Understand how your product copilot is performing"
+              actions={
+                <DateRangePicker value={dateRange} onChange={setDateRange} />
+              }
+            />
 
-      {/* 1. Hero: AI Metrics (North Star) */}
-      <AIMetricsOverview stats={aiUsageStats} isLoading={isAiUsageLoading} />
+            {/* 1. Hero: AI Metrics (North Star) */}
+            <AIMetricsOverview
+              stats={aiUsageStats}
+              isLoading={isAiUsageLoading}
+            />
 
-      {/* 2. Charts Row: Trend + Feedback */}
-      <div className="grid gap-6 @lg/analytics-page-content:grid-cols-3">
-        <ConversationsChart
-          data={conversationsTrend}
-          isLoading={isTrendLoading}
-          className="@lg/analytics-page-content:col-span-2"
-        />
-        <FeedbackSummary
-          feedback={aiUsageStats?.feedback}
-          isLoading={isAiUsageLoading}
-        />
-      </div>
+            {/* 2. Charts Row: Trend + Feedback */}
+            <div className="grid gap-6 @lg/analytics-page-content:grid-cols-3">
+              <ConversationsChart
+                data={conversationsTrend}
+                isLoading={isTrendLoading}
+                className="@lg/analytics-page-content:col-span-2"
+              />
+              <FeedbackSummary
+                feedback={aiUsageStats?.feedback}
+                isLoading={isAiUsageLoading}
+              />
+            </div>
 
-      {/* 3. Top Questions */}
-      <TopQuestions
-        questions={aiUsageStats?.topQuestions ?? []}
-        isLoading={isAiUsageLoading}
-      />
+            {/* 3. Top Questions */}
+            <TopQuestions
+              questions={aiUsageStats?.topQuestions ?? []}
+              isLoading={isAiUsageLoading}
+            />
+          </div>
+        </div>
+      </ScrollArea>
     </div>
   );
 }

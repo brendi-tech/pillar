@@ -86,9 +86,5 @@ export function DetailPageShell({
     );
   }
 
-  return (
-    <div className="h-full overflow-auto">
-      <div className="space-y-6 p-6">{children}</div>
-    </div>
-  );
+  return <div className="space-y-6 p-6">{children}</div>;
 }

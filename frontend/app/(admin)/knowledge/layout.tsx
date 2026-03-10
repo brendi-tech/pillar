@@ -2,6 +2,7 @@
 
 import { SourcesSidebar } from "@/components/Sources/SourcesPage/SourcesSidebar";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { PanelLeftIcon, Plus } from "lucide-react";
 import Link from "next/link";
@@ -71,7 +72,13 @@ export default function KnowledgeLayout({ children }: KnowledgeLayoutProps) {
         </div>
 
         {/* Content Panel */}
-        <div className="flex-1 overflow-hidden bg-muted/30">{children}</div>
+        <div className="flex-1 overflow-hidden bg-muted/30">
+          <ScrollArea className="h-full px-page">
+            <div className="h-full overflow-hidden max-w-page mx-auto w-full">
+              {children}
+            </div>
+          </ScrollArea>
+        </div>
       </div>
     </div>
   );

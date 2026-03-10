@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import type { Visitor } from "@/lib/admin/visitors-api";
 import { visitorsListInfiniteQuery } from "@/queries/visitors.queries";
 
+import { PageHeader } from "../shared";
 import { UserDetailModal } from "../UserDetailModal";
 import { UsersTable } from "./UsersTable";
 
@@ -61,7 +62,11 @@ export function UsersPageContent() {
   }, [fetchNextPage]);
 
   return (
-    <>
+    <div className="p-page flex h-full max-w-page mx-auto overflow-hidden flex-col gap-6 max-md:gap-4">
+      <PageHeader
+        title="Users"
+        description="View end-users who have been identified via the SDK"
+      />
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
@@ -91,6 +96,6 @@ export function UsersPageContent() {
           if (!open) handleModalClose();
         }}
       />
-    </>
+    </div>
   );
 }

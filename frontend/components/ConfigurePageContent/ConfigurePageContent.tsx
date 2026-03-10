@@ -5,12 +5,9 @@ import { Spinner } from "@/components/ui/spinner";
 import type { AIConfig, EmbedConfig } from "@/types/config";
 import type { LanguageCode } from "@/types/v2/products";
 import { Save, Undo2 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { AIAssistantSection } from "./AIAssistantSection";
-import {
-  ConfigureProvider,
-  useConfigure,
-} from "./ConfigureContext";
+import { ConfigureProvider, useConfigure } from "./ConfigureContext";
 import { SecuritySection } from "./SecuritySection";
 
 export interface ConfigureSavePayload {
@@ -73,7 +70,9 @@ function ConfigureContent({
     });
 
     if (emptyQuestions.length > 0) {
-      setError("Suggested questions cannot be empty. Please fill in or remove empty questions.");
+      setError(
+        "Suggested questions cannot be empty. Please fill in or remove empty questions."
+      );
       return;
     }
 

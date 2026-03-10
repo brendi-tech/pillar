@@ -103,7 +103,7 @@ const navigationItems: NavItem[] = [
   },
   {
     title: "API Keys",
-    href: "/api-keys",
+    href: "/keys",
     icon: Key,
     category: "settings",
   },

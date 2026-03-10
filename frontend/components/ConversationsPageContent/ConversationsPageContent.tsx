@@ -115,7 +115,7 @@ export function ConversationsPageContent() {
   };
 
   return (
-    <div className="p-page flex h-full overflow-hidden flex-col gap-6 max-md:gap-4">
+    <div className="p-page flex h-full overflow-hidden flex-col gap-6 max-md:gap-4 max-w-page mx-auto">
       {/* Header */}
       <PageHeader
         title="Conversations"

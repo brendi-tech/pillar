@@ -239,11 +239,11 @@ export function ConversationsFilters({
               )}
             </Button>
           </SheetTrigger>
-          <SheetContent side="bottom" className="h-auto max-h-[80vh] px-4">
-            <SheetHeader>
+          <SheetContent side="bottom" className="h-auto max-h-[80vh] px-4 pb-4">
+            <SheetHeader className="px-0">
               <SheetTitle>Filters</SheetTitle>
             </SheetHeader>
-            <div className="mt-4 pb-4">
+            <div className="pb-4">
               <FilterControls
                 filters={filters}
                 onFiltersChange={onFiltersChange}

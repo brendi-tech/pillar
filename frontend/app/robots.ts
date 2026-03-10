@@ -17,7 +17,7 @@ export default function robots(): MetadataRoute.Robots {
           "/reset-password",
           "/onboarding",
           "/oauth-callback",
-          "/api-keys",
+          "/keys",
           "/actions",
           "/analytics",
           "/billing",

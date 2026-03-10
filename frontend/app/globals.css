@@ -212,6 +212,7 @@
 }
 
 @theme {
+  --max-width-page: 1280px;
   --max-width-marketingSection: 1334px;
   --color-marketing: #d4d4d4;
 

@@ -1,7 +1,6 @@
 "use client";
 
 import { SDKSetupStep } from "@/components/Onboarding/SDKSetupStep";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Spinner } from "@/components/ui/spinner";
 import { useProduct } from "@/providers";
 import { actionListQuery } from "@/queries/actions.queries";
@@ -36,7 +35,7 @@ export default function ActionsPage() {
   // Show loading spinner while loading or redirecting
   if (isLoading || actions.length > 0) {
     return (
-      <div className="h-full grid place-items-center">
+      <div className="h-dvh grid place-items-center">
         <Spinner size="lg" />
       </div>
     );
@@ -44,10 +43,8 @@ export default function ActionsPage() {
 
   // Show SDKSetupStep when no actions exist
   return (
-    <ScrollArea className="h-full">
-      <div className="p-page">
-        <SDKSetupStep showTestStep={true} initialSubStep={1} />
-      </div>
-    </ScrollArea>
+    <div className="p-page">
+      <SDKSetupStep showTestStep={true} initialSubStep={1} />
+    </div>
   );
 }
