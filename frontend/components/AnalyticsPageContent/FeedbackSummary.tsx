@@ -11,7 +11,7 @@ interface FeedbackSummaryProps {
 
 function LoadingSkeleton() {
   return (
-    <Card className="admin-card">
+    <Card variant="default" className="admin-card">
       <CardHeader>
         <div className="h-5 w-32 admin-shimmer rounded" />
       </CardHeader>
@@ -39,7 +39,7 @@ export function FeedbackSummary({ feedback, isLoading }: FeedbackSummaryProps) {
   const unhelpfulPercent = totalFeedback > 0 ? 100 - helpfulPercent : 0;
 
   return (
-    <Card>
+    <Card variant="default">
       <CardHeader>
         <CardTitle>User Feedback</CardTitle>
       </CardHeader>

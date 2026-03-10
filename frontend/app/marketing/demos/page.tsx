@@ -16,6 +16,9 @@ export const metadata: Metadata = {
       "Watch Pillar demos across banking, CRM, analytics, and more. Each demo shows how Pillar turns a plain-language request into completed actions.",
     url: "https://trypillar.com/demos",
   },
+  twitter: {
+    card: "summary_large_image",
+  },
 };
 
 const demos = [

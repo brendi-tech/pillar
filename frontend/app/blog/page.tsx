@@ -5,6 +5,9 @@ import { format, parseISO } from 'date-fns';
 export const metadata = {
   title: 'Blog | Pillar',
   description: 'Thoughts on the future of product, AI, and support.',
+  alternates: {
+    canonical: '/blog',
+  },
   openGraph: {
     title: 'Blog | Pillar',
     description: 'Thoughts on the future of product, AI, and support.',

@@ -52,7 +52,7 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
 
 function LoadingSkeleton({ className }: { className?: string }) {
   return (
-    <Card className={cn("admin-card", className)}>
+    <Card variant="default" className={cn("admin-card", className)}>
       <CardHeader>
         <div className="h-5 w-48 admin-shimmer rounded" />
       </CardHeader>
@@ -80,7 +80,7 @@ export function ConversationsChart({
   }
 
   return (
-    <Card className={className}>
+    <Card variant="default" className={className}>
       <CardHeader>
         <CardTitle>Conversations Over Time</CardTitle>
       </CardHeader>

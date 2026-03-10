@@ -14,6 +14,12 @@ export const metadata: Metadata = {
       "Pillar is an open source copilot that turns user and agent requests into completed actions, right inside your app.",
     url: "https://trypillar.com",
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "Pillar - Your App's Copilot",
+    description:
+      "Pillar is an open source copilot that turns user and agent requests into completed actions, right inside your app.",
+  },
   robots: {
     index: true,
     follow: true,

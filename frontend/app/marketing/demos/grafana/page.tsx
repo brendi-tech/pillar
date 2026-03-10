@@ -14,6 +14,9 @@ export const metadata: Metadata = {
       "Experience Pillar's AI-powered Grafana plugin. Navigate dashboards, write queries, and create visualizations with natural language.",
     url: "https://trypillar.com/demos/grafana",
   },
+  twitter: {
+    card: "summary_large_image",
+  },
 };
 
 /**

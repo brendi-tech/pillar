@@ -14,6 +14,9 @@ export const metadata: Metadata = {
       "Experience Pillar's AI-powered assistant for Apache Superset. Explore dashboards, create charts, and query data with natural language.",
     url: "https://trypillar.com/demos/superset",
   },
+  twitter: {
+    card: "summary_large_image",
+  },
 };
 
 /**

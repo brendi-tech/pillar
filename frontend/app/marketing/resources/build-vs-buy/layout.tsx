@@ -6,6 +6,9 @@ export const metadata: Metadata = {
   title: "Build vs Buy Your AI Copilot — An Honest Assessment | Pillar",
   description:
     "What it takes to build a copilot yourself — a vector database, a backend agent, a frontend UI, and the glue between them. When to build, and when one SDK is enough.",
+  alternates: {
+    canonical: "/resources/build-vs-buy",
+  },
   openGraph: {
     title: "Build vs Buy Your AI Copilot — An Honest Assessment | Pillar",
     description:
@@ -14,6 +17,20 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
+  },
+};
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Article",
+  headline: "Build vs Buy Your AI Copilot — An Honest Assessment",
+  description:
+    "What it takes to build a copilot yourself — a vector database, a backend agent, a frontend UI, and the glue between them. When to build, and when one SDK is enough.",
+  url: "https://trypillar.com/resources/build-vs-buy",
+  publisher: {
+    "@type": "Organization",
+    name: "Pillar",
+    url: "https://trypillar.com",
   },
 };
 
@@ -30,6 +47,10 @@ export default function BuildVsBuyLayout({
         backgroundRepeat: "repeat",
       }}
     >
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <MarketingNavbar />
 
       <main className="flex-1 max-w-marketingSection mx-auto border-x border-marketing bg-white w-full">

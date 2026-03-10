@@ -16,7 +16,21 @@ export const metadata: Metadata = {
     card: "summary_large_image",
   },
   alternates: {
-    canonical: "https://trypillar.com/resources/videos",
+    canonical: "/resources/videos",
+  },
+};
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  name: "Videos",
+  description:
+    "Demos, tutorials, and deep dives on building AI copilots with Pillar. See how Pillar works inside real products.",
+  url: "https://trypillar.com/resources/videos",
+  publisher: {
+    "@type": "Organization",
+    name: "Pillar",
+    url: "https://trypillar.com",
   },
 };
 
@@ -33,6 +47,10 @@ export default function VideosLayout({
         backgroundRepeat: "repeat",
       }}
     >
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <MarketingNavbar />
 
       <main className="flex-1 max-w-marketingSection mx-auto border-x border-marketing bg-white w-full">

@@ -6,6 +6,9 @@ export const metadata: Metadata = {
   title: "Agent Readiness Score | Pillar",
   description:
     "Free tool that scores any website's readiness for AI agents. Checks 25+ factors across discovery, readability, interactability, permissions, and accessibility.",
+  alternates: {
+    canonical: "/resources/agent-score",
+  },
   openGraph: {
     title: "Agent Readiness Score | Pillar",
     description:
@@ -14,6 +17,26 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
+  },
+};
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  name: "Agent Readiness Score",
+  description:
+    "Free tool that scores any website's readiness for AI agents. Checks 25+ factors across discovery, readability, interactability, permissions, and accessibility.",
+  url: "https://trypillar.com/resources/agent-score",
+  applicationCategory: "DeveloperApplication",
+  offers: {
+    "@type": "Offer",
+    price: "0",
+    priceCurrency: "USD",
+  },
+  publisher: {
+    "@type": "Organization",
+    name: "Pillar",
+    url: "https://trypillar.com",
   },
 };
 
@@ -30,6 +53,10 @@ export default function AgentScoreLayout({
         backgroundRepeat: "repeat",
       }}
     >
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <MarketingNavbar />
 
       <main className="flex-1 max-w-marketingSection mx-auto border-x border-marketing bg-white w-full">
