@@ -278,7 +278,7 @@ export function AdminAuthProvider({
     "/accept-invite",
     "/forgot-password",
     "/reset-password",
-  ].includes(pathname) || pathname.startsWith("/oauth-callback");
+  ].includes(pathname) || pathname.startsWith("/oauth-callback") || pathname.startsWith("/impersonate-callback");
   if (!isAuthPage && !user) {
     return <Rerouter route={buildReturnToUrl("/login", pathname)} />;
   }

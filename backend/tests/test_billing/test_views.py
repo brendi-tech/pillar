@@ -19,10 +19,31 @@ BILLING_PREFIX = "/api/admin/billing"
 # POST /billing/checkout/
 # ──────────────────────────────────────────────────────────────────────────────
 class TestCheckoutView:
+    @pytest.fixture
+    def new_org_client(self, db):
+        """Client with an org that has NO existing subscription (new checkout flow)."""
+        org = Organization.objects.create(
+            name="New Checkout Org",
+            plan="free",
+            subscription_status="active",
+            stripe_customer_id="cus_new_123",
+        )
+        from apps.users.models import User, OrganizationMembership
+        user = User.objects.create_user(
+            email="newcheckout@test.com", password="testpass123", full_name="New User",
+        )
+        OrganizationMembership.objects.create(
+            organization=org, user=user, role=OrganizationMembership.Role.ADMIN,
+        )
+        user.current_organization = org
+        client = APIClient()
+        client.force_authenticate(user=user)
+        return client
+
     @patch("apps.billing.views.billing_service")
-    def test_valid_price_key_returns_url(self, mock_svc, billing_client):
+    def test_valid_price_key_returns_url(self, mock_svc, new_org_client):
         mock_svc.create_checkout_session.return_value = "https://checkout.stripe.com/x"
-        resp = billing_client.post(
+        resp = new_org_client.post(
             f"{BILLING_PREFIX}/checkout/",
             {"price_id": "pro_monthly"},
             format="json",
@@ -45,9 +66,9 @@ class TestCheckoutView:
         assert "Invalid" in resp.data["error"]
 
     @patch("apps.billing.views.billing_service")
-    def test_stripe_failure_returns_500(self, mock_svc, billing_client):
+    def test_stripe_failure_returns_500(self, mock_svc, new_org_client):
         mock_svc.create_checkout_session.side_effect = Exception("stripe down")
-        resp = billing_client.post(
+        resp = new_org_client.post(
             f"{BILLING_PREFIX}/checkout/",
             {"price_id": "pro_monthly"},
             format="json",
@@ -60,10 +81,10 @@ class TestCheckoutView:
         assert resp.status_code in (401, 403)
 
     @patch("apps.billing.views.billing_service")
-    def test_accepts_raw_stripe_price_id(self, mock_svc, billing_client, settings):
+    def test_accepts_raw_stripe_price_id(self, mock_svc, new_org_client, settings):
         """When the caller passes an actual Stripe price ID (not a key name), accept it."""
         mock_svc.create_checkout_session.return_value = "https://checkout.stripe.com/y"
-        resp = billing_client.post(
+        resp = new_org_client.post(
             f"{BILLING_PREFIX}/checkout/",
             {"price_id": "price_pro_monthly_test"},
             format="json",
@@ -85,15 +106,17 @@ class TestSubscriptionView:
             "cancel_at_period_end": False,
             "price_id": "price_pro_monthly_test",
         }
+        mock_svc.get_billing_interval.return_value = "monthly"
         resp = billing_client.get(f"{BILLING_PREFIX}/subscription/")
         assert resp.status_code == 200
         assert resp.data["plan"] == "pro"
-        assert resp.data["monthly_responses"] == 400
+        assert resp.data["monthly_responses"] == 500
         assert resp.data["has_payg"] is True
 
     @patch("apps.billing.views.billing_service")
     def test_no_subscription_still_returns_plan(self, mock_svc, billing_client):
         mock_svc.get_subscription_details.return_value = None
+        mock_svc.get_billing_interval.return_value = None
         resp = billing_client.get(f"{BILLING_PREFIX}/subscription/")
         assert resp.status_code == 200
         assert "plan" in resp.data

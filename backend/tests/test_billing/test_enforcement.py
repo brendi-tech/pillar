@@ -1,7 +1,7 @@
 """
 Tests for billing enforcement (check_usage_allowed).
 
-ChatMessage counts are controlled via mock patching.
+Usage counts are controlled via mock patching of aget_weighted_usage.
 """
 import pytest
 from unittest.mock import patch, AsyncMock
@@ -71,45 +71,30 @@ class TestCheckUsageAllowed:
         await check_usage_allowed(org_free)
 
     @pytest.mark.asyncio
-    async def test_free_tier_at_limit_raises(self, org_free):
+    @patch("apps.billing.enforcement.aget_weighted_usage", new_callable=AsyncMock, return_value=50)
+    @patch("apps.billing.enforcement.get_effective_limit", return_value=50)
+    async def test_free_tier_at_limit_raises(self, mock_limit, mock_usage, org_free):
         """Free tier at the 50-message lifetime limit raises."""
-        with patch(
-            "apps.analytics.models.ChatMessage.objects"
-        ) as mock_qs:
-            mock_filter = AsyncMock()
-            mock_filter.acount = AsyncMock(return_value=50)
-            mock_qs.filter.return_value = mock_filter
+        with pytest.raises(PlanLimitExceeded) as exc_info:
+            await check_usage_allowed(org_free)
 
-            with pytest.raises(PlanLimitExceeded) as exc_info:
-                await check_usage_allowed(org_free)
-
-            assert exc_info.value.limit_type == "responses"
-            assert exc_info.value.current_value == 50
-            assert exc_info.value.max_value == 50
+        assert exc_info.value.limit_type == "responses"
+        assert exc_info.value.current_value == 50
+        assert exc_info.value.max_value == 50
 
     @pytest.mark.asyncio
-    async def test_free_tier_over_limit_raises(self, org_free):
-        with patch(
-            "apps.analytics.models.ChatMessage.objects"
-        ) as mock_qs:
-            mock_filter = AsyncMock()
-            mock_filter.acount = AsyncMock(return_value=100)
-            mock_qs.filter.return_value = mock_filter
-
-            with pytest.raises(PlanLimitExceeded):
-                await check_usage_allowed(org_free)
+    @patch("apps.billing.enforcement.aget_weighted_usage", new_callable=AsyncMock, return_value=100)
+    @patch("apps.billing.enforcement.get_effective_limit", return_value=50)
+    async def test_free_tier_over_limit_raises(self, mock_limit, mock_usage, org_free):
+        with pytest.raises(PlanLimitExceeded):
+            await check_usage_allowed(org_free)
 
     @pytest.mark.asyncio
-    async def test_free_tier_message_includes_plan_name(self, org_free):
-        with patch(
-            "apps.analytics.models.ChatMessage.objects"
-        ) as mock_qs:
-            mock_filter = AsyncMock()
-            mock_filter.acount = AsyncMock(return_value=50)
-            mock_qs.filter.return_value = mock_filter
+    @patch("apps.billing.enforcement.aget_weighted_usage", new_callable=AsyncMock, return_value=50)
+    @patch("apps.billing.enforcement.get_effective_limit", return_value=50)
+    async def test_free_tier_message_includes_plan_name(self, mock_limit, mock_usage, org_free):
+        with pytest.raises(PlanLimitExceeded) as exc_info:
+            await check_usage_allowed(org_free)
 
-            with pytest.raises(PlanLimitExceeded) as exc_info:
-                await check_usage_allowed(org_free)
-
-            assert "Free" in exc_info.value.message
-            assert "lifetime" in exc_info.value.message
+        assert "Free" in exc_info.value.message
+        assert "lifetime" in exc_info.value.message

@@ -26,9 +26,19 @@ export interface SubscriptionData {
   };
 }
 
+export interface BonusGrant {
+  amount: number;
+  expires_at: string | null;
+  memo: string;
+}
+
 export interface UsageData {
   used: number;
   limit: number | null;
+  plan_limit: number | null;
+  bonus_total: number;
+  bonus_used: number;
+  bonus_grants: BonusGrant[];
   is_one_time: boolean;
   plan: string;
   has_payg: boolean;

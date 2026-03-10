@@ -157,7 +157,7 @@ export function PricingSection({ hideNumberedHeading, activePlan }: PricingSecti
                     {/* Response limit */}
                     <p
                       className={cn(
-                        "text-sm mb-6",
+                        "text-sm",
                         isHighlighted ? "text-white" : "text-white/70"
                       )}
                     >
@@ -173,6 +173,7 @@ export function PricingSection({ hideNumberedHeading, activePlan }: PricingSecti
                         </span>
                       )}
                     </p>
+                    <div className="mb-6 mt-0.5" />
 
                     {/* CTA Button */}
                     {isCurrent ? (
@@ -253,6 +254,9 @@ export function PricingSection({ hideNumberedHeading, activePlan }: PricingSecti
               >
                 Contact us for enterprise pricing
               </a>
+            </p>
+            <p className="text-white/40 text-xs mt-4">
+              Simple responses are free. Longer responses count proportionally.
             </p>
           </div>
         </div>

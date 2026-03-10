@@ -9,10 +9,11 @@ import logging
 from datetime import datetime, timezone as tz
 from decimal import Decimal
 
+from asgiref.sync import sync_to_async
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 
-from apps.billing.constants import get_plan_limits
+from apps.billing.constants import aget_weighted_usage, get_effective_limit, get_plan_limits
 
 logger = logging.getLogger(__name__)
 
@@ -189,7 +190,7 @@ async def check_and_notify_threshold(org, message_id: str) -> None:
     if plan_limits.monthly_responses is None:
         return
 
-    limit = plan_limits.monthly_responses
+    limit = await sync_to_async(get_effective_limit)(org)
 
     # Count current usage
     base_filter = {
@@ -199,14 +200,16 @@ async def check_and_notify_threshold(org, message_id: str) -> None:
     }
 
     if plan_limits.is_one_time:
-        used = await ChatMessage.objects.filter(**base_filter).acount()
+        used = await aget_weighted_usage(ChatMessage.objects.filter(**base_filter))
     else:
         now = datetime.now(tz.utc)
         period_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-        used = await ChatMessage.objects.filter(
-            **base_filter,
-            created_at__gte=period_start,
-        ).acount()
+        used = await aget_weighted_usage(
+            ChatMessage.objects.filter(
+                **base_filter,
+                created_at__gte=period_start,
+            )
+        )
 
     pct = (used / limit) * 100 if limit > 0 else 0
 

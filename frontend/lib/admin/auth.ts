@@ -40,18 +40,31 @@ export function isAuthenticated(): boolean {
 }
 
 /**
- * Handle auth callback - extract token from URL params.
- * Call this on page load to check for token in URL.
+ * Handle auth callback - extract token(s) from URL params.
+ * Supports both single-token OAuth callbacks (?token=...) and
+ * dual-token impersonation callbacks (?access=...&refresh=...).
  */
 export function handleAuthCallback(): boolean {
   if (typeof window === "undefined") return false;
 
   const params = new URLSearchParams(window.location.search);
-  const token = params.get("token");
 
+  const accessParam = params.get("access");
+  const refreshParam = params.get("refresh");
+  if (accessParam && refreshParam) {
+    clearAllTokens();
+    setAuthToken(accessParam);
+    setRefreshToken(refreshParam);
+    const url = new URL(window.location.href);
+    url.searchParams.delete("access");
+    url.searchParams.delete("refresh");
+    window.history.replaceState({}, "", url.toString());
+    return true;
+  }
+
+  const token = params.get("token");
   if (token) {
     setAuthToken(token);
-    // Remove token from URL
     const url = new URL(window.location.href);
     url.searchParams.delete("token");
     window.history.replaceState({}, "", url.toString());

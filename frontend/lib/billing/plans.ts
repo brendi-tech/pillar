@@ -54,8 +54,8 @@ export const PLAN_TIERS: PlanTier[] = [
     price: 19,
     priceLabel: "$19",
     priceSubtext: "per month",
-    responseLimit: "100 responses/mo",
-    responseLimitNumber: 100,
+    responseLimit: "150 responses/mo",
+    responseLimitNumber: 150,
     ctaText: "Get Started",
     ctaSubtext: "Then $0.25/response",
     features: [
@@ -78,8 +78,8 @@ export const PLAN_TIERS: PlanTier[] = [
     price: 99,
     priceLabel: "$99",
     priceSubtext: "per month",
-    responseLimit: "400 responses/mo",
-    responseLimitNumber: 400,
+    responseLimit: "500 responses/mo",
+    responseLimitNumber: 500,
     ctaText: "Get Started",
     ctaSubtext: "Then $0.20/response",
     highlighted: true,
@@ -138,7 +138,27 @@ export function getTierForInterval(
   return tier;
 }
 
+export const ENTERPRISE_TIER: PlanTier = {
+  name: "enterprise",
+  label: "Enterprise",
+  description: "Custom plan for your organization",
+  price: 0,
+  priceLabel: "Custom",
+  responseLimit: "Unlimited responses",
+  responseLimitNumber: null,
+  ctaText: "Contact Us",
+  ctaSubtext: "",
+  features: [
+    "Everything in Growth",
+    "Unlimited responses",
+    "Dedicated support",
+    "Custom integrations",
+  ],
+  badge: { text: "ENTERPRISE", bg: "#1a1a2e", color: "#a78bfa" },
+};
+
 export function getPlanTier(planName: string): PlanTier | undefined {
+  if (planName === "enterprise") return ENTERPRISE_TIER;
   return PLAN_TIERS.find((t) => t.name === planName);
 }
 

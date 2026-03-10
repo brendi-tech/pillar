@@ -46,11 +46,23 @@ def custom_exception_handler(exc, context):
 
     # If response is None, it's an unhandled exception
     if response is None:
+        view = context.get('view')
+        view_name = view.__class__.__name__ if view else 'Unknown'
+        request = context.get('request')
+        method = getattr(request, 'method', 'Unknown')
+        path = getattr(request, 'path', 'Unknown')
+
         sentry_sdk.capture_exception(exc)
         logger.error(
-            f"Unhandled exception: {exc}",
+            "Unhandled exception in %s %s [%s]",
+            method, path, view_name,
             exc_info=True,
-            extra={'context': context}
+            extra={
+                'exception_type': type(exc).__qualname__,
+                'view': view_name,
+                'method': method,
+                'path': path,
+            },
         )
         return Response(
             {
@@ -65,13 +77,20 @@ def custom_exception_handler(exc, context):
         view = context.get('view')
         view_name = view.__class__.__name__ if view else 'Unknown'
         request = context.get('request')
-        method = request.method if request else 'Unknown'
-        path = request.path if request else 'Unknown'
+        method = getattr(request, 'method', 'Unknown')
+        path = getattr(request, 'path', 'Unknown')
 
         log_level = logging.WARNING if response.status_code < 500 else logging.ERROR
         logger.log(
             log_level,
-            f"API error {response.status_code} on {method} {path} [{view_name}]: {response.data}",
+            "API error %d on %s %s [%s]",
+            response.status_code, method, path, view_name,
+            extra={
+                'status_code': response.status_code,
+                'view': view_name,
+                'method': method,
+                'path': path,
+            },
         )
 
     # Customize the response format

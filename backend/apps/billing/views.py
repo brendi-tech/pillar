@@ -14,7 +14,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.billing import services as billing_service
-from apps.billing.constants import get_plan_limits
+from apps.billing.constants import get_effective_limit, get_plan_limits, get_weighted_usage
 from apps.analytics.models import ChatMessage
 from apps.users.permissions import IsAuthenticatedAdmin
 
@@ -327,18 +327,48 @@ class UsageView(APIView):
         }
 
         if plan_limits.is_one_time:
-            used = ChatMessage.objects.filter(**base_filter).count()
+            used = get_weighted_usage(ChatMessage.objects.filter(**base_filter))
         else:
             now = datetime.now(tz.utc)
             period_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-            used = ChatMessage.objects.filter(
-                **base_filter,
-                created_at__gte=period_start,
-            ).count()
+            used = get_weighted_usage(
+                ChatMessage.objects.filter(
+                    **base_filter,
+                    created_at__gte=period_start,
+                )
+            )
+
+        bonus_total = org.active_bonus_responses
+        plan_limit = plan_limits.monthly_responses
+        effective_limit = get_effective_limit(org)
+        bonus_used = (
+            min(max(used - plan_limit, 0), bonus_total)
+            if plan_limit is not None and bonus_total
+            else 0
+        )
+
+        bonus_grants = []
+        if bonus_total > 0:
+            from apps.billing.models import BonusResponseGrant
+
+            for g in (
+                BonusResponseGrant.objects.filter(organization=org)
+                .active()
+                .order_by("expires_at")
+            ):
+                bonus_grants.append({
+                    "amount": g.amount,
+                    "expires_at": g.expires_at.isoformat() if g.expires_at else None,
+                    "memo": g.memo,
+                })
 
         return Response({
             "used": used,
-            "limit": plan_limits.monthly_responses,
+            "limit": effective_limit,
+            "plan_limit": plan_limit,
+            "bonus_total": bonus_total,
+            "bonus_used": bonus_used,
+            "bonus_grants": bonus_grants,
             "is_one_time": plan_limits.is_one_time,
             "plan": org.plan,
             "has_payg": plan_limits.has_payg,

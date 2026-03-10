@@ -14,12 +14,15 @@ const BADGE_STYLES: Record<string, string> = {
   hobby: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
   pro: "bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300",
   growth: "bg-pink-100 text-pink-700 dark:bg-pink-950 dark:text-pink-300",
+  enterprise: "bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300",
 };
 
-const PLAN_ORDER = PLAN_TIERS.map((t) => t.name);
+const PLAN_ORDER = [...PLAN_TIERS.map((t) => t.name), "enterprise"];
 
 function getButtonText(tierName: string, activePlan?: string): string {
   if (!activePlan) return tierName === "free" ? "Get Started Free" : "Get Started";
+
+  if (activePlan === "enterprise") return "Contact Us";
 
   const activeIndex = PLAN_ORDER.indexOf(activePlan);
   const tierIndex = PLAN_ORDER.indexOf(tierName);
@@ -106,6 +109,7 @@ function PlanTierCard({
           </span>
         )}
       </p>
+      <div className="mt-0.5" />
 
       {/* CTA */}
       <div className="mt-6">
@@ -209,6 +213,9 @@ export function PlanTierGrid({
           );
         })}
       </div>
+      <p className="text-center text-xs text-muted-foreground/60">
+        Simple responses are free. Longer responses count proportionally.
+      </p>
     </div>
   );
 }

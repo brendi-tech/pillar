@@ -112,29 +112,24 @@ class TestProcessItemAsyncSafety:
 
     @patch('apps.knowledge.services.processing_service.ProcessingService._optimize_content_async')
     @patch('common.services.embedding_service.EmbeddingService.embed_document_async')
-    async def test_process_item_fails_without_select_related_product(
+    async def test_process_item_succeeds_without_select_related_product(
         self, mock_embed, mock_optimize, knowledge_item
     ):
         """
-        Loading item WITHOUT select_related('product') should fail with
-        SynchronousOnlyOperation when _create_chunk accesses item.product.
-
-        This is the exact bug that was happening in production.
+        Processing should succeed even without select_related('product')
+        because the service uses item.product_id (FK id) instead of
+        item.product (lazy load).
         """
         from asgiref.sync import sync_to_async
-        from django.core.exceptions import SynchronousOnlyOperation
         from apps.knowledge.services.processing_service import ProcessingService
 
-        # Mock external services
         mock_optimize.return_value = knowledge_item.raw_content
         mock_embed.return_value = [0.1] * 1536
 
-        # Load item WITHOUT product in select_related — simulates the old bug
         item = await KnowledgeItem.objects.select_related(
             'source', 'organization'
         ).aget(id=knowledge_item.id)
 
-        # Clear any cached product to force a lazy load
         if 'product' in item._state.fields_cache:
             del item._state.fields_cache['product']
 
@@ -143,9 +138,8 @@ class TestProcessItemAsyncSafety:
         )()
         result = await processing_service.process_item(item)
 
-        # Should fail with the sync-in-async error
-        assert result.error is not None
-        assert "async context" in result.error or "SynchronousOnlyOperation" in result.error
+        assert result.error is None
+        assert result.chunks_created > 0
 
     @patch('apps.knowledge.services.processing_service.ProcessingService._optimize_content_async')
     @patch('common.services.embedding_service.EmbeddingService.embed_document_async')

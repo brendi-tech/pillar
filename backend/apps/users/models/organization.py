@@ -116,3 +116,15 @@ class Organization(BaseModel):
         if self.subscription_status == 'trialing' and self.trial_ends_at:
             return timezone.now() < self.trial_ends_at
         return False
+
+    @property
+    def active_bonus_responses(self) -> int:
+        """Sum of all unexpired bonus response grants."""
+        from apps.billing.models import BonusResponseGrant
+
+        total = (
+            BonusResponseGrant.objects.filter(organization=self)
+            .active()
+            .aggregate(total=models.Sum("amount"))["total"]
+        )
+        return total or 0

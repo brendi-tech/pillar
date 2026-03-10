@@ -6,10 +6,17 @@ https://docs.djangoproject.com/en/4.2/howto/deployment/asgi/
 """
 
 import os
+from pathlib import Path
 
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.security.websocket import AllowedHostsOriginValidator
 from django.core.asgi import get_asgi_application
+
+# Load environment variables from root .env.local (same as manage.py)
+_env_file = Path(__file__).resolve().parent.parent.parent / '.env.local'
+if _env_file.exists():
+    from dotenv import load_dotenv
+    load_dotenv(_env_file)
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.production')
 

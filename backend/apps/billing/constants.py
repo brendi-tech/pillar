@@ -4,6 +4,7 @@ Plan limits and pricing constants.
 This module defines the limits and pricing for each subscription plan.
 These constants are used for usage tracking, enforcement, and billing.
 """
+import math
 from dataclasses import dataclass
 from decimal import Decimal
 
@@ -31,12 +32,12 @@ PLAN_LIMITS: dict[str, PlanLimits] = {
         payg_rate=None,  # No PAYG for free tier
     ),
     "hobby": PlanLimits(
-        monthly_responses=100,
+        monthly_responses=150,
         is_one_time=False,
         payg_rate=Decimal("0.25"),
     ),
     "pro": PlanLimits(
-        monthly_responses=400,
+        monthly_responses=500,
         is_one_time=False,
         payg_rate=Decimal("0.20"),
     ),
@@ -97,9 +98,78 @@ def get_payg_rate(plan: str) -> Decimal | None:
     return PLAN_LIMITS[plan].payg_rate
 
 
+def get_effective_limit(org) -> int | None:
+    """
+    Get the effective response limit for an org, including bonus grants.
+
+    Returns plan_limit + active bonus, or None for unlimited (enterprise).
+    """
+    base = get_plan_limits(org.plan).monthly_responses
+    if base is None:
+        return None
+    return base + org.active_bonus_responses
+
+
 PLAN_ORDER: list[str] = ["free", "hobby", "pro", "growth", "enterprise"]
 
 
 def is_downgrade(current_plan: str, target_plan: str) -> bool:
     """Check whether switching from current_plan to target_plan is a downgrade."""
     return PLAN_ORDER.index(target_plan) < PLAN_ORDER.index(current_plan)
+
+
+# ---------------------------------------------------------------------------
+# Weighted response metering
+# ---------------------------------------------------------------------------
+
+SIMPLE_RESPONSE_TOKEN_THRESHOLD = 5_000
+RESPONSE_TOKEN_UNIT = 50_000
+
+
+def get_billing_weight(total_tokens: int | None) -> int:
+    """
+    Compute how many billing units a single response costs.
+
+    - Under 5K tokens: 0 (free, trivial response)
+    - 5K–50K tokens: 1 (standard response)
+    - Over 50K tokens: ceil(total_tokens / 50K), scaling proportionally
+    - None (unknown): 1 (safe default)
+    """
+    if total_tokens is None:
+        return 1
+    if total_tokens < SIMPLE_RESPONSE_TOKEN_THRESHOLD:
+        return 0
+    return max(1, math.ceil(total_tokens / RESPONSE_TOKEN_UNIT))
+
+
+def get_weighted_usage(queryset) -> int:
+    """
+    Compute weighted response count from a ChatMessage queryset (sync).
+
+    Each row contributes its billing weight to the sum:
+    0 for simple, 1 for standard, ceil(tokens/50K) for heavy.
+    """
+    from django.db.models import Case, F, FloatField, IntegerField, Sum, Value, When
+    from django.db.models.functions import Cast, Ceil, Greatest
+
+    result = queryset.aggregate(
+        weighted=Sum(
+            Case(
+                When(total_tokens__isnull=True, then=Value(1)),
+                When(total_tokens__lt=SIMPLE_RESPONSE_TOKEN_THRESHOLD, then=Value(0)),
+                default=Greatest(
+                    Value(1),
+                    Ceil(Cast(F("total_tokens"), FloatField()) / Value(RESPONSE_TOKEN_UNIT)),
+                ),
+                output_field=IntegerField(),
+            )
+        )
+    )
+    return result["weighted"] or 0
+
+
+async def aget_weighted_usage(queryset) -> int:
+    """Async variant of get_weighted_usage."""
+    from asgiref.sync import sync_to_async
+
+    return await sync_to_async(get_weighted_usage)(queryset)

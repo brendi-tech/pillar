@@ -2,6 +2,8 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils.html import format_html
 
+from apps.billing.admin import BonusResponseGrantInline
+from apps.billing.models import BonusResponseGrant
 from apps.users.models import (
     Organization,
     OrganizationInvitation,
@@ -98,7 +100,7 @@ class OrganizationAdmin(admin.ModelAdmin):
     search_fields = ['name', 'domain']
     ordering = ['-created_at']
     readonly_fields = ['id', 'created_at', 'updated_at']
-    inlines = [OrganizationMembershipInline, OrganizationInvitationInline]
+    inlines = [OrganizationMembershipInline, OrganizationInvitationInline, BonusResponseGrantInline]
 
     fieldsets = (
         (None, {
@@ -118,6 +120,16 @@ class OrganizationAdmin(admin.ModelAdmin):
             'fields': ('created_at', 'updated_at'),
         }),
     )
+
+    def save_formset(self, request, form, formset, change):
+        instances = formset.save(commit=False)
+        for obj in instances:
+            if isinstance(obj, BonusResponseGrant) and not obj.granted_by_id:
+                obj.granted_by = request.user
+            obj.save()
+        formset.save_m2m()
+        for obj in formset.deleted_objects:
+            obj.delete()
 
     @admin.display(description='Members')
     def member_count(self, obj):

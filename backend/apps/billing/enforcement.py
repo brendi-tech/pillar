@@ -7,7 +7,9 @@ before allowing an agent response.
 import logging
 from datetime import datetime, timezone as tz
 
-from apps.billing.constants import get_plan_limits
+from asgiref.sync import sync_to_async
+
+from apps.billing.constants import aget_weighted_usage, get_effective_limit, get_plan_limits
 from common.exceptions import PlanLimitExceeded
 
 logger = logging.getLogger(__name__)
@@ -54,16 +56,18 @@ async def check_usage_allowed(org) -> None:
     }
 
     if plan_limits.is_one_time:
-        used = await ChatMessage.objects.filter(**base_filter).acount()
+        used = await aget_weighted_usage(ChatMessage.objects.filter(**base_filter))
     else:
         now = datetime.now(tz.utc)
         period_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-        used = await ChatMessage.objects.filter(
-            **base_filter,
-            created_at__gte=period_start,
-        ).acount()
+        used = await aget_weighted_usage(
+            ChatMessage.objects.filter(
+                **base_filter,
+                created_at__gte=period_start,
+            )
+        )
 
-    limit = plan_limits.monthly_responses
+    limit = await sync_to_async(get_effective_limit)(org)
     if used >= limit:
         raise PlanLimitExceeded(
             message=(

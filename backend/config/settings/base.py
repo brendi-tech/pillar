@@ -72,6 +72,16 @@ INSTALLED_APPS = [
     'apps.billing',                     # Stripe billing, usage metering, plan enforcement
 ]
 
+# Internal tools (impersonation, diagnostics) — excluded from open source repo.
+# Gated behind env var + try/except so open source builds don't break.
+ENABLE_INTERNAL_TOOLS = os.environ.get('ENABLE_INTERNAL_TOOLS', 'false').lower() == 'true'
+if ENABLE_INTERNAL_TOOLS:
+    try:
+        import internal  # noqa: F401
+        INSTALLED_APPS += ['internal']
+    except ImportError:
+        pass
+
 MIDDLEWARE = [
     # CORS must be first to handle preflight OPTIONS requests before other middleware
     'corsheaders.middleware.CorsMiddleware',

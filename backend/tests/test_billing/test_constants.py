@@ -56,13 +56,13 @@ class TestGetPlanLimits:
 
     def test_hobby_values(self):
         pl = get_plan_limits("hobby")
-        assert pl.monthly_responses == 100
+        assert pl.monthly_responses == 150
         assert pl.is_one_time is False
         assert pl.payg_rate == Decimal("0.25")
 
     def test_pro_values(self):
         pl = get_plan_limits("pro")
-        assert pl.monthly_responses == 400
+        assert pl.monthly_responses == 500
         assert pl.is_one_time is False
         assert pl.payg_rate == Decimal("0.20")
 
@@ -82,7 +82,7 @@ class TestGetPlanLimits:
 class TestGetMonthlyLimit:
     @pytest.mark.parametrize(
         "plan, expected",
-        [("free", 50), ("hobby", 100), ("pro", 400), ("growth", 1500), ("enterprise", None)],
+        [("free", 50), ("hobby", 150), ("pro", 500), ("growth", 1500), ("enterprise", None)],
     )
     def test_returns_expected_limit(self, plan, expected):
         assert get_monthly_limit(plan) == expected

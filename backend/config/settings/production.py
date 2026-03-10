@@ -112,8 +112,17 @@ elif STORAGE_BACKEND == 's3':
     }
 
 # Logging - Use structured JSON logging for production
+# CloudLoggingFormatter outputs JSON with severity, exception_type,
+# sourceLocation, and service fields that Cloud Logging auto-parses.
 LOGGING['formatters']['json'] = {
-    'format': '%(message)s',
+    '()': 'common.logging.CloudLoggingFormatter',
+    'format': '%(message)s %(levelname)s %(name)s',
+}
+
+LOGGING['filters'] = {
+    'dedupe_exceptions': {
+        '()': 'common.logging.DeduplicateExceptionFilter',
+    },
 }
 
 # Configure console handler based on service type
@@ -123,21 +132,33 @@ if os.environ.get('SERVICE_TYPE') == 'hatchet-worker':
     LOGGING['handlers']['console'] = {
         'class': 'logging.StreamHandler',
         'formatter': 'verbose',
+        'filters': ['dedupe_exceptions'],
     }
     LOGGING['root']['handlers'] = ['console']
 elif not use_json_logging:
     LOGGING['handlers']['console'] = {
         'class': 'logging.StreamHandler',
         'formatter': 'verbose',
+        'filters': ['dedupe_exceptions'],
     }
 else:
     LOGGING['handlers']['console'] = {
         'class': 'logging.StreamHandler',
         'formatter': 'json',
+        'filters': ['dedupe_exceptions'],
     }
 
 # Keep root logger at INFO level
 LOGGING['root']['level'] = 'INFO'
+
+# Suppress Django's request logger -- the DRF exception handler already logs
+# 4xx/5xx errors with structured context; letting django.request also emit
+# them doubles every error in the logs.
+LOGGING['loggers']['django.request'] = {
+    'handlers': ['console'],
+    'level': 'CRITICAL',
+    'propagate': False,
+}
 
 # OpenTelemetry tracing (always on)
 from common.observability.tracing import setup_tracing as _setup_tracing  # noqa: E402
