@@ -1,8 +1,10 @@
+import { formatDistanceToNow } from "date-fns";
+import { Trash2 } from "lucide-react";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TableCell, TableRow } from "@/components/ui/table";
 import type { OrganizationMembership, OrganizationRole } from "@/types/organization";
-import { Trash2 } from "lucide-react";
 
 interface MemberRowProps {
   membership: OrganizationMembership;
@@ -22,18 +24,24 @@ export function MemberRow({
   getRoleBadgeColor,
 }: MemberRowProps) {
   return (
-    <TableRow key={`member-${membership.id}`}>
+    <TableRow>
       <TableCell className="font-medium">
-        {membership.user.full_name}
+        {membership.user.full_name || (
+          <span className="text-muted-foreground italic">No name</span>
+        )}
       </TableCell>
-      <TableCell>{membership.user.email}</TableCell>
+      <TableCell className="text-muted-foreground">
+        {membership.user.email}
+      </TableCell>
       <TableCell>
         <Badge variant="outline" className={getRoleBadgeColor(membership.role)}>
           {membership.role.charAt(0).toUpperCase() + membership.role.slice(1)}
         </Badge>
       </TableCell>
-      <TableCell>
-        {new Date(membership.created_at).toLocaleDateString()}
+      <TableCell className="text-muted-foreground">
+        {formatDistanceToNow(new Date(membership.created_at), {
+          addSuffix: true,
+        })}
       </TableCell>
       {isAdmin && (
         <TableCell className="text-right">
@@ -42,7 +50,7 @@ export function MemberRow({
               type="button"
               variant="ghost"
               size="icon"
-              className="text-muted-foreground hover:text-destructive h-8 w-8"
+              className="h-8 w-8 text-muted-foreground hover:text-destructive"
               onClick={() => onRemove(membership)}
               disabled={isRemoving}
               title="Remove member"

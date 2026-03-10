@@ -1,5 +1,6 @@
 "use client";
 
+import { DataTable, type DataTableColumn } from "@/components/DataTable";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   AlertDialog,
@@ -17,27 +18,25 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { adminFetch } from "@/lib/admin/api-client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import { AlertTriangle, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
-import type { CreateSecretResponse, SyncSecret } from "./ApiKeysPageContent.types";
+import type {
+  CreateSecretResponse,
+  SyncSecret,
+} from "./ApiKeysPageContent.types";
 
 interface SecretsTableProps {
   productId: string;
   onSecretCreated: (secret: string, name: string) => void;
 }
 
-export function SecretsTable({ productId, onSecretCreated }: SecretsTableProps) {
+export function SecretsTable({
+  productId,
+  onSecretCreated,
+}: SecretsTableProps) {
   const queryClient = useQueryClient();
   const [newSecretName, setNewSecretName] = useState("");
   const [nameError, setNameError] = useState<string | null>(null);
@@ -134,6 +133,74 @@ export function SecretsTable({ productId, onSecretCreated }: SecretsTableProps) 
   const hasSecrets = secrets && secrets.length > 0;
   const canCreateMore = !secrets || secrets.length < 10;
 
+  const secretColumns: DataTableColumn<SyncSecret>[] = [
+    {
+      id: "name",
+      header: "Name",
+      cell: (row) => <span className="font-mono text-sm">{row.name}</span>,
+    },
+    {
+      id: "created",
+      header: "Created",
+      cell: (row) => (
+        <span className="text-sm text-muted-foreground">
+          {formatDistanceToNow(new Date(row.created_at), { addSuffix: true })}
+        </span>
+      ),
+    },
+    {
+      id: "last-used",
+      header: "Last Used",
+      cell: (row) => (
+        <span className="text-sm text-muted-foreground">
+          {row.last_used_at
+            ? formatDistanceToNow(new Date(row.last_used_at), {
+                addSuffix: true,
+              })
+            : "Never"}
+        </span>
+      ),
+    },
+    {
+      id: "actions",
+      header: "",
+      width: "w-12",
+      cell: (row) => (
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-destructive hover:text-destructive"
+              disabled={deleteSecretMutation.isPending}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Revoke Secret</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to revoke the &quot;{row.name}&quot;
+                secret? Any CI/CD pipelines using this secret will fail to
+                authenticate.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => deleteSecretMutation.mutate(row.id)}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Revoke
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      ),
+    },
+  ];
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -147,74 +214,11 @@ export function SecretsTable({ productId, onSecretCreated }: SecretsTableProps) 
       </div>
 
       {hasSecrets && (
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead>Last Used</TableHead>
-                <TableHead className="w-[80px]"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {secrets.map((secret) => (
-                <TableRow key={secret.id}>
-                  <TableCell className="font-mono text-sm">
-                    {secret.name}
-                  </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {formatDistanceToNow(new Date(secret.created_at), {
-                      addSuffix: true,
-                    })}
-                  </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {secret.last_used_at
-                      ? formatDistanceToNow(new Date(secret.last_used_at), {
-                          addSuffix: true,
-                        })
-                      : "Never"}
-                  </TableCell>
-                  <TableCell>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-destructive hover:text-destructive"
-                          disabled={deleteSecretMutation.isPending}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Revoke Secret</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Are you sure you want to revoke the &quot;
-                            {secret.name}&quot; secret? Any CI/CD pipelines
-                            using this secret will fail to authenticate.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() =>
-                              deleteSecretMutation.mutate(secret.id)
-                            }
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                          >
-                            Revoke
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+        <DataTable
+          columns={secretColumns}
+          data={secrets}
+          keyExtractor={(row) => row.id}
+        />
       )}
 
       {canCreateMore && (

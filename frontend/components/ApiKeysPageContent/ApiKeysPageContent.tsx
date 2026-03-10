@@ -4,7 +4,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useProduct } from "@/providers/ProductProvider";
 import { useEffect, useState } from "react";
 import { PageHeader } from "../shared/PageHeader";
-import { ScrollArea } from "../ui/scroll-area";
 import type { GeneratedSecret } from "./ApiKeysPageContent.types";
 import { ApiUrlCollapsible } from "./ApiUrlCollapsible";
 import { DocsLink } from "./DocsLink";
@@ -15,7 +14,7 @@ import { UsageExamples } from "./UsageExamples";
 
 const PageWrapper = ({ children }: { children: React.ReactNode }) => {
   return (
-    <ScrollArea className="h-full">
+    <div className="h-full overflow-y-auto">
       <div className="space-y-6 p-page max-w-page mx-auto">
         <PageHeader
           title="API Keys"
@@ -23,7 +22,7 @@ const PageWrapper = ({ children }: { children: React.ReactNode }) => {
         />
         {children}
       </div>
-    </ScrollArea>
+    </div>
   );
 };
 

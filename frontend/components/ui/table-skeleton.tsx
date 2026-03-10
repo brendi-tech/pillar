@@ -29,7 +29,9 @@ export function TableSkeleton({
   className,
 }: TableSkeletonProps) {
   return (
-    <div className={cn("overflow-auto rounded-md border h-full", className)}>
+    <div
+      className={cn("overflow-auto rounded-md border max-h-full", className)}
+    >
       <table className="w-full caption-bottom text-xs md:text-sm">
         <TableHeader className="sticky top-0 z-10">
           <TableRow className="bg-background hover:bg-background">

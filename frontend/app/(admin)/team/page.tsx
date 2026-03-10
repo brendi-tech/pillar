@@ -29,32 +29,5 @@ export default function TeamPage() {
     );
   }
 
-  return (
-    <div className="space-y-6 p-6">
-      <PageHeader
-        title="Team"
-        description="Manage your team members and permissions"
-      />
-
-      <UserManagementPanel organizationId={currentOrganizationId} />
-      {/* <Tabs defaultValue={defaultTab} className="w-full">
-        <TabsList>
-          <TabsTrigger value="members" className="gap-2">
-            <Users className="h-4 w-4" />
-            Members
-          </TabsTrigger>
-          <TabsTrigger value="permissions" className="gap-2">
-            <Shield className="h-4 w-4" />
-            Permissions
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="members" className="mt-6">
-          <UserManagementPanel organizationId={currentOrganizationId} />
-        </TabsContent>
-        <TabsContent value="permissions" className="mt-6">
-          <TeamPermissionsPanel />
-        </TabsContent>
-      </Tabs> */}
-    </div>
-  );
+  return <UserManagementPanel organizationId={currentOrganizationId} />;
 }

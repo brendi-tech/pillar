@@ -70,9 +70,9 @@
   --shadow-2xl: 0px 1px 4px 0px hsl(0 0% 0% / 0.13);
   --tracking-normal: 0rem;
   --spacing: 0.25rem;
-  --scrollbar-thumb: var(--muted);
+  --scrollbar-thumb: var(--border);
   --scrollbar-thumb-hover: var(--muted-foreground);
-  --scrollbar-track: var(--card);
+  --scrollbar-track: transparent;
 }
 
 .dark {
@@ -138,9 +138,9 @@
   --shadow-xl:
     0px 1px 4px 0px hsl(0 0% 0% / 0.05), 0px 8px 10px -1px hsl(0 0% 0% / 0.05);
   --shadow-2xl: 0px 1px 4px 0px hsl(0 0% 0% / 0.13);
-  --scrollbar-thumb: var(--muted);
+  --scrollbar-thumb: var(--border);
   --scrollbar-thumb-hover: var(--muted-foreground);
-  --scrollbar-track: var(--background);
+  --scrollbar-track: transparent;
 }
 @theme inline {
   --color-background: var(--background);
@@ -260,6 +260,39 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+
+  /* Native scrollbar styling to match ScrollArea component */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+  }
+
+  /* Webkit browsers (Chrome, Safari, Edge) */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover);
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+
+  ::-webkit-scrollbar-corner {
+    background: var(--scrollbar-track);
   }
 }
 

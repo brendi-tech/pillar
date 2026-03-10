@@ -1,35 +1,16 @@
 "use client";
 
-import { Spinner } from "@/components/ui/spinner";
 import {
-  TableSkeleton,
-  type TableSkeletonColumn,
-} from "@/components/ui/table-skeleton";
-import { format } from "date-fns";
-import { AlertCircle, MessageSquare, ThumbsDown } from "lucide-react";
-import { useEffect, useRef } from "react";
-
+  DataTable,
+  type DataTableColumn,
+} from "@/components/DataTable";
 import { Badge } from "@/components/ui/badge";
-import {
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { MessageSquare, ThumbsDown } from "lucide-react";
 import type {
   ChatConversationListItem,
   ConversationStatus,
 } from "@/types/admin";
-
-const CONVERSATIONS_TABLE_COLUMNS: TableSkeletonColumn[] = [
-  { header: "Started", width: "w-[140px]", cellWidth: "w-24" },
-  { header: "Status", width: "w-[100px]", cellWidth: "w-16" },
-  { header: "Messages", width: "w-[80px]", cellWidth: "w-8", centered: true },
-  { header: "First Question", cellWidth: "w-64" },
-  { header: "Feedback", width: "w-[72px]", cellWidth: "w-6", centered: true },
-];
 
 interface ConversationsTableProps {
   conversations: ChatConversationListItem[];
@@ -62,6 +43,65 @@ function getStatusLabel(status: ConversationStatus): string {
   return status.charAt(0).toUpperCase() + status.slice(1);
 }
 
+const columns: DataTableColumn<ChatConversationListItem>[] = [
+  {
+    id: "started",
+    header: "Started",
+    width: "w-[140px]",
+    skeletonWidth: "w-24",
+    cell: (row) => (
+      <span className="text-muted-foreground">
+        {format(new Date(row.started_at), "MMM d, h:mm a")}
+      </span>
+    ),
+  },
+  {
+    id: "status",
+    header: "Status",
+    width: "w-[100px]",
+    skeletonWidth: "w-16",
+    cell: (row) => (
+      <Badge variant={getStatusBadgeVariant(row.status)}>
+        {getStatusLabel(row.status)}
+      </Badge>
+    ),
+  },
+  {
+    id: "messages",
+    header: "Messages",
+    width: "w-[80px]",
+    centered: true,
+    skeletonWidth: "w-8",
+    cell: (row) => (
+      <span className="text-muted-foreground">{row.message_count}</span>
+    ),
+  },
+  {
+    id: "first-question",
+    header: "First Question",
+    skeletonWidth: "w-64",
+    cell: (row) => (
+      <p className="truncate max-w-400">
+        {row.first_user_message || (
+          <span className="text-muted-foreground italic">No message</span>
+        )}
+      </p>
+    ),
+  },
+  {
+    id: "feedback",
+    header: "Feedback",
+    width: "w-[72px]",
+    centered: true,
+    skeletonWidth: "w-6",
+    headerClassName: "pr-4",
+    cell: (row) =>
+      row.has_negative_feedback ? (
+        <ThumbsDown className="mx-auto h-4 w-4 text-orange-500" />
+      ) : null,
+  },
+];
+
 export function ConversationsTable({
   conversations,
   isLoading,
@@ -71,111 +111,25 @@ export function ConversationsTable({
   isFetchingNextPage,
   onLoadMore,
 }: ConversationsTableProps) {
-  const sentinelRef = useRef<HTMLDivElement>(null);
-
-  // Intersection observer for infinite scroll
-  useEffect(() => {
-    const el = sentinelRef.current;
-    if (!el) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting && hasNextPage && !isFetchingNextPage) {
-          onLoadMore();
-        }
-      },
-      { rootMargin: "100px" }
-    );
-
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [hasNextPage, isFetchingNextPage, onLoadMore]);
-
-  if (isLoading) {
-    return <TableSkeleton columns={CONVERSATIONS_TABLE_COLUMNS} />;
-  }
-
-  if (isError) {
-    return (
-      <div className="flex flex-col items-center justify-center gap-2 py-12 text-muted-foreground">
-        <AlertCircle className="h-8 w-8" />
-        <p>Failed to load conversations</p>
-      </div>
-    );
-  }
-
-  if (conversations.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center gap-2 py-12 text-muted-foreground">
-        <MessageSquare className="h-8 w-8" />
-        <p>No conversations found</p>
-        <p className="text-sm">Try adjusting your filters or date range</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="overflow-auto rounded-md border h-full">
-      <table className={cn("w-full caption-bottom text-xs md:text-sm")}>
-        <TableHeader className="sticky top-0 z-10">
-          <TableRow className="bg-background hover:bg-background">
-            <TableHead className="w-[140px] bg-background">Started</TableHead>
-            <TableHead className="w-[100px] bg-background">Status</TableHead>
-            <TableHead className="w-[80px] bg-background text-center">
-              Messages
-            </TableHead>
-            <TableHead className="bg-background">First Question</TableHead>
-            <TableHead className="w-[72px] bg-background text-center pr-4">
-              Feedback
-            </TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {conversations.map((conversation) => (
-            <TableRow
-              key={conversation.id}
-              className="cursor-pointer hover:bg-muted/50"
-              onClick={() => onRowClick(conversation)}
-            >
-              <TableCell className="text-muted-foreground">
-                {format(new Date(conversation.started_at), "MMM d, h:mm a")}
-              </TableCell>
-              <TableCell>
-                <Badge variant={getStatusBadgeVariant(conversation.status)}>
-                  {getStatusLabel(conversation.status)}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-center text-muted-foreground">
-                {conversation.message_count}
-              </TableCell>
-              <TableCell className="max-w-[400px]">
-                <p className="truncate">
-                  {conversation.first_user_message || (
-                    <span className="text-muted-foreground italic">
-                      No message
-                    </span>
-                  )}
-                </p>
-              </TableCell>
-              <TableCell className="text-center">
-                {conversation.has_negative_feedback && (
-                  <ThumbsDown className="mx-auto h-4 w-4 text-orange-500" />
-                )}
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </table>
-
-      {/* Sentinel element for infinite scroll */}
-      <div ref={sentinelRef} className="h-1" />
-
-      {/* Loading more indicator */}
-      {isFetchingNextPage && (
-        <div className="flex items-center justify-center py-4">
-          <Spinner size="sm" />
-        </div>
-      )}
-    </div>
+    <DataTable
+      columns={columns}
+      data={conversations}
+      keyExtractor={(row) => row.id}
+      isLoading={isLoading}
+      isError={isError}
+      onRowClick={onRowClick}
+      errorMessage="Failed to load conversations"
+      emptyState={{
+        icon: <MessageSquare className="h-8 w-8" />,
+        title: "No conversations found",
+        description: "Try adjusting your filters or date range",
+      }}
+      infiniteScroll={{
+        hasNextPage,
+        isFetchingNextPage,
+        onLoadMore,
+      }}
+    />
   );
 }

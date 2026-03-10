@@ -1,8 +1,9 @@
+import { Copy, Send, Trash2 } from "lucide-react";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TableCell, TableRow } from "@/components/ui/table";
 import type { OrganizationInvitation, OrganizationRole } from "@/types/organization";
-import { Copy, Send, Trash2 } from "lucide-react";
 
 interface InvitationRowProps {
   invitation: OrganizationInvitation;
@@ -24,9 +25,11 @@ export function InvitationRow({
   getRoleBadgeColor,
 }: InvitationRowProps) {
   return (
-    <TableRow key={`invitation-${invitation.id}`}>
-      <TableCell className="text-muted-foreground font-medium">—</TableCell>
-      <TableCell>{invitation.email}</TableCell>
+    <TableRow>
+      <TableCell className="font-medium text-muted-foreground italic">
+        Pending invite
+      </TableCell>
+      <TableCell className="text-muted-foreground">{invitation.email}</TableCell>
       <TableCell>
         <Badge variant="outline" className={getRoleBadgeColor(invitation.role)}>
           {invitation.role.charAt(0).toUpperCase() + invitation.role.slice(1)}
@@ -46,7 +49,7 @@ export function InvitationRow({
             type="button"
             variant="ghost"
             size="icon"
-            className="h-8 w-8"
+            className="h-8 w-8 text-muted-foreground"
             onClick={() => onCopyLink(invitation.invitation_link)}
             title="Copy invitation link"
           >
@@ -56,7 +59,7 @@ export function InvitationRow({
             type="button"
             variant="ghost"
             size="icon"
-            className="h-8 w-8"
+            className="h-8 w-8 text-muted-foreground"
             onClick={() => onResend(invitation.id)}
             disabled={isResending}
             title="Resend invitation email"
@@ -67,7 +70,7 @@ export function InvitationRow({
             type="button"
             variant="ghost"
             size="icon"
-            className="text-muted-foreground hover:text-destructive h-8 w-8"
+            className="h-8 w-8 text-muted-foreground hover:text-destructive"
             onClick={() => onCancel(invitation.id)}
             disabled={isCanceling}
             title="Cancel invitation"

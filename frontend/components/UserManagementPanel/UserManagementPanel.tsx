@@ -1,5 +1,11 @@
 "use client";
 
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { toast } from "sonner";
+
+import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/shared";
 import { WarningModal } from "@/components/WarningModal";
 import { useAuth } from "@/providers/AuthProvider";
 import {
@@ -11,10 +17,11 @@ import {
   removeMemberMutation,
   resendInvitationMutation,
 } from "@/queries/organization.queries";
-import type { BulkInvitationResult, OrganizationRole } from "@/types/organization";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
-import { toast } from "sonner";
+import type {
+  BulkInvitationResult,
+  OrganizationRole,
+} from "@/types/organization";
+
 import { InviteMemberDialog } from "./InviteMemberDialog";
 import { LoadingSkeleton } from "./LoadingSkeleton";
 import { MemberNotice } from "./MemberNotice";
@@ -31,7 +38,6 @@ export function UserManagementPanel({
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  // Dialog and form state
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [parsedEmails, setParsedEmails] = useState<string[]>([]);
@@ -45,7 +51,6 @@ export function UserManagementPanel({
     email: string;
   } | null>(null);
 
-  // Fetch members
   const {
     data: members = [],
     isPending: isMembersPending,
@@ -53,15 +58,11 @@ export function UserManagementPanel({
     error: membersError,
   } = useQuery(organizationMembersQuery(organizationId));
 
-  // Get current user's membership to check permissions
   const currentUserMembership = members.find((m) => m.user.id === user?.id);
-  // Note: "owner" is a legacy role that was converted to "admin" in migration 0018/0019
-  // We check for both to handle any remaining legacy data gracefully
   const isAdmin =
     currentUserMembership?.role === "admin" ||
     currentUserMembership?.role === "owner";
 
-  // Fetch invitations only if user is admin
   const {
     data: allInvitations = [],
     isPending: isInvitationsPending,
@@ -73,82 +74,64 @@ export function UserManagementPanel({
   });
 
   const showInvitationsPending = isAdmin && isInvitationsPending;
-
-  // Check if the error is a 403 (user is not an admin)
   const isForbiddenError =
     isInvitationsError &&
-    (invitationsError as Error & { response?: { status?: number } })?.response?.status === 403;
-
-  // Filter to pending invitations
+    (invitationsError as Error & { response?: { status?: number } })?.response
+      ?.status === 403;
   const invitations = allInvitations.filter((inv) => inv.status === "pending");
 
-  // Parse emails from text input
   const parseEmails = (text: string): string[] => {
     if (!text.trim()) return [];
-
-    // Split by comma, semicolon, newline, or multiple spaces
     const emails = text
       .split(/[,;\n\s]+/)
       .map((email) => email.trim())
       .filter((email) => email.length > 0);
-
-    // Remove duplicates
     return Array.from(new Set(emails));
   };
 
-  // Validate email format
   const isValidEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   };
 
-  // Handle email input change
   const handleEmailInputChange = (text: string) => {
     setInviteEmail(text);
     const emails = parseEmails(text);
-    // Only set parsed emails if all are valid
     const validEmails = emails.filter(isValidEmail);
     setParsedEmails(validEmails);
   };
 
-  // Remove individual email
   const removeEmail = (emailToRemove: string) => {
     const updatedEmails = parsedEmails.filter(
       (email) => email !== emailToRemove
     );
     setParsedEmails(updatedEmails);
-    // Update textarea
     setInviteEmail(updatedEmails.join(", "));
   };
 
-  // Mutations
   const bulkInvite = useMutation({
     ...bulkInviteMembersMutation(),
     onSuccess: (result) => {
       setBulkInviteResult(result);
 
-      // Show success message
       if (result.successful.length > 0) {
         toast.success(
           `Successfully invited ${result.successful.length} ${result.successful.length === 1 ? "member" : "members"}!`
         );
       }
 
-      // Show warnings for skipped
       if (result.skipped.length > 0) {
         toast.warning(
           `${result.skipped.length} ${result.skipped.length === 1 ? "email was" : "emails were"} skipped`
         );
       }
 
-      // Show errors
       if (result.errors.length > 0) {
         toast.error(
           `${result.errors.length} ${result.errors.length === 1 ? "invitation" : "invitations"} failed`
         );
       }
 
-      // If all successful, close dialog and reset
       if (result.errors.length === 0 && result.skipped.length === 0) {
         setTimeout(() => {
           setIsInviteDialogOpen(false);
@@ -159,7 +142,6 @@ export function UserManagementPanel({
         }, 1500);
       }
 
-      // Invalidate queries to refresh data
       queryClient.invalidateQueries({
         queryKey: organizationKeys.members(organizationId),
       });
@@ -167,7 +149,11 @@ export function UserManagementPanel({
         queryKey: organizationKeys.invitations(organizationId),
       });
     },
-    onError: (err: Error & { response?: { data?: { error?: string; message?: string } } }) => {
+    onError: (
+      err: Error & {
+        response?: { data?: { error?: string; message?: string } };
+      }
+    ) => {
       console.error("Failed to invite members:", err);
       toast.error(
         err.response?.data?.error ||
@@ -187,7 +173,11 @@ export function UserManagementPanel({
         queryKey: organizationKeys.members(organizationId),
       });
     },
-    onError: (err: Error & { response?: { data?: { error?: string; message?: string } } }) => {
+    onError: (
+      err: Error & {
+        response?: { data?: { error?: string; message?: string } };
+      }
+    ) => {
       console.error("Failed to remove member:", err);
       toast.error(
         err.response?.data?.error ||
@@ -205,13 +195,17 @@ export function UserManagementPanel({
         queryKey: organizationKeys.invitations(organizationId),
       });
     },
-    onError: (err: Error & { response?: { data?: { error?: string; message?: string } } }) => {
+    onError: (
+      err: Error & {
+        response?: { data?: { error?: string; message?: string } };
+      }
+    ) => {
       console.error("Failed to cancel invitation:", err);
-      const errorMessage =
+      toast.error(
         err.response?.data?.error ||
-        err.response?.data?.message ||
-        "Failed to cancel invitation.";
-      toast.error(errorMessage);
+          err.response?.data?.message ||
+          "Failed to cancel invitation."
+      );
     },
   });
 
@@ -220,13 +214,17 @@ export function UserManagementPanel({
     onSuccess: () => {
       toast.success("Invitation email resent successfully!");
     },
-    onError: (err: Error & { response?: { data?: { error?: string; message?: string } } }) => {
+    onError: (
+      err: Error & {
+        response?: { data?: { error?: string; message?: string } };
+      }
+    ) => {
       console.error("Failed to resend invitation:", err);
-      const errorMessage =
+      toast.error(
         err.response?.data?.error ||
-        err.response?.data?.message ||
-        "Failed to resend invitation.";
-      toast.error(errorMessage);
+          err.response?.data?.message ||
+          "Failed to resend invitation."
+      );
     },
   });
 
@@ -300,7 +298,6 @@ export function UserManagementPanel({
   const handleInviteDialogChange = (open: boolean) => {
     setIsInviteDialogOpen(open);
     if (!open) {
-      // Reset on close
       setInviteEmail("");
       setParsedEmails([]);
       setInviteRole("member");
@@ -309,22 +306,49 @@ export function UserManagementPanel({
   };
 
   if (isMembersPending || showInvitationsPending) {
-    return <LoadingSkeleton />;
+    return (
+      <div className="flex h-full flex-col gap-6 overflow-hidden p-page max-w-page mx-auto">
+        <PageHeader
+          title="Team"
+          description="Manage your team members and permissions"
+        />
+        <LoadingSkeleton />
+      </div>
+    );
   }
 
   if (isMembersError) {
     return (
-      <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
-        <p className="text-destructive text-sm">
-          {membersError?.message || "Failed to load team members"}
-        </p>
+      <div className="flex h-full flex-col gap-6 overflow-hidden p-page max-w-page mx-auto">
+        <PageHeader
+          title="Team"
+          description="Manage your team members and permissions"
+        />
+        <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+          <p className="text-sm text-destructive">
+            {membersError?.message || "Failed to load team members"}
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="flex h-full flex-col gap-6 overflow-hidden p-page max-w-page mx-auto">
+      <PageHeader
+        title="Team"
+        description="Manage your team members and permissions"
+        actions={
+          isAdmin && (
+            <Button onClick={() => setIsInviteDialogOpen(true)}>
+              Invite Member
+            </Button>
+          )
+        }
+      />
+
       {!isAdmin && <MemberNotice />}
+
       {isForbiddenError && (
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/20">
           <div className="flex items-start gap-3">
@@ -360,23 +384,24 @@ export function UserManagementPanel({
         membersCount={members.length}
         invitationsCount={invitations.length}
         isAdmin={isAdmin}
-        onInviteClick={() => setIsInviteDialogOpen(true)}
       />
 
-      <MembersTable
-        members={members}
-        invitations={invitations}
-        currentUserId={user?.id}
-        isAdmin={isAdmin}
-        isRemoving={removeMember.isPending}
-        isResending={resendInvitation.isPending}
-        isCanceling={cancelInvitation.isPending}
-        onRemoveMember={handleRemoveMember}
-        onCopyInvitationLink={handleCopyInvitationLink}
-        onResendInvitation={handleResendInvitation}
-        onCancelInvitation={handleCancelInvitation}
-        getRoleBadgeColor={getRoleBadgeColor}
-      />
+      <div className="flex-1 overflow-hidden">
+        <MembersTable
+          members={members}
+          invitations={invitations}
+          currentUserId={user?.id}
+          isAdmin={isAdmin}
+          isRemoving={removeMember.isPending}
+          isResending={resendInvitation.isPending}
+          isCanceling={cancelInvitation.isPending}
+          onRemoveMember={handleRemoveMember}
+          onCopyInvitationLink={handleCopyInvitationLink}
+          onResendInvitation={handleResendInvitation}
+          onCancelInvitation={handleCancelInvitation}
+          getRoleBadgeColor={getRoleBadgeColor}
+        />
+      </div>
 
       <InviteMemberDialog
         open={isInviteDialogOpen}
