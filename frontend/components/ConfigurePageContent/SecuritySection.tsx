@@ -1,25 +1,26 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useConfigure } from './ConfigureContext';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { 
-  Shield, 
-  Plus, 
-  X,
-  AlertTriangle,
-} from 'lucide-react';
-import { validateDomain } from '@/lib/utils/domain-validation';
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { validateDomain } from "@/lib/utils/domain-validation";
+import { AlertTriangle, Plus, Shield, X } from "lucide-react";
+import { useState } from "react";
+import { useConfigure } from "./ConfigureContext";
 
 export function SecuritySection() {
   const { embedConfig, updateEmbedConfig } = useConfigure();
   const security = embedConfig.security;
-  const [newDomain, setNewDomain] = useState('');
+  const [newDomain, setNewDomain] = useState("");
   const [domainError, setDomainError] = useState<string | null>(null);
 
   const handleRestrictToggle = (restrict: boolean) => {
@@ -33,17 +34,19 @@ export function SecuritySection() {
     setDomainError(null);
 
     if (!domain) {
-      setDomainError('Please enter a domain');
+      setDomainError("Please enter a domain");
       return;
     }
 
     if (!validateDomain(domain)) {
-      setDomainError('Please enter a valid domain (e.g., example.com, *.example.com, localhost:3000)');
+      setDomainError(
+        "Please enter a valid domain (e.g., example.com, *.example.com, localhost:3000)"
+      );
       return;
     }
 
     if (security.allowedDomains.includes(domain)) {
-      setDomainError('This domain is already in the list');
+      setDomainError("This domain is already in the list");
       return;
     }
 
@@ -53,7 +56,7 @@ export function SecuritySection() {
         allowedDomains: [...security.allowedDomains, domain],
       },
     });
-    setNewDomain('');
+    setNewDomain("");
   };
 
   const handleRemoveDomain = (domain: string) => {
@@ -66,14 +69,14 @@ export function SecuritySection() {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       e.preventDefault();
       handleAddDomain();
     }
   };
 
   return (
-    <Card>
+    <Card variant="elevated">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Shield className="h-5 w-5" />
@@ -87,7 +90,9 @@ export function SecuritySection() {
         {/* Restrict Toggle */}
         <div className="flex items-center justify-between">
           <div>
-            <Label className="text-sm font-medium">Restrict to allowed domains</Label>
+            <Label className="text-sm font-medium">
+              Restrict to allowed domains
+            </Label>
             <p className="text-xs text-muted-foreground">
               When enabled, the SDK will only work on the domains listed below
             </p>
@@ -105,8 +110,8 @@ export function SecuritySection() {
             <div className="text-xs">
               <p className="font-medium">Domain restrictions are disabled</p>
               <p className="mt-0.5">
-                Your SDK can be used on any domain. This is fine for development but 
-                consider enabling restrictions for production.
+                Your SDK can be used on any domain. This is fine for development
+                but consider enabling restrictions for production.
               </p>
             </div>
           </div>
@@ -125,7 +130,7 @@ export function SecuritySection() {
                 }}
                 onKeyDown={handleKeyDown}
                 placeholder="app.example.com or localhost:3000"
-                className={domainError ? 'border-destructive' : ''}
+                className={domainError ? "border-destructive" : ""}
               />
               {domainError && (
                 <p className="text-xs text-destructive mt-1">{domainError}</p>
@@ -141,7 +146,8 @@ export function SecuritySection() {
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
-            Use <code className="bg-muted px-1 rounded">*.example.com</code> to allow all subdomains
+            Use <code className="bg-muted px-1 rounded">*.example.com</code> to
+            allow all subdomains
           </p>
         </div>
 
@@ -175,9 +181,18 @@ export function SecuritySection() {
         <div className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground space-y-1">
           <p className="font-medium">Common entries:</p>
           <ul className="list-disc list-inside space-y-0.5">
-            <li><code className="bg-muted px-1 rounded">localhost:3000</code> - Local development</li>
-            <li><code className="bg-muted px-1 rounded">staging.yourapp.com</code> - Staging environment</li>
-            <li><code className="bg-muted px-1 rounded">app.yourapp.com</code> - Production app</li>
+            <li>
+              <code className="bg-muted px-1 rounded">localhost:3000</code> -
+              Local development
+            </li>
+            <li>
+              <code className="bg-muted px-1 rounded">staging.yourapp.com</code>{" "}
+              - Staging environment
+            </li>
+            <li>
+              <code className="bg-muted px-1 rounded">app.yourapp.com</code> -
+              Production app
+            </li>
           </ul>
         </div>
       </CardContent>

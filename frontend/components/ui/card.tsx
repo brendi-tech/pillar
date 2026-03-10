@@ -17,7 +17,7 @@ const cardVariants = cva(
       },
     },
     defaultVariants: {
-      variant: "default",
+      variant: "ghost",
     },
   }
 );
@@ -35,7 +35,7 @@ const cardHeaderVariants = cva(
       },
     },
     defaultVariants: {
-      variant: "default",
+      variant: "ghost",
     },
   }
 );
@@ -52,7 +52,7 @@ const cardTitleVariants = cva("leading-none font-medium", {
     },
   },
   defaultVariants: {
-    variant: "default",
+    variant: "ghost",
   },
 });
 
@@ -67,7 +67,7 @@ const cardDescriptionVariants = cva("pt-1 text-xs", {
     },
   },
   defaultVariants: {
-    variant: "default",
+    variant: "ghost",
   },
 });
 
@@ -82,7 +82,7 @@ const cardContentVariants = cva("p-4 h-full", {
     },
   },
   defaultVariants: {
-    variant: "default",
+    variant: "ghost",
   },
 });
 
@@ -97,21 +97,21 @@ const cardFooterVariants = cva("flex items-center px-4 [.border-t]:pt-4", {
     },
   },
   defaultVariants: {
-    variant: "default",
+    variant: "ghost",
   },
 });
 
 type CardVariant = "default" | "flat" | "ghost" | "outline" | "elevated";
 
-const CardVariantContext = React.createContext<CardVariant>("default");
+const CardVariantContext = React.createContext<CardVariant>("ghost");
 
 function Card({
   className,
-  variant = "default",
+  variant = "ghost",
   ...props
 }: React.ComponentProps<"div"> & VariantProps<typeof cardVariants>) {
   return (
-    <CardVariantContext.Provider value={variant ?? "default"}>
+    <CardVariantContext.Provider value={variant ?? "ghost"}>
       <div
         data-slot="card"
         className={cn(cardVariants({ variant }), className)}

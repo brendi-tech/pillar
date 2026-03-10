@@ -1,18 +1,38 @@
-'use client';
+"use client";
 
-import { useConfigure } from './ConfigureContext';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
-import { Separator } from '@/components/ui/separator';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, X, Sparkles, Globe, FolderOpen, Pencil, Check } from 'lucide-react';
-import { LANGUAGE_OPTIONS, type LanguageCode } from '@/types/v2/products';
-import type { SuggestedQuestionConfig } from '@/types/config';
-import { useState, useMemo } from 'react';
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+import type { SuggestedQuestionConfig } from "@/types/config";
+import { LANGUAGE_OPTIONS, type LanguageCode } from "@/types/v2/products";
+import {
+  Check,
+  FolderOpen,
+  Globe,
+  Pencil,
+  Plus,
+  Sparkles,
+  X,
+} from "lucide-react";
+import { useMemo, useState } from "react";
+import { useConfigure } from "./ConfigureContext";
 
 interface QuestionGroup {
   pathPattern: string | undefined;
@@ -20,18 +40,25 @@ interface QuestionGroup {
 }
 
 export function AIAssistantSection() {
-  const { aiConfig, updateAIConfig, defaultLanguage, updateDefaultLanguage, agentGuidance, updateAgentGuidance } = useConfigure();
+  const {
+    aiConfig,
+    updateAIConfig,
+    defaultLanguage,
+    updateDefaultLanguage,
+    agentGuidance,
+    updateAgentGuidance,
+  } = useConfigure();
   const [editingPath, setEditingPath] = useState<string | null>(null);
-  const [editingPathValue, setEditingPathValue] = useState('');
-  const [newPathInput, setNewPathInput] = useState('');
+  const [editingPathValue, setEditingPathValue] = useState("");
+  const [newPathInput, setNewPathInput] = useState("");
   const [showNewPathInput, setShowNewPathInput] = useState(false);
 
-  const handleToggle = (key: 'enabled' | 'openOnLoad') => {
+  const handleToggle = (key: "enabled" | "openOnLoad") => {
     updateAIConfig({ [key]: !aiConfig[key] });
   };
 
   const handleChange = (
-    key: 'assistantName' | 'welcomeMessage' | 'inputPlaceholder',
+    key: "assistantName" | "welcomeMessage" | "inputPlaceholder",
     value: string
   ) => {
     updateAIConfig({ [key]: value });
@@ -40,15 +67,18 @@ export function AIAssistantSection() {
   // Group questions by pathPattern
   const questionGroups = useMemo((): QuestionGroup[] => {
     const groups = new Map<string, QuestionGroup>();
-    
+
     aiConfig.suggestedQuestions.forEach((q, index) => {
-      const pathPattern = typeof q === 'string' ? undefined : q.pathPattern;
-      const key = pathPattern || '__all__';
-      
+      const pathPattern = typeof q === "string" ? undefined : q.pathPattern;
+      const key = pathPattern || "__all__";
+
       if (!groups.has(key)) {
         groups.set(key, { pathPattern, questions: [] });
       }
-      groups.get(key)!.questions.push({ question: typeof q === 'string' ? { text: q } : q, originalIndex: index });
+      groups.get(key)!.questions.push({
+        question: typeof q === "string" ? { text: q } : q,
+        originalIndex: index,
+      });
     });
 
     // Sort: "All pages" first, then alphabetically by path
@@ -63,37 +93,54 @@ export function AIAssistantSection() {
 
   const handleAddQuestionToGroup = (pathPattern: string | undefined) => {
     updateAIConfig({
-      suggestedQuestions: [...aiConfig.suggestedQuestions, { text: '', pathPattern }],
+      suggestedQuestions: [
+        ...aiConfig.suggestedQuestions,
+        { text: "", pathPattern },
+      ],
     });
   };
 
   const handleAddNewPathGroup = () => {
     if (!newPathInput.trim()) return;
     updateAIConfig({
-      suggestedQuestions: [...aiConfig.suggestedQuestions, { text: '', pathPattern: newPathInput.trim() }],
+      suggestedQuestions: [
+        ...aiConfig.suggestedQuestions,
+        { text: "", pathPattern: newPathInput.trim() },
+      ],
     });
-    setNewPathInput('');
+    setNewPathInput("");
     setShowNewPathInput(false);
   };
 
   const handleUpdateQuestionText = (index: number, text: string) => {
     const newQuestions = [...aiConfig.suggestedQuestions];
     const existing = newQuestions[index];
-    newQuestions[index] = { ...(typeof existing === 'string' ? { text: existing } : existing), text };
+    newQuestions[index] = {
+      ...(typeof existing === "string" ? { text: existing } : existing),
+      text,
+    };
     updateAIConfig({ suggestedQuestions: newQuestions });
   };
 
   const handleRemoveQuestion = (index: number) => {
     updateAIConfig({
-      suggestedQuestions: aiConfig.suggestedQuestions.filter((_, i) => i !== index),
+      suggestedQuestions: aiConfig.suggestedQuestions.filter(
+        (_, i) => i !== index
+      ),
     });
   };
 
-  const handleUpdateGroupPath = (oldPath: string | undefined, newPath: string) => {
+  const handleUpdateGroupPath = (
+    oldPath: string | undefined,
+    newPath: string
+  ) => {
     const newQuestions = aiConfig.suggestedQuestions.map((q) => {
-      const currentPath = typeof q === 'string' ? undefined : q.pathPattern;
+      const currentPath = typeof q === "string" ? undefined : q.pathPattern;
       if (currentPath === oldPath) {
-        return { ...(typeof q === 'string' ? { text: q } : q), pathPattern: newPath || undefined };
+        return {
+          ...(typeof q === "string" ? { text: q } : q),
+          pathPattern: newPath || undefined,
+        };
       }
       return q;
     });
@@ -104,19 +151,19 @@ export function AIAssistantSection() {
   const handleRemoveGroup = (pathPattern: string | undefined) => {
     updateAIConfig({
       suggestedQuestions: aiConfig.suggestedQuestions.filter((q) => {
-        const currentPath = typeof q === 'string' ? undefined : q.pathPattern;
+        const currentPath = typeof q === "string" ? undefined : q.pathPattern;
         return currentPath !== pathPattern;
       }),
     });
   };
 
   const startEditingPath = (pathPattern: string | undefined) => {
-    setEditingPath(pathPattern ?? '__all__');
-    setEditingPathValue(pathPattern || '');
+    setEditingPath(pathPattern ?? "__all__");
+    setEditingPathValue(pathPattern || "");
   };
 
   return (
-    <Card id="ai">
+    <Card id="ai" variant="elevated">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
@@ -130,7 +177,7 @@ export function AIAssistantSection() {
           </div>
           <Switch
             checked={aiConfig.enabled}
-            onCheckedChange={() => handleToggle('enabled')}
+            onCheckedChange={() => handleToggle("enabled")}
           />
         </div>
       </CardHeader>
@@ -143,7 +190,7 @@ export function AIAssistantSection() {
             <Input
               id="ai-name"
               value={aiConfig.assistantName}
-              onChange={(e) => handleChange('assistantName', e.target.value)}
+              onChange={(e) => handleChange("assistantName", e.target.value)}
               placeholder="Assistant"
             />
             <p className="text-xs text-muted-foreground">
@@ -157,7 +204,7 @@ export function AIAssistantSection() {
             <Textarea
               id="ai-welcome"
               value={aiConfig.welcomeMessage}
-              onChange={(e) => handleChange('welcomeMessage', e.target.value)}
+              onChange={(e) => handleChange("welcomeMessage", e.target.value)}
               placeholder="Hi! I'm here to help you find answers. Ask me anything!"
               rows={3}
             />
@@ -169,7 +216,7 @@ export function AIAssistantSection() {
             <Input
               id="ai-placeholder"
               value={aiConfig.inputPlaceholder}
-              onChange={(e) => handleChange('inputPlaceholder', e.target.value)}
+              onChange={(e) => handleChange("inputPlaceholder", e.target.value)}
               placeholder="Ask anything..."
             />
           </div>
@@ -182,13 +229,14 @@ export function AIAssistantSection() {
               <div>
                 <Label>Suggested Questions</Label>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Organize questions by page path. Questions without a path show on all pages.
+                  Organize questions by page path. Questions without a path show
+                  on all pages.
                 </p>
               </div>
-              <Button 
-                type="button" 
-                variant="outline" 
-                size="sm" 
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
                 onClick={() => setShowNewPathInput(true)}
               >
                 <Plus className="h-4 w-4" />
@@ -207,23 +255,23 @@ export function AIAssistantSection() {
                   className="flex-1 h-8"
                   autoFocus
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleAddNewPathGroup();
-                    if (e.key === 'Escape') {
+                    if (e.key === "Enter") handleAddNewPathGroup();
+                    if (e.key === "Escape") {
                       setShowNewPathInput(false);
-                      setNewPathInput('');
+                      setNewPathInput("");
                     }
                   }}
                 />
                 <Button type="button" size="sm" onClick={handleAddNewPathGroup}>
                   <Check className="h-4 w-4" />
                 </Button>
-                <Button 
-                  type="button" 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
                   onClick={() => {
                     setShowNewPathInput(false);
-                    setNewPathInput('');
+                    setNewPathInput("");
                   }}
                 >
                   <X className="h-4 w-4" />
@@ -233,21 +281,23 @@ export function AIAssistantSection() {
 
             {questionGroups.length === 0 && !showNewPathInput ? (
               <div className="text-center py-8 border rounded-lg border-dashed">
-                <p className="text-sm text-muted-foreground mb-3">No suggested questions added.</p>
+                <p className="text-sm text-muted-foreground mb-3">
+                  No suggested questions added.
+                </p>
                 <div className="flex items-center justify-center gap-2">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
                     onClick={() => handleAddQuestionToGroup(undefined)}
                   >
                     <Plus className="h-4 w-4" />
                     Add for All Pages
                   </Button>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
                     onClick={() => setShowNewPathInput(true)}
                   >
                     <FolderOpen className="h-4 w-4" />
@@ -258,29 +308,38 @@ export function AIAssistantSection() {
             ) : (
               <div className="space-y-4">
                 {questionGroups.map((group) => {
-                  const groupKey = group.pathPattern ?? '__all__';
+                  const groupKey = group.pathPattern ?? "__all__";
                   const isEditing = editingPath === groupKey;
-                  
+
                   return (
-                    <div key={groupKey} className="rounded-lg border overflow-hidden">
+                    <div
+                      key={groupKey}
+                      className="rounded-lg border overflow-hidden"
+                    >
                       {/* Group Header */}
                       <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 border-b">
                         <FolderOpen className="h-4 w-4 text-muted-foreground shrink-0" />
                         {isEditing ? (
                           <Input
                             value={editingPathValue}
-                            onChange={(e) => setEditingPathValue(e.target.value)}
+                            onChange={(e) =>
+                              setEditingPathValue(e.target.value)
+                            }
                             placeholder="Path pattern (empty for all pages)"
                             className="flex-1 h-7 text-sm"
                             autoFocus
                             onKeyDown={(e) => {
-                              if (e.key === 'Enter') handleUpdateGroupPath(group.pathPattern, editingPathValue);
-                              if (e.key === 'Escape') setEditingPath(null);
+                              if (e.key === "Enter")
+                                handleUpdateGroupPath(
+                                  group.pathPattern,
+                                  editingPathValue
+                                );
+                              if (e.key === "Escape") setEditingPath(null);
                             }}
                           />
                         ) : (
                           <span className="flex-1 text-sm font-medium">
-                            {group.pathPattern || 'All pages'}
+                            {group.pathPattern || "All pages"}
                           </span>
                         )}
                         {isEditing ? (
@@ -290,7 +349,12 @@ export function AIAssistantSection() {
                               variant="ghost"
                               size="sm"
                               className="h-7 w-7 p-0"
-                              onClick={() => handleUpdateGroupPath(group.pathPattern, editingPathValue)}
+                              onClick={() =>
+                                handleUpdateGroupPath(
+                                  group.pathPattern,
+                                  editingPathValue
+                                )
+                              }
                             >
                               <Check className="h-3.5 w-3.5" />
                             </Button>
@@ -311,7 +375,9 @@ export function AIAssistantSection() {
                               variant="ghost"
                               size="sm"
                               className="h-7 w-7 p-0"
-                              onClick={() => startEditingPath(group.pathPattern)}
+                              onClick={() =>
+                                startEditingPath(group.pathPattern)
+                              }
                             >
                               <Pencil className="h-3.5 w-3.5" />
                             </Button>
@@ -320,7 +386,9 @@ export function AIAssistantSection() {
                               variant="ghost"
                               size="sm"
                               className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-                              onClick={() => handleRemoveGroup(group.pathPattern)}
+                              onClick={() =>
+                                handleRemoveGroup(group.pathPattern)
+                              }
                             >
                               <X className="h-3.5 w-3.5" />
                             </Button>
@@ -330,36 +398,50 @@ export function AIAssistantSection() {
 
                       {/* Questions in Group */}
                       <div className="p-2 space-y-2">
-                        {group.questions.map(({ question, originalIndex }, qIndex) => (
-                          <div key={originalIndex} className="flex items-center gap-2">
-                            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-medium text-muted-foreground">
-                              {qIndex + 1}
-                            </span>
-                            <Input
-                              value={question.text}
-                              onChange={(e) => handleUpdateQuestionText(originalIndex, e.target.value)}
-                              placeholder="Enter a suggested question..."
-                              className="flex-1 h-8 text-sm"
-                            />
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                              onClick={() => handleRemoveQuestion(originalIndex)}
+                        {group.questions.map(
+                          ({ question, originalIndex }, qIndex) => (
+                            <div
+                              key={originalIndex}
+                              className="flex items-center gap-2"
                             >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ))}
-                        
+                              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-medium text-muted-foreground">
+                                {qIndex + 1}
+                              </span>
+                              <Input
+                                value={question.text}
+                                onChange={(e) =>
+                                  handleUpdateQuestionText(
+                                    originalIndex,
+                                    e.target.value
+                                  )
+                                }
+                                placeholder="Enter a suggested question..."
+                                className="flex-1 h-8 text-sm"
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                onClick={() =>
+                                  handleRemoveQuestion(originalIndex)
+                                }
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          )
+                        )}
+
                         {/* Add Question to Group Button */}
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
                           className="w-full h-8 text-muted-foreground hover:text-foreground border border-dashed"
-                          onClick={() => handleAddQuestionToGroup(group.pathPattern)}
+                          onClick={() =>
+                            handleAddQuestionToGroup(group.pathPattern)
+                          }
                         >
                           <Plus className="h-3.5 w-3.5 mr-1" />
                           Add question
@@ -377,7 +459,7 @@ export function AIAssistantSection() {
           {/* Behavior */}
           <div className="space-y-3">
             <Label>Behavior</Label>
-            
+
             {/* Default AI Language */}
             <div className="space-y-2">
               <Label htmlFor="ai-language" className="flex items-center gap-2">
@@ -386,7 +468,9 @@ export function AIAssistantSection() {
               </Label>
               <Select
                 value={defaultLanguage}
-                onValueChange={(value) => updateDefaultLanguage(value as LanguageCode)}
+                onValueChange={(value) =>
+                  updateDefaultLanguage(value as LanguageCode)
+                }
               >
                 <SelectTrigger id="ai-language" className="w-full">
                   <SelectValue placeholder="Select language" />
@@ -400,18 +484,21 @@ export function AIAssistantSection() {
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
-                Language the AI will use to respond. &quot;Auto-detect&quot; uses the user&apos;s browser language.
+                Language the AI will use to respond. &quot;Auto-detect&quot;
+                uses the user&apos;s browser language.
               </p>
             </div>
-            
+
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
                 checked={aiConfig.openOnLoad}
-                onChange={() => handleToggle('openOnLoad')}
+                onChange={() => handleToggle("openOnLoad")}
                 className="rounded border-border"
               />
-              <span className="text-sm">Open assistant by default on page load</span>
+              <span className="text-sm">
+                Open assistant by default on page load
+              </span>
             </label>
           </div>
 
@@ -433,7 +520,10 @@ Example:
               rows={6}
             />
             <p className="text-xs text-muted-foreground">
-              Custom instructions injected into the agent&apos;s prompt. Use this for product-specific tips like &quot;prefer API actions over navigation&quot; or &quot;always verify dataset schema before creating charts.&quot;
+              Custom instructions injected into the agent&apos;s prompt. Use
+              this for product-specific tips like &quot;prefer API actions over
+              navigation&quot; or &quot;always verify dataset schema before
+              creating charts.&quot;
             </p>
           </div>
         </CardContent>

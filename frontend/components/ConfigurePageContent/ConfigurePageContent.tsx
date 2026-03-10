@@ -6,6 +6,7 @@ import type { AIConfig, EmbedConfig } from "@/types/config";
 import type { LanguageCode } from "@/types/v2/products";
 import { Save, Undo2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Separator } from "../ui/separator";
 import { AIAssistantSection } from "./AIAssistantSection";
 import { ConfigureProvider, useConfigure } from "./ConfigureContext";
 import { SecuritySection } from "./SecuritySection";
@@ -101,7 +102,7 @@ function ConfigureContent({
     <div className="space-y-6">
       {/* AI Assistant */}
       <AIAssistantSection />
-
+      <Separator className="mb-4" />
       {/* Security / Domains */}
       <SecuritySection />
 
