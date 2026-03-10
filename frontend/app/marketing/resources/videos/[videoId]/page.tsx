@@ -10,6 +10,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+export const dynamic = "force-dynamic";
+
 interface PageProps {
   params: Promise<{ videoId: string }>;
 }
@@ -64,17 +66,6 @@ export async function generateMetadata({
     };
   } catch {
     return {};
-  }
-}
-
-export async function generateStaticParams() {
-  try {
-    const videos = await fetchYouTubeVideos();
-    return videos.map((video) => ({
-      videoId: getVideoSlug(video),
-    }));
-  } catch {
-    return [];
   }
 }
 
