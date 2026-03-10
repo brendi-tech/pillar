@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { apiClient } from "@/lib/admin/api-client";
-import { Mail, ArrowLeft } from "lucide-react";
+import { ArrowLeft, Mail } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
@@ -54,7 +54,7 @@ export function ForgotPasswordForm() {
           </p>
         </div>
 
-        <Card className="border-2">
+        <Card>
           <CardHeader>
             <CardTitle>
               {isSubmitted ? "Email Sent" : "Reset Password"}

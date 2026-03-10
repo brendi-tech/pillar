@@ -6,11 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useRedirectToReturnPath, useReturnToValue } from "@/hooks";
 import { Spinner } from "@/components/ui/spinner";
+import { useRedirectToReturnPath, useReturnToValue } from "@/hooks";
 import { useAuth } from "@/providers/AuthProvider";
-import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
@@ -162,7 +162,7 @@ export function SignupForm({ requireInviteCode = false }: SignupFormProps) {
         </div>
 
         {/* Signup Card */}
-        <Card className="border-2">
+        <Card>
           <CardHeader>
             <CardTitle>Get Started</CardTitle>
           </CardHeader>

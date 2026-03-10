@@ -6,11 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useRedirectToReturnPath, useReturnToValue } from "@/hooks";
 import { Spinner } from "@/components/ui/spinner";
+import { useRedirectToReturnPath, useReturnToValue } from "@/hooks";
 import { useAuth } from "@/providers/AuthProvider";
-import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 export function LoginForm() {
@@ -86,7 +86,7 @@ export function LoginForm() {
         </div>
 
         {/* Login Card */}
-        <Card className="border-2">
+        <Card>
           <CardHeader>
             <CardTitle>Sign In</CardTitle>
           </CardHeader>
@@ -134,7 +134,10 @@ export function LoginForm() {
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="password" className="block text-sm font-medium">
+                  <Label
+                    htmlFor="password"
+                    className="block text-sm font-medium"
+                  >
                     Password
                   </Label>
                   <Link
