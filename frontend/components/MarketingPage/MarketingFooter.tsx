@@ -45,6 +45,12 @@ export function MarketingFooter() {
               Contact Us
             </Link>
             <Link
+              href="/jobs"
+              className="hover:text-[#6B6B6B] transition-colors"
+            >
+              Jobs
+            </Link>
+            <Link
               href="/privacy"
               className="hover:text-[#6B6B6B] transition-colors"
             >

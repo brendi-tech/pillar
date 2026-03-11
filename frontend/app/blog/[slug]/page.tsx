@@ -134,7 +134,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
         </div>
       </div>
 
-      <div className="prose dark:prose-invert max-w-none prose-headings:font-serif prose-headings:tracking-tight prose-a:text-primary hover:prose-a:underline">
+      <div className="prose dark:prose-invert max-w-none prose-headings:font-serif prose-headings:tracking-tight prose-a:text-primary hover:prose-a:underline [&_code::before]:content-none [&_code::after]:content-none">
         <MarkdownRenderer content={post.content} />
       </div>
 

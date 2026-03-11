@@ -31,7 +31,7 @@ export default function BlogIndexPage() {
 
       <div className="divide-y divide-border">
         {posts.map((post) => (
-          <article key={post.slug} className="group relative flex flex-col gap-2 py-10 first:pt-0 last:pb-0">
+          <article key={post.slug} className="group relative flex flex-col gap-2 py-10 first:pt-0 last:pb-0 cursor-pointer">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <time dateTime={post.frontmatter.date}>
                 {format(parseISO(post.frontmatter.date), 'MMMM d, yyyy')}
@@ -44,8 +44,8 @@ export default function BlogIndexPage() {
               )}
             </div>
             
-            <Link href={`/blog/${post.slug}`} className="block group-hover:opacity-80 transition-opacity">
-              <h2 className="text-2xl font-bold text-foreground font-serif">
+            <Link href={`/blog/${post.slug}`} className="after:absolute after:inset-0">
+              <h2 className="text-2xl font-bold text-foreground font-serif group-hover:text-primary transition-colors">
                 {post.frontmatter.title}
               </h2>
             </Link>
@@ -56,14 +56,9 @@ export default function BlogIndexPage() {
               </p>
             )}
 
-            <div className="mt-2">
-              <Link 
-                href={`/blog/${post.slug}`}
-                className="text-sm font-medium text-primary hover:underline underline-offset-4"
-              >
-                Read more →
-              </Link>
-            </div>
+            <span className="mt-2 text-sm font-medium text-primary group-hover:underline underline-offset-4">
+              Read more →
+            </span>
           </article>
         ))}
 

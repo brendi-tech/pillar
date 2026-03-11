@@ -2,9 +2,9 @@
 
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import rehypeHighlight from 'rehype-highlight';
 import rehypeSlug from 'rehype-slug';
 import { cn, generateSlug } from '@/lib/utils';
+import { SyntaxHighlightedPre } from '@/components/mdx/SyntaxHighlightedPre';
 
 function getYouTubeVideoId(url: string): string | null {
   const match = url.match(
@@ -34,7 +34,7 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
     <div className={cn(className)}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeHighlight, rehypeSlug]}
+        rehypePlugins={[rehypeSlug]}
         components={{
         h1: ({ children, ...props }) => {
           const id = typeof children === 'string' ? generateSlug(children) : undefined;
@@ -108,12 +108,9 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
           );
         },
         pre: ({ children, ...props }) => (
-          <pre
-            className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto"
-            {...props}
-          >
+          <SyntaxHighlightedPre {...props}>
             {children}
-          </pre>
+          </SyntaxHighlightedPre>
         ),
         img: ({ src, alt, ...props }) => (
           // eslint-disable-next-line @next/next/no-img-element
