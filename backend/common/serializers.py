@@ -54,3 +54,19 @@ class TokenRefreshResponseSerializer(serializers.Serializer):
     """JWT token refresh response."""
     access = serializers.CharField(help_text="New JWT access token")
     refresh = serializers.CharField(required=False, help_text="New JWT refresh token (if rotation enabled)")
+
+
+class ContactSubmissionSerializer(serializers.Serializer):
+    """Validate inbound marketing contact form submissions."""
+
+    name = serializers.CharField(max_length=120)
+    email = serializers.EmailField(max_length=254)
+    company = serializers.CharField(max_length=160)
+    message = serializers.CharField(max_length=5000)
+    source_path = serializers.CharField(max_length=500, required=False, allow_blank=True)
+
+    def validate_source_path(self, value: str) -> str:
+        """Ensure stored source paths stay internal and normalized."""
+        if value and not value.startswith('/'):
+            raise serializers.ValidationError("Source path must start with '/'.")
+        return value

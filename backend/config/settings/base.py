@@ -490,6 +490,7 @@ EMAIL_HOST_USER = os.environ.get('SENDGRID_SMTP_USERNAME', 'apikey')
 EMAIL_HOST_PASSWORD = os.environ.get('SENDGRID_SMTP_PASSWORD', os.environ.get('SENDGRID_API_KEY', ''))
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@m.pillar.bot')
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
+CONTACT_FORM_TO_EMAIL = os.environ.get('CONTACT_FORM_TO_EMAIL', 'founders@trypillar.com')
 
 # ==============================================================================
 # HELP CENTER PUBLIC API CONFIGURATION (Phase 5)

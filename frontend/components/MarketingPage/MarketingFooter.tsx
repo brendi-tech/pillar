@@ -39,6 +39,12 @@ export function MarketingFooter() {
               Pricing
             </Link>
             <Link
+              href="/contact"
+              className="hover:text-[#6B6B6B] transition-colors"
+            >
+              Contact Us
+            </Link>
+            <Link
               href="/privacy"
               className="hover:text-[#6B6B6B] transition-colors"
             >

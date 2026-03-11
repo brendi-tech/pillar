@@ -510,3 +510,83 @@ def notify_agent_score_complete(
             )
         except Exception:
             return False
+
+
+def notify_contact_submission(
+    *,
+    name: str,
+    email: str,
+    company: str,
+    message: str,
+    source_path: str = "",
+    ip_address: str = "",
+) -> bool:
+    """
+    Send a notification when someone submits the public contact form.
+
+    Args:
+        name: Submitter name
+        email: Submitter email
+        company: Submitter company
+        message: Contact message body
+        source_path: Origin path on the marketing site
+        ip_address: Submitter IP address when available
+
+    Returns:
+        True if notification was sent successfully, False otherwise
+    """
+    try:
+        text = f"📬 New contact submission from {name} ({company})"
+
+        blocks = [
+            {
+                "type": "header",
+                "text": {
+                    "type": "plain_text",
+                    "text": "📬 New Contact Submission",
+                    "emoji": True,
+                },
+            },
+            {
+                "type": "section",
+                "fields": [
+                    {"type": "mrkdwn", "text": f"*Name:*\n{name}"},
+                    {"type": "mrkdwn", "text": f"*Email:*\n{email}"},
+                    {"type": "mrkdwn", "text": f"*Company:*\n{company}"},
+                    {
+                        "type": "mrkdwn",
+                        "text": f"*Source:*\n{source_path or '/contact'}",
+                    },
+                ],
+            },
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"*Message:*\n>{message}",
+                },
+            },
+        ]
+
+        context_parts = [datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')]
+        if ip_address:
+            context_parts.append(f"IP: {ip_address}")
+
+        blocks.append({
+            "type": "context",
+            "elements": [
+                {
+                    "type": "mrkdwn",
+                    "text": " | ".join(context_parts),
+                }
+            ],
+        })
+
+        return send_message(text, blocks)
+
+    except Exception as e:
+        logger.error(f"Error building contact submission notification: {e}", exc_info=True)
+        try:
+            return send_message(f"New contact submission from {name} <{email}>")
+        except Exception:
+            return False

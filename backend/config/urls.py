@@ -30,7 +30,7 @@ from apps.users.views import (
     oauth_callback,
     select_organization,
 )
-from common.views import early_access_form
+from common.views import contact_form, early_access_form
 
 # Import webhook views
 from apps.knowledge.views import firecrawl_webhook_view
@@ -125,6 +125,7 @@ urlpatterns = [
 
     # Public endpoints (no auth required)
     path('api/public/early-access/', early_access_form, name='public-early-access'),
+    path('api/public/contact/', contact_form, name='public-contact'),
 
     # Agent Score (public free tool — no auth)
     path('api/public/agent-score/', include('apps.agent_score.urls')),
