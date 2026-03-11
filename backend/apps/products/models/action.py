@@ -232,7 +232,7 @@ class Action(TenantAwareModel):
         # NO db_table - Django creates 'products_action'
         verbose_name = 'Action'
         verbose_name_plural = 'Actions'
-        unique_together = [['organization', 'name']]
+        unique_together = [['product', 'name']]
         ordering = ['-created_at']
         indexes = [
             models.Index(fields=['organization', 'status']),

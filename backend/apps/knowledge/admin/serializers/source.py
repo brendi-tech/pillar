@@ -222,17 +222,22 @@ class KnowledgeSourceCreateSerializer(serializers.ModelSerializer):
             })
 
         # Get product from request (required for proper gating)
-        product_id = request.query_params.get('product') or request.data.get('product')
-        if not product_id:
+        import uuid as _uuid
+        product_param = request.query_params.get('product') or request.data.get('product')
+        if not product_param:
             raise serializers.ValidationError({
                 'product': 'Product ID is required.'
             })
         try:
-            product = Product.objects.get(id=product_id, organization=organization)
-        except Product.DoesNotExist:
-            raise serializers.ValidationError({
-                'product': 'Invalid product ID or product does not belong to your organization.'
-            })
+            _uuid.UUID(str(product_param))
+            product = Product.objects.get(id=product_param, organization=organization)
+        except (ValueError, Product.DoesNotExist):
+            try:
+                product = Product.objects.get(subdomain=product_param, organization=organization)
+            except Product.DoesNotExist:
+                raise serializers.ValidationError({
+                    'product': 'Invalid product or product does not belong to your organization.'
+                })
 
         # Extract pending_upload_ids before creating source
         pending_upload_ids = validated_data.pop('pending_upload_ids', [])

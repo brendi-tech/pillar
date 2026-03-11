@@ -28,7 +28,7 @@ jobs:
           PILLAR_SLUG: ${{ secrets.PILLAR_SLUG }}
           PILLAR_SECRET: ${{ secrets.PILLAR_SECRET }}
           GIT_SHA: ${{ github.sha }}
-        run: npx pillar-sync --scan ./src
+        run: npx pillar-cli sync --scan ./src
 
       - name: Deploy
         run: npm run deploy

@@ -10,7 +10,7 @@ export PILLAR_SLUG="${PILLAR_SLUG}"
 export PILLAR_SECRET="${PILLAR_SECRET}"
 export GIT_SHA="${CI_COMMIT_SHA:-$(git rev-parse HEAD)}"
 
-npx pillar-sync --scan ./src
+npx pillar-cli sync --scan ./src
 
 # Deploy your app
 npm run deploy

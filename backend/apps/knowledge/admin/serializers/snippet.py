@@ -86,19 +86,23 @@ class SnippetCreateSerializer(serializers.Serializer):
         organization = request.user.primary_organization
 
         # Get product from request (required for proper gating)
-        product_id = request.query_params.get('product') or request.data.get('product')
-        if not product_id:
-            from rest_framework import serializers as drf_serializers
+        import uuid as _uuid
+        from rest_framework import serializers as drf_serializers
+        product_param = request.query_params.get('product') or request.data.get('product')
+        if not product_param:
             raise drf_serializers.ValidationError({
                 'product': 'Product ID is required.'
             })
         try:
-            product = Product.objects.get(id=product_id, organization=organization)
-        except Product.DoesNotExist:
-            from rest_framework import serializers as drf_serializers
-            raise drf_serializers.ValidationError({
-                'product': 'Invalid product ID or product does not belong to your organization.'
-            })
+            _uuid.UUID(str(product_param))
+            product = Product.objects.get(id=product_param, organization=organization)
+        except (ValueError, Product.DoesNotExist):
+            try:
+                product = Product.objects.get(subdomain=product_param, organization=organization)
+            except Product.DoesNotExist:
+                raise drf_serializers.ValidationError({
+                    'product': 'Invalid product or product does not belong to your organization.'
+                })
 
         # Get or create the snippets source for this organization and product
         snippets_source, _ = KnowledgeSource.objects.get_or_create(

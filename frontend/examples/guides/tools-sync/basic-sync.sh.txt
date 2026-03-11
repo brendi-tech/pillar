@@ -3,4 +3,4 @@ export PILLAR_SLUG="your-help-center-slug"
 export PILLAR_SECRET="your-secret-token"
 
 # Scan and sync your actions
-npx pillar-sync --scan ./src
+npx pillar-cli sync --scan ./src

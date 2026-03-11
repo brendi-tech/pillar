@@ -1,1 +1,1 @@
-PILLAR_SLUG=your-product-slug PILLAR_SECRET=your-secret-token npx pillar-sync --scan ./src
+PILLAR_SLUG=your-product-slug PILLAR_SECRET=your-secret-token npx pillar-cli sync --scan ./src

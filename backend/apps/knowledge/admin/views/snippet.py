@@ -8,6 +8,8 @@ from rest_framework.permissions import IsAuthenticated
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
 from apps.knowledge.models import KnowledgeItem, KnowledgeSource
+from apps.products.models import Product
+from apps.knowledge.admin.views.mixins import ProductResolveMixin
 from apps.knowledge.admin.serializers import (
     SnippetSerializer,
     SnippetCreateSerializer,
@@ -24,7 +26,7 @@ logger = logging.getLogger(__name__)
     partial_update=extend_schema(summary="Update snippet"),
     destroy=extend_schema(summary="Delete snippet"),
 )
-class SnippetViewSet(viewsets.ModelViewSet):
+class SnippetViewSet(ProductResolveMixin, viewsets.ModelViewSet):
     """
     ViewSet for managing snippets (custom AI instructions).
 
@@ -37,17 +39,24 @@ class SnippetViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Filter to snippets in user's organizations and product."""
-        # Product is required for proper gating
-        product_id = self.request.query_params.get('product')
-        if not product_id:
+        user_orgs = self.request.user.organizations.all()
+        product_param = self.request.query_params.get('product')
+
+        if product_param:
+            product = self._resolve_product()
+            queryset = KnowledgeItem.objects.filter(
+                organization__in=user_orgs,
+                item_type=KnowledgeItem.ItemType.SNIPPET,
+                product=product,
+            )
+        elif self.action in ('list', 'create'):
             from rest_framework.exceptions import ValidationError
             raise ValidationError({'product': 'Product ID is required.'})
-
-        queryset = KnowledgeItem.objects.filter(
-            organization__in=self.request.user.organizations.all(),
-            item_type=KnowledgeItem.ItemType.SNIPPET,
-            product_id=product_id
-        )
+        else:
+            queryset = KnowledgeItem.objects.filter(
+                organization__in=user_orgs,
+                item_type=KnowledgeItem.ItemType.SNIPPET,
+            )
 
         return queryset.order_by('-created_at')
 

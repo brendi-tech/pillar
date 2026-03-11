@@ -37,7 +37,7 @@ from apps.knowledge.views import firecrawl_webhook_view
 from apps.billing.webhooks import stripe_webhook_view
 
 # Import views for top-level routes
-from apps.products.views import ProductViewSet, ActionSyncView, ActionSyncStatusView, EmbedConfigView
+from apps.products.views import ProductViewSet, ActionSyncView, ActionSyncStatusView, EmbedConfigView, CLIInitView
 
 # Import debug log views
 from apps.mcp.views.debug_logs import DebugSessionListView, DebugSessionDetailView, DebugSessionLatestView
@@ -107,6 +107,9 @@ urlpatterns = [
     path('api/admin/products/', include('apps.products.urls')),
     path('api/admin/analytics/', include('apps.analytics.urls')),
     
+    # CLI init endpoint (LLM-powered SDK scaffolding)
+    path('api/cli/init/', CLIInitView.as_view(), name='cli-init'),
+
     # Action sync endpoint for configs (CI/CD code-first action definitions)
     # NOTE: Must be BEFORE configs_router to avoid being consumed by include()
     path('api/admin/configs/<slug:slug>/actions/sync/', ActionSyncView.as_view(), name='config-action-sync'),

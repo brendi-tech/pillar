@@ -19,10 +19,13 @@ Run with:
     # Specific provider
     pytest backend/apps/mcp/tests/test_native_tool_calling_integration.py -v -k "openai"
 """
+import asyncio
+
 import pytest
 from typing import Dict, List, Optional, Tuple
 from django.conf import settings
 
+from common.exceptions import LLMAPIError
 from common.utils.llm_client import LLMClient
 from common.utils.llm_config import LLMConfigService
 from apps.mcp.services.agent_tools.definitions import get_tools_for_api
@@ -98,29 +101,42 @@ async def get_first_tool_call(
     messages: List[Dict],
     model: str,
     tools: List[Dict],
+    retries: int = 1,
 ) -> Optional[Dict]:
     """
     Stream until we get a tool_call event.
-    
+
+    Retries once on transient provider errors (e.g. capacity 502s from
+    OpenRouter) to avoid flaky CI failures.
+
     Args:
         client: LLMClient instance
         messages: Messages to send
         model: OpenRouter model path (e.g., 'openai/gpt-5.1')
         tools: Tool definitions
-    
+        retries: How many times to retry on transient errors (default 1)
+
     Returns:
         The first tool_call event, or None if no tool call was made
     """
-    async for event in client.stream_complete_with_tools_async(
-        messages=messages,
-        tools=tools,
-        model=model,
-    ):
-        if event.get('type') == 'tool_call':
-            return event
-        if event.get('type') == 'error':
-            raise RuntimeError(f"API error: {event.get('error')}")
-    return None
+    last_err: Optional[Exception] = None
+    for attempt in range(1 + retries):
+        try:
+            async for event in client.stream_complete_with_tools_async(
+                messages=messages,
+                tools=tools,
+                model=model,
+            ):
+                if event.get('type') == 'tool_call':
+                    return event
+                if event.get('type') == 'error':
+                    raise RuntimeError(f"API error: {event.get('error')}")
+            return None
+        except (LLMAPIError, RuntimeError) as exc:
+            last_err = exc
+            if attempt < retries:
+                await asyncio.sleep(2)
+    raise last_err  # type: ignore[misc]
 
 
 async def get_all_tool_calls(
@@ -128,30 +144,42 @@ async def get_all_tool_calls(
     messages: List[Dict],
     model: str,
     tools: List[Dict],
+    retries: int = 1,
 ) -> List[Dict]:
     """
     Stream until done and collect all tool_call events.
-    
+
+    Retries once on transient provider errors.
+
     Args:
         client: LLMClient instance
         messages: Messages to send
         model: OpenRouter model path
         tools: Tool definitions
-    
+        retries: How many times to retry on transient errors (default 1)
+
     Returns:
         List of all tool_call events
     """
-    tool_calls = []
-    async for event in client.stream_complete_with_tools_async(
-        messages=messages,
-        tools=tools,
-        model=model,
-    ):
-        if event.get('type') == 'tool_call':
-            tool_calls.append(event)
-        if event.get('type') == 'error':
-            raise RuntimeError(f"API error: {event.get('error')}")
-    return tool_calls
+    last_err: Optional[Exception] = None
+    for attempt in range(1 + retries):
+        try:
+            tool_calls = []
+            async for event in client.stream_complete_with_tools_async(
+                messages=messages,
+                tools=tools,
+                model=model,
+            ):
+                if event.get('type') == 'tool_call':
+                    tool_calls.append(event)
+                if event.get('type') == 'error':
+                    raise RuntimeError(f"API error: {event.get('error')}")
+            return tool_calls
+        except (LLMAPIError, RuntimeError) as exc:
+            last_err = exc
+            if attempt < retries:
+                await asyncio.sleep(2)
+    raise last_err  # type: ignore[misc]
 
 
 class TestSearchToolNativeIntegration:

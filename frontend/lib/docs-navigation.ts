@@ -45,6 +45,7 @@ export const docsNavigation: NavSection[] = [
     items: [
       { title: "What is Pillar?", href: "/docs/get-started/what-is-pillar" },
       { title: "Quickstart", href: "/docs/get-started/quickstart" },
+      { title: "CLI Setup", href: "/docs/get-started/cli-setup" },
     ],
   },
   {
@@ -71,6 +72,7 @@ export const docsNavigation: NavSection[] = [
       { title: "Text Selection Helper", href: "/docs/guides/text-selection" },
       { title: "Edge Trigger", href: "/docs/guides/edge-trigger" },
       { title: "Human Escalation", href: "/docs/guides/human-escalation" },
+      { title: "CLI Reference", href: "/docs/guides/cli" },
       { title: "Testing", href: "/docs/guides/testing" },
       { title: "Debug Mode", href: "/docs/guides/debug-mode" },
     ],

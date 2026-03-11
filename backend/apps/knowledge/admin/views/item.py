@@ -10,6 +10,8 @@ from django_filters import rest_framework as filters
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
 from apps.knowledge.models import KnowledgeItem
+from apps.products.models import Product
+from apps.knowledge.admin.views.mixins import ProductResolveMixin
 from apps.knowledge.admin.serializers import (
     KnowledgeItemSerializer,
     KnowledgeItemListSerializer,
@@ -38,7 +40,7 @@ class KnowledgeItemFilter(filters.FilterSet):
     partial_update=extend_schema(summary="Update knowledge item"),
     destroy=extend_schema(summary="Delete knowledge item"),
 )
-class ItemViewSet(viewsets.ModelViewSet):
+class ItemViewSet(ProductResolveMixin, viewsets.ModelViewSet):
     """
     ViewSet for managing knowledge items.
 
@@ -55,16 +57,19 @@ class ItemViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Filter items by user's organizations and product."""
-        # Product is required for proper gating
-        product_id = self.request.query_params.get('product')
-        if not product_id:
+        user_orgs = self.request.user.organizations.all()
+        product_param = self.request.query_params.get('product')
+
+        if product_param:
+            product = self._resolve_product()
+            queryset = KnowledgeItem.objects.filter(
+                organization__in=user_orgs, product=product
+            )
+        elif self.action in ('list', 'create'):
             from rest_framework.exceptions import ValidationError
             raise ValidationError({'product': 'Product ID is required.'})
-
-        queryset = KnowledgeItem.objects.filter(
-            organization__in=self.request.user.organizations.all(),
-            product_id=product_id
-        )
+        else:
+            queryset = KnowledgeItem.objects.filter(organization__in=user_orgs)
 
         return queryset.select_related('source').order_by('-created_at')
 

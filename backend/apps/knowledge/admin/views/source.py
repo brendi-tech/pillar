@@ -13,6 +13,8 @@ from django_filters import rest_framework as filters
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
 from apps.knowledge.models import KnowledgeSource, KnowledgeItem, KnowledgeSyncHistory
+from apps.products.models import Product
+from apps.knowledge.admin.views.mixins import ProductResolveMixin
 from apps.knowledge.admin.serializers import (
     KnowledgeSourceSerializer,
     KnowledgeSourceCreateSerializer,
@@ -42,7 +44,7 @@ class KnowledgeSourceFilter(filters.FilterSet):
     partial_update=extend_schema(summary="Update knowledge source"),
     destroy=extend_schema(summary="Delete knowledge source"),
 )
-class SourceViewSet(viewsets.ModelViewSet):
+class SourceViewSet(ProductResolveMixin, viewsets.ModelViewSet):
     """
     ViewSet for managing knowledge sources.
 
@@ -54,24 +56,32 @@ class SourceViewSet(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete']
 
     def get_queryset(self):
-        """Filter sources by user's organizations and product with computed item counts."""
-        # Product is required for proper gating
-        product_id = self.request.query_params.get('product')
-        if not product_id:
+        """Filter sources by user's organizations and product with computed item counts.
+
+        Product is required for list/create; detail actions (retrieve, update,
+        sync, sync-history, etc.) only need org scoping since the source is
+        already identified by pk.
+        """
+        user_orgs = self.request.user.organizations.all()
+        product_param = self.request.query_params.get('product')
+
+        if product_param:
+            product = self._resolve_product()
+            queryset = KnowledgeSource.objects.filter(
+                organization__in=user_orgs, product=product
+            )
+        elif self.action in ('list', 'create'):
             from rest_framework.exceptions import ValidationError
             raise ValidationError({'product': 'Product ID is required.'})
-
-        queryset = KnowledgeSource.objects.filter(
-            organization__in=self.request.user.organizations.all(),
-            product_id=product_id
-        )
+        else:
+            queryset = KnowledgeSource.objects.filter(organization__in=user_orgs)
 
         return queryset.annotate(
-            live_item_count=Count('items'),  # Total items (pages crawled)
+            live_item_count=Count('items'),
             live_indexed_count=Count(
                 'items',
                 filter=Q(items__status=KnowledgeItem.Status.INDEXED)
-            ),  # Items with embeddings (pages indexed)
+            ),
         ).order_by('name')
 
     def get_serializer_class(self):

@@ -20,8 +20,6 @@ interface SyntaxHighlightedPreProps {
   language?: string;
   /** Override the docs URL used in the "Copy as prompt" button (defaults to current pathname) */
   docsUrl?: string;
-  /** When true, the component stretches to fill available height (for tabbed snippets) */
-  fillHeight?: boolean;
 }
 
 // Languages that should NOT get copy buttons (diagrams, plain text, etc.)
@@ -115,7 +113,6 @@ export function SyntaxHighlightedPre({
   code: codeProp,
   language: languageProp,
   docsUrl,
-  fillHeight,
 }: SyntaxHighlightedPreProps) {
   const [copied, setCopied] = useState<'code' | 'prompt' | null>(null);
   const pathname = usePathname();
@@ -193,7 +190,6 @@ Adapt this to fit my existing codebase—match my file structure, naming convent
   return (
     <div className={cn(
       'relative group rounded-lg overflow-hidden my-3',
-      fillHeight && 'flex flex-col',
       className
     )}>
       {/* Header with language and copy buttons */}
@@ -277,7 +273,6 @@ Adapt this to fit my existing codebase—match my file structure, naming convent
             className={cn(
               highlightClassName,
               'overflow-x-auto p-4 text-sm leading-relaxed',
-              fillHeight && 'flex-1',
               isDark
                 ? 'scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent'
                 : 'scrollbar-thin scrollbar-thumb-zinc-400 scrollbar-track-transparent'

@@ -248,7 +248,6 @@ export function CodeSnippetTabs({
         ))}
       </div>
 
-      {/* Only render the active snippet - scroll position is preserved via handleTabClick */}
       <SyntaxHighlightedPre
         code={activeSnippet.code!.trim()}
         language={activeSnippet.language}

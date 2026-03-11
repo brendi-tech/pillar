@@ -855,9 +855,9 @@ class ActionSyncView(APIView):
             
             action_obj, created = Action.objects.update_or_create(
                 product=product,
-                organization=product.organization,
                 name=action_data.name,
                 defaults={
+                    'organization': product.organization,
                     'description': action_data.description,
                     'guidance': action_data.guidance or '',
                     'examples': action_data.examples or [],
@@ -1339,3 +1339,226 @@ class EmbedConfigView(APIView):
         drf_response['Vary'] = 'Origin'
         add_cors_headers(drf_response, request, skip_origin_check=True)
         return drf_response
+
+
+class CLIInitView(APIView):
+    """
+    Generate scaffolding for Pillar SDK integration.
+
+    POST /api/cli/init/
+
+    Accepts project context (framework, file tree, selected file snippets)
+    and returns typed file operations for the CLI to apply locally.
+
+    Authentication: JWT (from ``pillar auth login``).
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    SUPPORTED_FRAMEWORKS = {
+        'nextjs-app', 'nextjs-pages', 'vite-react', 'vue', 'nuxt',
+        'angular', 'vanilla',
+    }
+
+    MAX_FILE_TREE_ITEMS = 500
+    MAX_SNIPPET_BYTES = 50_000
+
+    SYSTEM_PROMPT = """You are a code scaffolding assistant for the Pillar AI copilot SDK.
+
+Given a project's framework, file tree, and selected file contents, generate
+the minimal set of file operations to integrate Pillar into the project.
+
+Rules:
+- Only output JSON. No prose, no markdown fences.
+- Every operation must be one of: {"type": "create_file", "path": "...", "content": "..."}
+  or {"type": "update_file", "path": "...", "content": "...", "precondition_snippet": "..."}.
+- Paths must be relative to the project root. No leading slash. No ".." segments.
+- For update_file, precondition_snippet must be a 1-3 line string that currently
+  exists in the file. The CLI will verify it before applying.
+- Do NOT create shell scripts or instruct the user to run commands.
+- Use the correct SDK import for the framework:
+  nextjs-app / nextjs-pages / vite-react → @pillar-ai/react
+  vue / nuxt → @pillar-ai/vue (placeholder)
+  angular → @pillar-ai/angular (placeholder)
+  vanilla → @pillar-ai/sdk
+- Create a tools file with 2-3 starter tool definitions using usePillarTool.
+- Create or update the provider wrapper (PillarProvider) in the appropriate layout.
+- Create a .env.local with PILLAR_SLUG and PILLAR_SECRET placeholders.
+- Keep generated code minimal, idiomatic, and production-ready.
+
+Output format — a JSON object:
+{
+  "operations": [
+    {"type": "create_file", "path": "...", "content": "..."},
+    ...
+  ]
+}
+"""
+
+    @extend_schema(
+        summary="Generate CLI init scaffolding",
+        description="Returns typed file operations for SDK integration.",
+        request={
+            'application/json': {
+                'type': 'object',
+                'required': ['framework', 'product_key'],
+                'properties': {
+                    'framework': {
+                        'type': 'string',
+                        'enum': list(SUPPORTED_FRAMEWORKS),
+                    },
+                    'framework_version': {'type': 'string'},
+                    'product_key': {'type': 'string'},
+                    'file_tree': {
+                        'type': 'array',
+                        'items': {'type': 'string'},
+                        'description': 'Relative file paths in the project',
+                    },
+                    'file_snippets': {
+                        'type': 'object',
+                        'additionalProperties': {'type': 'string'},
+                        'description': 'Map of path → content for key files',
+                    },
+                },
+            },
+        },
+        responses={
+            200: {
+                'type': 'object',
+                'properties': {
+                    'operations': {
+                        'type': 'array',
+                        'items': {
+                            'type': 'object',
+                            'properties': {
+                                'type': {
+                                    'type': 'string',
+                                    'enum': ['create_file', 'update_file'],
+                                },
+                                'path': {'type': 'string'},
+                                'content': {'type': 'string'},
+                                'precondition_snippet': {'type': 'string'},
+                            },
+                        },
+                    },
+                },
+            },
+        },
+    )
+    def post(self, request):
+        data = request.data
+        framework = data.get('framework')
+        product_key = data.get('product_key')
+        framework_version = data.get('framework_version', '')
+        file_tree = data.get('file_tree', [])
+        file_snippets = data.get('file_snippets', {})
+
+        if not framework or framework not in self.SUPPORTED_FRAMEWORKS:
+            return Response(
+                {'error': f'Invalid framework. Must be one of: {sorted(self.SUPPORTED_FRAMEWORKS)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not product_key:
+            return Response(
+                {'error': 'product_key is required'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Verify product exists and user has access
+        try:
+            product = Product.objects.filter(
+                organization__in=request.user.organizations.all(),
+                subdomain=product_key,
+            ).get()
+        except Product.DoesNotExist:
+            return Response(
+                {'error': f'Product "{product_key}" not found or not accessible'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Enforce limits
+        if len(file_tree) > self.MAX_FILE_TREE_ITEMS:
+            file_tree = file_tree[:self.MAX_FILE_TREE_ITEMS]
+
+        total_snippet_bytes = sum(len(v.encode()) for v in file_snippets.values())
+        if total_snippet_bytes > self.MAX_SNIPPET_BYTES:
+            return Response(
+                {'error': f'file_snippets total exceeds {self.MAX_SNIPPET_BYTES} bytes'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user_prompt = json.dumps({
+            'framework': framework,
+            'framework_version': framework_version,
+            'product_key': product_key,
+            'file_tree': file_tree,
+            'file_snippets': file_snippets,
+        }, indent=2)
+
+        try:
+            from common.utils.llm_client import get_llm_client
+            client = get_llm_client()
+            raw = client.complete(
+                prompt=user_prompt,
+                system_prompt=self.SYSTEM_PROMPT,
+                max_tokens=4000,
+                temperature=0.2,
+                response_format={"type": "json_object"},
+            )
+            result = json.loads(raw)
+        except json.JSONDecodeError:
+            logger.error("CLI init: LLM returned non-JSON response")
+            return Response(
+                {'error': 'Failed to generate valid scaffolding. Please retry.'},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+        except Exception:
+            logger.exception("CLI init: LLM call failed")
+            return Response(
+                {'error': 'Scaffolding generation failed. Please retry.'},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+        operations = result.get('operations', [])
+        validated = self._validate_operations(operations)
+        if validated is None:
+            return Response(
+                {'error': 'LLM returned invalid operations. Please retry.'},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+        return Response({'operations': validated}, status=status.HTTP_200_OK)
+
+    @staticmethod
+    def _validate_operations(operations: list) -> Optional[list]:
+        """Validate and sanitize LLM-generated file operations."""
+        if not isinstance(operations, list):
+            return None
+
+        valid = []
+        for op in operations:
+            if not isinstance(op, dict):
+                continue
+
+            op_type = op.get('type')
+            path = op.get('path', '')
+            content = op.get('content', '')
+
+            if op_type not in ('create_file', 'update_file'):
+                continue
+            if not path or not isinstance(path, str):
+                continue
+            if '..' in path or path.startswith('/'):
+                continue
+            if not isinstance(content, str):
+                continue
+
+            entry = {'type': op_type, 'path': path, 'content': content}
+            if op_type == 'update_file':
+                snippet = op.get('precondition_snippet', '')
+                if isinstance(snippet, str) and snippet:
+                    entry['precondition_snippet'] = snippet
+            valid.append(entry)
+
+        return valid if valid else None
