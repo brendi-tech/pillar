@@ -1,7 +1,7 @@
 "use client";
 
-import { cn } from "@/lib/utils";
 import type { BillingInterval } from "@/lib/billing/plans";
+import { cn } from "@/lib/utils";
 
 interface BillingIntervalToggleProps {
   interval: BillingInterval;
@@ -56,7 +56,7 @@ export function BillingIntervalToggle({
         Yearly
         <span
           className={cn(
-            "ml-1.5 inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none",
+            "ml-1.5 translate-y-[-2px] inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none",
             interval === "yearly"
               ? "bg-emerald-500/15 text-emerald-600"
               : isDark

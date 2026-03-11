@@ -43,12 +43,11 @@ const cardHeaderVariants = cva(
 const cardTitleVariants = cva("leading-none font-medium", {
   variants: {
     variant: {
-      default:
-        "text-card-header-foreground/50 font-mono text-[11px] uppercase",
+      default: "text-card-header-foreground/50 font-mono text-[11px] uppercase",
       flat: "text-foreground text-sm",
       ghost: "text-foreground text-sm",
       outline: "text-foreground text-sm",
-      elevated: "text-foreground text-sm",
+      elevated: "text-foreground text-base",
     },
   },
   defaultVariants: {

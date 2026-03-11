@@ -25,6 +25,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { PageHeader } from "../shared";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { ScrollArea } from "../ui/scroll-area";
 import { BillingEmailRow } from "./BillingEmailRow";
 import { CurrentPlanCard } from "./CurrentPlanCard";
@@ -92,6 +93,7 @@ export function BillingPageContent() {
   const { data: subscription, isPending: isSubPending } = useQuery(
     billingSubscriptionQuery()
   );
+  console.log(subscription);
 
   const { data: usage, isPending: isUsagePending } =
     useQuery(billingUsageQuery());
@@ -252,22 +254,24 @@ export function BillingPageContent() {
 
         <BillingEmailRow />
 
-        <div>
-          <h3 className="mb-4 text-base font-semibold">
-            {isFreePlan ? "Upgrade Your Plan" : "Plans"}
-          </h3>
-          <PlanTierGrid
-            tiers={PLAN_TIERS}
-            onSelectPlan={handleSelectPlan}
-            disabled={isChangePending}
-            activePlan={subscription?.plan}
-            defaultInterval={
-              subscription?.billing_interval === "monthly"
-                ? "monthly"
-                : "yearly"
-            }
-          />
-        </div>
+        <Card variant={"elevated"}>
+          <CardHeader>
+            <CardTitle>{isFreePlan ? "Upgrade Your Plan" : "Plans"}</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-8">
+            <PlanTierGrid
+              tiers={PLAN_TIERS}
+              onSelectPlan={handleSelectPlan}
+              disabled={isChangePending}
+              activePlan={subscription?.plan}
+              defaultInterval={
+                subscription?.billing_interval === "monthly"
+                  ? "monthly"
+                  : "yearly"
+              }
+            />
+          </CardContent>
+        </Card>
 
         {!isFreePlan && (
           <InvoicesCard onManage={handleManage} isPending={portal.isPending} />

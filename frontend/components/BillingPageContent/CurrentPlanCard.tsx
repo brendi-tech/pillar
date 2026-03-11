@@ -3,11 +3,15 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowUpRight, CreditCard, Sparkles } from "lucide-react";
-import { getPlanTier, getPaidTiers, getTierForInterval } from "@/lib/billing/plans";
 import type { PlanTier } from "@/lib/billing/plans";
+import {
+  getPaidTiers,
+  getPlanTier,
+  getTierForInterval,
+} from "@/lib/billing/plans";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { ArrowUpRight, CreditCard, Sparkles } from "lucide-react";
 
 interface SubscriptionData {
   plan: string;
@@ -59,7 +63,9 @@ export function CurrentPlanCard({
             {plan?.label || subscription?.plan}
             {subscription?.billing_interval && (
               <span className="ml-1.5 text-base font-medium text-muted-foreground">
-                {subscription.billing_interval === "yearly" ? "Yearly" : "Monthly"}
+                {subscription.billing_interval === "yearly"
+                  ? "Yearly"
+                  : "Monthly"}
               </span>
             )}
           </span>
@@ -87,7 +93,9 @@ export function CurrentPlanCard({
         </div>
         <p className="mt-1 text-sm text-muted-foreground">
           {plan?.responseLimit}
-          {plan?.ctaSubtext && plan.name !== "free" ? ` · ${plan.ctaSubtext}` : ""}
+          {plan?.ctaSubtext && plan.name !== "free"
+            ? ` · ${plan.ctaSubtext}`
+            : ""}
           {subscription?.billing_interval === "yearly" && (
             <span className="ml-1.5 text-xs text-muted-foreground/60">
               · billed yearly
@@ -116,7 +124,9 @@ export function CurrentPlanCard({
                 on{" "}
                 <span className="font-medium text-foreground/70">
                   {format(
-                    new Date(subscription.pending_downgrade.effective_date * 1000),
+                    new Date(
+                      subscription.pending_downgrade.effective_date * 1000
+                    ),
                     "MMM d, yyyy"
                   )}
                 </span>
@@ -140,7 +150,11 @@ export function CurrentPlanCard({
         )}
         <div className="mt-4 flex gap-2">
           {isFreePlan ? (
-            <Button size="sm" onClick={handleUpgrade} disabled={isChangePending}>
+            <Button
+              size="sm"
+              onClick={handleUpgrade}
+              disabled={isChangePending}
+            >
               <ArrowUpRight className="mr-1 h-4 w-4" />
               Upgrade
             </Button>

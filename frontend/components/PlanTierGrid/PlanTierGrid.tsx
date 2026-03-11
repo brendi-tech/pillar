@@ -1,33 +1,37 @@
 "use client";
 
-import { useState } from "react";
+import { BillingIntervalToggle } from "@/components/BillingIntervalToggle";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Check, ArrowRight } from "lucide-react";
-import { cn } from "@/lib/utils";
+import type { BillingInterval, PlanTier } from "@/lib/billing/plans";
 import { getTierForInterval, PLAN_TIERS } from "@/lib/billing/plans";
-import type { PlanTier, BillingInterval } from "@/lib/billing/plans";
-import { BillingIntervalToggle } from "@/components/BillingIntervalToggle";
+import { cn } from "@/lib/utils";
+import { ArrowRight, Check } from "lucide-react";
+import { useState } from "react";
 
 const BADGE_STYLES: Record<string, string> = {
   free: "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
-  hobby: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
+  hobby:
+    "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
   pro: "bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300",
   growth: "bg-pink-100 text-pink-700 dark:bg-pink-950 dark:text-pink-300",
-  enterprise: "bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300",
+  enterprise:
+    "bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300",
 };
 
 const PLAN_ORDER = [...PLAN_TIERS.map((t) => t.name), "enterprise"];
 
 function getButtonText(tierName: string, activePlan?: string): string {
-  if (!activePlan) return tierName === "free" ? "Get Started Free" : "Get Started";
+  if (!activePlan)
+    return tierName === "free" ? "Get Started Free" : "Get Started";
 
   if (activePlan === "enterprise") return "Contact Us";
 
   const activeIndex = PLAN_ORDER.indexOf(activePlan);
   const tierIndex = PLAN_ORDER.indexOf(tierName);
 
-  if (activeIndex === -1) return tierName === "free" ? "Get Started Free" : "Get Started";
+  if (activeIndex === -1)
+    return tierName === "free" ? "Get Started Free" : "Get Started";
   if (tierIndex > activeIndex) return "Upgrade";
   return "Downgrade";
 }
@@ -187,9 +191,7 @@ export function PlanTierGrid({
   const [interval, setInterval] = useState<BillingInterval>(defaultInterval);
 
   const cols =
-    tiers.length <= 3
-      ? "sm:grid-cols-3"
-      : "sm:grid-cols-2 lg:grid-cols-4";
+    tiers.length <= 3 ? "sm:grid-cols-3" : "sm:grid-cols-2 lg:grid-cols-4";
 
   return (
     <div className="space-y-8">
