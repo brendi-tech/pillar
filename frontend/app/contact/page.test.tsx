@@ -9,12 +9,14 @@ describe("ContactPage", () => {
 
     expect(
       screen.getByRole("heading", {
-        name: /bring your product questions straight to us/i,
+        name: /contact\./i,
       })
     ).toBeInTheDocument();
 
     expect(
       screen.getByRole("button", { name: /send message/i })
     ).toBeInTheDocument();
+
+    expect(screen.getByText(/san francisco/i)).toBeInTheDocument();
   });
 });
