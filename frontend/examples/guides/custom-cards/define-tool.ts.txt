@@ -1,0 +1,25 @@
+// In your Pillar dashboard or tools sync file
+const tools = [
+  {
+    name: 'invite_members',
+    type: 'inline_ui',
+    description: 'Invite team members to the workspace',
+    parameters: {
+      type: 'object',
+      properties: {
+        card_type: { const: 'invite_members' }, // Links to registered card
+        emails: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Email addresses to invite',
+        },
+        role: {
+          type: 'string',
+          enum: ['admin', 'member'],
+          description: 'Role for invited members',
+        },
+      },
+      required: ['card_type', 'emails', 'role'],
+    },
+  },
+];

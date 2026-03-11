@@ -73,7 +73,7 @@ export default function KnowledgeLayout({ children }: KnowledgeLayoutProps) {
 
         {/* Content Panel */}
         <div className="flex-1 overflow-hidden bg-muted/30">
-          <ScrollArea className="h-full px-page">
+          <ScrollArea className="h-full">
             <div className="h-full overflow-hidden max-w-page mx-auto w-full">
               {children}
             </div>

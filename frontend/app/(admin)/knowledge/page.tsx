@@ -33,7 +33,7 @@ export default function KnowledgePage() {
 
   // Show AddSourceWizard when no sources exist
   return (
-    <div>
+    <div className="px-page">
       <PageHeader
         className="pt-4"
         title="Add Knowledge Source"

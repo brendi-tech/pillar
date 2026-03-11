@@ -30,7 +30,7 @@ export function DetailPageShell({
   if (isLoading) {
     return (
       <div className="h-full overflow-auto">
-        <div className="space-y-6 p-6">
+        <div className="space-y-6 p-page">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
               <Skeleton className="h-10 w-10 rounded-lg" />
@@ -58,7 +58,7 @@ export function DetailPageShell({
 
   if (error) {
     return (
-      <div className="flex h-full flex-col items-center justify-center p-6 py-12">
+      <div className="flex h-full flex-col items-center justify-center p-page py-12">
         <div className="rounded-full bg-red-100 p-3 dark:bg-red-900/30">
           <AlertCircle className="h-6 w-6 text-red-600 dark:text-red-400" />
         </div>
@@ -76,7 +76,7 @@ export function DetailPageShell({
 
   if (isEmpty) {
     return (
-      <div className="flex h-full flex-col items-center justify-center p-6 text-center">
+      <div className="flex h-full flex-col items-center justify-center p-page text-center">
         <AlertCircle className="h-12 w-12 text-destructive/60 mb-4" />
         <p className="text-sm text-muted-foreground">{emptyTitle}</p>
         <p className="text-xs text-muted-foreground/60 mt-1">
@@ -86,5 +86,5 @@ export function DetailPageShell({
     );
   }
 
-  return <div className="space-y-6 p-6">{children}</div>;
+  return <div className="space-y-6 p-page">{children}</div>;
 }

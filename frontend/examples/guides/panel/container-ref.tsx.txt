@@ -1,9 +1,8 @@
-const containerRef = useRef<HTMLDivElement>(null);
-
 <PillarProvider
+  productKey="your-product-key"
   config={{
-    panel: { container: containerRef.current }
+    panel: { container: '#my-panel-container' }
   }}
 >
-  <div ref={containerRef} />
+  <div id="my-panel-container" />
 </PillarProvider>

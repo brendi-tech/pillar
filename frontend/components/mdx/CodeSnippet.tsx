@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { useDocsPreferences, type Framework } from '@/components/Docs/DocsPreferencesProvider';
 import { useDocsUser, replaceSlugPlaceholders } from '@/components/Docs/DocsUserProvider';
 import { SyntaxHighlightedPre } from './SyntaxHighlightedPre';
@@ -166,6 +166,7 @@ export function CodeSnippetTabs({
 }: CodeSnippetTabsProps) {
   const { framework, setFramework } = useDocsPreferences();
   const { slug } = useDocsUser();
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const validSnippets = (snippets || []).map((snippet) => {
     const rawCode = CODE_EXAMPLES[snippet.src];
@@ -181,9 +182,23 @@ export function CodeSnippetTabs({
 
   const handleTabClick = useCallback(
     (index: number, label: string) => {
-      if (FRAMEWORK_VALUES.includes(label as Framework)) {
-        setFramework(label as Framework);
-      }
+      if (!FRAMEWORK_VALUES.includes(label as Framework)) return;
+      
+      // Capture position before the change
+      const container = containerRef.current;
+      const topBefore = container?.getBoundingClientRect().top ?? 0;
+      
+      setFramework(label as Framework);
+      
+      // After DOM updates, adjust scroll to maintain position
+      requestAnimationFrame(() => {
+        if (!container) return;
+        const topAfter = container.getBoundingClientRect().top;
+        const delta = topAfter - topBefore;
+        if (delta !== 0) {
+          window.scrollBy(0, delta);
+        }
+      });
     },
     [setFramework]
   );
@@ -210,8 +225,10 @@ export function CodeSnippetTabs({
     );
   }
 
+  const activeSnippet = validSnippets[activeTab];
+
   return (
-    <div className={cn('relative group rounded-lg overflow-hidden my-3', className)}>
+    <div ref={containerRef} className={cn('relative group rounded-lg overflow-hidden my-3', className)}>
       {/* Tabs header */}
       <div className="flex items-center bg-zinc-800 border-b border-zinc-700">
         {validSnippets.map((snippet, index) => (
@@ -231,27 +248,13 @@ export function CodeSnippetTabs({
         ))}
       </div>
 
-      {/* All snippets stacked via CSS Grid - prevents layout shift on tab switch */}
-      <div className="grid">
-        {validSnippets.map((snippet, index) => (
-          <div
-            key={snippet.src}
-            className={cn(
-              '[grid-area:1/1]',
-              activeTab !== index && 'invisible'
-            )}
-            aria-hidden={activeTab !== index}
-          >
-            <SyntaxHighlightedPre
-              code={snippet.code!.trim()}
-              language={snippet.language}
-              filePath={title || `examples/${snippet.src}`}
-              className="!my-0 !rounded-none h-full"
-              fillHeight
-            />
-          </div>
-        ))}
-      </div>
+      {/* Only render the active snippet - scroll position is preserved via handleTabClick */}
+      <SyntaxHighlightedPre
+        code={activeSnippet.code!.trim()}
+        language={activeSnippet.language}
+        filePath={title || `examples/${activeSnippet.src}`}
+        className="!my-0 !rounded-none"
+      />
     </div>
   );
 }
