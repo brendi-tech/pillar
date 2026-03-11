@@ -5,9 +5,8 @@ import { PageHeader } from "@/components/shared";
 
 export default function NewKnowledgeSourcePage() {
   return (
-    <div className="space-y-6 p-page">
+    <div className=" p-page">
       <PageHeader
-        className="pb-4"
         title="Add Knowledge Source"
         description="Add a new knowledge source to provide context for the AI."
       />

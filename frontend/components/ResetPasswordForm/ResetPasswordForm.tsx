@@ -7,11 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { apiClient } from "@/lib/admin/api-client";
-import { Eye, EyeOff, CheckCircle2 } from "lucide-react";
+import { AxiosError } from "axios";
+import { CheckCircle2, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { AxiosError } from "axios";
 
 export function ResetPasswordForm() {
   const searchParams = useSearchParams();
@@ -87,11 +87,9 @@ export function ResetPasswordForm() {
           </p>
         </div>
 
-        <Card className="border-2">
+        <Card>
           <CardHeader>
-            <CardTitle>
-              {isSuccess ? "All Done" : "New Password"}
-            </CardTitle>
+            <CardTitle>{isSuccess ? "All Done" : "New Password"}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-5">
             {missingParams ? (
@@ -120,7 +118,11 @@ export function ResetPasswordForm() {
                 <p className="text-center text-sm text-muted-foreground">
                   You can now sign in with your new password.
                 </p>
-                <Button asChild size="lg" className="w-full h-12 text-base font-medium">
+                <Button
+                  asChild
+                  size="lg"
+                  className="w-full h-12 text-base font-medium"
+                >
                   <Link href="/login">Sign in</Link>
                 </Button>
               </div>

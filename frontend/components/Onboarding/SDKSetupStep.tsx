@@ -53,7 +53,6 @@ interface SubStep {
   icon: React.ReactNode;
 }
 
-
 // =============================================================================
 // Sub-step Components
 // =============================================================================
@@ -425,7 +424,7 @@ export function SDKSetupStep({
   };
 
   return (
-    <Card className="border-2">
+    <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Code2 className="w-4 h-4" />

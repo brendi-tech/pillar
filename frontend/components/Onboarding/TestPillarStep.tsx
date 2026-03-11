@@ -1,8 +1,8 @@
 "use client";
 
+import { Spinner } from "@/components/ui/spinner";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Check, CheckCircle2, Circle, Sparkles } from "lucide-react";
-import { Spinner } from "@/components/ui/spinner";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -36,7 +36,12 @@ interface StatusItemProps {
 // Status Item Component
 // =============================================================================
 
-function StatusItem({ label, description, isComplete, isLoading }: StatusItemProps) {
+function StatusItem({
+  label,
+  description,
+  isComplete,
+  isLoading,
+}: StatusItemProps) {
   return (
     <div className="flex items-start gap-3">
       <div
@@ -77,7 +82,7 @@ function StatusItem({ label, description, isComplete, isLoading }: StatusItemPro
 export function TestPillarStep({ onComplete, onBack }: TestPillarStepProps) {
   const { currentProduct } = useProduct();
   const productId = currentProduct?.id;
-  
+
   // Track polling state with 30 minute timeout
   const [isPollingActive, setIsPollingActive] = useState(true);
 
@@ -100,10 +105,10 @@ export function TestPillarStep({ onComplete, onBack }: TestPillarStepProps) {
   const sdkInitialized = integrationStatus?.sdk_initialized ?? false;
   const actionsRegistered = integrationStatus?.actions_registered ?? false;
   const actionExecuted = integrationStatus?.action_executed ?? false;
-  
+
   // Also stop polling if all checks pass
   const allChecksPassed = sdkInitialized && actionsRegistered && actionExecuted;
-  
+
   useEffect(() => {
     if (allChecksPassed) {
       setIsPollingActive(false);
@@ -111,7 +116,7 @@ export function TestPillarStep({ onComplete, onBack }: TestPillarStepProps) {
   }, [allChecksPassed]);
 
   return (
-    <Card className="border-2">
+    <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Sparkles className="w-4 h-4" />

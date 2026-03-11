@@ -35,7 +35,7 @@ export default function KnowledgePage() {
   return (
     <div>
       <PageHeader
-        className="pb-4"
+        className="pt-4"
         title="Add Knowledge Source"
         description="Add a new knowledge source to provide context for the AI."
       />
