@@ -256,7 +256,7 @@ def should_register_cron_schedules() -> bool:
     """
     Check if cron schedules should be registered based on the namespace.
     
-    Cron schedules are only registered for production namespaces (pillar-dev, pillar-prod).
+    Cron schedules are only registered for production namespaces.
     Local development namespaces (jj-local, etc.) should not register cron schedules.
     
     Returns:
@@ -282,7 +282,7 @@ def task_with_conditional_cron(
     """
     Wrapper for @hatchet.task() that conditionally applies cron schedules.
     
-    Cron schedules are only applied in production namespaces (pillar-dev, pillar-prod).
+    Cron schedules are only applied in production namespaces.
     For local development, the task is registered without cron schedules.
     
     Args:
@@ -294,7 +294,7 @@ def task_with_conditional_cron(
     Usage:
         @task_with_conditional_cron(
             name="my-task",
-            on_crons=["0 2 * * *"],  # Only registered in pillar-dev/pillar-prod
+            on_crons=["0 2 * * *"],  # Only registered in production namespaces
             execution_timeout=timedelta(hours=1)
         )
         def my_task(workflow_input: dict, context: Context):
