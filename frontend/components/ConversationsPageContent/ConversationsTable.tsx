@@ -11,6 +11,7 @@ import type {
   ChatConversationListItem,
   ConversationStatus,
 } from "@/types/admin";
+import { ConversationCardList } from "./ConversationCardList";
 
 interface ConversationsTableProps {
   conversations: ChatConversationListItem[];
@@ -112,24 +113,42 @@ export function ConversationsTable({
   onLoadMore,
 }: ConversationsTableProps) {
   return (
-    <DataTable
-      columns={columns}
-      data={conversations}
-      keyExtractor={(row) => row.id}
-      isLoading={isLoading}
-      isError={isError}
-      onRowClick={onRowClick}
-      errorMessage="Failed to load conversations"
-      emptyState={{
-        icon: <MessageSquare className="h-8 w-8" />,
-        title: "No conversations found",
-        description: "Try adjusting your filters or date range",
-      }}
-      infiniteScroll={{
-        hasNextPage,
-        isFetchingNextPage,
-        onLoadMore,
-      }}
-    />
+    <>
+      {/* Mobile: Card list */}
+      <div className="md:hidden">
+        <ConversationCardList
+          conversations={conversations}
+          isLoading={isLoading}
+          isError={isError}
+          onRowClick={onRowClick}
+          hasNextPage={hasNextPage}
+          isFetchingNextPage={isFetchingNextPage}
+          onLoadMore={onLoadMore}
+        />
+      </div>
+
+      {/* Desktop: Data table */}
+      <div className="hidden md:block">
+        <DataTable
+          columns={columns}
+          data={conversations}
+          keyExtractor={(row) => row.id}
+          isLoading={isLoading}
+          isError={isError}
+          onRowClick={onRowClick}
+          errorMessage="Failed to load conversations"
+          emptyState={{
+            icon: <MessageSquare className="h-8 w-8" />,
+            title: "No conversations found",
+            description: "Try adjusting your filters or date range",
+          }}
+          infiniteScroll={{
+            hasNextPage,
+            isFetchingNextPage,
+            onLoadMore,
+          }}
+        />
+      </div>
+    </>
   );
 }

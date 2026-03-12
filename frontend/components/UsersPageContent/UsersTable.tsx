@@ -7,6 +7,7 @@ import {
 import type { Visitor } from "@/lib/admin/visitors-api";
 import { formatDistanceToNow } from "date-fns";
 import { MessageSquare, Users } from "lucide-react";
+import { UserCardList } from "./UserCardList";
 
 interface UsersTableProps {
   visitors: Visitor[];
@@ -106,25 +107,43 @@ export function UsersTable({
   onLoadMore,
 }: UsersTableProps) {
   return (
-    <DataTable
-      columns={columns}
-      data={visitors}
-      keyExtractor={(row) => row.id}
-      isLoading={isLoading}
-      isError={isError}
-      onRowClick={onRowClick}
-      errorMessage="Failed to load users"
-      emptyState={{
-        icon: <Users className="h-8 w-8" />,
-        title: "No users found",
-        description:
-          "Users will appear here when they are identified via the SDK",
-      }}
-      infiniteScroll={{
-        hasNextPage,
-        isFetchingNextPage,
-        onLoadMore,
-      }}
-    />
+    <>
+      {/* Mobile: Card list */}
+      <div className="md:hidden">
+        <UserCardList
+          visitors={visitors}
+          isLoading={isLoading}
+          isError={isError}
+          onRowClick={onRowClick}
+          hasNextPage={hasNextPage}
+          isFetchingNextPage={isFetchingNextPage}
+          onLoadMore={onLoadMore}
+        />
+      </div>
+
+      {/* Desktop: Data table */}
+      <div className="hidden md:block">
+        <DataTable
+          columns={columns}
+          data={visitors}
+          keyExtractor={(row) => row.id}
+          isLoading={isLoading}
+          isError={isError}
+          onRowClick={onRowClick}
+          errorMessage="Failed to load users"
+          emptyState={{
+            icon: <Users className="h-8 w-8" />,
+            title: "No users found",
+            description:
+              "Users will appear here when they are identified via the SDK",
+          }}
+          infiniteScroll={{
+            hasNextPage,
+            isFetchingNextPage,
+            onLoadMore,
+          }}
+        />
+      </div>
+    </>
   );
 }
