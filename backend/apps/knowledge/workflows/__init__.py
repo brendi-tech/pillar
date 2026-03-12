@@ -16,6 +16,7 @@ from .indexing import (
     trigger_index_knowledge_item_async,
 )
 from .cleanup_pending_uploads import cleanup_pending_uploads_workflow
+from .resync_active_sources import resync_active_sources_workflow
 
 __all__ = [
     'sync_source_workflow',
@@ -32,4 +33,6 @@ __all__ = [
     'trigger_index_knowledge_item_async',
     # Cleanup workflows
     'cleanup_pending_uploads_workflow',
+    # Cron workflows
+    'resync_active_sources_workflow',
 ]

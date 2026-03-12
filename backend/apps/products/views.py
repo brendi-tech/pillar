@@ -184,26 +184,32 @@ class ProductViewSet(viewsets.ModelViewSet):
         # POST - create new secret
         serializer = SyncSecretCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
-        name = serializer.validated_data['name']
-        
+
+        name = serializer.validated_data.get('name', '').strip()
+        hostname_hint = serializer.validated_data.get('hostname_hint', '').strip()
+
+        if not name:
+            prefix = f"cli-{hostname_hint}" if hostname_hint else "cli"
+            short_id = secrets.token_hex(3)
+            name = f"{prefix}-{short_id}"[:50]
+
         # Check for duplicate name
         if SyncSecret.objects.filter(product=product, name=name).exists():
             return Response(
                 {'error': f'A secret named "{name}" already exists'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         # Enforce limit of 10 secrets per product
         if product.sync_secrets.count() >= 10:
             return Response(
                 {'error': 'Maximum 10 secrets per product. Delete an existing secret first.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         # Generate prefixed secret key (plr_ + 64-char hex)
         raw_secret = "plr_" + secrets.token_hex(32)
-        
+
         # Create the sync secret
         sync_secret = SyncSecret.objects.create(
             product=product,
@@ -212,11 +218,11 @@ class ProductViewSet(viewsets.ModelViewSet):
             secret_hash=raw_secret,
             created_by=request.user,
         )
-        
+
         return Response({
             'id': str(sync_secret.id),
             'name': sync_secret.name,
-            'secret': raw_secret,  # Shown once only!
+            'secret': raw_secret,
             'message': 'Copy this secret now - it will not be shown again!',
         }, status=status.HTTP_201_CREATED)
 
@@ -478,6 +484,56 @@ class ProductViewSet(viewsets.ModelViewSet):
             'actions_registered': actions_registered,
             'action_executed': action_executed,
         }, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'], url_path='filter-docs-urls')
+    def filter_docs_urls(self, request, pk=None):
+        """
+        Use LLM to filter candidate docs URLs, keeping only those
+        likely belonging to the product (not third-party references).
+        """
+        product = self.get_object()
+        candidate_urls = request.data.get('candidate_urls', [])
+        product_name = request.data.get('product_name', product.name)
+
+        if not candidate_urls or not isinstance(candidate_urls, list):
+            return Response({'urls': []})
+
+        if len(candidate_urls) == 1:
+            return Response({'urls': candidate_urls})
+
+        try:
+            from common.utils.llm_client import get_llm_client
+            from common.utils.llm_config import LLMConfigService
+            from common.utils.json_parser import parse_json_from_llm
+
+            model = LLMConfigService.get_openrouter_model('openai/budget')
+            client = get_llm_client()
+
+            urls_list = '\n'.join(f'- {u}' for u in candidate_urls)
+            prompt = (
+                f"Product name: {product_name}\n\n"
+                f"Candidate documentation URLs found in the project:\n{urls_list}\n\n"
+                "Which of these URLs are likely the product's OWN documentation, "
+                "help center, or knowledge base? Exclude third-party docs "
+                "(e.g. Stripe, AWS, Django docs) that are just referenced in the codebase.\n\n"
+                "Return a JSON array of the relevant URLs only. "
+                "If none are relevant, return an empty array []."
+            )
+
+            response = client.complete(
+                prompt=prompt,
+                model=model,
+                temperature=0.0,
+                max_tokens=500,
+            )
+            filtered = parse_json_from_llm(response)
+            if isinstance(filtered, list):
+                valid = [u for u in filtered if u in candidate_urls]
+                return Response({'urls': valid})
+        except Exception as e:
+            logger.warning(f"[FilterDocsUrls] LLM filtering failed: {e}")
+
+        return Response({'urls': candidate_urls})
 
 
 class PlatformViewSet(viewsets.ModelViewSet):

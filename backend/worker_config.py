@@ -27,6 +27,7 @@ def get_all_workflows():
         poll_async_crawl_workflow,
         process_async_crawl_workflow,
         cleanup_pending_uploads_workflow,
+        resync_active_sources_workflow,
     )
     
     # Import products workflows
@@ -65,6 +66,8 @@ def get_all_workflows():
         process_async_crawl_workflow,
         # Cleanup workflows
         cleanup_pending_uploads_workflow,
+        # Knowledge cron workflows
+        resync_active_sources_workflow,
         # Products app workflows
         sync_actions_workflow,
         # Billing app workflows (cron jobs)

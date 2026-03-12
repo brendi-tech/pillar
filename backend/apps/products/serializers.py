@@ -139,24 +139,24 @@ class SyncSecretSerializer(serializers.ModelSerializer):
 
 
 class SyncSecretCreateSerializer(serializers.Serializer):
-    """Create serializer for SyncSecret - validates name only."""
-    
-    name = serializers.CharField(max_length=50)
-    
+    """Create serializer for SyncSecret - validates name, auto-generates if omitted."""
+
+    name = serializers.CharField(max_length=50, required=False, default='')
+    hostname_hint = serializers.CharField(max_length=100, required=False, default='')
+
     def validate_name(self, value: str) -> str:
-        """Validate secret name format."""
+        """Validate secret name format if provided."""
         value = value.lower().strip()
-        
         if not value:
-            raise serializers.ValidationError("Secret name is required")
-        
+            return ''
+
         if len(value) > 50:
             raise serializers.ValidationError("Secret name must be 50 characters or less")
-        
+
         if not re.match(r'^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$', value):
             raise serializers.ValidationError(
                 "Secret name must contain only lowercase letters, numbers, and hyphens, "
                 "and cannot start or end with a hyphen"
             )
-        
+
         return value
