@@ -12,6 +12,9 @@ venv/
 # Node modules
 node_modules/
 
+# pnpm store (cache)
+.pnpm-store/
+
 # Build artifacts
 dist/
 backend/static/dev/

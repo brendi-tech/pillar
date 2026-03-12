@@ -41,7 +41,7 @@ const ConfigureContext = createContext<ConfigureContextValue | undefined>(undefi
 
 const DEFAULT_AI_CONFIG: AIConfig = {
   enabled: true,
-  assistantName: 'Assistant',
+  assistantName: 'Copilot',
   welcomeMessage: 'Hi! How can I help you today?',
   inputPlaceholder: 'Ask anything...',
   suggestedQuestions: [],
