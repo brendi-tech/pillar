@@ -24,7 +24,11 @@ logger = logging.getLogger(__name__)
 _hatchet_client = None
 
 # Production namespaces that should register cron schedules
-PRODUCTION_NAMESPACES = {'pillar-dev', 'pillar-prod', 'pillar-hc-dev', 'pillar-hc-prod'}
+PRODUCTION_NAMESPACES = {
+    'pillar-dev', 'pillar-prod',
+    'pillar-hc-dev', 'pillar-hc-prod',
+    'help-center-dev', 'help-center-prod',
+}
 
 
 class MockWorkflowRun:
