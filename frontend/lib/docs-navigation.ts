@@ -54,7 +54,7 @@ export const docsNavigation: NavSection[] = [
     items: [
       { title: "Tools", href: "/docs/core-concepts/tools" },
       { title: "Knowledge Base", href: "/docs/core-concepts/knowledge-base" },
-      { title: "Custom Cards", href: "/docs/core-concepts/custom-cards" },
+      { title: "Inline UI", href: "/docs/core-concepts/inline-ui" },
       { title: "Human Escalation", href: "/docs/core-concepts/human-escalation" },
     ],
   },
@@ -66,7 +66,7 @@ export const docsNavigation: NavSection[] = [
       { title: "Syncing Tools", href: "/docs/guides/tools-sync" },
       { title: "Agent Guidance", href: "/docs/guides/agent-guidance" },
       { title: "Adding User Context", href: "/docs/guides/context" },
-      { title: "Building Custom Cards", href: "/docs/guides/custom-cards" },
+      { title: "Building Inline UI", href: "/docs/guides/inline-ui" },
       { title: "Customizing the Panel", href: "/docs/guides/panel" },
       { title: "Theming & Branding", href: "/docs/guides/theme" },
       { title: "Text Selection Helper", href: "/docs/guides/text-selection" },

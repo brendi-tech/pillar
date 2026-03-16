@@ -1,5 +1,0 @@
-const [loading, setLoading] = useState(false);
-
-<button disabled={loading}>
-  {loading ? 'Processing...' : 'Confirm'}
-</button>

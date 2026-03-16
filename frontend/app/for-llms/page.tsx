@@ -153,8 +153,8 @@ export default function ForLLMsPage() {
             copilot can&apos;t complete a task
           </li>
           <li>
-            <strong>Custom cards:</strong> Render custom React/Vue/Angular
-            components inside copilot responses
+            <strong>Inline UI:</strong> Render custom React/Vue/Angular
+            components inside copilot responses using the render prop
           </li>
           <li>
             <strong>Framework support:</strong> React (including Next.js), Vue 3

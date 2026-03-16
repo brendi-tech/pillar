@@ -1,0 +1,39 @@
+<script setup lang="ts">
+import { usePillarTool, type ToolRenderProps } from '@pillar-ai/vue';
+import { defineComponent, h } from 'vue';
+
+interface InviteData {
+  emails: string[];
+  role: string;
+}
+
+const InviteCard = defineComponent({
+  props: ['data', 'onConfirm', 'onCancel'],
+  setup(props: ToolRenderProps<InviteData>) {
+    return () => h('div', { class: 'p-4 border rounded-lg' }, [
+      h('h3', { class: 'font-semibold mb-3' }, 'Invite Team Members'),
+      h('p', { class: 'mb-4' }, `Inviting ${props.data.emails.length} members as ${props.data.role}`),
+      h('div', { class: 'flex gap-2' }, [
+        h('button', { onClick: () => props.onCancel() }, 'Cancel'),
+        h('button', { onClick: () => props.onConfirm() }, 'Send Invites'),
+      ]),
+    ]);
+  },
+});
+
+usePillarTool({
+  name: 'invite_members',
+  type: 'inline_ui',
+  description: 'Invite team members to the workspace',
+  parameters: {
+    emails: { type: 'array', items: { type: 'string' }, description: 'Email addresses' },
+    role: { type: 'string', enum: ['admin', 'member'], description: 'Role for members' },
+  },
+  execute: async ({ emails, role }) => {
+    return { emails, role };
+  },
+  render: InviteCard,
+});
+</script>
+
+<template><slot /></template>

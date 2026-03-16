@@ -1,0 +1,27 @@
+import { Component, Input, Output, EventEmitter } from '@angular/core';
+
+interface MyData {
+  id: string;
+}
+
+@Component({
+  selector: 'app-my-card',
+  standalone: true,
+  template: `<button (click)="handleConfirm()">Confirm</button>`,
+})
+export class MyCardComponent {
+  @Input() data!: MyData;
+  @Output() onConfirm = new EventEmitter<void>();
+  @Output() onStateChange = new EventEmitter<{ state: string; message?: string }>();
+
+  async handleConfirm() {
+    this.onStateChange.emit({ state: 'loading', message: 'Processing...' });
+    try {
+      await doSomething(this.data.id);
+      this.onStateChange.emit({ state: 'success', message: 'Done!' });
+      this.onConfirm.emit();
+    } catch (e) {
+      this.onStateChange.emit({ state: 'error', message: 'Failed' });
+    }
+  }
+}

@@ -1,0 +1,47 @@
+pillar.defineTool({
+  name: 'delete_item',
+  type: 'inline_ui',
+  description: 'Delete an item permanently',
+  parameters: {
+    itemId: { type: 'string' },
+    itemName: { type: 'string' },
+  },
+  execute: async ({ itemId, itemName }) => ({ itemId, itemName }),
+  render: (container, data, { onConfirm, onCancel, onStateChange }) => {
+    let loading = false;
+
+    function render() {
+      container.innerHTML = `
+        <div style="padding: 16px; border: 1px solid #fecaca; border-radius: 8px; background: #fef2f2;">
+          <h3 style="font-weight: 600; color: #7f1d1d;">Delete ${data.itemName}?</h3>
+          <p style="color: #b91c1c; font-size: 14px; margin-top: 4px;">This action cannot be undone.</p>
+          <div style="display: flex; gap: 8px; margin-top: 16px;">
+            <button id="cancel-btn" ${loading ? 'disabled' : ''}>Cancel</button>
+            <button id="delete-btn" ${loading ? 'disabled' : ''} style="background: #dc2626; color: white;">
+              ${loading ? 'Deleting...' : 'Delete'}
+            </button>
+          </div>
+        </div>
+      `;
+
+      container.querySelector('#cancel-btn').onclick = onCancel;
+      container.querySelector('#delete-btn').onclick = async () => {
+        loading = true;
+        render();
+        onStateChange?.('loading', 'Deleting...');
+        try {
+          await deleteItem(data.itemId);
+          onStateChange?.('success', 'Deleted successfully');
+          onConfirm({ deleted: true });
+        } catch {
+          onStateChange?.('error', 'Failed to delete');
+          loading = false;
+          render();
+        }
+      };
+    }
+
+    render();
+    return () => { container.innerHTML = ''; };
+  },
+});

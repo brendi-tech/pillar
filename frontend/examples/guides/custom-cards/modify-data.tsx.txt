@@ -1,2 +1,0 @@
-const [emails, setEmails] = useState(data.emails);
-// User can add/remove emails before confirming

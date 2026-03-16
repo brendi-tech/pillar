@@ -1,0 +1,21 @@
+import { type ToolRenderProps } from '@pillar-ai/react';
+import { Button, Card, CardHeader, CardContent } from '@/components/ui';
+
+interface ConfirmData {
+  message: string;
+}
+
+function ConfirmCard({ data, onConfirm, onCancel }: ToolRenderProps<ConfirmData>) {
+  return (
+    <Card>
+      <CardHeader>Confirm Action</CardHeader>
+      <CardContent>
+        <p>{data.message}</p>
+        <div className="flex gap-2 mt-4">
+          <Button variant="outline" onClick={() => onCancel()}>Cancel</Button>
+          <Button onClick={() => onConfirm()}>Confirm</Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}

@@ -1,0 +1,23 @@
+pillar.defineTool({
+  name: 'invite_members',
+  type: 'inline_ui',
+  description: 'Invite team members to the workspace',
+  parameters: {
+    emails: { type: 'array', items: { type: 'string' } },
+    role: { type: 'string', enum: ['admin', 'member'] },
+  },
+  execute: async ({ emails, role }) => ({ emails, role }),
+  render: (container, data, { onConfirm, onCancel }) => {
+    container.innerHTML = `
+      <div class="invite-card">
+        <h3>Invite Members</h3>
+        <p>Inviting ${data.emails.length} people as ${data.role}</p>
+        <button id="cancel">Cancel</button>
+        <button id="confirm">Confirm</button>
+      </div>
+    `;
+    container.querySelector('#cancel').onclick = onCancel;
+    container.querySelector('#confirm').onclick = () => onConfirm();
+    return () => { container.innerHTML = ''; };
+  },
+});

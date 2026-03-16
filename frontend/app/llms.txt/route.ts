@@ -30,7 +30,7 @@ const LLMS_TXT = `# Pillar
 - [Context Guide](https://trypillar.com/docs/guides/context): Provide runtime context to the copilot
 - [Knowledge Base](https://trypillar.com/docs/knowledge-base/overview): Provide your existing docs and content as context for the copilot
 - [Human Escalation](https://trypillar.com/docs/guides/human-escalation): Hand off to a human when the copilot can't complete a task
-- [Custom Cards](https://trypillar.com/docs/guides/custom-cards): Render custom UI components in copilot responses
+- [Inline UI](https://trypillar.com/docs/guides/inline-ui): Render custom UI components in copilot responses using the render prop
 - [Theme Customization](https://trypillar.com/docs/guides/theme): Match the copilot to your brand
 
 ## API Reference

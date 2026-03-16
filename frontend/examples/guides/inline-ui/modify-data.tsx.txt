@@ -1,0 +1,23 @@
+import { useState } from 'react';
+import { type ToolRenderProps } from '@pillar-ai/react';
+
+interface InviteData {
+  emails: string[];
+  role: string;
+}
+
+function InviteCard({ data, onConfirm }: ToolRenderProps<InviteData>) {
+  const [emails, setEmails] = useState(data.emails);
+
+  return (
+    <div>
+      {emails.map(email => (
+        <div key={email}>
+          {email}
+          <button onClick={() => setEmails(e => e.filter(x => x !== email))}>×</button>
+        </div>
+      ))}
+      <button onClick={() => onConfirm({ ...data, emails })}>Confirm</button>
+    </div>
+  );
+}

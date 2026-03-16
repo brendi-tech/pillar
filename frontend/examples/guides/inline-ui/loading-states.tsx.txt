@@ -1,0 +1,20 @@
+import { type ToolRenderProps } from '@pillar-ai/react';
+
+interface MyData {
+  id: string;
+}
+
+function MyCard({ data, onConfirm, onStateChange }: ToolRenderProps<MyData>) {
+  const handleConfirm = async () => {
+    onStateChange?.('loading', 'Processing...');
+    try {
+      await doSomething(data.id);
+      onStateChange?.('success', 'Done!');
+      onConfirm();
+    } catch (e) {
+      onStateChange?.('error', 'Failed');
+    }
+  };
+
+  return <button onClick={handleConfirm}>Confirm</button>;
+}

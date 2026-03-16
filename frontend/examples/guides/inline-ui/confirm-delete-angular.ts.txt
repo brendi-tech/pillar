@@ -1,0 +1,66 @@
+import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { injectPillarTool } from '@anthropic-ai/pillar-angular';
+
+interface DeleteData {
+  itemId: string;
+  itemName: string;
+}
+
+@Component({
+  selector: 'app-confirm-delete-card',
+  standalone: true,
+  template: `
+    <div class="p-4 border border-red-200 rounded-lg bg-red-50">
+      <h3 class="font-semibold text-red-900">Delete {{ data.itemName }}?</h3>
+      <p class="text-red-700 text-sm mt-1">This action cannot be undone.</p>
+      <div class="flex gap-2 mt-4">
+        <button (click)="onCancel.emit()" [disabled]="loading">Cancel</button>
+        <button (click)="handleDelete()" [disabled]="loading" class="bg-red-600 text-white">
+          {{ loading ? 'Deleting...' : 'Delete' }}
+        </button>
+      </div>
+    </div>
+  `,
+})
+export class ConfirmDeleteCardComponent {
+  @Input() data!: DeleteData;
+  @Output() onConfirm = new EventEmitter<Record<string, unknown>>();
+  @Output() onCancel = new EventEmitter<void>();
+  @Output() onStateChange = new EventEmitter<{ state: string; message?: string }>();
+
+  loading = false;
+
+  async handleDelete() {
+    this.loading = true;
+    this.onStateChange.emit({ state: 'loading', message: 'Deleting...' });
+    try {
+      await deleteItem(this.data.itemId);
+      this.onStateChange.emit({ state: 'success', message: 'Deleted successfully' });
+      this.onConfirm.emit({ deleted: true });
+    } catch {
+      this.onStateChange.emit({ state: 'error', message: 'Failed to delete' });
+      this.loading = false;
+    }
+  }
+}
+
+@Component({
+  selector: 'app-delete-tools',
+  standalone: true,
+  template: '',
+})
+export class DeleteToolsComponent {
+  constructor() {
+    injectPillarTool({
+      name: 'delete_item',
+      type: 'inline_ui',
+      description: 'Delete an item permanently',
+      parameters: {
+        itemId: { type: 'string' },
+        itemName: { type: 'string' },
+      },
+      execute: async ({ itemId, itemName }) => ({ itemId, itemName }),
+      render: ConfirmDeleteCardComponent,
+    });
+  }
+}

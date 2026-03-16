@@ -1,0 +1,29 @@
+const pillar = await Pillar.init({ productKey: 'your-product-key' });
+
+pillar.defineTool({
+  name: 'invite_members',
+  type: 'inline_ui',
+  description: 'Invite team members to the workspace',
+  parameters: {
+    emails: { type: 'array', items: { type: 'string' }, description: 'Email addresses' },
+    role: { type: 'string', enum: ['admin', 'member'], description: 'Role for members' },
+  },
+  execute: async ({ emails, role }) => {
+    return { emails, role };
+  },
+  render: (container, data, { onConfirm, onCancel }) => {
+    container.innerHTML = `
+      <div style="padding: 16px; border: 1px solid #e5e7eb; border-radius: 8px;">
+        <h3 style="font-weight: 600; margin-bottom: 12px;">Invite Team Members</h3>
+        <p style="margin-bottom: 16px;">Inviting ${data.emails.length} members as ${data.role}</p>
+        <div style="display: flex; gap: 8px;">
+          <button id="cancel-btn">Cancel</button>
+          <button id="confirm-btn">Send Invites</button>
+        </div>
+      </div>
+    `;
+    container.querySelector('#cancel-btn').onclick = onCancel;
+    container.querySelector('#confirm-btn').onclick = () => onConfirm();
+    return () => { container.innerHTML = ''; };
+  },
+});

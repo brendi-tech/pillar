@@ -1,0 +1,23 @@
+<script setup lang="ts">
+import type { ToolRenderProps } from '@pillar-ai/vue';
+import { Button, Card, CardHeader, CardContent } from '@/components/ui';
+
+interface ConfirmData {
+  message: string;
+}
+
+const props = defineProps<ToolRenderProps<ConfirmData>>();
+</script>
+
+<template>
+  <Card>
+    <CardHeader>Confirm Action</CardHeader>
+    <CardContent>
+      <p>{{ props.data.message }}</p>
+      <div class="flex gap-2 mt-4">
+        <Button variant="outline" @click="props.onCancel()">Cancel</Button>
+        <Button @click="props.onConfirm()">Confirm</Button>
+      </div>
+    </CardContent>
+  </Card>
+</template>

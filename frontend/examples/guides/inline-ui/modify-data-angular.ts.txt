@@ -1,0 +1,40 @@
+import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
+
+interface InviteData {
+  emails: string[];
+  role: string;
+}
+
+@Component({
+  selector: 'app-invite-card',
+  standalone: true,
+  template: `
+    <div>
+      @for (email of emails; track email) {
+        <div>
+          {{ email }}
+          <button (click)="removeEmail(email)">×</button>
+        </div>
+      }
+      <button (click)="confirm()">Confirm</button>
+    </div>
+  `,
+})
+export class InviteCardComponent implements OnInit {
+  @Input() data!: InviteData;
+  @Output() onConfirm = new EventEmitter<Record<string, unknown>>();
+
+  emails: string[] = [];
+
+  ngOnInit() {
+    this.emails = [...this.data.emails];
+  }
+
+  removeEmail(email: string) {
+    this.emails = this.emails.filter(e => e !== email);
+  }
+
+  confirm() {
+    this.onConfirm.emit({ ...this.data, emails: this.emails });
+  }
+}
