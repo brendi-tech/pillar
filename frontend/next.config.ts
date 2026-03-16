@@ -4,7 +4,7 @@ import path from "path";
 import createMDX from "@next/mdx";
 import remarkGfm from "remark-gfm";
 import rehypeSlug from "rehype-slug";
-import { withSentryConfig } from "@sentry/nextjs";
+
 
 // Load env vars from monorepo root .env.local (shared with Django backend)
 // Using manual dotenv parsing since @next/env doesn't load from parent dirs properly
@@ -399,6 +399,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withSentryConfig(withMDX(nextConfig), {
-  silent: !process.env.CI,
-});
+export default withMDX(nextConfig);

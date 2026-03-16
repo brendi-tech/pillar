@@ -115,6 +115,20 @@ function isIpAddress(hostname: string): boolean {
 }
 
 /**
+ * Check if an IP address is in a private/reserved range (RFC 1918 + loopback).
+ * Private IPs are used in local dev; public IPs are production load balancers.
+ */
+function isPrivateIp(hostname: string): boolean {
+  const ip = hostname.split(":")[0];
+  return (
+    ip.startsWith("10.") ||
+    ip.startsWith("192.168.") ||
+    ip.startsWith("127.") ||
+    /^172\.(1[6-9]|2\d|3[01])\./.test(ip)
+  );
+}
+
+/**
  * Check if this is a root domain (no subdomain) - marketing site.
  */
 function isRootDomain(hostname: string): boolean {
@@ -247,8 +261,29 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(`${getAdminSubdomainUrl(hostname)}${newPath}`);
   }
 
+  // REDIRECT/BLOCK: Auth paths on bare IP addresses.
+  // IPs can't have subdomains, so redirect public IPs (e.g. GCP load balancer
+  // 35.190.36.169) to production admin, and return 404 for private IPs (local dev).
+  if (
+    isMarketing &&
+    isIpAddress(hostname) &&
+    (pathname.startsWith("/login") ||
+      pathname.startsWith("/signup") ||
+      pathname.startsWith("/onboarding") ||
+      pathname.startsWith("/logout") ||
+      pathname.startsWith("/forgot-password") ||
+      pathname.startsWith("/reset-password"))
+  ) {
+    if (!isPrivateIp(hostname)) {
+      return NextResponse.redirect(
+        `https://admin.trypillar.com${pathname}${request.nextUrl.search}`
+      );
+    }
+    return new NextResponse("Not Found", { status: 404 });
+  }
+
   // REDIRECT: If someone tries to access /login, /signup, /signup-beta, /onboarding on root domain,
-  // redirect them to the admin subdomain (skip for IP addresses - no subdomain concept)
+  // redirect them to the admin subdomain
   if (
     isMarketing &&
     !isIpAddress(hostname) &&

@@ -1,55 +1,25 @@
-"use client";
-
-import { AdminShell } from "@/components/AdminLayout";
-import {
-  OrganizationProvider,
-  ProductProvider,
-  SourcesProvider,
-  SystemNotificationProvider,
-  useAuth,
-  WebSocketProvider,
-} from "@/providers";
-import { PillarSyncProvider } from "@/providers/PillarSDKProvider";
-
-/**
- * Inner component that uses the auth context.
- */
-function AdminLayoutInner({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
-
-  // User is guaranteed to exist after auth provider passes
-  if (!user) {
-    return null;
-  }
-
-  return <AdminShell>{children}</AdminShell>;
-}
+import { isAdminRequest } from "@/lib/api-client";
+import { redirect } from "next/navigation";
+import { AdminLayoutClient } from "./AdminLayoutClient";
 
 /**
  * Admin layout for the Pillar dashboard.
- * Uses a different shell with sidebar navigation.
  *
- * Note: QueryClientProvider and AdminAuthProvider are provided by the root
+ * Server component guard: redirects non-admin requests (e.g. crawlers hitting
+ * trypillar.com/team) before any client code renders, preventing useAuth()
+ * from throwing outside AdminAuthProvider.
+ *
+ * QueryClientProvider and AdminAuthProvider are provided by the root
  * layout's AdminProviders wrapper for the admin subdomain.
  */
-export default function AdminLayout({
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <OrganizationProvider>
-      <ProductProvider>
-        <WebSocketProvider>
-          <SourcesProvider>
-            <SystemNotificationProvider>
-              <PillarSyncProvider>
-                <AdminLayoutInner>{children}</AdminLayoutInner>
-              </PillarSyncProvider>
-            </SystemNotificationProvider>
-          </SourcesProvider>
-        </WebSocketProvider>
-      </ProductProvider>
-    </OrganizationProvider>
-  );
+  const isAdmin = await isAdminRequest();
+  if (!isAdmin) {
+    redirect("/");
+  }
+  return <AdminLayoutClient>{children}</AdminLayoutClient>;
 }
