@@ -1,16 +1,18 @@
 "use client";
 
+import { useState } from "react";
 import type { MetadataItem } from "@/components/shared";
 import { MetadataStrip } from "@/components/shared";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
+import { ConversationDetailDrawer } from "@/components/ConversationDetailDrawer";
 import {
   KNOWLEDGE_ITEM_STATUS_COLORS,
   KNOWLEDGE_ITEM_TYPE_LABELS,
 } from "@/types/knowledge";
 import type { KnowledgeItem } from "@/types/knowledge";
 import { format, parseISO, isValid } from "date-fns";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, MessageSquare } from "lucide-react";
 
 // =============================================================================
 // Helper Functions
@@ -69,6 +71,11 @@ const PROMOTED_METADATA_KEYS = new Set([
   "scraped_at",
 ]);
 
+// Metadata keys that are handled specially (clickable, etc.)
+const SPECIAL_METADATA_KEYS = new Set([
+  "source_conversation_id",
+]);
+
 // =============================================================================
 // Component
 // =============================================================================
@@ -82,6 +89,7 @@ interface ItemMetadataSectionProps {
  * Handles status, type, chunks, word count, dates, URLs, and dynamic metadata fields.
  */
 export function ItemMetadataSection({ item }: ItemMetadataSectionProps) {
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const metadataItems: MetadataItem[] = [];
 
   // Status badge
@@ -152,10 +160,29 @@ export function ItemMetadataSection({ item }: ItemMetadataSectionProps) {
     });
   }
 
-  // Dynamic metadata fields (not in promoted keys)
+  // Source conversation (clickable to open drawer)
+  const sourceConversationId = item.metadata?.source_conversation_id;
+  if (sourceConversationId && typeof sourceConversationId === "string") {
+    metadataItems.push({
+      label: "Source Conversation",
+      value: (
+        <button
+          type="button"
+          onClick={() => setSelectedConversationId(sourceConversationId)}
+          className="inline-flex items-center gap-1.5 text-primary hover:underline underline-offset-2"
+        >
+          <MessageSquare className="h-3 w-3" />
+          <span>View Conversation</span>
+        </button>
+      ),
+      allowWrap: true,
+    });
+  }
+
+  // Dynamic metadata fields (not in promoted keys or special keys)
   if (item.metadata) {
     const remainingEntries = Object.entries(item.metadata).filter(
-      ([key]) => !PROMOTED_METADATA_KEYS.has(key)
+      ([key]) => !PROMOTED_METADATA_KEYS.has(key) && !SPECIAL_METADATA_KEYS.has(key)
     );
     
     for (const [key, value] of remainingEntries) {
@@ -180,26 +207,36 @@ export function ItemMetadataSection({ item }: ItemMetadataSectionProps) {
   }
 
   return (
-    <div className="space-y-2">
-      {item.url && (
-        <div className="rounded-lg border bg-card px-4 py-3">
-          <div className="flex items-center gap-2 text-sm min-w-0">
-            <span className="text-xs text-muted-foreground shrink-0">
-              Source URL
-            </span>
-            <a
-              href={item.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline min-w-0"
-            >
-              <ExternalLink className="h-3 w-3 shrink-0" />
-              <span className="truncate">{item.url}</span>
-            </a>
+    <>
+      <div className="space-y-2">
+        {item.url && (
+          <div className="rounded-lg border bg-card px-4 py-3">
+            <div className="flex items-center gap-2 text-sm min-w-0">
+              <span className="text-xs text-muted-foreground shrink-0">
+                Source URL
+              </span>
+              <a
+                href={item.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline min-w-0"
+              >
+                <ExternalLink className="h-3 w-3 shrink-0" />
+                <span className="truncate">{item.url}</span>
+              </a>
+            </div>
           </div>
-        </div>
-      )}
-      <MetadataStrip items={metadataItems} columns={4} />
-    </div>
+        )}
+        <MetadataStrip items={metadataItems} columns={4} />
+      </div>
+
+      <ConversationDetailDrawer
+        conversationId={selectedConversationId}
+        open={selectedConversationId !== null}
+        onOpenChange={(open) => {
+          if (!open) setSelectedConversationId(null);
+        }}
+      />
+    </>
   );
 }

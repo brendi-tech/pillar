@@ -19,7 +19,7 @@ import type {
   ConversationFilters,
 } from "@/types/admin";
 
-import { ConversationDetailDrawer } from "./ConversationDetailDrawer";
+import { ConversationDetailDrawer } from "@/components/ConversationDetailDrawer";
 import {
   ConversationsFilters,
   type ConversationsFiltersState,

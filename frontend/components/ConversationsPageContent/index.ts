@@ -1,4 +1,4 @@
-export { ConversationDetailDrawer } from "./ConversationDetailDrawer";
+export { ConversationDetailDrawer } from "@/components/ConversationDetailDrawer";
 export { ConversationsFilters } from "./ConversationsFilters";
 export { ConversationsPageContent } from "./ConversationsPageContent";
 export { ConversationsTable } from "./ConversationsTable";

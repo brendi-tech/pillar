@@ -22,8 +22,10 @@ import {
   X,
 } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
+import Link from 'next/link';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { marked } from 'marked';
+import { MarkdownRenderer } from '@/components/MarkdownRenderer';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
@@ -63,6 +65,7 @@ import type {
   CreateCorrectionResponse,
 } from '@/types/admin';
 import { cn } from '@/lib/utils';
+import { ExistingCorrectionDisplay } from '@/components/ExistingCorrectionDisplay';
 
 import './ConversationDetailDrawer.css';
 import { useConversationTranslation } from './useConversationTranslation';
@@ -298,7 +301,10 @@ function InlineCorrectionForm({
             <div className="rounded-md border border-border/50 bg-background/80 px-3 py-2 space-y-1">
               <p className="text-xs font-medium text-foreground">{result.processed_title}</p>
               {result.processed_content && (
-                <p className="text-[11px] text-muted-foreground line-clamp-3">{result.processed_content}</p>
+                <MarkdownRenderer
+                  content={result.processed_content}
+                  className="text-[11px] text-muted-foreground line-clamp-3 prose-p:my-0 prose-p:leading-relaxed"
+                />
               )}
             </div>
           )}
@@ -527,7 +533,17 @@ function ChatMessageItem({
           <div className="flex items-center gap-2 mt-0.5">
             <FeedbackIndicator feedback={message.feedback} />
             <SourcesList chunks={message.chunks_details || []} />
-            {onCreateCorrection && (
+            {message.correction && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex h-5 w-5 items-center justify-center rounded-full bg-violet-500/10 text-violet-600 dark:text-violet-400">
+                    <Wand2 className="h-3 w-3" />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>Correction applied</TooltipContent>
+              </Tooltip>
+            )}
+            {onCreateCorrection && !message.correction && (
               <button
                 onClick={(e) => { e.stopPropagation(); onCreateCorrection(); }}
                 className="opacity-0 group-hover:opacity-100 inline-flex items-center gap-1 text-[11px] text-muted-foreground transition-all hover:text-primary"
@@ -543,6 +559,10 @@ function ChatMessageItem({
           <div className="rounded-md border border-amber-200/50 bg-amber-50/50 dark:border-amber-800/20 dark:bg-amber-950/20 px-2.5 py-1.5 text-[11px] text-amber-700 dark:text-amber-300 mt-0.5">
             <span className="font-medium">Feedback:</span> {message.feedback_comment}
           </div>
+        )}
+
+        {isAssistant && message.correction && (
+          <ExistingCorrectionDisplay correction={message.correction} />
         )}
       </div>
     </div>

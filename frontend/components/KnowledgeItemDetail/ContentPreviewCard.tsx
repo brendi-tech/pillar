@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Spinner } from "@/components/ui/spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import { KnowledgeItem } from "@/types/knowledge";
 import { Check, Copy, Download } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -132,9 +133,14 @@ export function ContentPreviewCard({
 
           <TabsContent value="optimized">
             <ScrollArea className="h-[60vh] min-h-[400px] max-h-[800px] w-full rounded-md border bg-muted/30 p-4">
-              <pre className="whitespace-pre-wrap text-sm font-mono break-words">
-                {item.optimized_content || "No optimized content available"}
-              </pre>
+              {item.optimized_content ? (
+                <MarkdownRenderer
+                  content={item.optimized_content}
+                  className="prose-sm max-w-none"
+                />
+              ) : (
+                <p className="text-sm text-muted-foreground">No optimized content available</p>
+              )}
             </ScrollArea>
           </TabsContent>
 
@@ -152,9 +158,14 @@ export function ContentPreviewCard({
               />
             ) : (
               <ScrollArea className="h-[60vh] min-h-[400px] max-h-[800px] w-full rounded-md border bg-muted/30 p-4">
-                <pre className="whitespace-pre-wrap text-sm font-mono break-words">
-                  {item.raw_content || "No original content available"}
-                </pre>
+                {item.raw_content ? (
+                  <MarkdownRenderer
+                    content={item.raw_content}
+                    className="prose-sm max-w-none"
+                  />
+                ) : (
+                  <p className="text-sm text-muted-foreground">No original content available</p>
+                )}
               </ScrollArea>
             )}
           </TabsContent>

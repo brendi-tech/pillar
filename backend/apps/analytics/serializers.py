@@ -6,7 +6,7 @@ from apps.analytics.models import (
     Search, WidgetSession,
     ChatConversation, ChatMessage, Visitor
 )
-from apps.knowledge.models import KnowledgeItem, KnowledgeChunk
+from apps.knowledge.models import KnowledgeItem, KnowledgeChunk, Correction
 
 
 class SearchSerializer(serializers.ModelSerializer):
@@ -134,12 +134,34 @@ class ChunkRetrievedSerializer(serializers.Serializer):
     content_preview = serializers.CharField(required=False)
 
 
+class MessageCorrectionSerializer(serializers.ModelSerializer):
+    """Lightweight serializer for correction info embedded in messages."""
+    
+    knowledge_item_source_id = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Correction
+        fields = [
+            'id', 'status', 'correction_type', 'processed_title',
+            'processed_content', 'user_correction_notes', 'created_at',
+            'knowledge_item', 'knowledge_item_source_id',
+        ]
+        read_only_fields = fields
+    
+    def get_knowledge_item_source_id(self, obj) -> str | None:
+        """Get the source ID for the knowledge item to construct the link."""
+        if obj.knowledge_item and obj.knowledge_item.source_id:
+            return str(obj.knowledge_item.source_id)
+        return None
+
+
 class ChatMessageDetailSerializer(serializers.ModelSerializer):
     """
     Detailed serializer for ChatMessage with resolved chunk information.
     Used in conversation detail view.
     """
     chunks_details = serializers.SerializerMethodField()
+    correction = serializers.SerializerMethodField()
     
     class Meta:
         model = ChatMessage
@@ -152,6 +174,7 @@ class ChatMessageDetailSerializer(serializers.ModelSerializer):
             'query_type', 'intent_category', 'was_stopped',
             'display_trace',  # ReAct agent display trace (thinking + tool steps)
             'images',  # Images attached to user messages
+            'correction',  # Existing correction for this message
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
     
@@ -194,6 +217,24 @@ class ChatMessageDetailSerializer(serializers.ModelSerializer):
             chunk_details.append(detail)
         
         return chunk_details
+    
+    def get_correction(self, obj) -> dict | None:
+        """
+        Get the most recent correction for this message, if any.
+        Uses prefetched data if available.
+        """
+        # Check for prefetched corrections (from viewset Prefetch with to_attr)
+        if hasattr(obj, '_corrections_list'):
+            corrections = obj._corrections_list
+            if corrections:
+                return MessageCorrectionSerializer(corrections[0]).data
+            return None
+        
+        # Fallback to query if not prefetched
+        correction = Correction.objects.filter(source_message=obj).order_by('-created_at').first()
+        if correction:
+            return MessageCorrectionSerializer(correction).data
+        return None
 
 
 class ChatConversationDetailSerializer(serializers.ModelSerializer):

@@ -634,6 +634,19 @@ export interface ReasoningStep {
   answer_strategy?: string;
 }
 
+/** Lightweight correction info embedded in messages */
+export interface MessageCorrection {
+  id: string;
+  status: CorrectionStatus;
+  correction_type: CorrectionType;
+  processed_title: string;
+  processed_content: string;
+  user_correction_notes: string;
+  created_at: string;
+  knowledge_item: string | null;
+  knowledge_item_source_id: string | null;
+}
+
 export interface ChatMessage {
   id: string;
   conversation: string;
@@ -663,6 +676,8 @@ export interface ChatMessage {
   reasoning_trace?: ReasoningStep[];
   primary_cluster?: string | null;
   cluster_confidence?: number | null;
+  // Existing correction for this message (if any)
+  correction?: MessageCorrection | null;
 }
 
 export interface VisitorSummary {

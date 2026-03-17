@@ -2,7 +2,7 @@
 ViewSets for the analytics app.
 """
 from datetime import datetime
-from django.db.models import Count, Exists, OuterRef, Subquery, Q
+from django.db.models import Count, Exists, OuterRef, Subquery, Q, Prefetch
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -15,6 +15,7 @@ from apps.analytics.models import (
     Search, WidgetSession,
     ChatConversation, ChatMessage, Visitor
 )
+from apps.knowledge.models import Correction
 from apps.analytics.serializers import (
     SearchSerializer,
     WidgetSessionSerializer, ChatConversationSerializer, ChatMessageSerializer,
@@ -142,8 +143,19 @@ class ChatConversationViewSet(viewsets.ReadOnlyModelViewSet):
                 message_count=Count('messages')
             ).prefetch_related('messages')
         else:
-            # Detail view - prefetch messages ordered by timestamp
-            queryset = queryset.prefetch_related('messages')
+            # Detail view - prefetch messages with their corrections
+            queryset = queryset.prefetch_related(
+                Prefetch(
+                    'messages',
+                    queryset=ChatMessage.objects.prefetch_related(
+                        Prefetch(
+                            'corrections',
+                            queryset=Correction.objects.order_by('-created_at'),
+                            to_attr='_corrections_list'
+                        )
+                    )
+                )
+            )
         
         return queryset.order_by('-started_at')
 
