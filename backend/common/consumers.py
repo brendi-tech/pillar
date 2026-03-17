@@ -67,11 +67,17 @@ class HelpCenterConsumer(AsyncWebsocketConsumer):
             await self.close(code=4003)  # Custom close code for unauthorized
             return
         
-        # Accept connection and join help center group
-        await self.channel_layer.group_add(
-            self.hc_group_name,
-            self.channel_name
-        )
+        try:
+            await self.channel_layer.group_add(
+                self.hc_group_name,
+                self.channel_name
+            )
+        except Exception as e:
+            logger.error(
+                f"Failed to join channel group {self.hc_group_name}: {e}"
+            )
+            await self.close(code=1011)
+            return
         
         await self.accept()
         logger.info(f"WebSocket connected: User {user.email} joined help center {self.help_center_config_id}")
@@ -85,12 +91,16 @@ class HelpCenterConsumer(AsyncWebsocketConsumer):
     
     async def disconnect(self, close_code):
         """Handle WebSocket disconnection."""
-        # Leave help center group
         if hasattr(self, 'hc_group_name'):
-            await self.channel_layer.group_discard(
-                self.hc_group_name,
-                self.channel_name
-            )
+            try:
+                await self.channel_layer.group_discard(
+                    self.hc_group_name,
+                    self.channel_name
+                )
+            except Exception as e:
+                logger.warning(
+                    f"Failed to discard channel from group {self.hc_group_name}: {e}"
+                )
         
         if self.user:
             logger.info(

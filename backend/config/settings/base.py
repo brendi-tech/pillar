@@ -18,6 +18,8 @@ You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 """
 import os
+import socket
+import sys
 from datetime import timedelta
 from pathlib import Path
 
@@ -285,6 +287,17 @@ CORS_ALLOW_CREDENTIALS = True
 # Redis Configuration
 REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379')
 
+# TCP keepalive options to detect dead connections before the app tries to use
+# them. These constants are Linux-only; macOS uses a different API.
+if sys.platform == "linux":
+    _REDIS_KEEPALIVE_OPTS = {
+        socket.TCP_KEEPIDLE: 60,
+        socket.TCP_KEEPINTVL: 15,
+        socket.TCP_KEEPCNT: 3,
+    }
+else:
+    _REDIS_KEEPALIVE_OPTS = {}
+
 # Cache Configuration
 CACHES = {
     'default': {
@@ -294,8 +307,11 @@ CACHES = {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
             'SOCKET_CONNECT_TIMEOUT': 5,
             'SOCKET_TIMEOUT': 5,
+            'SOCKET_KEEPALIVE': True,
+            'SOCKET_KEEPALIVE_OPTIONS': _REDIS_KEEPALIVE_OPTS,
             'CONNECTION_POOL_KWARGS': {
                 'max_connections': 50,
+                'health_check_interval': 30,
             },
         },
         'KEY_PREFIX': 'help_center',

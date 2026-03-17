@@ -186,9 +186,13 @@ CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            "hosts": [REDIS_URL],
-            "capacity": 1500,  # Increased for streaming workloads
-            "expiry": 10,  # Message expiry in seconds
+            "hosts": [{
+                "address": REDIS_URL,
+                "socket_keepalive": True,
+                "health_check_interval": 30,
+            }],
+            "capacity": 1500,
+            "expiry": 10,
         },
     },
 }

@@ -31,6 +31,8 @@ from typing import Self
 
 import redis.asyncio as aioredis
 from django.conf import settings
+from redis.backoff import ExponentialBackoff
+from redis.retry import Retry
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +51,8 @@ class RedisDistributedSemaphore:
     """
 
     KEY_PREFIX = "semaphore"
+    _RETRY = Retry(ExponentialBackoff(cap=2, base=0.25), retries=3)
+    _RETRY_ERRORS = [ConnectionError, TimeoutError, ConnectionResetError]
 
     def __init__(
         self,
@@ -73,6 +77,18 @@ class RedisDistributedSemaphore:
     def _redis_url(self) -> str:
         return getattr(settings, "REDIS_URL", os.environ.get("REDIS_URL", "redis://localhost:6379"))
 
+    def _make_client(self) -> aioredis.Redis:
+        return aioredis.from_url(
+            self._redis_url(),
+            decode_responses=True,
+            health_check_interval=30,
+            socket_keepalive=True,
+            socket_connect_timeout=5,
+            socket_timeout=5,
+            retry=self._RETRY,
+            retry_on_error=self._RETRY_ERRORS,
+        )
+
     def _key_pattern(self) -> str:
         return f"{self.KEY_PREFIX}:{self.name}:*"
 
@@ -83,7 +99,7 @@ class RedisDistributedSemaphore:
 
     async def acquire(self) -> str:
         """Block until a slot is available. Returns the token string."""
-        client = aioredis.from_url(self._redis_url(), decode_responses=True)
+        client = self._make_client()
         token = f"{uuid.uuid4().hex[:12]}-{os.getpid()}"
 
         try:
@@ -143,7 +159,7 @@ class RedisDistributedSemaphore:
                 pass
             self._refresh_task = None
 
-        client = aioredis.from_url(self._redis_url(), decode_responses=True)
+        client = self._make_client()
         try:
             key = self._token_key(self._token)
             deleted = await client.delete(key)
