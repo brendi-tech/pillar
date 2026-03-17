@@ -37,12 +37,13 @@ export class InviteToolsComponent {
       name: 'invite_members',
       type: 'inline_ui',
       description: 'Invite team members to the workspace',
-      parameters: {
-        emails: { type: 'array', items: { type: 'string' }, description: 'Email addresses' },
-        role: { type: 'string', enum: ['admin', 'member'], description: 'Role for members' },
-      },
-      execute: async ({ emails, role }) => {
-        return { emails, role };
+      inputSchema: {
+        type: 'object',
+        properties: {
+          emails: { type: 'array', items: { type: 'string' }, description: 'Email addresses' },
+          role: { type: 'string', enum: ['admin', 'member'], description: 'Role for members' },
+        },
+        required: ['emails'],
       },
       render: InviteCardComponent,
     });

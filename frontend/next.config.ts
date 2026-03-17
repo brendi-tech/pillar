@@ -331,17 +331,22 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/docs/features/custom-cards",
-        destination: "/docs/core-concepts/inline-ui",
+        destination: "/docs/core-concepts/tools#inline-ui",
         permanent: true,
       },
       {
         source: "/docs/core-concepts/custom-cards",
-        destination: "/docs/core-concepts/inline-ui",
+        destination: "/docs/core-concepts/tools#inline-ui",
         permanent: true,
       },
       {
         source: "/docs/guides/custom-cards",
         destination: "/docs/guides/inline-ui",
+        permanent: true,
+      },
+      {
+        source: "/docs/core-concepts/inline-ui",
+        destination: "/docs/core-concepts/tools#inline-ui",
         permanent: true,
       },
       {

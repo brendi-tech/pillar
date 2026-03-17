@@ -2,7 +2,12 @@ usePillarTool({
   // Required
   name: string,             // Unique identifier for this tool
   description: string,      // AI uses this to match user intent
+
+  // Required for non-inline_ui types
   execute: (input) => void, // Your execution logic
+
+  // Required for inline_ui type (instead of execute)
+  render: Component,        // React/Vue/Angular component to render in chat
 
   // Optional
   type?: ToolType,          // navigate, trigger_tool, query, inline_ui, external_link, copy_text

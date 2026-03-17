@@ -55,11 +55,14 @@ export class DeleteToolsComponent {
       name: 'delete_item',
       type: 'inline_ui',
       description: 'Delete an item permanently',
-      parameters: {
-        itemId: { type: 'string' },
-        itemName: { type: 'string' },
+      inputSchema: {
+        type: 'object',
+        properties: {
+          itemId: { type: 'string' },
+          itemName: { type: 'string' },
+        },
+        required: ['itemId', 'itemName'],
       },
-      execute: async ({ itemId, itemName }) => ({ itemId, itemName }),
       render: ConfirmDeleteCardComponent,
     });
   }

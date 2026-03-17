@@ -54,7 +54,6 @@ export const docsNavigation: NavSection[] = [
     items: [
       { title: "Tools", href: "/docs/core-concepts/tools" },
       { title: "Knowledge Base", href: "/docs/core-concepts/knowledge-base" },
-      { title: "Inline UI", href: "/docs/core-concepts/inline-ui" },
       { title: "Human Escalation", href: "/docs/core-concepts/human-escalation" },
     ],
   },
