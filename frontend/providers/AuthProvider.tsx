@@ -263,9 +263,24 @@ export function AdminAuthProvider({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const value: AuthContextValue = {
+    user,
+    isAuthenticated: !!user,
+    isLoading,
+    logout,
+    refreshUser,
+    login,
+    loginWithTokens,
+    signUp,
+  };
+
   // Show loading screen while checking auth
   if (isLoading) {
-    return <FullScreenLoading />;
+    return (
+      <AuthContext.Provider value={value}>
+        <FullScreenLoading />
+      </AuthContext.Provider>
+    );
   }
 
   // Redirect to login if user is not authenticated
@@ -280,19 +295,12 @@ export function AdminAuthProvider({
     "/reset-password",
   ].includes(pathname) || pathname.startsWith("/oauth-callback") || pathname.startsWith("/impersonate-callback") || pathname.startsWith("/cli/auth");
   if (!isAuthPage && !user) {
-    return <Rerouter route={buildReturnToUrl("/login", pathname)} />;
+    return (
+      <AuthContext.Provider value={value}>
+        <Rerouter route={buildReturnToUrl("/login", pathname)} />
+      </AuthContext.Provider>
+    );
   }
-
-  const value: AuthContextValue = {
-    user,
-    isAuthenticated: !!user,
-    isLoading,
-    logout,
-    refreshUser,
-    login,
-    loginWithTokens,
-    signUp,
-  };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
