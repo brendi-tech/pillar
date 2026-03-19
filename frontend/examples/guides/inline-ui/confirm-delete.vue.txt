@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { ref } from 'vue';
 import { usePillarTool, type ToolRenderProps } from '@pillar-ai/vue';
 import { defineComponent } from 'vue';
 
@@ -9,35 +8,14 @@ interface DeleteData {
 }
 
 const ConfirmDeleteCard = defineComponent({
-  props: ['data', 'onConfirm', 'onCancel', 'onStateChange'],
+  props: ['data', 'onStateChange'],
   setup(props: ToolRenderProps<DeleteData>) {
-    const loading = ref(false);
-
-    async function handleDelete() {
-      loading.value = true;
-      props.onStateChange?.('loading', 'Deleting...');
-      try {
-        await deleteItem(props.data.itemId);
-        props.onStateChange?.('success', 'Deleted successfully');
-        props.onConfirm({ deleted: true });
-      } catch {
-        props.onStateChange?.('error', 'Failed to delete');
-        loading.value = false;
-      }
-    }
-
-    return { loading, handleDelete };
+    return {};
   },
   template: `
     <div class="p-4 border border-red-200 rounded-lg bg-red-50">
       <h3 class="font-semibold text-red-900">Delete {{ data.itemName }}?</h3>
       <p class="text-red-700 text-sm mt-1">This action cannot be undone.</p>
-      <div class="flex gap-2 mt-4">
-        <button @click="onCancel()" :disabled="loading">Cancel</button>
-        <button @click="handleDelete" :disabled="loading" class="bg-red-600 text-white">
-          {{ loading ? 'Deleting...' : 'Delete' }}
-        </button>
-      </div>
     </div>
   `,
 });
