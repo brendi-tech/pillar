@@ -308,16 +308,20 @@ export function AgentsPage({
               <div className="grid gap-2 py-2">
                 {allChannels.map((channel) => {
                   const Icon = CHANNEL_ICONS[channel] || Globe;
+                  const comingSoon = channel === "discord" || channel === "email";
                   return (
                     <Button
                       key={channel}
                       variant="outline"
                       className="justify-start gap-3 h-12"
                       onClick={() => handleAddAgent(channel)}
-                      disabled={createAgent.isPending}
+                      disabled={createAgent.isPending || comingSoon}
                     >
                       <Icon className="h-4 w-4 text-muted-foreground" />
                       {CHANNEL_LABELS[channel]}
+                      {comingSoon && (
+                        <span className="ml-auto text-xs text-muted-foreground">Coming Soon</span>
+                      )}
                     </Button>
                   );
                 })}
