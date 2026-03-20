@@ -110,3 +110,6 @@ class ActionDeployment(TenantAwareModel):
     def action_count(self) -> int:
         """Get the number of actions in this deployment."""
         return self.actions.count()
+
+
+ToolDeployment = ActionDeployment

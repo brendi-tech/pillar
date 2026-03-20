@@ -707,6 +707,9 @@ export interface ChatConversationListItem {
   external_session_id?: string;
   logging_enabled?: boolean;
   visitor?: VisitorSummary | null;
+  // Agent / Channel fields
+  channel?: string;
+  agent_name?: string | null;
 }
 
 export interface ChatConversationDetail {
@@ -749,6 +752,8 @@ export interface ConversationFilters {
   has_negative_feedback?: boolean;
   query_type?: string;
   intent_category?: string;
+  channel?: string;
+  agent?: string;
   search?: string;
   page?: number;
   page_size?: number;

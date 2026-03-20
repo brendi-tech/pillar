@@ -29,7 +29,7 @@ export function DocsSDKProvider({ children }: DocsSDKProviderProps) {
   const apiBaseUrl =
     process.env.NEXT_PUBLIC_PILLAR_API_URL || "http://localhost:8003";
   // Docs pages use pillar-docs help center for SDK documentation
-  const productKey = "pillar-docs";
+  const agentSlug = "pillar-docs";
 
   // Destroy the SDK when navigating away from docs pages
   // This prevents the edge trigger and panel from showing on marketing/login pages
@@ -42,7 +42,7 @@ export function DocsSDKProvider({ children }: DocsSDKProviderProps) {
 
   return (
     <PillarProvider
-      productKey={productKey}
+      agentSlug={agentSlug}
       config={{
         apiBaseUrl,
         panel: {

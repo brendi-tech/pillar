@@ -43,6 +43,11 @@ class KnowledgeSource(TenantAwareModel):
         CLOUD_STORAGE = 'cloud_storage', 'Cloud Storage'  # S3/GCS
         DOCUMENT_UPLOAD = 'document_upload', 'Document Upload'  # Direct uploads
 
+    class Visibility(models.TextChoices):
+        INTERNAL = 'internal', 'Internal'
+        EXTERNAL = 'external', 'External'
+        ALL = 'all', 'All'
+
     class Status(models.TextChoices):
         ACTIVE = 'active', 'Active'
         SYNCING = 'syncing', 'Syncing'
@@ -53,6 +58,13 @@ class KnowledgeSource(TenantAwareModel):
     name = models.CharField(
         max_length=200,
         help_text="Display name for this source"
+    )
+    visibility = models.CharField(
+        max_length=20,
+        choices=Visibility.choices,
+        default=Visibility.ALL,
+        db_index=True,
+        help_text="Visibility tag for agent knowledge scoping",
     )
     source_type = models.CharField(
         max_length=50,

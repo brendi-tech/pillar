@@ -36,8 +36,33 @@ from common.views import contact_form, early_access_form
 from apps.knowledge.views import firecrawl_webhook_view
 from apps.billing.webhooks import stripe_webhook_view
 
+# Pillar backend SDK view (lazy import to avoid circular imports at module load)
+from django.views.decorators.csrf import csrf_exempt
+
+_cached_pillar_view = None
+
+@csrf_exempt
+async def _pillar_tools_view(request):
+    global _cached_pillar_view
+    if _cached_pillar_view is None:
+        from apps.tools.pillar_tools import pillar
+        _cached_pillar_view = pillar.django_view()
+    return await _cached_pillar_view(request)
+
 # Import views for top-level routes
-from apps.products.views import ProductViewSet, ActionSyncView, ActionSyncStatusView, EmbedConfigView, CLIInitView
+from apps.mcp.views_api import HeadlessChatView, HeadlessChatStreamView
+from apps.products.views import ProductViewSet, ActionSyncView, ActionSyncStatusView, EmbedConfigView, AgentEmbedConfigView, CLIInitView, AgentViewSet
+
+# Slack admin view
+from apps.integrations.slack.views import SlackInstallationAdminView, SlackInstallAdminView, SlackBYOBAdminView
+from apps.integrations.discord.views import DiscordInstallationAdminView, DiscordInstallAdminView
+from apps.integrations.email_channel.views import EmailChannelAdminView
+_slack_admin_view = SlackInstallationAdminView.as_view()
+_slack_install_admin_view = SlackInstallAdminView.as_view()
+_slack_byob_admin_view = SlackBYOBAdminView.as_view()
+_discord_admin_view = DiscordInstallationAdminView.as_view()
+_discord_install_admin_view = DiscordInstallAdminView.as_view()
+_email_admin_view = EmailChannelAdminView.as_view()
 
 # Import debug log views
 from apps.mcp.views.debug_logs import DebugSessionListView, DebugSessionDetailView, DebugSessionLatestView
@@ -45,6 +70,10 @@ from apps.mcp.views.debug_logs import DebugSessionListView, DebugSessionDetailVi
 # Configs router (alias for products)
 configs_router = DefaultRouter()
 configs_router.register(r'', ProductViewSet, basename='config')
+
+# Standalone agents router (direct access by agent ID)
+standalone_agents_router = DefaultRouter()
+standalone_agents_router.register(r'', AgentViewSet, basename='standalone-agent')
 
 
 def root_view(request):
@@ -106,17 +135,23 @@ urlpatterns = [
     # New domain-focused APIs
     path('api/admin/products/', include('apps.products.urls')),
     path('api/admin/analytics/', include('apps.analytics.urls')),
+    path('api/admin/identity/', include('apps.identity.urls_admin')),
     
     # CLI init endpoint (LLM-powered SDK scaffolding)
     path('api/cli/init/', CLIInitView.as_view(), name='cli-init'),
 
-    # Action sync endpoint for configs (CI/CD code-first action definitions)
+    # Action sync endpoints for configs (CI/CD code-first action definitions)
     # NOTE: Must be BEFORE configs_router to avoid being consumed by include()
     path('api/admin/configs/<slug:slug>/actions/sync/', ActionSyncView.as_view(), name='config-action-sync'),
-    # Action sync status endpoint for configs (polling async jobs)
     path('api/admin/configs/<slug:slug>/actions/sync/<uuid:job_id>/status/', ActionSyncStatusView.as_view(), name='config-action-sync-status'),
+    # Tool sync endpoints for configs (aliases)
+    path('api/admin/configs/<slug:slug>/tools/sync/', ActionSyncView.as_view(), name='config-tool-sync'),
+    path('api/admin/configs/<slug:slug>/tools/sync/<uuid:job_id>/status/', ActionSyncStatusView.as_view(), name='config-tool-sync-status'),
     # Configs endpoint (alias for products - for frontend compatibility)
     path('api/admin/configs/', include(configs_router.urls)),
+
+    # Standalone agent CRUD (GET/PATCH/DELETE by agent ID)
+    path('api/admin/agents/', include(standalone_agents_router.urls)),
 
     # Billing API
     path('api/admin/billing/', include('apps.billing.urls')),
@@ -129,13 +164,44 @@ urlpatterns = [
     # Public endpoints (no auth required)
     path('api/public/early-access/', early_access_form, name='public-early-access'),
     path('api/public/contact/', contact_form, name='public-contact'),
+    path('api/public/identity/', include('apps.identity.urls_public')),
 
     # Agent Score (public free tool — no auth)
     path('api/public/agent-score/', include('apps.agent_score.urls')),
     
     # SDK embed config (public - for SDK initialization)
     path('api/public/products/<slug:subdomain>/embed-config/', EmbedConfigView.as_view(), name='public-embed-config'),
+    path('api/public/agents/<slug:slug>/embed-config/', AgentEmbedConfigView.as_view(), name='public-agent-embed-config'),
     
+    # Headless chat API (SDK Bearer token auth)
+    path('api/chat/', HeadlessChatView.as_view(), name='headless-chat'),
+    path('api/chat/stream/', HeadlessChatStreamView.as_view(), name='headless-chat-stream'),
+
+    # Server-side tools
+    path('api/tools/', include('apps.tools.urls')),
+
+    # Pillar SDK webhook endpoint (backend tools)
+    path('api/pillar-tools/', _pillar_tools_view),
+
+    # Integrations (Slack, Discord, etc.) — public webhook endpoints
+    path('api/integrations/slack/', include('apps.integrations.slack.urls')),
+    path('api/integrations/discord/', include('apps.integrations.discord.urls')),
+    path('api/integrations/email/', include('apps.integrations.email_channel.urls')),
+
+    # Integrations — admin API (dashboard management)
+    path('api/admin/products/<uuid:product_id>/integrations/slack/install/',
+         _slack_install_admin_view, name='slack-install-admin'),
+    path('api/admin/products/<uuid:product_id>/integrations/slack/byob/',
+         _slack_byob_admin_view, name='slack-byob-admin'),
+    path('api/admin/products/<uuid:product_id>/integrations/slack/',
+         _slack_admin_view, name='slack-admin'),
+    path('api/admin/products/<uuid:product_id>/integrations/discord/install/',
+         _discord_install_admin_view, name='discord-install-admin'),
+    path('api/admin/products/<uuid:product_id>/integrations/discord/',
+         _discord_admin_view, name='discord-admin'),
+    path('api/admin/products/<uuid:product_id>/integrations/email/',
+         _email_admin_view, name='email-admin'),
+
     # Webhooks (no auth - signature verified)
     path('api/v1/webhooks/firecrawl/', firecrawl_webhook_view, name='firecrawl-webhook'),
     path('api/v1/webhooks/stripe/', stripe_webhook_view, name='stripe-webhook'),

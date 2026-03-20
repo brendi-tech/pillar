@@ -28,9 +28,10 @@ class TestFlushAll:
     async def _run_flush(self, message_id, collected_text, state, mock_aupdate):
         """Re-implement _flush_all exactly as in streamable_http for unit testing."""
         content = ''.join(collected_text)
+        tools = state.get("registered_tools", [])
         llm_message = {
             "messages": state.get("llm_messages", []),
-            "registered_actions": state.get("registered_actions", []),
+            "registered_tools": tools,
         }
         updates = {
             "content": content,
@@ -53,7 +54,7 @@ class TestFlushAll:
         mock_aupdate = AsyncMock()
         await self._run_flush(
             "msg-1", ["Hello ", "world!"],
-            {"llm_messages": [], "registered_actions": [], "display_trace": []},
+            {"llm_messages": [], "registered_tools": [], "display_trace": []},
             mock_aupdate,
         )
         call_kwargs = mock_aupdate.call_args[1]
@@ -61,20 +62,20 @@ class TestFlushAll:
 
     @pytest.mark.asyncio
     async def test_writes_llm_message_dict_format(self):
-        """Should wrap llm_messages and registered_actions in a dict."""
+        """Should wrap llm_messages and registered tools in a dict."""
         msgs = [{"role": "assistant", "content": "hi"}]
-        actions = [{"name": "create_chart"}]
+        tools = [{"name": "create_chart"}]
         mock_aupdate = AsyncMock()
 
         await self._run_flush(
             "msg-1", [],
-            {"llm_messages": msgs, "registered_actions": actions, "display_trace": []},
+            {"llm_messages": msgs, "registered_tools": tools, "display_trace": []},
             mock_aupdate,
         )
         call_kwargs = mock_aupdate.call_args[1]
         assert call_kwargs["llm_message"] == {
             "messages": msgs,
-            "registered_actions": actions,
+            "registered_tools": tools,
         }
 
     @pytest.mark.asyncio
@@ -85,7 +86,7 @@ class TestFlushAll:
 
         await self._run_flush(
             "msg-1", [],
-            {"llm_messages": [], "registered_actions": [], "display_trace": trace},
+            {"llm_messages": [], "registered_tools": [], "display_trace": trace},
             mock_aupdate,
         )
         call_kwargs = mock_aupdate.call_args[1]
@@ -97,7 +98,7 @@ class TestFlushAll:
         mock_aupdate = AsyncMock()
         await self._run_flush(
             "msg-1", [],
-            {"llm_messages": [], "registered_actions": [], "display_trace": [], "model_used": "gpt-4"},
+            {"llm_messages": [], "registered_tools": [], "display_trace": [], "model_used": "gpt-4"},
             mock_aupdate,
         )
         call_kwargs = mock_aupdate.call_args[1]
@@ -109,7 +110,7 @@ class TestFlushAll:
         mock_aupdate = AsyncMock()
         await self._run_flush(
             "msg-1", [],
-            {"llm_messages": [], "registered_actions": [], "display_trace": [], "model_used": ""},
+            {"llm_messages": [], "registered_tools": [], "display_trace": [], "model_used": ""},
             mock_aupdate,
         )
         call_kwargs = mock_aupdate.call_args[1]
@@ -122,7 +123,7 @@ class TestFlushAll:
         await self._run_flush(
             "msg-1", [],
             {
-                "llm_messages": [], "registered_actions": [], "display_trace": [],
+                "llm_messages": [], "registered_tools": [], "display_trace": [],
                 "prompt_tokens": 500, "completion_tokens": 200,
             },
             mock_aupdate,
@@ -138,7 +139,7 @@ class TestFlushAll:
         mock_aupdate = AsyncMock()
         await self._run_flush(
             "msg-1", [],
-            {"llm_messages": [], "registered_actions": [], "display_trace": [], "prompt_tokens": None},
+            {"llm_messages": [], "registered_tools": [], "display_trace": [], "prompt_tokens": None},
             mock_aupdate,
         )
         call_kwargs = mock_aupdate.call_args[1]
@@ -152,7 +153,7 @@ class TestFlushAll:
         await self._run_flush(
             "msg-1", [],
             {
-                "llm_messages": [], "registered_actions": [], "display_trace": [],
+                "llm_messages": [], "registered_tools": [], "display_trace": [],
                 "peak_context_occupancy": 0.85,
             },
             mock_aupdate,
@@ -166,7 +167,7 @@ class TestFlushAll:
         mock_aupdate = AsyncMock()
         await self._run_flush(
             "msg-1", [],
-            {"llm_messages": [], "registered_actions": [], "display_trace": []},
+            {"llm_messages": [], "registered_tools": [], "display_trace": []},
             mock_aupdate,
         )
         call_kwargs = mock_aupdate.call_args[1]
@@ -187,7 +188,7 @@ class TestStateCheckpointHandling:
             "stream_completed": False,
             "llm_messages": [],
             "display_trace": [],
-            "registered_actions": [],
+            "registered_tools": [],
             "model_used": "",
             "prompt_tokens": None,
             "completion_tokens": None,
@@ -200,7 +201,7 @@ class TestStateCheckpointHandling:
         """Simulate the state_checkpoint handler from streamable_http."""
         flush_state["llm_messages"] = event.get("llm_messages", [])
         flush_state["display_trace"] = event.get("display_trace", [])
-        flush_state["registered_actions"] = event.get("registered_actions", [])
+        flush_state["registered_tools"] = event.get("registered_tools", [])
         flush_state["model_used"] = event.get("model_used", "")
         flush_state["prompt_tokens"] = event.get("prompt_tokens")
         flush_state["completion_tokens"] = event.get("completion_tokens")
@@ -214,7 +215,7 @@ class TestStateCheckpointHandling:
             "type": "state_checkpoint",
             "llm_messages": [{"role": "assistant", "content": "hi"}],
             "display_trace": [{"step_type": "thinking"}],
-            "registered_actions": [{"name": "create_chart"}],
+            "registered_tools": [{"name": "create_chart"}],
             "model_used": "gpt-4",
             "prompt_tokens": 300,
             "completion_tokens": 100,
@@ -224,7 +225,7 @@ class TestStateCheckpointHandling:
 
         assert state["llm_messages"] == [{"role": "assistant", "content": "hi"}]
         assert state["display_trace"] == [{"step_type": "thinking"}]
-        assert state["registered_actions"] == [{"name": "create_chart"}]
+        assert state["registered_tools"] == [{"name": "create_chart"}]
         assert state["model_used"] == "gpt-4"
         assert state["prompt_tokens"] == 300
         assert state["completion_tokens"] == 100
@@ -258,7 +259,7 @@ class TestStateCheckpointHandling:
 
         assert state["llm_messages"] == []
         assert state["display_trace"] == []
-        assert state["registered_actions"] == []
+        assert state["registered_tools"] == []
         assert state["model_used"] == ""
         assert state["prompt_tokens"] is None
 
@@ -501,32 +502,31 @@ class TestCompleteEventFlush:
             "assistant_message_id": "msg-123",
             "stream_completed": False,
             "display_trace": [{"old": "trace"}],
-            "registered_actions": [],
+            "registered_tools": [],
         }
         event = {
             "type": "complete",
             "display_trace": [{"new": "trace"}, {"another": "step"}],
-            "registered_actions": [{"name": "chart"}],
+            "registered_tools": [{"name": "chart"}],
         }
 
-        # Simulate the complete handler logic
         flush_state["display_trace"] = event.get("display_trace", flush_state["display_trace"])
-        flush_state["registered_actions"] = event.get("registered_actions", flush_state["registered_actions"])
+        flush_state["registered_tools"] = event.get("registered_tools", flush_state["registered_tools"])
 
         assert flush_state["display_trace"] == [{"new": "trace"}, {"another": "step"}]
-        assert flush_state["registered_actions"] == [{"name": "chart"}]
+        assert flush_state["registered_tools"] == [{"name": "chart"}]
 
     @pytest.mark.asyncio
     async def test_complete_event_keeps_existing_trace_when_missing_from_event(self):
         """If complete event has no display_trace, keep existing."""
         flush_state = {
             "display_trace": [{"existing": "trace"}],
-            "registered_actions": [{"name": "old_action"}],
+            "registered_tools": [{"name": "old_action"}],
         }
         event = {"type": "complete"}
 
         flush_state["display_trace"] = event.get("display_trace", flush_state["display_trace"])
-        flush_state["registered_actions"] = event.get("registered_actions", flush_state["registered_actions"])
+        flush_state["registered_tools"] = event.get("registered_tools", flush_state["registered_tools"])
 
         assert flush_state["display_trace"] == [{"existing": "trace"}]
-        assert flush_state["registered_actions"] == [{"name": "old_action"}]
+        assert flush_state["registered_tools"] == [{"name": "old_action"}]

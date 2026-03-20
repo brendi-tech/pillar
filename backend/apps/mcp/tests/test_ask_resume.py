@@ -10,7 +10,7 @@ Covers:
 - resume=True happy path → loads session state, skips history load, skips
   create_conversation_and_user_message, creates assistant message only,
   yields conversation_started, streams tokens, yields complete
-- resume=True uses session's registered_actions (not arguments')
+- resume=True uses session registered_tools (not arguments')
 - resume=True clears disconnected status
 """
 import asyncio
@@ -18,11 +18,35 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from apps.mcp.tools.builtin.ask import AskTool
+from apps.products.models.agent import KnowledgeScope
+from apps.products.services.agent_resolver import AgentConfig
 
 
 # =============================================================================
 # Helpers
 # =============================================================================
+
+
+def _minimal_agent_config() -> AgentConfig:
+    """Stub config so resume tests never hit Agent.objects with a MagicMock product."""
+    return AgentConfig(
+        agent_id=None,
+        agent_name="default",
+        channel="web",
+        guidance="",
+        tone="neutral",
+        llm_model="",
+        temperature=0.7,
+        max_response_tokens=None,
+        include_sources=True,
+        include_suggested_followups=True,
+        tool_allowlist=[],
+        tool_denylist=[],
+        language="en",
+        channel_config={},
+        knowledge_scope=KnowledgeScope.ALL,
+        knowledge_source_ids=[],
+    )
 
 def _mock_help_center():
     hc = MagicMock()
@@ -43,6 +67,7 @@ def _mock_request():
     req.GET = {}
     req.headers = {}
     req.META = {}
+    req.agent = None
     return req
 
 
@@ -144,7 +169,7 @@ class TestAskResumeHappyPath:
             {"role": "user", "content": "Help me with billing"},
             {"role": "assistant", "content": "Let me search for billing info."},
         ],
-        "registered_actions": [{"name": "open_billing"}],
+        "registered_tools": [{"name": "open_billing"}],
         "partial_response": "Let me search for billing info.",
         "display_trace": [],
     }
@@ -197,11 +222,19 @@ class TestAskResumeHappyPath:
             new_callable=AsyncMock,
         )
 
+        # 5b. resolve_agent_config — avoid DB Agent query with MagicMock help_center
+        # (imported inside execute_stream, so patch at definition site)
+        patches["resolve_config"] = patch(
+            "apps.products.services.agent_resolver.resolve_agent_config",
+            new_callable=AsyncMock,
+            return_value=_minimal_agent_config(),
+        )
+
         # 6. AgentAnswerServiceReActAsync — mock ask_stream to yield a few tokens + complete
         async def fake_ask_stream(**kwargs):
             yield {"type": "token", "text": "Resuming "}
             yield {"type": "token", "text": "your request."}
-            yield {"type": "complete", "registered_actions": [{"name": "open_billing"}]}
+            yield {"type": "complete", "registered_tools": [{"name": "open_billing"}]}
 
         mock_agent_cls = MagicMock()
         mock_agent_instance = MagicMock()
@@ -210,6 +243,16 @@ class TestAskResumeHappyPath:
         patches["agent"] = patch(
             "apps.mcp.services.agent.AgentAnswerServiceReActAsync",
             mock_agent_cls,
+        )
+
+        # 7. WebResponseAdapter persistence — finalize_turn and mark_completed
+        patches["finalize_turn"] = patch(
+            "apps.mcp.services.session_resumption.finalize_turn",
+            new_callable=AsyncMock,
+        )
+        patches["mark_completed"] = patch(
+            "apps.mcp.services.session_resumption.mark_completed",
+            new_callable=AsyncMock,
         )
 
         return patches
@@ -227,7 +270,10 @@ class TestAskResumeHappyPath:
             patches["metadata"],
             patches["cache"],
             patches["acreate"] as mock_acreate,
+            patches["resolve_config"],
             patches["agent"] as mock_agent_cls,
+            patches["finalize_turn"],
+            patches["mark_completed"],
         ):
             events = await _collect_events(
                 tool.execute_stream(
@@ -269,8 +315,8 @@ class TestAskResumeHappyPath:
         assert "ASSISTANT" in str(create_kwargs["role"]) or create_kwargs["role"] == "assistant"
 
     @pytest.mark.asyncio
-    async def test_resume_uses_session_registered_actions(self):
-        """Resume should use registered_actions from session, not from arguments."""
+    async def test_resume_uses_session_registered_tools(self):
+        """Resume should use registered_tools from session, not from arguments."""
         tool = AskTool()
         patches = self._build_patches()
 
@@ -281,7 +327,10 @@ class TestAskResumeHappyPath:
             patches["metadata"],
             patches["cache"],
             patches["acreate"],
+            patches["resolve_config"],
             patches["agent"] as mock_agent_cls,
+            patches["finalize_turn"],
+            patches["mark_completed"],
         ):
             events = await _collect_events(
                 tool.execute_stream(
@@ -292,15 +341,14 @@ class TestAskResumeHappyPath:
                         "query": "",
                         "resume": True,
                         "conversation_id": "conv-abc",
-                        # SDK might send stale registered_actions — should be ignored
-                        "registered_actions": [{"name": "stale_action"}],
+                        "registered_tools": [{"name": "stale_action"}],
                     },
                 )
             )
 
-        # The agent service should have been created with session's registered_actions
+        # The agent service should have been created with session's tools
         agent_init_kwargs = mock_agent_cls.call_args[1]
-        assert agent_init_kwargs["registered_actions"] == [{"name": "open_billing"}]
+        assert agent_init_kwargs["registered_tools"] == [{"name": "open_billing"}]
 
     @pytest.mark.asyncio
     async def test_resume_skips_history_load(self):
@@ -315,7 +363,10 @@ class TestAskResumeHappyPath:
             patches["metadata"],
             patches["cache"],
             patches["acreate"],
+            patches["resolve_config"],
             patches["agent"] as mock_agent_cls,
+            patches["finalize_turn"],
+            patches["mark_completed"],
         ):
             with patch.object(
                 tool, "_load_conversation_history", new_callable=AsyncMock
@@ -372,7 +423,10 @@ class TestAskResumeHappyPath:
             patches["metadata"],
             patches["cache"],
             patches["acreate"],
+            patches["resolve_config"],
             patches["agent"],
+            patches["finalize_turn"],
+            patches["mark_completed"],
         ):
             events = await _collect_events(
                 tool.execute_stream(

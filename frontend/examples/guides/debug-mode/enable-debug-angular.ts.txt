@@ -5,7 +5,7 @@ import { environment } from './environments/environment';
 export class AppComponent {
   constructor(private pillar: PillarService) {
     this.pillar.init({
-      productKey: 'your-product-key',
+      agentSlug: 'your-agent-slug',
       debug: !environment.production,
     });
   }

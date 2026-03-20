@@ -1,9 +1,12 @@
 """
-SyncSecret model for multi-secret action sync from CI/CD pipelines.
+SyncSecret model — product-level API key for CLI sync, backend SDK auth,
+and webhook signature generation.
 """
 import re
+
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.utils import timezone
 
 from common.fields import EncryptedTextField
 from common.models.base import TenantAwareModel
@@ -33,10 +36,11 @@ def validate_secret_name(value: str) -> None:
 
 class SyncSecret(TenantAwareModel):
     """
-    Named sync secret for code-first action sync from CI/CD pipelines.
+    Product API key used for CLI sync, backend SDK registration,
+    and webhook signature generation.
 
     Allows multiple secrets per product for environment isolation
-    (e.g., production, staging, dev-ci).
+    and key rotation (e.g., production, staging, backend-sdk).
     """
 
     product = models.ForeignKey(
@@ -53,7 +57,14 @@ class SyncSecret(TenantAwareModel):
     )
 
     secret_hash = EncryptedTextField(
-        help_text="The sync secret (encrypted at rest)"
+        help_text="The secret value (encrypted at rest via Fernet)"
+    )
+
+    last_four = models.CharField(
+        max_length=4,
+        blank=True,
+        default='',
+        help_text="Last 4 characters of the secret for dashboard display"
     )
 
     created_by = models.ForeignKey(
@@ -69,7 +80,19 @@ class SyncSecret(TenantAwareModel):
         null=True,
         blank=True,
         db_index=True,
-        help_text="Last time this secret was used for a sync"
+        help_text="Last time this secret was used"
+    )
+
+    is_active = models.BooleanField(
+        default=True,
+        db_index=True,
+        help_text="Whether this secret can be used for authentication"
+    )
+
+    revoked_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When this secret was revoked"
     )
 
     class Meta:
@@ -77,8 +100,22 @@ class SyncSecret(TenantAwareModel):
         verbose_name_plural = 'Sync Secrets'
         unique_together = ['product', 'name']
         indexes = [
-            models.Index(fields=['product', '-created_at']),
+            models.Index(
+                fields=['product', '-created_at'],
+                name='syncsecret_product_created_idx',
+            ),
+            models.Index(
+                fields=['product', 'is_active'],
+                name='syncsecret_product_active_idx',
+            ),
         ]
 
     def __str__(self):
-        return f"{self.product.subdomain}/{self.name}"
+        display = f"••••{self.last_four}" if self.last_four else self.name
+        return f"{self.product.subdomain}/{display}"
+
+    def revoke(self) -> None:
+        """Revoke this secret so it can no longer be used."""
+        self.is_active = False
+        self.revoked_at = timezone.now()
+        self.save(update_fields=['is_active', 'revoked_at', 'updated_at'])

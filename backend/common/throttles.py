@@ -1,7 +1,7 @@
 """
 Custom throttle classes for API rate limiting.
 """
-from rest_framework.throttling import AnonRateThrottle
+from rest_framework.throttling import AnonRateThrottle, SimpleRateThrottle
 
 
 class PublicFormMinuteThrottle(AnonRateThrottle):
@@ -19,5 +19,18 @@ class PublicFormDayThrottle(AnonRateThrottle):
     scope = 'public_form_day'
 
 
+class HeadlessChatThrottle(SimpleRateThrottle):
+    """
+    Rate limit for headless chat API, keyed by product API key.
+    Configure via DEFAULT_THROTTLE_RATES['headless_chat'] in settings.
+    """
+    scope = 'headless_chat'
+
+    def get_cache_key(self, request, view):
+        auth = request.META.get('HTTP_AUTHORIZATION', '')
+        if auth.startswith('Bearer '):
+            token = auth[7:]
+            return self.cache_format % {'scope': self.scope, 'ident': token}
+        return self.get_ident(request)
 
 

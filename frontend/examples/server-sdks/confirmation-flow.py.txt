@@ -1,0 +1,22 @@
+from pillar import Pillar, ToolContext, ConfirmationResponse
+
+pillar = Pillar(secret="plr_...")
+
+@pillar.tool(description="Remove a member from the workspace")
+async def delete_member(user_id: str, ctx: ToolContext) -> dict:
+    if not ctx.confirmed:
+        user = await db.get_user(user_id)
+        return ConfirmationResponse(
+            confirmation_required=True,
+            title="Remove member",
+            message=f"Remove {user.name} from the workspace?",
+            details={
+                "Member": user.name,
+                "Email": user.email,
+                "Role": user.role,
+            },
+            confirm_payload={"user_id": user_id},
+        )
+
+    await workspace.remove_member(user_id)
+    return {"removed": True}

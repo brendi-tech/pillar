@@ -340,8 +340,6 @@ async def check_and_notify_threshold(org, message_id: str) -> None:
         return
 
     # New threshold crossed — send email and update org
-    from asgiref.sync import sync_to_async
-
     await sync_to_async(_send_threshold_email)(org, crossed, used, limit)
 
     org.usage_alert_last_threshold = crossed

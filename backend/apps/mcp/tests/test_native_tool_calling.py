@@ -214,7 +214,7 @@ class TestNativeMessageFormat:
         """format_search_result_content should format actions and knowledge."""
         content = format_search_result_content(
             query="create dashboard",
-            actions=[
+            tools=[
                 {"name": "create_dashboard", "description": "Creates a new dashboard", "action_type": "trigger"},
             ],
             knowledge=[
@@ -223,7 +223,7 @@ class TestNativeMessageFormat:
         )
         
         assert "create dashboard" in content
-        assert "Actions (1 found)" in content
+        assert "Tools (1 found)" in content
         assert "create_dashboard" in content
         assert "Knowledge (1 found)" in content
         assert "Dashboard Guide" in content
@@ -232,7 +232,7 @@ class TestNativeMessageFormat:
         """format_search_result_content should handle no results gracefully."""
         content = format_search_result_content(
             query="nonexistent feature",
-            actions=[],
+            tools=[],
             knowledge=[],
         )
         
@@ -241,7 +241,7 @@ class TestNativeMessageFormat:
     def test_format_execute_result_content_success(self):
         """format_execute_result_content should format successful execution."""
         content = format_execute_result_content(
-            action_name="create_dashboard",
+            tool_name="create_dashboard",
             success=True,
             result={"id": 123, "name": "My Dashboard"},
         )
@@ -253,7 +253,7 @@ class TestNativeMessageFormat:
     def test_format_execute_result_content_failure(self):
         """format_execute_result_content should format failed execution."""
         content = format_execute_result_content(
-            action_name="create_dashboard",
+            tool_name="create_dashboard",
             success=False,
             error="Permission denied",
         )

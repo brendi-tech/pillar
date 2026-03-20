@@ -17,7 +17,7 @@
 </script>
 
 <PillarProvider
-  productKey="your-product-key"
+  agentSlug="your-agent-slug"
   onTask={handleTask}
 >
   <PillarPanel />

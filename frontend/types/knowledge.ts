@@ -13,6 +13,14 @@ export type KnowledgeSourceType =
 
 export type KnowledgeSourceStatus = 'active' | 'syncing' | 'error' | 'paused';
 
+export type KnowledgeSourceVisibility = 'internal' | 'external' | 'all';
+
+export const KNOWLEDGE_VISIBILITY_LABELS: Record<KnowledgeSourceVisibility, string> = {
+  internal: 'Internal',
+  external: 'External',
+  all: 'All',
+};
+
 export interface KnowledgeCrawlConfig {
   max_pages?: number;
   include_paths?: string[];
@@ -40,6 +48,7 @@ export interface KnowledgeSource {
   help_center_config: string;
 
   source_type: KnowledgeSourceType;
+  visibility: KnowledgeSourceVisibility;
   name: string;
   url: string | null; // null for snippets, integration, cloud_storage, document_upload
   crawl_config: KnowledgeCrawlConfig;
@@ -137,6 +146,7 @@ export interface UpdateKnowledgeSourceRequest {
   url?: string;
   crawl_config?: KnowledgeCrawlConfig;
   status?: KnowledgeSourceStatus;
+  visibility?: KnowledgeSourceVisibility;
 }
 
 export interface CreateSnippetRequest {

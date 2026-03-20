@@ -1,0 +1,8 @@
+from pillar import Pillar, ToolContext
+
+pillar = Pillar(secret="plr_...")
+
+@pillar.tool(description="Look up a customer by email address")
+async def lookup_customer(email: str, ctx: ToolContext) -> dict:
+    customer = await db.get_customer(email=email)
+    return {"name": customer.name, "plan": customer.plan}

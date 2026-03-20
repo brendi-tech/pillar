@@ -305,53 +305,14 @@ async def stream_event_generator(mcp_server: MCPServer, request_data: dict, sess
     Yields:
         SSE-formatted event strings with JSON-RPC messages
     """
-    from django.utils import timezone
-    from apps.mcp.services.session_resumption import mark_completed, mark_disconnected
-    
+    from apps.mcp.services.session_resumption import mark_disconnected
+
     request_id = request_data.get('id')
     method = request_data.get('method')
     params = request_data.get('params', {})
-    
-    # Unified flush state -- one dict, one periodic writer
-    flush_state = {
-        "assistant_message_id": None,
-        "streaming_started_at": timezone.now(),
-        "stream_completed": False,
-        # Updated by state_checkpoint events and token events
-        "llm_messages": [],
-        "display_trace": [],
-        "registered_actions": [],
-        "model_used": "",
-        "prompt_tokens": None,
-        "completion_tokens": None,
-        "peak_context_occupancy": None,
-        "dirty": False,
-        "last_flush_time": None,
-    }
-    _flush_task: asyncio.Task | None = None
 
-    async def _flush_all(message_id: str, collected_text: list, state: dict):
-        """Write content + llm_message + display_trace to DB in one update."""
-        from apps.analytics.models import ChatMessage
-        content = ''.join(collected_text)
-        llm_message = {
-            "messages": state.get("llm_messages", []),
-            "registered_actions": state.get("registered_actions", []),
-        }
-        updates = {
-            "content": content,
-            "llm_message": llm_message,
-            "display_trace": state.get("display_trace", []),
-        }
-        if state.get("model_used"):
-            updates["model_used"] = state["model_used"]
-        if state.get("prompt_tokens") is not None:
-            updates["prompt_tokens"] = state["prompt_tokens"]
-            updates["completion_tokens"] = state.get("completion_tokens") or 0
-            updates["total_tokens"] = (state["prompt_tokens"] or 0) + (state.get("completion_tokens") or 0)
-        if state.get("peak_context_occupancy") is not None:
-            updates["peak_context_occupancy"] = state["peak_context_occupancy"]
-        await ChatMessage.objects.filter(id=message_id, role='assistant').aupdate(**updates)
+    stream_completed = False
+    assistant_message_id: str | None = None
 
     # Validate streaming is requested for tools/call
     if method != 'tools/call':
@@ -466,22 +427,11 @@ async def stream_event_generator(mcp_server: MCPServer, request_data: dict, sess
             logger.debug(f"[SSE DEBUG] Event {event_count}: type={event_type}, keys={list(event.keys())}")
 
             if event_type == 'state_checkpoint':
-                # Internal event -- update flush_state, don't yield to client
-                flush_state["llm_messages"] = event.get("llm_messages", [])
-                flush_state["display_trace"] = event.get("display_trace", [])
-                flush_state["registered_actions"] = event.get("registered_actions", [])
-                flush_state["model_used"] = event.get("model_used", "")
-                flush_state["prompt_tokens"] = event.get("prompt_tokens")
-                flush_state["completion_tokens"] = event.get("completion_tokens")
-                flush_state["peak_context_occupancy"] = event.get("peak_context_occupancy")
-                flush_state["dirty"] = True
+                pass
 
             elif event_type == 'token':
-                # Stream text tokens
                 token_text = event.get('text', '')
                 collected_text.append(token_text)
-                flush_state["dirty"] = True
-                logger.debug(f"[SSE DEBUG] Received token event ({len(token_text)} chars): {token_text[:80]}...")
 
                 notification = {
                     'jsonrpc': '2.0',
@@ -536,9 +486,8 @@ async def stream_event_generator(mcp_server: MCPServer, request_data: dict, sess
                 logger.debug(f"[SSE DEBUG] Received actions event ({len(final_actions)} actions)")
 
             elif event_type == 'conversation_started':
-                # Track assistant message ID for flush
-                flush_state["assistant_message_id"] = event.get('assistant_message_id', '')
-                
+                assistant_message_id = event.get('assistant_message_id', '') or None
+
                 notification = {
                     'jsonrpc': '2.0',
                     'method': 'notifications/progress',
@@ -671,9 +620,8 @@ async def stream_event_generator(mcp_server: MCPServer, request_data: dict, sess
                 return
 
             elif event_type == 'complete':
-                # Streaming complete - build and send final response
-                logger.info(f"[SSE DEBUG] Received 'complete' signal - building final response")
-                flush_state["stream_completed"] = True
+                logger.info("[SSE DEBUG] Received 'complete' signal - building final response")
+                stream_completed = True
 
                 final_text = ''.join(collected_text)
 
@@ -682,7 +630,6 @@ async def stream_event_generator(mcp_server: MCPServer, request_data: dict, sess
                     'isError': False
                 }
 
-                # Build structured content
                 structured_content = {}
                 if final_sources:
                     structured_content['sources'] = final_sources
@@ -691,18 +638,14 @@ async def stream_event_generator(mcp_server: MCPServer, request_data: dict, sess
 
                 for key, data in final_structured_content.items():
                     structured_content[key] = data
-                
-                # Include registered_actions for SDK persistence (dynamic action tools)
-                registered_actions = event.get('registered_actions', [])
-                if registered_actions:
-                    structured_content['registered_actions'] = registered_actions
-                    logger.info(f"[SSE DEBUG] Including {len(registered_actions)} registered actions for SDK")
+
+                registered_tools = event.get('registered_tools', [])
+                if registered_tools:
+                    structured_content['registered_tools'] = registered_tools
 
                 if structured_content:
                     result['structuredContent'] = structured_content
-                    logger.info(f"[SSE DEBUG] Final structuredContent keys: {list(structured_content.keys())}")
 
-                # Send final result
                 final_response = {
                     'jsonrpc': '2.0',
                     'id': request_id,
@@ -710,26 +653,8 @@ async def stream_event_generator(mcp_server: MCPServer, request_data: dict, sess
                 }
 
                 yield f"data: {json.dumps(final_response)}\n\n"
-                
-                # Final flush + mark completed
-                if flush_state.get("assistant_message_id"):
-                    # Await in-flight flush to prevent race
-                    if _flush_task and not _flush_task.done():
-                        await _flush_task
-                    # Pull final state from complete event
-                    flush_state["display_trace"] = event.get("display_trace", flush_state["display_trace"])
-                    flush_state["registered_actions"] = event.get("registered_actions", flush_state["registered_actions"])
-                    await _flush_all(flush_state["assistant_message_id"], collected_text, flush_state)
-                    latency_ms = int((time.time() - stream_start_time) * 1000)
-                    await mark_completed(flush_state["assistant_message_id"], latency_ms=latency_ms)
-                
-                # Track successful completion in Agnost
+
                 if agnost_interaction:
-                    agnost_interaction.set_properties({
-                        'model_used': flush_state.get('model_used', ''),
-                        'prompt_tokens': flush_state.get('prompt_tokens'),
-                        'completion_tokens': flush_state.get('completion_tokens'),
-                    })
                     agnost_interaction.end(output=final_text)
 
                 logger.debug(f"[Streamable HTTP] Stream complete. Events sent: {event_count + 1}")
@@ -753,13 +678,9 @@ async def stream_event_generator(mcp_server: MCPServer, request_data: dict, sess
                     yield f"data: {json.dumps(tool_error_event)}\n\n"
                     # Don't return - continue streaming so agent can attempt recovery
                 else:
-                    # Terminal error - flush + mark disconnected so row isn't stuck as 'streaming'
                     logger.warning(f"[SSE DEBUG] Terminal error, ending stream: {error_message}")
-                    if flush_state.get("assistant_message_id"):
-                        if _flush_task and not _flush_task.done():
-                            await _flush_task
-                        await _flush_all(flush_state["assistant_message_id"], collected_text, flush_state)
-                        await mark_disconnected(flush_state["assistant_message_id"])
+                    if assistant_message_id:
+                        await mark_disconnected(assistant_message_id)
                     error_data = event.get('data') or {}
                     if 'upgrade_url' in event:
                         error_data['upgrade_url'] = event['upgrade_url']
@@ -790,54 +711,28 @@ async def stream_event_generator(mcp_server: MCPServer, request_data: dict, sess
                 yield f"data: {json.dumps(response)}\n\n"
                 return
 
-            # Periodic flush (~2s) -- fire-and-forget, snapshot values
-            now = time.time()
-            if (
-                flush_state["assistant_message_id"]
-                and flush_state["dirty"]
-                and (flush_state["last_flush_time"] is None or now - flush_state["last_flush_time"] >= 2.0)
-            ):
-                flush_state["last_flush_time"] = now
-                flush_state["dirty"] = False
-                # Snapshot collected_text as a shallow copy so the task is safe
-                snap_text = list(collected_text)
-                snap_state = dict(flush_state)
-                _flush_task = asyncio.create_task(
-                    _flush_all(flush_state["assistant_message_id"], snap_text, snap_state)
-                )
-
         # Fallback: stream ended without 'complete' event (disconnect or exhausted generator)
-        if flush_state.get("assistant_message_id") and not flush_state.get("stream_completed"):
-            if _flush_task and not _flush_task.done():
-                await _flush_task
-            await _flush_all(flush_state["assistant_message_id"], collected_text, flush_state)
-            await mark_disconnected(flush_state["assistant_message_id"])
-            flush_state["stream_completed"] = True
+        if assistant_message_id and not stream_completed:
+            await mark_disconnected(assistant_message_id)
+            stream_completed = True
             if agnost_interaction:
                 agnost_interaction.end(output='disconnected', success=False)
-            logger.info(f"[Streamable HTTP] Stream {stream_id} ended without complete -- flushed + marked disconnected")
+            logger.info(f"[Streamable HTTP] Stream {stream_id} ended without complete -- marked disconnected")
 
     except asyncio.CancelledError:
         cancel_event.set()
         logger.info(f"[Streamable HTTP] Stream {stream_id} cancelled (client disconnect)")
-        if flush_state.get("assistant_message_id") and not flush_state.get("stream_completed"):
-            if _flush_task and not _flush_task.done():
-                await _flush_task
-            await _flush_all(flush_state["assistant_message_id"], collected_text, flush_state)
-            await mark_disconnected(flush_state["assistant_message_id"])
+        if assistant_message_id and not stream_completed:
+            await mark_disconnected(assistant_message_id)
         if agnost_interaction:
             agnost_interaction.end(output='cancelled', success=False)
         raise
         
     except Exception as e:
         logger.error(f"Streamable HTTP streaming error: {e}", exc_info=True)
-        
-        # Flush + mark disconnected so the row isn't stuck as 'streaming'
-        if flush_state.get("assistant_message_id") and not flush_state.get("stream_completed"):
-            if _flush_task and not _flush_task.done():
-                await _flush_task
-            await _flush_all(flush_state["assistant_message_id"], collected_text, flush_state)
-            await mark_disconnected(flush_state["assistant_message_id"])
+
+        if assistant_message_id and not stream_completed:
+            await mark_disconnected(assistant_message_id)
         
         if agnost_interaction:
             agnost_interaction.end(output=str(e), success=False)

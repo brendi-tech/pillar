@@ -27,7 +27,8 @@ from common.utils.cors import add_cors_headers, is_origin_allowed
 from common.services import slack
 from apps.products.models import (
     Product, Platform, Action, ActionExecutionLog, ActionDeployment,
-    ActionSyncJob, ActionSyncJobStatus, SyncSecret, validate_subdomain, RESERVED_SUBDOMAINS
+    ActionSyncJob, ActionSyncJobStatus, SyncSecret, validate_subdomain, RESERVED_SUBDOMAINS,
+    Agent,
 )
 from common.services.subdomain_generator import SubdomainGeneratorService
 from django.core.exceptions import ValidationError
@@ -37,7 +38,8 @@ from apps.products.serializers import (
     ProductSerializer, ProductCreateSerializer,
     PlatformSerializer, ActionSerializer,
     ActionExecutionLogSerializer,
-    SyncSecretSerializer, SyncSecretCreateSerializer
+    SyncSecretSerializer, SyncSecretCreateSerializer,
+    AgentSerializer, AgentCreateSerializer,
 )
 from apps.users.permissions import IsAuthenticatedAdmin
 
@@ -78,19 +80,19 @@ class ProductViewSet(viewsets.ModelViewSet):
         serializer.save(organization=organization, subdomain=subdomain)
     
     def _generate_subdomain(self, name: str) -> str:
-        """Generate a unique subdomain from a product name."""
-        # Sanitize: lowercase, replace spaces with hyphens, remove invalid chars
-        base_subdomain = re.sub(r'[^a-z0-9-]', '', name.lower().replace(' ', '-').replace("'", ''))
-        base_subdomain = re.sub(r'-+', '-', base_subdomain).strip('-')
-        
-        # Ensure minimum length
+        """Generate a unique subdomain from a product name, trying clean name first."""
+        from common.services.subdomain_generator import SubdomainGeneratorService
+
+        base_subdomain = SubdomainGeneratorService.sanitize_subdomain(name)
         if len(base_subdomain) < 3:
             base_subdomain = f"product-{base_subdomain}" if base_subdomain else "product"
-        
-        # Add a short unique suffix to avoid conflicts
-        subdomain = f"{base_subdomain[:40]}-{uuid.uuid4().hex[:6]}"
-        
-        return subdomain
+
+        existing = set(
+            Product.objects.values_list('subdomain', flat=True)
+        )
+        return SubdomainGeneratorService.ensure_unique_subdomain(
+            base_subdomain, existing
+        )
 
     def create(self, request, *args, **kwargs):
         """Create a product and return full product data."""
@@ -536,6 +538,58 @@ class ProductViewSet(viewsets.ModelViewSet):
         return Response({'urls': candidate_urls})
 
 
+class AgentViewSet(viewsets.ModelViewSet):
+    """ViewSet for managing per-channel Agent configurations."""
+
+    permission_classes = [IsAuthenticatedAdmin]
+    pagination_class = None
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['channel', 'is_active']
+
+    def get_queryset(self):
+        qs = Agent.objects.filter(
+            organization__in=self.request.user.organizations.all()
+        ).select_related('product').order_by('-created_at')
+
+        product_id = self.kwargs.get('product_pk')
+        if product_id:
+            qs = qs.filter(product_id=product_id)
+        return qs
+
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return AgentCreateSerializer
+        return AgentSerializer
+
+    def perform_create(self, serializer):
+        product_id = self.kwargs.get('product_pk')
+        if not product_id:
+            raise serializers.ValidationError(
+                {"product": "Product ID is required. Use the nested URL."}
+            )
+        product = Product.objects.filter(
+            id=product_id,
+            organization__in=self.request.user.organizations.all(),
+        ).first()
+        if not product:
+            raise serializers.ValidationError(
+                {"product": "Product not found or access denied."}
+            )
+        serializer.save(product=product, organization=product.organization)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        response_serializer = AgentSerializer(serializer.instance)
+        headers = self.get_success_headers(response_serializer.data)
+        return Response(
+            response_serializer.data,
+            status=status.HTTP_201_CREATED,
+            headers=headers,
+        )
+
+
 class PlatformViewSet(viewsets.ModelViewSet):
     """ViewSet for managing Platforms."""
     
@@ -559,7 +613,7 @@ class ActionViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticatedAdmin]
     serializer_class = ActionSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
-    filterset_fields = ['product', 'action_type', 'status', 'implementation_status']
+    filterset_fields = ['product', 'action_type', 'tool_type', 'status', 'implementation_status']
     ordering_fields = ['action_type', 'name', 'created_at', 'updated_at', 'status']
     ordering = ['-created_at']
     search_fields = ['name', 'description']
@@ -638,6 +692,7 @@ class ActionSyncData(BaseModel):
     guidance: Optional[str] = None
     examples: Optional[list[str]] = None
     type: str  # action_type
+    tool_type: Optional[str] = 'client_side'
     path: Optional[str] = None
     external_url: Optional[str] = None
     auto_run: Optional[bool] = False
@@ -648,6 +703,7 @@ class ActionSyncData(BaseModel):
     default_data: Optional[dict] = None
     parameter_examples: Optional[list[dict]] = None  # Examples of valid parameter objects
     required_context: Optional[dict] = None
+    channel_compatibility: Optional[list[str]] = None
 
     @field_validator('type')
     @classmethod
@@ -670,6 +726,7 @@ class ActionSyncRequest(BaseModel):
     git_sha: Optional[str] = None
     actions: list[ActionSyncData]
     agent_guidance: Optional[str] = None
+    mode: str = 'additive'
 
     @field_validator('platform')
     @classmethod
@@ -678,6 +735,14 @@ class ActionSyncRequest(BaseModel):
         valid_platforms = ['web', 'ios', 'android', 'desktop']
         if v not in valid_platforms:
             raise ValueError(f"Invalid platform: {v}. Must be one of {valid_platforms}")
+        return v
+
+    @field_validator('mode')
+    @classmethod
+    def validate_mode(cls, v: str) -> str:
+        valid_modes = ['additive', 'replace']
+        if v not in valid_modes:
+            raise ValueError(f"Invalid mode: {v}. Must be one of {valid_modes}")
         return v
 
 
@@ -809,24 +874,49 @@ class ActionSyncView(APIView):
         ).first()
 
         if existing and not force_sync:
-            # Check if there are orphaned actions in the DB that need to be deleted.
-            # This handles the case where a newer sync added actions, then a sync
-            # with the original manifest finds an old deployment with matching hash
-            # but the DB still has extra actions from the newer sync.
+            # Verify the manifest's actions actually exist in the DB.
+            # A previous destructive sync or manual deletion could have
+            # removed them even though the deployment record remains.
             manifest_action_names = {a.name for a in sync_request.actions}
-            current_action_count = Action.objects.filter(
-                product=product,
-                organization=product.organization,
-            ).count()
-            
-            if current_action_count != len(manifest_action_names):
-                # Action count mismatch — need to run sync to delete orphaned actions
+            existing_action_names = set(
+                Action.objects.filter(
+                    product=product,
+                    organization=product.organization,
+                    source_type=Action.SourceType.CLI_SYNC,
+                    name__in=manifest_action_names,
+                ).values_list('name', flat=True)
+            )
+            missing_actions = manifest_action_names - existing_action_names
+
+            needs_reconcile = False
+            if missing_actions:
                 logger.info(
-                    f"[ActionSync] Manifest hash matches but action count differs "
-                    f"(DB: {current_action_count}, manifest: {len(manifest_action_names)}) — "
-                    f"running sync to reconcile"
+                    f"[ActionSync] Manifest hash matches but {len(missing_actions)} action(s) "
+                    f"missing from DB: {missing_actions} — running sync to recreate"
                 )
-                # Fall through to run the sync
+                needs_reconcile = True
+            elif sync_request.mode == 'replace':
+                # In replace mode, also check for extra actions that need deleting.
+                manifest_tool_types = {
+                    a.tool_type or 'client_side' for a in sync_request.actions
+                }
+                current_action_count = Action.objects.filter(
+                    product=product,
+                    organization=product.organization,
+                    source_type=Action.SourceType.CLI_SYNC,
+                    tool_type__in=manifest_tool_types,
+                ).count()
+                
+                if current_action_count != len(manifest_action_names):
+                    logger.info(
+                        f"[ActionSync] Manifest hash matches but action count differs "
+                        f"(DB: {current_action_count}, manifest: {len(manifest_action_names)}) — "
+                        f"running sync to reconcile"
+                    )
+                    needs_reconcile = True
+
+            if needs_reconcile:
+                pass  # Fall through to run the sync
             else:
                 # Even if actions unchanged, update agent_guidance if provided
                 if sync_request.agent_guidance is not None:
@@ -912,12 +1002,14 @@ class ActionSyncView(APIView):
             action_obj, created = Action.objects.update_or_create(
                 product=product,
                 name=action_data.name,
+                source_type=Action.SourceType.CLI_SYNC,
                 defaults={
                     'organization': product.organization,
                     'description': action_data.description,
                     'guidance': action_data.guidance or '',
                     'examples': action_data.examples or [],
                     'action_type': action_data.type,
+                    'tool_type': action_data.tool_type or 'client_side',
                     'path_template': action_data.path or '',
                     'external_url': action_data.external_url or '',
                     'auto_run': action_data.auto_run or False,
@@ -928,6 +1020,7 @@ class ActionSyncView(APIView):
                     'default_data': action_data.default_data or {},
                     'parameter_examples': action_data.parameter_examples or [],
                     'required_context': action_data.required_context or {},
+                    'channel_compatibility': action_data.channel_compatibility or ['*'],
                     'status': Action.Status.PUBLISHED,
                 }
             )
@@ -938,21 +1031,32 @@ class ActionSyncView(APIView):
             else:
                 updated_count += 1
 
-        # Delete actions not in the manifest (code is source of truth)
-        deleted_actions = Action.objects.filter(
-            product=product,
-            organization=product.organization,
-        ).exclude(name__in=action_names)
-        
-        deleted_names = list(deleted_actions.values_list('name', flat=True))
-        deleted_count = deleted_actions.count()
-        
-        if deleted_count > 0:
-            logger.info(
-                f"[ActionSync] Deleting {deleted_count} actions not in manifest: "
-                f"{deleted_names}"
-            )
-            deleted_actions.delete()
+        # In replace mode, delete CLI-synced actions of the same tool_type(s)
+        # not in the manifest. Scoped by source_type + tool_type so a frontend
+        # sync doesn't delete backend tools, manual tools, or MCP tools.
+        # In additive mode (default), only create/update — never delete.
+        deleted_count = 0
+        if sync_request.mode == 'replace':
+            synced_tool_types = {
+                action_data.tool_type or 'client_side'
+                for action_data in sync_request.actions
+            }
+            deleted_actions = Action.objects.filter(
+                product=product,
+                organization=product.organization,
+                source_type=Action.SourceType.CLI_SYNC,
+                tool_type__in=synced_tool_types,
+            ).exclude(name__in=action_names)
+            
+            deleted_names = list(deleted_actions.values_list('name', flat=True))
+            deleted_count = deleted_actions.count()
+            
+            if deleted_count > 0:
+                logger.info(
+                    f"[ActionSync] Deleting {deleted_count} actions not in manifest: "
+                    f"{deleted_names}"
+                )
+                deleted_actions.delete()
 
         # Get user agent for tracking
         user_agent = request.headers.get('User-Agent', 'unknown')
@@ -1102,6 +1206,7 @@ class ActionSyncView(APIView):
                 actions=actions_data,
                 deployed_by=deployed_by,
                 agent_guidance=sync_request.agent_guidance,
+                mode=sync_request.mode,
             )
         except Exception as e:
             logger.error(f"[ActionSync] Failed to trigger workflow: {e}", exc_info=True)
@@ -1253,6 +1358,12 @@ class ActionSyncStatusView(APIView):
         return False
 
 
+ToolViewSet = ActionViewSet
+ToolExecutionLogViewSet = ActionExecutionLogViewSet
+ToolSyncView = ActionSyncView
+ToolSyncStatusView = ActionSyncStatusView
+
+
 # ============================================================================
 # Public SDK Config API
 # ============================================================================
@@ -1332,41 +1443,47 @@ class EmbedConfigView(APIView):
         # Record SDK initialization timestamp
         product.sdk_last_initialized_at = timezone.now()
         product.save(update_fields=['sdk_last_initialized_at', 'updated_at'])
-        
-        # Extract embed config from product.config
+
+        # Try to resolve the web Agent for this product
+        web_agent = Agent.objects.filter(
+            product=product, channel='web', is_active=True,
+        ).first()
+
         config = product.config or {}
-        embed = config.get('embed', {})
         branding = config.get('branding', {})
-        ai_config = config.get('ai', {})
-        security = embed.get('security', {})
-        
-        # Build response with only SDK-relevant settings
         response_data = {}
-        
-        # Assistant display name (from AI config)
-        assistant_name = ai_config.get('assistantName')
-        if assistant_name:
-            response_data['assistantDisplayName'] = assistant_name
-        
-        # Input placeholder (from AI config)
-        input_placeholder = ai_config.get('inputPlaceholder')
-        if input_placeholder:
-            response_data['inputPlaceholder'] = input_placeholder
-        
-        # Welcome message (from AI config)
-        welcome_message = ai_config.get('welcomeMessage')
-        if welcome_message:
-            response_data['welcomeMessage'] = welcome_message
-        
-        # Panel settings
-        if embed.get('panel'):
-            response_data['panel'] = embed['panel']
-        
-        # Floating button settings (reserved for future use)
-        if embed.get('floatingButton'):
-            response_data['floatingButton'] = embed['floatingButton']
-        
-        # Theme/branding
+
+        if web_agent and web_agent.channel_config:
+            cc = web_agent.channel_config
+            if cc.get('assistantName'):
+                response_data['assistantDisplayName'] = cc['assistantName']
+            if cc.get('inputPlaceholder'):
+                response_data['inputPlaceholder'] = cc['inputPlaceholder']
+            if cc.get('welcomeMessage'):
+                response_data['welcomeMessage'] = cc['welcomeMessage']
+            if cc.get('panel'):
+                response_data['panel'] = cc['panel']
+            if cc.get('floatingButton'):
+                response_data['floatingButton'] = cc['floatingButton']
+            security = cc.get('security', {})
+        else:
+            # Fallback to Product.config (pre-migration or unconfigured)
+            embed = config.get('embed', {})
+            ai_config = config.get('ai', {})
+            security = embed.get('security', {})
+
+            if ai_config.get('assistantName'):
+                response_data['assistantDisplayName'] = ai_config['assistantName']
+            if ai_config.get('inputPlaceholder'):
+                response_data['inputPlaceholder'] = ai_config['inputPlaceholder']
+            if ai_config.get('welcomeMessage'):
+                response_data['welcomeMessage'] = ai_config['welcomeMessage']
+            if embed.get('panel'):
+                response_data['panel'] = embed['panel']
+            if embed.get('floatingButton'):
+                response_data['floatingButton'] = embed['floatingButton']
+
+        # Theme/branding always comes from Product (not per-agent)
         primary_color = branding.get('colors', {}).get('primary')
         if primary_color:
             response_data['theme'] = {
@@ -1374,23 +1491,102 @@ class EmbedConfigView(APIView):
                     'primary': primary_color
                 }
             }
-        
-        # Domain restriction check: tell the SDK whether this origin is allowed
+
+        # Domain restriction still comes from Product-level config
         restrict = security.get('restrictToAllowedDomains', False)
         if restrict:
             origin = request.META.get('HTTP_ORIGIN', '')
             allowed_domains = security.get('allowedDomains', [])
             origin_allowed = (
-                not origin  # No origin header = lenient allow
+                not origin
                 or is_origin_allowed(origin, allowed_domains)
             )
             response_data['security'] = {
                 'originAllowed': origin_allowed,
             }
-        
-        # Build DRF response, then add CORS headers manually so this
-        # endpoint works from any customer domain (not just the
-        # django-cors-headers whitelist).
+
+        drf_response = Response(response_data, status=status.HTTP_200_OK)
+        drf_response['Vary'] = 'Origin'
+        add_cors_headers(drf_response, request, skip_origin_check=True)
+        return drf_response
+
+
+class AgentEmbedConfigView(APIView):
+    """
+    Public endpoint for SDK to fetch embed config by agent slug.
+
+    GET /api/public/agents/{slug}/embed-config/
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request, slug):
+        try:
+            agent = Agent.objects.select_related('product').get(
+                slug=slug, is_active=True,
+            )
+        except Agent.DoesNotExist:
+            return Response(
+                {'error': 'Agent not found'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        product = agent.product
+        product.sdk_last_initialized_at = timezone.now()
+        product.save(update_fields=['sdk_last_initialized_at', 'updated_at'])
+
+        config = product.config or {}
+        branding = config.get('branding', {})
+        response_data = {}
+
+        if agent.channel_config:
+            cc = agent.channel_config
+            if cc.get('assistantName'):
+                response_data['assistantDisplayName'] = cc['assistantName']
+            if cc.get('inputPlaceholder'):
+                response_data['inputPlaceholder'] = cc['inputPlaceholder']
+            if cc.get('welcomeMessage'):
+                response_data['welcomeMessage'] = cc['welcomeMessage']
+            if cc.get('panel'):
+                response_data['panel'] = cc['panel']
+            if cc.get('floatingButton'):
+                response_data['floatingButton'] = cc['floatingButton']
+            security = cc.get('security', {})
+        else:
+            embed = config.get('embed', {})
+            ai_config = config.get('ai', {})
+            security = embed.get('security', {})
+
+            if ai_config.get('assistantName'):
+                response_data['assistantDisplayName'] = ai_config['assistantName']
+            if ai_config.get('inputPlaceholder'):
+                response_data['inputPlaceholder'] = ai_config['inputPlaceholder']
+            if ai_config.get('welcomeMessage'):
+                response_data['welcomeMessage'] = ai_config['welcomeMessage']
+            if embed.get('panel'):
+                response_data['panel'] = embed['panel']
+            if embed.get('floatingButton'):
+                response_data['floatingButton'] = embed['floatingButton']
+
+        primary_color = branding.get('colors', {}).get('primary')
+        if primary_color:
+            response_data['theme'] = {
+                'colors': {
+                    'primary': primary_color
+                }
+            }
+
+        restrict = security.get('restrictToAllowedDomains', False)
+        if restrict:
+            origin = request.META.get('HTTP_ORIGIN', '')
+            allowed_domains = security.get('allowedDomains', [])
+            origin_allowed = (
+                not origin
+                or is_origin_allowed(origin, allowed_domains)
+            )
+            response_data['security'] = {
+                'originAllowed': origin_allowed,
+            }
+
         drf_response = Response(response_data, status=status.HTTP_200_OK)
         drf_response['Vary'] = 'Origin'
         add_cors_headers(drf_response, request, skip_origin_check=True)

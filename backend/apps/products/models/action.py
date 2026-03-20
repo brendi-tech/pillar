@@ -52,6 +52,18 @@ class Action(TenantAwareModel):
         PUBLISHED = 'published', 'Published'
         ARCHIVED = 'archived', 'Archived'
 
+    class ToolType(models.TextChoices):
+        """Whether this tool runs client-side (in browser) or server-side (on customer's server)."""
+        CLIENT_SIDE = 'client_side', 'Client-Side'
+        SERVER_SIDE = 'server_side', 'Server-Side'
+
+    class SourceType(models.TextChoices):
+        """How this tool was registered."""
+        CLI_SYNC = 'cli_sync', 'CLI Sync'
+        MANUAL = 'manual', 'Manual'
+        BACKEND_SDK = 'backend_sdk', 'Backend SDK'
+        MCP = 'mcp', 'MCP Server'
+
     # === Relationships ===
     product = models.ForeignKey(
         'products.Product',
@@ -105,6 +117,35 @@ class Action(TenantAwareModel):
         choices=ActionType.choices,
         default=ActionType.TRIGGER_ACTION,
         help_text="Type of action this action performs"
+    )
+    tool_type = models.CharField(
+        max_length=20,
+        choices=ToolType.choices,
+        default=ToolType.CLIENT_SIDE,
+        db_index=True,
+        help_text="Whether this tool runs in the user's browser (client-side) "
+                  "or on the customer's server (server-side)"
+    )
+    channel_compatibility = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="List of channels where this tool is available. "
+                  "Default: ['web'] for client-side, all channels for server-side."
+    )
+    source_type = models.CharField(
+        max_length=20,
+        choices=SourceType.choices,
+        default=SourceType.CLI_SYNC,
+        db_index=True,
+        help_text="How this tool was registered (CLI sync, backend SDK, MCP, or manual)"
+    )
+    mcp_source = models.ForeignKey(
+        'tools.MCPToolSource',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='tools',
+        help_text="MCP source this tool was discovered from (if source_type='mcp')"
     )
 
     # For 'navigate' type
@@ -232,7 +273,7 @@ class Action(TenantAwareModel):
         # NO db_table - Django creates 'products_action'
         verbose_name = 'Action'
         verbose_name_plural = 'Actions'
-        unique_together = [['product', 'name']]
+        unique_together = [['product', 'name', 'source_type']]
         ordering = ['-created_at']
         indexes = [
             models.Index(fields=['organization', 'status']),
@@ -338,6 +379,12 @@ class Action(TenantAwareModel):
         import logging
         logger = logging.getLogger(__name__)
 
+        if not self.channel_compatibility:
+            if self.tool_type == self.ToolType.SERVER_SIDE:
+                self.channel_compatibility = ['*']
+            else:
+                self.channel_compatibility = ['web']
+
         # Check what changed (for existing objects)
         description_changed = True
         examples_changed = True
@@ -382,6 +429,12 @@ class Action(TenantAwareModel):
         import logging
         logger = logging.getLogger(__name__)
 
+        if not self.channel_compatibility:
+            if self.tool_type == self.ToolType.SERVER_SIDE:
+                self.channel_compatibility = ['*']
+            else:
+                self.channel_compatibility = ['web']
+
         # Check what changed (for existing objects)
         description_changed = True
         examples_changed = True
@@ -418,3 +471,6 @@ class Action(TenantAwareModel):
             logger.warning(f"Failed to generate embeddings for action {self.name}: {e}")
 
         await super().asave(*args, **kwargs)
+
+
+Tool = Action

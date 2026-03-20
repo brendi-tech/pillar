@@ -1,13 +1,13 @@
 interface PillarConfig {
   /**
-   * Your product key from the Pillar app.
+   * Your agent slug from the Pillar app.
    * Get it at app.trypillar.com
    */
-  productKey?: string;
+  agentSlug?: string;
   
   /**
    * Display name for the assistant shown in the sidebar tab.
-   * @default 'Assistant'
+   * @default 'Copilot'
    */
   assistantDisplayName?: string;
   

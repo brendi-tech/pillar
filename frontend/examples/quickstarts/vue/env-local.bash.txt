@@ -1,2 +1,2 @@
 # .env.local
-VITE_PILLAR_PRODUCT_KEY=your-product-slug
+VITE_PILLAR_AGENT_SLUG=your-agent-slug

@@ -1,0 +1,13 @@
+# main.py
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+from myapp.pillar_tools import pillar
+
+app = FastAPI()
+
+@app.post("/pillar")
+async def pillar_endpoint(request: Request):
+    body = await request.body()
+    headers = {"X-Pillar-Signature": request.headers.get("x-pillar-signature", "")}
+    result, status_code = await pillar.handle(body, headers)
+    return JSONResponse(result, status_code=status_code)

@@ -4,8 +4,9 @@ Serializers for the products app.
 import re
 from rest_framework import serializers
 from apps.products.models import (
-    Product, Platform, Action, ActionExecutionLog, ActionDeployment, SyncSecret
+    Product, Platform, Action, ActionExecutionLog, ActionDeployment, SyncSecret, Agent
 )
+from apps.knowledge.models import KnowledgeSource
 
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -65,8 +66,9 @@ class ActionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Action
         fields = [
-            'id', 'product', 'name', 'description', 'action_type', 'status',
-            'implementation_status', 'path_template', 'external_url',
+            'id', 'product', 'name', 'description', 'action_type',
+            'tool_type', 'channel_compatibility', 'source_type',
+            'status', 'implementation_status', 'path_template', 'external_url',
             'data_schema', 'default_data', 'parameter_examples', 'required_context',
             'auto_run', 'auto_complete', 'returns_data',
             'examples', 'has_embedding',
@@ -134,8 +136,11 @@ class SyncSecretSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = SyncSecret
-        fields = ['id', 'name', 'created_at', 'last_used_at', 'created_by_email']
-        read_only_fields = ['id', 'created_at', 'last_used_at', 'created_by_email']
+        fields = [
+            'id', 'name', 'last_four', 'is_active', 'revoked_at',
+            'created_at', 'last_used_at', 'created_by_email',
+        ]
+        read_only_fields = fields
 
 
 class SyncSecretCreateSerializer(serializers.Serializer):
@@ -160,3 +165,56 @@ class SyncSecretCreateSerializer(serializers.Serializer):
             )
 
         return value
+
+
+ToolSerializer = ActionSerializer
+ToolExecutionLogSerializer = ActionExecutionLogSerializer
+ToolDeploymentSerializer = ActionDeploymentSerializer
+
+
+class AgentSerializer(serializers.ModelSerializer):
+    """Serializer for Agent CRUD operations."""
+
+    knowledge_source_ids = serializers.PrimaryKeyRelatedField(
+        many=True,
+        source='knowledge_sources',
+        queryset=KnowledgeSource.objects.all(),
+        required=False,
+    )
+
+    class Meta:
+        model = Agent
+        fields = [
+            'id', 'organization', 'product', 'name', 'slug', 'channel', 'is_active',
+            'tone', 'guidance_override',
+            'tool_allowlist', 'tool_denylist',
+            'max_response_tokens', 'include_sources', 'include_suggested_followups',
+            'llm_model', 'temperature',
+            'channel_config', 'default_language',
+            'knowledge_scope', 'knowledge_source_ids',
+            'created_at', 'updated_at',
+        ]
+        read_only_fields = ['id', 'organization', 'created_at', 'updated_at']
+
+
+class AgentCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating an Agent. Channel is required, product resolved from URL."""
+
+    knowledge_source_ids = serializers.PrimaryKeyRelatedField(
+        many=True,
+        source='knowledge_sources',
+        queryset=KnowledgeSource.objects.all(),
+        required=False,
+    )
+
+    class Meta:
+        model = Agent
+        fields = [
+            'name', 'slug', 'channel', 'is_active',
+            'tone', 'guidance_override',
+            'tool_allowlist', 'tool_denylist',
+            'max_response_tokens', 'include_sources', 'include_suggested_followups',
+            'llm_model', 'temperature',
+            'channel_config', 'default_language',
+            'knowledge_scope', 'knowledge_source_ids',
+        ]

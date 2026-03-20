@@ -22,8 +22,8 @@ interface MarketingSDKProviderProps {
 export function MarketingSDKProvider({ children }: MarketingSDKProviderProps) {
   const apiBaseUrl =
     process.env.NEXT_PUBLIC_PILLAR_API_URL || "http://localhost:8003";
-  const productKey =
-    process.env.NEXT_PUBLIC_PILLAR_PRODUCT_KEY || "pillar-help";
+  const agentSlug =
+    process.env.NEXT_PUBLIC_PILLAR_AGENT_SLUG || "pillar-help";
 
   // Destroy SDK on unmount to prevent UI leaking to other pages
   useEffect(() => {
@@ -34,7 +34,7 @@ export function MarketingSDKProvider({ children }: MarketingSDKProviderProps) {
 
   return (
     <PillarProvider
-      productKey={productKey}
+      agentSlug={agentSlug}
       config={{
         apiBaseUrl,
         panel: {

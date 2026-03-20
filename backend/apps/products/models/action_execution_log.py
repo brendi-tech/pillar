@@ -69,3 +69,6 @@ class ActionExecutionLog(TenantAwareModel):
 
     def __str__(self):
         return f"{self.action.name} - {self.status} at {self.created_at}"
+
+
+ToolExecutionLog = ActionExecutionLog

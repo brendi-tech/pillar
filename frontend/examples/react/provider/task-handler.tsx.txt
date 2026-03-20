@@ -2,7 +2,7 @@
 // For most cases, prefer usePillarTool for type-safe, co-located handlers
 
 <PillarProvider
-  productKey="your-product-key"
+  agentSlug="your-agent-slug"
   onTask={(task) => {
     // Handle dynamic action names
     if (task.name.startsWith('nav_')) {

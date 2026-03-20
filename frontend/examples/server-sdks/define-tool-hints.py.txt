@@ -1,0 +1,17 @@
+from typing import Literal, Annotated
+from pillar import Pillar, ToolContext
+
+pillar = Pillar(secret="plr_...")
+
+@pillar.tool(
+    description="Invite a new member to the workspace",
+    guidance="Only use when the user explicitly asks to invite someone.",
+    timeout_ms=15_000,
+)
+async def invite_member(
+    email: Annotated[str, "Email of the person to invite"],
+    role: Literal["admin", "member", "viewer"],
+    ctx: ToolContext,
+) -> dict:
+    invite = await workspace.invite(email, role)
+    return {"invite_id": invite.id, "status": "sent"}

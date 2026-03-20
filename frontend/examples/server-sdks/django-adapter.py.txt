@@ -1,0 +1,7 @@
+# urls.py
+from django.urls import path
+from myapp.pillar_tools import pillar
+
+urlpatterns = [
+    path("pillar/", pillar.django_view()),
+]

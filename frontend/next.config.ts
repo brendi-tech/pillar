@@ -63,16 +63,9 @@ const nextConfig: NextConfig = {
   },
 
   // Turbopack configuration (for next dev --turbopack)
-  // Mirrors the webpack aliases below for SDK packages
-  // Note: Turbopack requires package-relative paths, not absolute paths
-  experimental: {
-    turbo: {
-      resolveAlias: {
-        "@pillar-ai/sdk": "@pillar-ai/sdk/dist/pillar.esm.js",
-        "@pillar-ai/react": "@pillar-ai/react/dist/index.esm.js",
-      },
-    },
-  },
+  // SDK packages resolve correctly via their package.json "exports" field,
+  // so no resolveAlias is needed (unlike webpack which requires explicit aliases).
+  experimental: {},
 
   // Cache headers for static assets
   async headers() {

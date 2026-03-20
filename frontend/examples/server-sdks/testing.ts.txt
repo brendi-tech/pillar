@@ -1,0 +1,28 @@
+import { describe, it, expect } from 'vitest';
+import { generateSignature, createToolContext } from '@pillar-ai/server/testing';
+import { pillar } from './pillar-tools';
+
+const SECRET = 'plr_test_secret';
+
+describe('lookup_customer', () => {
+  it('returns customer data', async () => {
+    const body = JSON.stringify({
+      action: 'tool_call',
+      call_id: 'tc_test_123',
+      tool_name: 'lookup_customer',
+      arguments: { email: 'sarah@acme.com' },
+      caller: { channel: 'web', email: 'sarah@acme.com' },
+      conversation_id: 'conv_1',
+    });
+
+    const signature = generateSignature(body, SECRET);
+
+    const [result, status] = await pillar.handle(body, {
+      'x-pillar-signature': signature,
+    });
+
+    expect(status).toBe(200);
+    expect(result.success).toBe(true);
+    expect(result.result.name).toBe('Sarah');
+  });
+});

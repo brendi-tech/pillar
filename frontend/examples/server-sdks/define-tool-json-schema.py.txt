@@ -1,0 +1,22 @@
+from pillar import Pillar, ToolContext
+
+pillar = Pillar(secret="plr_...")
+
+@pillar.tool(
+    description="Invite a new member to the workspace",
+    input_schema={
+        "type": "object",
+        "properties": {
+            "email": {"type": "string", "description": "Email of the person to invite"},
+            "role": {
+                "type": "string",
+                "enum": ["admin", "member", "viewer"],
+                "description": "Role to assign",
+            },
+        },
+        "required": ["email", "role"],
+    },
+)
+async def invite_member(email: str, role: str, ctx: ToolContext) -> dict:
+    invite = await workspace.invite(email, role)
+    return {"invite_id": invite.id, "status": "sent"}

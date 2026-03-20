@@ -55,6 +55,7 @@ export function ConversationsPageContent() {
     hasNegativeFeedback: undefined,
     queryType: "all",
     intentCategory: "",
+    channel: "",
     search: initialSearch,
   });
   const pageSize = 20;
@@ -69,6 +70,7 @@ export function ConversationsPageContent() {
     has_negative_feedback: filters.hasNegativeFeedback,
     query_type: filters.queryType !== "all" ? filters.queryType : undefined,
     intent_category: filters.intentCategory || undefined,
+    channel: filters.channel || undefined,
     search: filters.search || undefined,
     page_size: pageSize,
   };

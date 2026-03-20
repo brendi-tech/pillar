@@ -1,5 +1,5 @@
 // app/layout.tsx
-<PillarProvider productKey="your-product-key">
+<PillarProvider agentSlug="your-agent-slug">
   <PillarActionHandlers />
   {children} {/* Your app content */}
 </PillarProvider>

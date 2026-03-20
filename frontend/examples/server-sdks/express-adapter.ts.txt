@@ -1,0 +1,11 @@
+import express from 'express';
+import { pillar } from './pillar-tools';
+
+const app = express();
+app.use(express.json());
+
+app.post('/pillar', pillar.expressHandler());
+
+app.listen(3000, () => {
+  console.log('Pillar webhook listening on port 3000');
+});

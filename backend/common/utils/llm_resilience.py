@@ -213,7 +213,7 @@ async def resilient_complete(
     context = context or {}
     question = context.get("question", "")
     iteration = context.get("iteration", 0)
-    found_actions = context.get("found_actions")
+    found_tools = context.get("found_tools")
     found_knowledge = context.get("found_knowledge")
     query_results = context.get("query_results")
     
@@ -369,7 +369,7 @@ async def resilient_complete(
     fallback_action = get_smart_default_action(
         question=question,
         iteration=iteration,
-        found_actions=found_actions,
+        found_tools=found_tools,
         found_knowledge=found_knowledge,
         query_results=query_results,
         error_type=last_error_type.value if last_error_type else None,
@@ -423,7 +423,7 @@ async def resilient_complete_with_health_check(
         fallback_action = get_smart_default_action(
             question=context.get("question", ""),
             iteration=context.get("iteration", 0),
-            found_actions=context.get("found_actions"),
+            found_tools=context.get("found_tools"),
             found_knowledge=context.get("found_knowledge"),
             query_results=context.get("query_results"),
             error_type="api_degraded",
@@ -500,7 +500,7 @@ async def resilient_stream_with_health_check(
         fallback_action = get_smart_default_action(
             question=context.get("question", ""),
             iteration=context.get("iteration", 0),
-            found_actions=context.get("found_actions"),
+            found_tools=context.get("found_tools"),
             found_knowledge=context.get("found_knowledge"),
             query_results=context.get("query_results"),
             error_type="api_degraded",
@@ -543,7 +543,7 @@ async def resilient_stream_with_health_check(
         fallback_action = get_smart_default_action(
             question=context.get("question", ""),
             iteration=context.get("iteration", 0),
-            found_actions=context.get("found_actions"),
+            found_tools=context.get("found_tools"),
             found_knowledge=context.get("found_knowledge"),
             query_results=context.get("query_results"),
             error_type="timeout",
@@ -564,7 +564,7 @@ async def resilient_stream_with_health_check(
         fallback_action = get_smart_default_action(
             question=context.get("question", ""),
             iteration=context.get("iteration", 0),
-            found_actions=context.get("found_actions"),
+            found_tools=context.get("found_tools"),
             found_knowledge=context.get("found_knowledge"),
             query_results=context.get("query_results"),
             error_type=error_type.value,

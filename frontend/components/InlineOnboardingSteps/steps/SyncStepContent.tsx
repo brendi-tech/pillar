@@ -9,13 +9,13 @@ import { Button } from "@/components/ui/button";
 
 interface SyncStepContentProps {
   onComplete: () => void;
-  productKey: string;
+  agentSlug: string;
   productId: string | undefined;
 }
 
 export function SyncStepContent({
   onComplete,
-  productKey,
+  agentSlug,
   productId,
 }: SyncStepContentProps) {
   const [newlyGeneratedSecret, setNewlyGeneratedSecret] = useState<{
@@ -24,7 +24,7 @@ export function SyncStepContent({
   } | null>(null);
 
   const secretValue = newlyGeneratedSecret?.secret || "your-secret";
-  const manualSyncCode = `PILLAR_SLUG=${productKey} \\
+  const manualSyncCode = `PILLAR_SLUG=${agentSlug} \\
   PILLAR_SECRET=${secretValue} \\
   npx pillar-sync --scan ./src`;
 
@@ -50,8 +50,8 @@ npx pillar-sync --scan ./src`;
             PILLAR_SLUG
           </code>
           <div className="flex items-center gap-1 min-w-0">
-            <code className="font-mono text-sm truncate">{productKey}</code>
-            <CopyButton value={productKey} className="shrink-0 h-7 w-7 p-0" />
+            <code className="font-mono text-sm truncate">{agentSlug}</code>
+            <CopyButton value={agentSlug} className="shrink-0 h-7 w-7 p-0" />
           </div>
         </div>
 

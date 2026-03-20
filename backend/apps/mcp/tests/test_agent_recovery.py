@@ -45,9 +45,9 @@ class TestSmartDefaultAction:
             )
             assert result["tool"] == "search", f"Failed for iteration {iteration}"
     
-    def test_with_found_actions_executes(self):
-        """When actions are found, should execute the top one."""
-        found_actions = [
+    def test_with_found_tools_executes(self):
+        """When tools are found, should execute the top one."""
+        found_tools = [
             {"name": "open_settings", "description": "Open settings page"},
             {"name": "view_profile", "description": "View user profile"},
         ]
@@ -55,7 +55,7 @@ class TestSmartDefaultAction:
         result = get_smart_default_action(
             question="Open my settings",
             iteration=1,
-            found_actions=found_actions,
+            found_tools=found_tools,
         )
         
         assert result["tool"] == "execute"
@@ -97,25 +97,25 @@ class TestSmartDefaultAction:
         result = get_smart_default_action(
             question="What is this?",
             iteration=2,
-            found_actions=None,
+            found_tools=None,
             found_knowledge=None,
         )
         
         # Simplified recovery defaults to search
         assert result["tool"] == "search"
     
-    def test_priority_order_actions_first(self):
-        """Found actions should take priority (to continue work, not short-circuit)."""
+    def test_priority_order_tools_first(self):
+        """Found tools should take priority (to continue work, not short-circuit)."""
         query_results = [{"action_name": "test", "result": {"data": "value"}}]
         found_knowledge = [{"title": "Doc", "content": "Content"}]
-        found_actions = [{"name": "action", "description": "Action"}]
+        found_tools = [{"name": "action", "description": "Action"}]
         
         result = get_smart_default_action(
             question="Test",
             iteration=1,
             query_results=query_results,
             found_knowledge=found_knowledge,
-            found_actions=found_actions,
+            found_tools=found_tools,
         )
         
         # Actions take priority - execute to continue work
@@ -233,10 +233,10 @@ class TestBuildStateSummary:
         assert "No context" in summary
     
     def test_with_actions(self):
-        """Should include action names."""
+        """Should include tool names."""
         summary = build_state_summary(
             iteration=1,
-            found_actions=[
+            found_tools=[
                 {"name": "open_settings"},
                 {"name": "view_profile"},
             ],

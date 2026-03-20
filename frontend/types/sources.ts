@@ -47,10 +47,13 @@ export interface ConnectionConfig {
 
 // --- Main Source Config Interface (matches backend serializer) ---
 
+export type KnowledgeSourceVisibility = 'internal' | 'external' | 'all';
+
 export interface KnowledgeSourceConfig {
   id: string;
   name: string;
   source_type: KnowledgeSourceType;
+  visibility: KnowledgeSourceVisibility;
   url: string;
   crawl_config: CrawlConfig;
   connection_config: ConnectionConfig; // For cloud_storage
@@ -231,6 +234,7 @@ export interface UpdateKnowledgeSourceRequest {
   name?: string;
   url?: string;
   crawl_config?: CrawlConfig;
+  visibility?: KnowledgeSourceVisibility;
 }
 
 // --- List Response ---

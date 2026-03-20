@@ -1,5 +1,5 @@
 <PillarProvider
-  productKey="your-product-key"
+  agentSlug="your-agent-slug"
   config={{
     sidebarTabs: [
       { id: 'assistant', label: 'Co-pilot', icon: 'sparkle' },

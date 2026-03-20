@@ -1,3 +1,3 @@
-<PillarProvider productKey={process.env.NEXT_PUBLIC_PILLAR_PRODUCT_KEY!}>
+<PillarProvider agentSlug={process.env.NEXT_PUBLIC_PILLAR_AGENT_SLUG!}>
   {children} {/* Your app content renders here */}
 </PillarProvider>

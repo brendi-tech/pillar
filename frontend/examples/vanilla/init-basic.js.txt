@@ -1,3 +1,3 @@
 const pillar = await Pillar.init({
-  productKey: 'your-product-key',
+  agentSlug: 'your-agent-slug',
 });

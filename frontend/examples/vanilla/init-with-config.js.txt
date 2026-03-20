@@ -1,5 +1,5 @@
 const pillar = await Pillar.init({
-  productKey: 'your-product-key',
+  agentSlug: 'your-agent-slug',
   sidebarTabs: [
     { id: 'assistant', label: 'Co-pilot', icon: 'sparkle' },
     { id: 'support', label: 'Talk to Human', icon: 'headset' },

@@ -114,6 +114,10 @@ dependencies = [
     # Billing
     "stripe>=12.0.0",
     "python-json-logger>=4.0.0",
+    "pillar-ai-server>=0.2.1",
+    "slack-sdk>=3.41.0",
+    "django-fernet-encrypted-fields>=0.3.1",
+    "pynacl>=1.6.2",
 ]
 
 [build-system]
@@ -132,7 +136,7 @@ addopts = [
     "--verbose",
     "--tb=short",
     "--strict-markers",
-    "-m", "not e2e",  # Skip e2e tests by default (require real API keys)
+    "-m", "not e2e and not integration",  # Skip e2e and integration tests by default (require real API keys / active Stripe products)
 ]
 testpaths = ["tests"]
 markers = [
@@ -170,6 +174,8 @@ exclude = [
 
 [tool.ruff.per-file-ignores]
 "__init__.py" = ["F401"]
+
+[tool.uv.sources]
 
 [dependency-groups]
 dev = [

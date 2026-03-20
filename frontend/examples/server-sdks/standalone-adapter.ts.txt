@@ -1,0 +1,18 @@
+import { Pillar, defineTool } from '@pillar-ai/server';
+import { z } from 'zod';
+
+const pillar = new Pillar({
+  secret: process.env.PILLAR_SECRET!,
+  endpointUrl: 'https://api.myapp.com/pillar',
+});
+
+const ping = defineTool({
+  name: 'ping',
+  description: 'Health check',
+  input: z.object({}),
+  execute: async () => ({ pong: true }),
+});
+
+await pillar.registerTools([ping]);
+
+pillar.serve({ port: 8787 });

@@ -17,18 +17,18 @@ import type { FrameworkId } from "../InlineOnboardingSteps.types";
 
 interface InstallSdkStepContentProps {
   onComplete: () => void;
-  productKey: string;
+  agentSlug: string;
   selectedFramework: FrameworkId;
   onFrameworkChange: (framework: FrameworkId) => void;
 }
 
 export function InstallSdkStepContent({
   onComplete,
-  productKey,
+  agentSlug,
   selectedFramework,
   onFrameworkChange,
 }: InstallSdkStepContentProps) {
-  const providerCodes = getProviderCode(productKey);
+  const providerCodes = getProviderCode(agentSlug);
 
   return (
     <div className="space-y-5">

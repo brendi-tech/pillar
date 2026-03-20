@@ -6,7 +6,7 @@ function BadComponent() {
 // ✅ Correct: Inside provider tree
 function App() {
   return (
-    <PillarProvider productKey="your-product-key">
+    <PillarProvider agentSlug="your-agent-slug">
       <GoodComponent />
     </PillarProvider>
   );

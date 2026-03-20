@@ -1,17 +1,17 @@
 """
 Agent tool definitions for the agentic reasoning loop.
 
-Dynamic action tool architecture:
-- search: Find actions and documentation (unified search)
-- [dynamic action tools]: Discovered via search, registered as native tools
+Dynamic tool architecture:
+- search: Find tools and documentation (unified search)
+- [dynamic tools]: Discovered via search, registered as native tools
 
 The model responds directly via content tokens (no respond tool).
 When the model produces content with no tool calls, the turn is over.
 
 Example flow:
 - "how do I" questions → search → direct response
-- "do X for me" requests → search → [action tool] → direct response
-- Multi-step tasks → search → [action tool] → [action tool] → ... → direct response
+- "do X for me" requests → search → [tool] → direct response
+- Multi-step tasks → search → [tool] → [tool] → ... → direct response
 """
 from typing import Any, Dict, List, Optional
 
@@ -28,8 +28,8 @@ CORE_TOOLS = [
     {
         "name": "search",
         "description": (
-            "Search for actions (capabilities) and knowledge (documentation/help articles). "
-            "Always searches both. Actions are operations you can execute. "
+            "Search for tools (capabilities) and knowledge (documentation/help articles). "
+            "Always searches both. Tools are operations you can execute. "
             "Knowledge is documentation relevant to the user's question."
         ),
         "parameters": {
@@ -248,7 +248,7 @@ def get_tool_names() -> List[str]:
 
 
 # =============================================================================
-# DYNAMIC ACTION TOOLS - Register discovered actions as native LLM tools
+# DYNAMIC TOOLS - Register discovered tools as native LLM tools
 # =============================================================================
 
 
@@ -305,7 +305,7 @@ def _sanitize_schema(schema: Dict[str, Any]) -> Dict[str, Any]:
 
 def action_to_tool(action: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Convert an action from search results to OpenAI tool format.
+    Convert an action record (from the Action model) to OpenAI tool format.
     
     This enables native schema enforcement by the LLM's tool calling API,
     eliminating parameter validation errors that occurred with the generic
@@ -348,18 +348,18 @@ def action_to_tool(action: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def get_dynamic_tools(
-    registered_actions: List[Dict[str, Any]],
+    registered_tools: List[Dict[str, Any]],
     include_get_article: bool = False,
     include_interact_with_page: bool = False,
 ) -> List[Dict[str, Any]]:
     """
-    Build the complete tool list: base tools + conditional tools + discovered action tools.
+    Build the complete tool list: base tools + conditional tools + discovered tools.
     
-    Actions discovered via search are converted to native tools, enabling
+    Tools discovered via search are converted to native LLM tools, enabling
     the LLM to call them directly with schema validation.
     
     Args:
-        registered_actions: List of action dicts from context.registered_actions
+        registered_tools: List of action dicts from context.registered_tools
         include_get_article: Include the get_article conditional tool
         include_interact_with_page: Include the interact_with_page conditional tool
         
@@ -370,5 +370,5 @@ def get_dynamic_tools(
         include_get_article=include_get_article,
         include_interact_with_page=include_interact_with_page,
     )
-    action_tools = [action_to_tool(a) for a in registered_actions]
-    return base_tools + action_tools
+    dynamic_tools = [action_to_tool(a) for a in registered_tools]
+    return base_tools + dynamic_tools

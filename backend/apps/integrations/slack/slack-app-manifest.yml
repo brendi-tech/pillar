@@ -1,0 +1,70 @@
+# ============================================================================
+# Slack App Manifest — Production
+# ============================================================================
+#
+# How to use:
+#   1. Go to https://api.slack.com/apps → "Create New App" → "From an app manifest"
+#   2. Select your workspace
+#   3. Paste this YAML (or the JSON tab equivalent)
+#   4. Review and create
+#   5. Under "Basic Information", copy:
+#      - Client ID       → SLACK_CLIENT_ID env var
+#      - Client Secret   → SLACK_CLIENT_SECRET env var
+#      - Signing Secret  → SLACK_SIGNING_SECRET env var
+#   6. In your Pillar dashboard, click "Connect Slack" on the Integrations page
+#
+# Replace YOUR_DOMAIN below with your actual API domain
+# (e.g., help-api.trypillar.com or your ngrok URL for development)
+#
+
+display_information:
+  name: Pillar
+  description: AI-powered product assistant that knows your docs, tools, and APIs.
+  background_color: "#1a1a2e"
+  long_description: |
+    Pillar brings your AI product assistant directly into Slack. Ask questions
+    about your product, trigger tools and actions, and get instant answers —
+    all without leaving Slack. Mention @Pillar in any channel or DM directly.
+
+features:
+  app_home:
+    home_tab_enabled: false
+    messages_tab_enabled: true
+    messages_tab_read_only_enabled: false
+  bot_user:
+    display_name: Pillar
+    always_online: true
+  slash_commands:
+    - command: /pillar
+      url: https://YOUR_DOMAIN/api/integrations/slack/commands/
+      description: Pillar commands — connect, status, help
+      usage_hint: "[connect | status | help]"
+      should_escape: false
+
+oauth_config:
+  scopes:
+    bot:
+      - app_mentions:read
+      - chat:write
+      - commands
+      - im:history
+      - im:read
+      - im:write
+      - reactions:read
+      - reactions:write
+      - users:read
+      - users:read.email
+
+settings:
+  event_subscriptions:
+    request_url: https://YOUR_DOMAIN/api/integrations/slack/events/
+    bot_events:
+      - app_mention
+      - message.im
+      - app_uninstalled
+  interactivity:
+    is_enabled: true
+    request_url: https://YOUR_DOMAIN/api/integrations/slack/interactions/
+  org_deploy_enabled: false
+  socket_mode_enabled: false
+  token_rotation_enabled: false

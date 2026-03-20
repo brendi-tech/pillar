@@ -1,0 +1,9 @@
+from pillar import Pillar, ToolContext
+
+pillar = Pillar(secret="plr_...")
+
+@pillar.tool(description="Health check")
+async def ping(ctx: ToolContext) -> dict:
+    return {"pong": True}
+
+pillar.serve(port=8787)

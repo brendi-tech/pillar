@@ -1,0 +1,4 @@
+// app/api/pillar/route.ts
+import { pillar } from '@/lib/pillar-tools';
+
+export const POST = pillar.nextHandler();

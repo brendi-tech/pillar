@@ -1,4 +1,4 @@
 // src/environments/environment.ts
 export const environment = {
-  pillarProductKey: 'your-product-slug',
+  pillarAgentSlug: 'your-agent-slug',
 };

@@ -48,6 +48,7 @@ class ActionSearchService:
         max_results: int | None = None,
         min_results: int | None = None,
         context: dict | None = None,
+        channel: str | None = None,
     ) -> List[Dict[str, Any]]:
         """
         Search for matching actions using smart selection.
@@ -63,6 +64,7 @@ class ActionSearchService:
             max_results: Maximum number of actions to return (default from settings)
             min_results: Minimum actions to return even if low scores (default from settings)
             context: User context for filtering (currentPage, userRole, etc.)
+            channel: Optional channel filter (web, slack, discord, email, api)
 
         Returns:
             List of formatted action dictionaries with scores
@@ -75,6 +77,7 @@ class ActionSearchService:
             max_results=max_results,
             min_results=min_results,
             context=context,
+            channel=channel,
         )
         return result.actions
 
@@ -87,6 +90,7 @@ class ActionSearchService:
         max_results: int | None = None,
         min_results: int | None = None,
         context: dict | None = None,
+        channel: str | None = None,
     ) -> ActionSearchResult:
         """
         Search for matching actions with metadata for debugging/tracing.
@@ -102,6 +106,7 @@ class ActionSearchService:
             max_results: Maximum number of actions to return (default from settings)
             min_results: Minimum actions to return even if low scores (default from settings)
             context: User context for filtering by requiredContext (currentPage, userRole, etc.)
+            channel: Optional channel filter (web, slack, discord, email, api)
 
         Returns:
             ActionSearchResult with actions and metadata
@@ -127,7 +132,7 @@ class ActionSearchService:
         try:
             # Get actions based on platform/version or fallback to all published
             actions = await self._get_actions_queryset(
-                product, platform, version, Action, ActionDeployment
+                product, platform, version, Action, ActionDeployment, channel=channel
             )
 
             action_count = await actions.acount()
@@ -366,6 +371,7 @@ class ActionSearchService:
         version: str | None,
         Action,
         ActionDeployment,
+        channel: str | None = None,
     ):
         """
         Get the actions queryset based on platform/version or fallback to all published.
@@ -376,6 +382,7 @@ class ActionSearchService:
             version: Optional version filter
             Action: Action model class
             ActionDeployment: ActionDeployment model class
+            channel: Optional channel filter (web, slack, discord, email, api)
 
         Returns:
             QuerySet of Action objects
@@ -409,10 +416,13 @@ class ActionSearchService:
                     f"[ActionSearch] Using deployment {deployment.platform}@{deployment.version} "
                     f"(id: {deployment.id})"
                 )
-                return deployment.actions.filter(
+                actions = deployment.actions.filter(
                     status=Action.Status.PUBLISHED,
                     description_embedding__isnull=False
                 )
+                if channel:
+                    actions = actions.filter(channel_compatibility__contains=[channel])
+                return actions
             else:
                 logger.info(
                     f"[ActionSearch] No deployment found for platform {platform}, "
@@ -420,11 +430,14 @@ class ActionSearchService:
                 )
 
         # Fallback: return all published actions for this product
-        return Action.objects.filter(
+        actions = Action.objects.filter(
             product=product,
             status=Action.Status.PUBLISHED,
             description_embedding__isnull=False
         )
+        if channel:
+            actions = actions.filter(channel_compatibility__contains=[channel])
+        return actions
 
     async def _rerank_actions(
         self,
@@ -572,6 +585,8 @@ class ActionSearchService:
             'description': action.description,
             'guidance': action.guidance or '',
             'action_type': action.action_type,
+            'tool_type': action.tool_type,
+            'channel_compatibility': action.channel_compatibility,
             'auto_run': should_auto_run,
             'auto_complete': behavior['auto_complete'],
             'returns_data': action.returns_data,
@@ -616,3 +631,8 @@ def get_action_search_service() -> ActionSearchService:
 
 # Convenience instance
 action_search_service = ActionSearchService()
+
+ToolSearchService = ActionSearchService
+ToolSearchResult = ActionSearchResult
+get_tool_search_service = get_action_search_service
+tool_search_service = action_search_service

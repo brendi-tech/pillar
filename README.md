@@ -69,7 +69,7 @@ Pillar understands the intent, builds a multi-step plan, and executes it using y
 
 ### Cloud (Fastest)
 
-Sign up at [trypillar.com](https://trypillar.com) to get your **Product Key**, then install the SDK:
+Sign up at [trypillar.com](https://trypillar.com) to get your **Agent Slug**, then install the SDK:
 
 ```bash
 npm install @pillar-ai/react
@@ -82,7 +82,7 @@ import { PillarProvider } from '@pillar-ai/react';
 
 function App() {
   return (
-    <PillarProvider productKey="your-product-key">
+    <PillarProvider agentSlug="your-agent-slug">
       <YourApp />
     </PillarProvider>
   );
@@ -200,7 +200,7 @@ Or load via CDN with no build step:
 ```html
 <script src="https://cdn.trypillar.com/sdk.js"></script>
 <script>
-  Pillar.init({ productKey: 'your-product-key' });
+  Pillar.init({ agentSlug: 'your-agent-slug' });
 </script>
 ```
 

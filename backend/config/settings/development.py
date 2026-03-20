@@ -19,7 +19,7 @@ MIDDLEWARE = [m for m in MIDDLEWARE if m not in (
     'whitenoise.middleware.WhiteNoiseMiddleware',
 )]
 
-ALLOWED_HOSTS = ['localhost', '.localhost', '127.0.0.1', '[::1]', 'testserver', '.ngrok-free.dev', '.ngrok.io', '10.0.0.22', '.nip.io']
+ALLOWED_HOSTS = ['localhost', '.localhost', '127.0.0.1', '[::1]', 'testserver', '.ngrok-free.dev', '.ngrok-free.app', '.ngrok.io', '10.0.0.22', '.nip.io', 'host.docker.internal']
 
 # CORS - Allow all origins in development
 CORS_ALLOW_ALL_ORIGINS = True

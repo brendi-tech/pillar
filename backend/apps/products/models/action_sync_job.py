@@ -120,3 +120,7 @@ class ActionSyncJob(TenantAwareModel):
     
     def __str__(self):
         return f"Sync {self.platform}@{self.version} ({self.product.subdomain}) - {self.status}"
+
+
+ToolSyncJob = ActionSyncJob
+ToolSyncJobStatus = ActionSyncJobStatus

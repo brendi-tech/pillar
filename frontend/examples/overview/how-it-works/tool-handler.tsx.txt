@@ -1,6 +1,6 @@
 import { Pillar } from '@pillar-ai/sdk';
 
-const pillar = await Pillar.init({ productKey: 'your-product-key' });
+const pillar = await Pillar.init({ agentSlug: 'your-agent-slug' });
 
 pillar.defineTool({
   name: 'invite_member',

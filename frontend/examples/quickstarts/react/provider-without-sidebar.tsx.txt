@@ -1,5 +1,5 @@
 <PillarProvider
-  productKey={process.env.NEXT_PUBLIC_PILLAR_PRODUCT_KEY!}
+  agentSlug={process.env.NEXT_PUBLIC_PILLAR_AGENT_SLUG!}
   config={{
     edgeTrigger: { enabled: false },
     mobileTrigger: { enabled: false },

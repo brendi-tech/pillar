@@ -1,8 +1,8 @@
 /**
  * Global store for the API Keys Modal.
  *
- * Uses the same event-based pattern as ThemeSelectorModal to allow
- * opening from anywhere (including non-React tool handlers).
+ * Uses an event-based pattern to allow opening from anywhere
+ * (including non-React tool handlers).
  */
 
 import { useEffect, useState } from "react";

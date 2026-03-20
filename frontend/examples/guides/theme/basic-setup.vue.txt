@@ -1,11 +1,13 @@
 <!-- App.vue -->
 <script setup lang="ts">
 import { PillarProvider } from "@pillar-ai/vue";
+
+const agentSlug = "your-agent-slug";
 </script>
 
 <template>
   <PillarProvider
-    :product-key="productKey"
+    :agent-slug="agentSlug"
     :config="{
       theme: {
         mode: 'auto',

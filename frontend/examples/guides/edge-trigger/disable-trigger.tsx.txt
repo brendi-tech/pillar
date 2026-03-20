@@ -1,4 +1,5 @@
 <PillarProvider
+  agentSlug="your-agent-slug"
   config={{
     edgeTrigger: {
       enabled: false,

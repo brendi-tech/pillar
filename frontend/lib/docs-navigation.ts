@@ -52,6 +52,7 @@ export const docsNavigation: NavSection[] = [
     title: "Core Concepts",
     slug: "core-concepts",
     items: [
+      { title: "Agents", href: "/docs/core-concepts/agents" },
       { title: "Tools", href: "/docs/core-concepts/tools" },
       { title: "Knowledge Base", href: "/docs/core-concepts/knowledge-base" },
       { title: "Human Escalation", href: "/docs/core-concepts/human-escalation" },
@@ -75,6 +76,14 @@ export const docsNavigation: NavSection[] = [
       { title: "Testing", href: "/docs/guides/testing" },
       { title: "Debug Mode", href: "/docs/guides/debug-mode" },
     ],
+    groups: [
+      {
+        title: "Migration",
+        items: [
+          { title: "productKey → agentSlug", href: "/docs/guides/migration-agent-slug" },
+        ],
+      },
+    ],
   },
   {
     title: "Knowledge Base",
@@ -85,6 +94,19 @@ export const docsNavigation: NavSection[] = [
       { title: "Files", href: "/docs/knowledge-base/files" },
       { title: "Cloud Storage", href: "/docs/knowledge-base/cloud-storage" },
       { title: "Snippets", href: "/docs/knowledge-base/snippets" },
+    ],
+  },
+  {
+    title: "Server SDKs",
+    slug: "server-sdks",
+    items: [
+      { title: "Overview", href: "/docs/server-sdks/overview" },
+      { title: "Quickstart", href: "/docs/server-sdks/quickstart" },
+      { title: "Defining Tools", href: "/docs/server-sdks/defining-tools" },
+      { title: "Framework Integration", href: "/docs/server-sdks/frameworks" },
+      { title: "Confirmation Flows", href: "/docs/server-sdks/confirmations" },
+      { title: "Webhook Security", href: "/docs/server-sdks/webhook-security" },
+      { title: "Testing", href: "/docs/server-sdks/testing" },
     ],
   },
   {

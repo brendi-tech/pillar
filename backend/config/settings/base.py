@@ -66,12 +66,22 @@ INSTALLED_APPS = [
     # Domain-focused apps
     'apps.products',                    # Products (core), actions, tooltips, platforms
     'apps.analytics',                   # Searches, views, sessions, chat
+    'apps.identity',                    # Cross-channel identity mapping and linking
+
+    # Server-side tools
+    'apps.tools',                       # Server-side tool endpoints, MCP sources
 
     # Public tools
     'apps.agent_score',                 # Agent Readiness Score (public free tool)
 
     # Billing
     'apps.billing',                     # Stripe billing, usage metering, plan enforcement
+
+    # Integrations (omnichannel)
+    'encrypted_fields',                 # Fernet encryption for bot tokens
+    'apps.integrations.slack',          # Slack bot integration
+    'apps.integrations.discord',        # Discord bot integration
+    'apps.integrations.email_channel',  # Email channel integration
 ]
 
 # Internal tools (impersonation, diagnostics) — excluded from open source repo.
@@ -151,6 +161,16 @@ DATABASES = {
     }
 }
 
+if os.environ.get('DEV_DB_HOST'):
+    DATABASES['dev_readonly'] = {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ.get('DEV_DB_NAME', 'help_center_dev'),
+        'USER': os.environ.get('DEV_DB_USER', 'help_center_user'),
+        'PASSWORD': os.environ.get('DEV_DB_PASSWORD', ''),
+        'HOST': os.environ.get('DEV_DB_HOST', 'localhost'),
+        'PORT': os.environ.get('DEV_DB_PORT', '5433'),
+    }
+
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -228,12 +248,28 @@ REST_FRAMEWORK = {
         'public_form_day': '30/day',
         'agent_score_scan': '10/minute',
         'agent_score_signup': '10/hour',
+        'headless_chat': '200/minute',
     },
 }
 
-# Slack Configuration
+# Slack Configuration (internal notifications)
 SLACK_WEBHOOK_URL = os.environ.get('SLACK_WEBHOOK_URL', None)
 SLACK_ENABLED_IN_DEBUG = os.environ.get('SLACK_ENABLED_IN_DEBUG', 'false').lower() == 'true'
+
+# Slack Bot Integration (omnichannel agent)
+SLACK_CLIENT_ID = os.environ.get('SLACK_CLIENT_ID', '')
+SLACK_CLIENT_SECRET = os.environ.get('SLACK_CLIENT_SECRET', '')
+SLACK_SIGNING_SECRET = os.environ.get('SLACK_SIGNING_SECRET', '')
+
+# Discord Configuration
+DISCORD_CLIENT_ID = os.environ.get('DISCORD_CLIENT_ID', '')
+DISCORD_CLIENT_SECRET = os.environ.get('DISCORD_CLIENT_SECRET', '')
+DISCORD_PUBLIC_KEY = os.environ.get('DISCORD_PUBLIC_KEY', '')
+DISCORD_BOT_TOKEN = os.environ.get('DISCORD_BOT_TOKEN', '')
+
+# Fernet encryption key for bot tokens (generate with: from cryptography.fernet import Fernet; Fernet.generate_key())
+FIELD_ENCRYPTION_KEY = os.environ.get('FIELD_ENCRYPTION_KEY', '')
+SALT_KEY = FIELD_ENCRYPTION_KEY
 
 # JWT Settings
 SIMPLE_JWT = {
@@ -528,6 +564,12 @@ BACKEND_URL = os.environ.get('HELP_CENTER_BACKEND_URL', os.environ.get('BACKEND_
 # Defaults to dev environment — override via ADMIN_URL env var.
 # dev: https://admin.pillar.bot  |  prod: https://admin.trypillar.com
 ADMIN_URL = os.environ.get('ADMIN_URL', 'https://admin.trypillar.com')
+
+# ==============================================================================
+# PILLAR SDK (Backend Tool Registration)
+# ==============================================================================
+PILLAR_SDK_SECRET = os.environ.get('PILLAR_SDK_SECRET', '')
+PILLAR_SDK_ENDPOINT_URL = os.environ.get('PILLAR_SDK_ENDPOINT_URL', '')
 
 # ==============================================================================
 # LOGGING CONFIGURATION

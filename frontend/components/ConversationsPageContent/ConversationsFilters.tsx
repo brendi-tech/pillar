@@ -32,6 +32,7 @@ export interface ConversationsFiltersState {
   hasNegativeFeedback: boolean | undefined;
   queryType: QueryType | "all";
   intentCategory: string;
+  channel: string;
   search: string;
 }
 
@@ -122,6 +123,35 @@ function FilterControls({
         </Select>
       </div>
 
+      {/* Channel Filter */}
+      <div
+        className={
+          isVertical ? "flex flex-col gap-2" : "flex items-center gap-2"
+        }
+      >
+        <span className="text-sm text-muted-foreground">Channel:</span>
+        <Select
+          value={filters.channel || "all"}
+          onValueChange={(value) => {
+            onFiltersChange({
+              ...filters,
+              channel: value === "all" ? "" : value,
+            });
+          }}
+        >
+          <SelectTrigger className={isVertical ? "w-full" : "w-[130px]"}>
+            <SelectValue placeholder="All channels" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="web">Web</SelectItem>
+            <SelectItem value="slack">Slack</SelectItem>
+            <SelectItem value="email">Email</SelectItem>
+            <SelectItem value="api">API</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       {/* Query Type Filter */}
       <div
         className={
@@ -200,6 +230,7 @@ function getActiveFilterCount(filters: ConversationsFiltersState): number {
   if (filters.hasNegativeFeedback !== undefined) count++;
   if (filters.queryType !== "all") count++;
   if (filters.intentCategory) count++;
+  if (filters.channel) count++;
   if (filters.search) count++;
   return count;
 }

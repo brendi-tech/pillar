@@ -1,0 +1,10 @@
+import Fastify from 'fastify';
+import { pillar } from './pillar-tools';
+
+const fastify = Fastify();
+
+fastify.post('/pillar', pillar.fastifyHandler());
+
+fastify.listen({ port: 3000 }, () => {
+  console.log('Pillar webhook listening on port 3000');
+});

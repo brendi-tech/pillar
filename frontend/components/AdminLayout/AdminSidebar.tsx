@@ -24,10 +24,12 @@ import type { LucideIcon } from "lucide-react";
 import {
   BarChart3,
   BookOpen,
+  Bot,
   CreditCard,
   FileText,
   Key,
   MessageSquare,
+  Plug2,
   Rocket,
   Search,
   Sliders,
@@ -96,9 +98,15 @@ const navigationItems: NavItem[] = [
     category: "insights",
   },
   {
-    title: "Configure",
-    href: "/configure",
-    icon: Sliders,
+    title: "Integrations",
+    href: "/integrations",
+    icon: Plug2,
+    category: "settings",
+  },
+  {
+    title: "Agents",
+    href: "/agents",
+    icon: Bot,
     category: "settings",
   },
   {

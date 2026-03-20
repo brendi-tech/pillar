@@ -95,7 +95,7 @@ export function DocsLoginModal({ open, onOpenChange }: DocsLoginModalProps) {
         <DialogHeader>
           <DialogTitle>Sign in to personalize docs</DialogTitle>
           <DialogDescription>
-            Sign in to see your product key in code examples.
+            Sign in to see your agent slug in code examples.
           </DialogDescription>
         </DialogHeader>
 

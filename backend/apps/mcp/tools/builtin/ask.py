@@ -18,6 +18,8 @@ from apps.mcp.services.mcp_server.utils import extract_request_metadata
 
 logger = logging.getLogger(__name__)
 
+_USE_WEB_ADAPTER = True
+
 
 def _is_valid_gcs_signed_url(url: str) -> bool:
     """Validate signed GCS URL from our bucket."""
@@ -71,10 +73,10 @@ class AskTool(Tool):
                 "type": "string",
                 "description": "Optional conversation ID to load history for context-aware answers.",
             },
-            "registered_actions": {
+            "registered_tools": {
                 "type": "array",
                 "items": {"type": "object"},
-                "description": "Actions from previous turns (persisted by SDK for multi-turn conversations).",
+                "description": "Registered tools from previous turns (persisted by SDK for multi-turn conversations).",
                 "default": []
             },
             "user_context": {
@@ -260,7 +262,10 @@ class AskTool(Tool):
 
             # Extract data for actions that have schemas
             if actions:
-                actions = await self._extract_action_data(query, actions, help_center_config)
+                from apps.mcp.services.agent.action_enrichment import (
+                    extract_action_data, generate_followup_question,
+                )
+                actions = await extract_action_data(query, actions, help_center_config)
 
             # Check if top action is missing required data
             top_action_incomplete = (
@@ -273,7 +278,7 @@ class AskTool(Tool):
                 # Generate follow-up question for missing required fields
                 missing_descs = actions[0].get('missing_field_descriptions', [])
                 action_name = actions[0].get('name', '').replace('_', ' ')
-                follow_up = self._generate_followup_question(action_name, missing_descs)
+                follow_up = generate_followup_question(action_name, missing_descs)
                 
                 # Return follow-up without action buttons - user needs to provide more info
                 return {
@@ -333,17 +338,16 @@ class AskTool(Tool):
         - Dynamic tool selection (search_actions, search_knowledge, create_plan)
         - Multi-step plans with action and guidance steps
         - Direct answers for greetings/off-topic
-        
+
         This tool handles data extraction for actions with schemas.
         Also logs all conversations to the database for analytics.
         """
-        import time
-        start_time = time.time()
-        
         query = arguments.get('query', '')
         images = arguments.get('images', [])
         resume = arguments.get('resume', False)
         conversation_id = arguments.get('conversation_id')
+        conversation_history: List[Dict[str, Any]] = []
+        client_registered_tools: List[Dict[str, Any]] = []
 
         # --- Resume mode: load state from interrupted session ---
         if resume and conversation_id:
@@ -353,7 +357,7 @@ class AskTool(Tool):
             session = await get_resumable_session(conversation_id)
             if session and session.get('resumable'):
                 conversation_history = session.get('llm_messages', [])
-                client_registered_actions = session.get('registered_actions', [])
+                client_registered_tools = session.get('registered_tools', [])
                 user_message = session.get('user_message', '')
                 query = (
                     f"{user_message}\n\n"
@@ -395,36 +399,26 @@ class AskTool(Tool):
         top_k = arguments.get('top_k', 5)
         user_context = arguments.get('user_context', [])
         context = arguments.get('context', {})
-        # Registered actions from previous turns (for dynamic action tools)
-        # On resume, these are already loaded from session state above
         if not resume:
-            client_registered_actions = arguments.get('registered_actions', [])
-        
-        # Extract user_profile from nested context structure
-        # SDK sends: { product: Context, user_profile: UserProfile }
+            client_registered_tools = arguments.get(
+                'registered_tools', arguments.get('registered_actions', []),
+            )
+
         user_profile = None
         if isinstance(context, dict):
             if 'product' in context:
                 user_profile = context.get('user_profile', {})
                 context = context.get('product', {})
-                logger.debug(f"[AskTool] Extracted nested context: product={context}, user_profile={user_profile}")
-        
-        if user_context:
-            logger.info(f"[AskTool] Received user_context with {len(user_context)} item(s)")
-        if context:
-            logger.info(f"[AskTool] Received context: {context}")
-        if user_profile:
-            logger.info(f"[AskTool] Received user_profile: {user_profile}")
-        
-        # Default query for image-only messages
+
         if not query and images:
             query = "[Image provided]"
-        
-        logger.info(f"[AskTool] execute_stream called with query='{query[:50]}...', images={len(images) if images else 0}")
-        logger.debug(f"[AskTool] Full arguments: {arguments}")
 
-        # Validate images if provided
-        logger.debug("[AskTool] Starting image validation")
+        logger.info(
+            "[AskTool] execute_stream called with query='%s...', images=%d",
+            query[:50], len(images) if images else 0,
+        )
+
+        # Validate images
         validated_images: Optional[List[Dict[str, str]]] = None
         if images:
             if len(images) > 4:
@@ -434,10 +428,10 @@ class AskTool(Tool):
             validated_images = []
             for idx, img in enumerate(images):
                 url = img.get('url', '')
-                # In local dev, allow localhost URLs; in production, require GCS signed URLs
                 storage_backend = getattr(settings, 'STORAGE_BACKEND', 'local')
-                is_localhost_url = url.startswith('http://localhost') or url.startswith('http://127.0.0.1')
-                logger.debug(f"[AskTool] Image {idx}: storage_backend={storage_backend}, is_localhost={is_localhost_url}, url={url[:50]}...")
+                is_localhost_url = (
+                    url.startswith('http://localhost') or url.startswith('http://127.0.0.1')
+                )
                 if storage_backend != 'local' and not is_localhost_url and not _is_valid_gcs_signed_url(url):
                     yield {'type': 'error', 'message': f'Invalid image URL at index {idx}'}
                     return
@@ -446,46 +440,105 @@ class AskTool(Tool):
                     'detail': img.get('detail', 'low'),
                     'path': img.get('path', ''),
                 })
-            logger.info(f"[AskTool] Processing {len(validated_images)} image(s)")
-        logger.debug("[AskTool] Image validation complete")
 
-        # Extract request metadata for logging
-        logger.debug("[AskTool] Extracting request metadata")
+        # Extract request metadata
         metadata = extract_request_metadata(request) if request else None
         skip_analytics = False
         page_url = ''
         if request:
-            # Check for skip_tracking header or query param
-            skip_analytics = bool(request.GET.get('skip_tracking') or request.headers.get('X-Skip-Tracking'))
+            skip_analytics = bool(
+                request.GET.get('skip_tracking') or request.headers.get('X-Skip-Tracking'),
+            )
             page_url = request.headers.get('X-Page-Url', '')
-        logger.debug(f"[AskTool] Metadata extracted: skip_analytics={skip_analytics}")
 
-        # PRE-GENERATE UUIDs - available at 0ms!
-        # conversation_id comes from client (SDK generates for new conversations)
-        # Server fallback only for direct API callers without SDK
+        if _USE_WEB_ADAPTER:
+            async for event in self._execute_stream_adapter(
+                organization=organization,
+                help_center_config=help_center_config,
+                conversation_id=conversation_id,
+                query=query,
+                validated_images=validated_images,
+                conversation_history=conversation_history,
+                client_registered_tools=client_registered_tools,
+                metadata=metadata,
+                page_url=page_url,
+                skip_analytics=skip_analytics,
+                resume=resume,
+                cancel_event=cancel_event,
+                top_k=top_k,
+                user_context=user_context,
+                context=context,
+                user_profile=user_profile,
+                language=language,
+                request=request,
+            ):
+                yield event
+        else:
+            async for event in self._execute_stream_legacy(
+                organization=organization,
+                help_center_config=help_center_config,
+                conversation_id=conversation_id,
+                query=query,
+                validated_images=validated_images,
+                conversation_history=conversation_history,
+                client_registered_tools=client_registered_tools,
+                metadata=metadata,
+                page_url=page_url,
+                skip_analytics=skip_analytics,
+                resume=resume,
+                cancel_event=cancel_event,
+                top_k=top_k,
+                user_context=user_context,
+                context=context,
+                user_profile=user_profile,
+                language=language,
+                request=request,
+            ):
+                yield event
+
+    # ── Legacy path (verbatim from original execute_stream) ────────────
+
+    async def _execute_stream_legacy(
+        self,
+        organization,
+        help_center_config,
+        conversation_id,
+        query,
+        validated_images,
+        conversation_history,
+        client_registered_tools,
+        metadata,
+        page_url,
+        skip_analytics,
+        resume,
+        cancel_event,
+        top_k,
+        user_context,
+        context,
+        user_profile,
+        language,
+        request,
+    ):
+        import time
+        start_time = time.time()
+
         conv_id = conversation_id if conversation_id else str(uuid.uuid4())
         user_msg_id = str(uuid.uuid4())
         assistant_msg_id = str(uuid.uuid4())
-        
-        # Yield conversation_started IMMEDIATELY (before any DB or LLM work)
+
         yield {
             'type': 'conversation_started',
             'conversation_id': conv_id,
             'assistant_message_id': assistant_msg_id,
         }
-        logger.debug(f"[AskTool] Yielded conversation_started: conv={conv_id}, assistant_msg={assistant_msg_id}")
 
-        # Collect response data for logging
         response_tokens: List[str] = []
         sources_retrieved: List[dict] = []
         display_trace: List[dict] = []
         model_used = ''
-        
-        # DB task reference for parallel write
         db_task: Optional[asyncio.Task] = None
 
         try:
-            # Enrich images with cached summaries before persisting
             from apps.mcp.services.image_summary_service import get_cached_summary
             enriched_images = None
             if validated_images:
@@ -496,12 +549,10 @@ class AskTool(Tool):
                     if summary:
                         enriched['summary'] = summary
                     enriched_images.append(enriched)
-            
-            # Start DB write as BACKGROUND TASK (non-blocking)
+
             from apps.analytics.services import ConversationLoggingService
-            
+
             if resume:
-                # Resume: conversation + user message already exist, just create new assistant message
                 from apps.analytics.models import ChatMessage as ChatMessageModel
                 db_task = asyncio.create_task(
                     ChatMessageModel.objects.acreate(
@@ -514,9 +565,7 @@ class AskTool(Tool):
                         streaming_status=ChatMessageModel.StreamingStatus.STREAMING,
                     )
                 )
-                logger.debug("[AskTool] Resume: created assistant message only")
             else:
-                # Normal: create conversation + user message + assistant message
                 db_task = asyncio.create_task(
                     ConversationLoggingService().create_conversation_and_user_message(
                         conversation_id=conv_id,
@@ -537,36 +586,38 @@ class AskTool(Tool):
                         external_user_id=metadata.external_user_id if metadata else '',
                     )
                 )
-                logger.debug("[AskTool] Started background DB task for conversation/user/assistant messages")
-            
-            # Load conversation history from DB (skip when resuming — already loaded from session)
-            if not resume:
-                logger.debug(f"[AskTool] Loading conversation history from DB for {conv_id}")
-                conversation_history = await self._load_conversation_history(conversation_id)
-                logger.debug(f"[AskTool] Loaded {len(conversation_history) if conversation_history else 0} history messages from DB")
-            
-            # Get platform/version for action filtering
-            platform, version = self._get_platform_version(request)
-            logger.debug(f"[AskTool] Platform={platform}, version={version}")
 
-            # Create agent service - it handles routing internally
+            if not resume:
+                conversation_history = await self._load_conversation_history(conversation_id)
+
+            platform, version = self._get_platform_version(request)
+
             from apps.mcp.services.agent import AgentAnswerServiceReActAsync
-            logger.debug("[AskTool] Creating AgentAnswerServiceReActAsync")
+            from apps.products.services.agent_resolver import (
+                resolve_agent_config, resolve_agent_config_from_agent,
+            )
+
+            pre_resolved_agent = getattr(request, 'agent', None) if request else None
+            if pre_resolved_agent:
+                agent_config = await resolve_agent_config_from_agent(
+                    pre_resolved_agent, help_center_config,
+                )
+            else:
+                agent_config = await resolve_agent_config(
+                    product=help_center_config, channel='web',
+                )
 
             agent_service = AgentAnswerServiceReActAsync(
                 help_center_config=help_center_config,
                 organization=organization,
                 conversation_history=conversation_history,
-                registered_actions=client_registered_actions,
+                registered_tools=client_registered_tools,
                 conversation_id=conv_id,
                 assistant_message_id=assistant_msg_id,
+                agent_config=agent_config,
             )
-            logger.debug("[AskTool] Agent service created, starting agent_service.ask_stream")
 
-            # Stream from agent service with all routing handled internally
-            # Pass session_id for query action result correlation
             session_id = metadata.session_id if metadata else None
-            logger.info(f"[AskTool] session_id for query actions: {session_id[:8] if session_id else 'NONE'}...")
             async for event in agent_service.ask_stream(
                 question=query,
                 top_k=top_k,
@@ -580,6 +631,8 @@ class AskTool(Tool):
                 page_url=page_url,
                 session_id=session_id,
                 language=language,
+                external_user_id=metadata.external_user_id if metadata else None,
+                visitor_id=metadata.visitor_id if metadata else None,
             ):
                 if cancel_event and cancel_event.is_set():
                     break
@@ -587,154 +640,196 @@ class AskTool(Tool):
                 event_type = event.get('type', '')
 
                 if event_type == 'token':
-                    # Collect tokens for logging
                     response_tokens.append(event.get('text', ''))
                     yield event
                 elif event_type == 'sources':
-                    # Collect sources for logging
                     sources_retrieved = event.get('sources', [])
                     yield event
                 elif event_type == 'actions':
-                    # Extract data for actions with schemas before sending
+                    from apps.mcp.services.agent.action_enrichment import (
+                        extract_action_data, generate_followup_question,
+                    )
                     actions = event.get('actions', [])
                     if actions:
-                        actions = await self._extract_action_data(
-                            query, actions, help_center_config
+                        actions = await extract_action_data(
+                            query, actions, help_center_config,
                         )
-                        
-                        # Check if top action is missing required data
                         top_action = actions[0] if actions else None
                         if top_action and top_action.get('data_incomplete'):
                             missing_descs = top_action.get('missing_field_descriptions', [])
                             action_name = top_action.get('name', '').replace('_', ' ')
-                            follow_up = self._generate_followup_question(
-                                action_name, missing_descs
+                            follow_up = generate_followup_question(
+                                action_name, missing_descs,
                             )
                             yield {'type': 'token', 'text': f"\n\n{follow_up}"}
                             response_tokens.append(f"\n\n{follow_up}")
                             yield {'type': 'awaiting_data', 'action_name': top_action.get('name')}
                         else:
-                            # Filter out incomplete actions
                             complete_actions = [
                                 a for a in actions if not a.get('data_incomplete')
                             ]
                             if complete_actions:
                                 yield {'type': 'actions', 'actions': complete_actions}
                 elif event_type == 'plan.created':
-                    # Multi-step plan created - pass through to frontend
                     yield event
                 elif event_type == 'display_trace':
-                    # Legacy: capture display trace for logging (not sent to client)
                     display_trace = event.get('trace', [])
                 elif event_type == 'error':
                     yield event
                     return
                 elif event_type == 'complete':
-                    # Ensure DB task completed so assistant message row exists
                     if db_task:
                         try:
                             await db_task
-                            logger.debug("[AskTool] DB task completed successfully")
                         except Exception as e:
-                            logger.error(f"[AskTool] Failed to create conversation: {e}")
-                    
-                    # Yield complete with conversation IDs
+                            logger.error("[AskTool] Failed to create conversation: %s", e)
                     complete_event = dict(event)
                     complete_event['conversation_id'] = conv_id
                     complete_event['assistant_message_id'] = assistant_msg_id
                     yield complete_event
                 else:
-                    # Pass through all other events (progress, query_request, etc.)
-                    # This ensures new event types from agentic_loop reach the client
                     yield event
 
         except Exception as e:
-            logger.error(f"Error executing ask tool stream: {e}", exc_info=True)
+            logger.error("Error executing ask tool stream: %s", e, exc_info=True)
             yield {'type': 'error', 'message': f'Error: {str(e)}'}
+
+    # ── Adapter path (new) ─────────────────────────────────────────────
+
+    async def _execute_stream_adapter(
+        self,
+        organization,
+        help_center_config,
+        conversation_id,
+        query,
+        validated_images,
+        conversation_history,
+        client_registered_tools,
+        metadata,
+        page_url,
+        skip_analytics,
+        resume,
+        cancel_event,
+        top_k,
+        user_context,
+        context,
+        user_profile,
+        language,
+        request,
+    ):
+        from apps.mcp.services.agent.web_adapter import WebResponseAdapter
+
+        conv_id = conversation_id if conversation_id else str(uuid.uuid4())
+
+        adapter = WebResponseAdapter(
+            organization_id=str(organization.id),
+            product_id=str(help_center_config.id),
+            conversation_id=conv_id,
+            channel='web',
+            request_metadata={
+                'ip_address': metadata.ip_address if metadata else None,
+                'user_agent': metadata.user_agent if metadata else '',
+                'visitor_id': metadata.visitor_id if metadata else '',
+                'external_user_id': metadata.external_user_id if metadata else '',
+                'page_url': page_url,
+                'skip_analytics': skip_analytics,
+                'external_session_id': metadata.session_id if metadata else '',
+                'referer': metadata.referer if metadata else '',
+            },
+        )
+
+        if resume:
+            assistant_msg_id = str(uuid.uuid4())
+            await adapter.prepare_resume(conv_id, assistant_msg_id)
+        else:
+            await adapter.prepare_turn(query, images=validated_images)
+
+        assistant_msg_id = adapter.assistant_message_id
+
+        if not resume:
+            conversation_history = await self._load_conversation_history(conversation_id)
+
+        platform, version = self._get_platform_version(request)
+
+        from apps.mcp.services.agent import AgentAnswerServiceReActAsync
+        from apps.products.services.agent_resolver import (
+            resolve_agent_config, resolve_agent_config_from_agent,
+        )
+
+        pre_resolved_agent = getattr(request, 'agent', None) if request else None
+        if pre_resolved_agent:
+            agent_config = await resolve_agent_config_from_agent(
+                pre_resolved_agent, help_center_config,
+            )
+        else:
+            agent_config = await resolve_agent_config(
+                product=help_center_config, channel='web',
+            )
+
+        agent_service = AgentAnswerServiceReActAsync(
+            help_center_config=help_center_config,
+            organization=organization,
+            conversation_history=conversation_history,
+            registered_tools=client_registered_tools,
+            conversation_id=conv_id,
+            assistant_message_id=assistant_msg_id,
+            agent_config=agent_config,
+        )
+
+        session_id = metadata.session_id if metadata else None
+        cancelled = False
+
+        async def _run():
+            nonlocal cancelled
+            try:
+                async for event in agent_service.ask_stream(
+                    question=query,
+                    top_k=top_k,
+                    cancel_event=cancel_event,
+                    platform=platform,
+                    version=version,
+                    user_context=user_context,
+                    images=validated_images,
+                    context=context,
+                    user_profile=user_profile,
+                    page_url=page_url,
+                    session_id=session_id,
+                    language=language,
+                    external_user_id=metadata.external_user_id if metadata else None,
+                    visitor_id=metadata.visitor_id if metadata else None,
+                ):
+                    if cancel_event and cancel_event.is_set():
+                        cancelled = True
+                        break
+                    await adapter.on_event(event)
+            except Exception as e:
+                logger.error("Error in adapter stream: %s", e, exc_info=True)
+                await adapter.on_error(f'Error: {str(e)}')
+            finally:
+                if cancelled:
+                    await adapter.finalize_disconnected()
+                else:
+                    await adapter.finalize()
+
+        task = asyncio.create_task(_run())
+        async for event in adapter.events():
+            yield event
+        await task
 
     async def _load_conversation_history(
         self,
         conversation_id: str | None,
     ) -> List[Dict[str, Any]]:
+        """Load conversation history for a follow-up turn.
+
+        Delegates to the shared :func:`load_conversation_history` utility
+        which iterates all ``ChatMessage`` rows and stitches their
+        ``llm_message`` turn slices into a full-fidelity message list.
         """
-        Load conversation history for a follow-up turn.
+        from apps.mcp.services.session_resumption import load_conversation_history
 
-        Each ChatMessage stores its portion of the LLM conversation in
-        llm_message, in standard chat completions format:
-        - User messages: single {role: "user", content: "..."} dict
-        - Assistant messages: list of message dicts covering the full turn
-          (assistant tool_calls + tool results + final assistant response)
-
-        On load, user messages are appended directly, and assistant turn
-        message lists are extended into the conversation.
-
-        Args:
-            conversation_id: UUID of the conversation
-
-        Returns:
-            List of standard chat API message dicts, or [] for new conversations.
-        """
-        if not conversation_id:
-            return []
-
-        try:
-            from apps.analytics.models import ChatMessage
-            
-            messages = []
-            
-            async for msg in ChatMessage.objects.filter(
-                conversation_id=conversation_id
-            ).order_by('timestamp'):
-                if msg.role == ChatMessage.Role.USER:
-                    messages.append({
-                        'role': 'user',
-                        'content': msg.content,
-                    })
-                    logger.info(
-                        f"[AskTool._load_history] User msg {msg.id}: "
-                        f"content_length={len(msg.content)}"
-                    )
-                elif msg.role == ChatMessage.Role.ASSISTANT:
-                    llm_data = msg.llm_message or {}
-                    if isinstance(llm_data, dict) and "messages" in llm_data:
-                        # New format: dict with messages + registered_actions
-                        messages.extend(llm_data["messages"])
-                        logger.info(
-                            f"[AskTool._load_history] Assistant msg {msg.id}: "
-                            f"extended {len(llm_data['messages'])} turn messages"
-                        )
-                    elif isinstance(llm_data, list) and llm_data:
-                        # Legacy list format
-                        messages.extend(llm_data)
-                        logger.info(
-                            f"[AskTool._load_history] Assistant msg {msg.id}: "
-                            f"extended {len(llm_data)} turn messages (legacy list)"
-                        )
-                    else:
-                        # Fallback: just use the text content
-                        messages.append({
-                            'role': 'assistant',
-                            'content': msg.content,
-                        })
-                        logger.info(
-                            f"[AskTool._load_history] Assistant msg {msg.id}: "
-                            f"fallback to plain content ({len(msg.content)} chars)"
-                        )
-                # Skip tool-role ChatMessage rows - tool results are stored
-                # inside the assistant's llm_message turn list
-            
-            if messages:
-                logger.info(
-                    f"[AskTool._load_history] Loaded {len(messages)} messages "
-                    f"from conversation {conversation_id}"
-                )
-                return messages
-
-            return []
-
-        except Exception as e:
-            logger.warning(f"[AskTool] Failed to load conversation history: {e}")
-            return []
+        result = await load_conversation_history(conversation_id)
+        return result["messages"]
 
     def _build_context(self, results) -> str:
         """Build context string from article search results."""

@@ -1,0 +1,21 @@
+import { Pillar, defineTool } from '@pillar-ai/server';
+import { z } from 'zod';
+
+const pillar = new Pillar({
+  secret: process.env.PILLAR_SECRET!,
+  endpointUrl: 'https://api.myapp.com/pillar',
+});
+
+const lookupCustomer = defineTool({
+  name: 'lookup_customer',
+  description: 'Look up a customer by email address',
+  input: z.object({
+    email: z.string().email().describe('Customer email address'),
+  }),
+  execute: async ({ email }, ctx) => {
+    const customer = await db.findByEmail(email);
+    return { name: customer.name, plan: customer.plan };
+  },
+});
+
+await pillar.registerTools([lookupCustomer]);

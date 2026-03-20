@@ -14,6 +14,8 @@ from django.contrib.postgres.indexes import GinIndex
 from django.contrib.postgres.search import SearchVectorField
 from common.models.base import TenantAwareModel
 
+from apps.mcp.services.agent.channels import Channel
+
 
 class ChatConversation(TenantAwareModel):
     """
@@ -64,6 +66,15 @@ class ChatConversation(TenantAwareModel):
         null=True,
         blank=True,
         help_text="Visitor who initiated this conversation (enables cross-device history)"
+    )
+
+    agent = models.ForeignKey(
+        'products.Agent',
+        on_delete=models.SET_NULL,
+        related_name='conversations',
+        null=True,
+        blank=True,
+        help_text="Agent that handled this conversation"
     )
 
     # Conversation state
@@ -167,6 +178,15 @@ class ChatConversation(TenantAwareModel):
         help_text="Full-text search vector for conversation content"
     )
 
+    # Channel
+    channel = models.CharField(
+        max_length=20,
+        choices=Channel.CHANNEL_CHOICES,
+        default=Channel.WEB,
+        db_index=True,
+        help_text="Channel this conversation originated from",
+    )
+
     # Extensible metadata
     metadata = models.JSONField(
         default=dict,
@@ -189,6 +209,14 @@ class ChatConversation(TenantAwareModel):
             models.Index(fields=['external_session_id']),
             models.Index(fields=['logging_enabled', '-started_at']),
             GinIndex(fields=['search_vector']),
+            models.Index(
+                fields=['organization', 'channel', '-started_at'],
+                name='chatconv_org_chan_start_idx',
+            ),
+            models.Index(
+                fields=['product', 'channel', '-started_at'],
+                name='chatconv_prod_chan_start_idx',
+            ),
         ]
 
     def __str__(self):

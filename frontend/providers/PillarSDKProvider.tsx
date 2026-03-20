@@ -23,7 +23,6 @@ import { useEffect } from "react";
 
 import { ApiKeysModal } from "@/components/ApiKeysModal";
 import { InviteMembersModal } from "@/components/InviteMembersModal";
-import { ThemeSelectorModal } from "@/components/ThemeSelectorModal";
 import { usePillarTools } from "@/hooks/usePillarTools";
 import { applyPendingHighlight } from "@/lib/highlight";
 import { useAuth } from "./AuthProvider";
@@ -40,8 +39,8 @@ export function PillarSDKProvider({ children }: PillarSDKProviderProps) {
   // The SDK calls /api/v1/help-center endpoints which are served by backend
   const apiBaseUrl =
     process.env.NEXT_PUBLIC_PILLAR_API_URL || "http://localhost:8003";
-  const productKey =
-    process.env.NEXT_PUBLIC_PILLAR_PRODUCT_KEY || "pillar-help";
+  const agentSlug =
+    process.env.NEXT_PUBLIC_PILLAR_AGENT_SLUG || "pillar-help";
 
   // Sidebar tabs are configured client-side. Clicking non-assistant tabs emits
   // 'sidebar:click' events that can be handled to trigger custom actions (e.g., Intercom).
@@ -58,7 +57,7 @@ export function PillarSDKProvider({ children }: PillarSDKProviderProps) {
 
   return (
     <PillarProvider
-      productKey={productKey}
+      agentSlug={agentSlug}
       config={{
         apiBaseUrl,
         debug: false,
@@ -124,7 +123,6 @@ export function PillarSyncProvider({
       <PillarThemeSync />
       <PillarIdentitySync />
       <PillarRouteSync />
-      <ThemeSelectorModal />
       <ApiKeysModal />
       <InviteMembersModal />
       {children}

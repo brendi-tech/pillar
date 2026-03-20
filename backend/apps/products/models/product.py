@@ -187,6 +187,19 @@ class Product(TenantAwareModel):
         help_text='Custom instructions for the AI agent. Injected into the agent prompt for product-specific guidance.'
     )
 
+    # Identity linking configuration
+    identity_link_url = models.URLField(
+        max_length=500,
+        blank=True,
+        default='',
+        help_text="URL template for account linking. Use {code} placeholder. "
+                  "Example: https://app.acme.com/connect?code={code}",
+    )
+    identity_auto_link_by_email = models.BooleanField(
+        default=False,
+        help_text="Auto-link channel users to customer accounts by matching email addresses",
+    )
+
     class Meta:
         # NO db_table - Django creates 'products_product'
         verbose_name = 'Product'

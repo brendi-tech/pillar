@@ -27,7 +27,7 @@ export function InlineOnboardingSteps({
 }: InlineOnboardingStepsProps) {
   const router = useRouter();
   const { currentProduct } = useProduct();
-  const productKey = currentProduct?.subdomain || "";
+  const agentSlug = currentProduct?.subdomain || "";
 
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(() => {
     const set = new Set<number>();
@@ -100,12 +100,12 @@ export function InlineOnboardingSteps({
           )}
           {step.id === 1 && currentProduct?.subdomain && (
             <p className="text-sm text-muted-foreground">
-              Your product key is{" "}
+              Your agent slug is{" "}
               <code className="font-mono bg-muted px-1.5 py-0.5 rounded text-foreground">
-                {productKey}
+                {agentSlug}
               </code>
               <CopyButton
-                value={productKey}
+                value={agentSlug}
                 className="inline-flex h-5 w-5 p-0 ml-1 align-text-bottom"
               />
             </p>
@@ -113,7 +113,7 @@ export function InlineOnboardingSteps({
           {step.id === 2 && (
             <InstallSdkStepContent
               onComplete={() => handleStepComplete(2)}
-              productKey={productKey}
+              agentSlug={agentSlug}
               selectedFramework={selectedFramework}
               onFrameworkChange={setSelectedFramework}
             />
@@ -128,7 +128,7 @@ export function InlineOnboardingSteps({
           {step.id === 4 && (
             <SyncStepContent
               onComplete={() => handleStepComplete(4)}
-              productKey={productKey}
+              agentSlug={agentSlug}
               productId={currentProduct?.id}
             />
           )}

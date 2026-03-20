@@ -38,6 +38,7 @@ export function useDocsUser() {
 }
 
 const SLUG_PLACEHOLDERS = [
+  'your-agent-slug',
   'your-product-key',
   'your-product-slug',
   'your-help-center-slug',

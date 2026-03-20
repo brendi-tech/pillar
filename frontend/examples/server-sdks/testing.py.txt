@@ -1,0 +1,35 @@
+import json
+import hmac
+import hashlib
+import time
+import pytest
+from myapp.pillar_tools import pillar
+
+SECRET = "plr_test_secret"
+
+def _generate_signature(body: bytes, secret: str) -> str:
+    timestamp = str(int(time.time()))
+    payload = f"{timestamp}.".encode() + body
+    digest = hmac.new(secret.encode(), payload, hashlib.sha256).hexdigest()
+    return f"t={timestamp},v1={digest}"
+
+@pytest.mark.asyncio
+async def test_lookup_customer():
+    body = json.dumps({
+        "action": "tool_call",
+        "call_id": "tc_test_123",
+        "tool_name": "lookup_customer",
+        "arguments": {"email": "sarah@acme.com"},
+        "caller": {"channel": "web", "email": "sarah@acme.com"},
+        "conversation_id": "conv_1",
+    }).encode()
+
+    signature = _generate_signature(body, SECRET)
+
+    result, status = await pillar.handle(body, {
+        "X-Pillar-Signature": signature,
+    })
+
+    assert status == 200
+    assert result["success"] is True
+    assert result["result"]["name"] == "Sarah"

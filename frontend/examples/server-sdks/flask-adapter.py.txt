@@ -1,0 +1,7 @@
+# app.py
+from flask import Flask
+from myapp.pillar_tools import pillar
+
+app = Flask(__name__)
+
+app.route("/pillar", methods=["POST"])(pillar.flask_handler())

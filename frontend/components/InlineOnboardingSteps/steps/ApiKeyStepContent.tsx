@@ -33,12 +33,12 @@ export function ApiKeyStepContent({ onComplete }: ApiKeyStepContentProps) {
   const queryClient = useQueryClient();
 
   const isDraft = !currentProduct?.subdomain;
-  const [productKey, setProductKey] = useState(currentProduct?.subdomain || "");
-  const [productKeyStatus, setProductKeyStatus] = useState<SubdomainStatus>(
+  const [agentSlug, setAgentSlug] = useState(currentProduct?.subdomain || "");
+  const [agentSlugStatus, setAgentSlugStatus] = useState<SubdomainStatus>(
     currentProduct?.subdomain ? "available" : "idle"
   );
-  const [productKeyError, setProductKeyError] = useState<string | null>(null);
-  const [productKeySuggestion, setProductKeySuggestion] = useState<
+  const [agentSlugError, setAgentSlugError] = useState<string | null>(null);
+  const [agentSlugSuggestion, setAgentSlugSuggestion] = useState<
     string | null
   >(null);
   const hasUserEdited = useRef(false);
@@ -47,15 +47,15 @@ export function ApiKeyStepContent({ onComplete }: ApiKeyStepContentProps) {
 
   useEffect(() => {
     if (currentProduct?.subdomain && !hasUserEdited.current) {
-      setProductKey(currentProduct.subdomain);
-      setProductKeyStatus("available");
-      setProductKeyError(null);
+      setAgentSlug(currentProduct.subdomain);
+      setAgentSlugStatus("available");
+      setAgentSlugError(null);
     }
   }, [currentProduct?.subdomain]);
 
   useEffect(() => {
     if (!isDraft) return;
-    if (hasAttemptedAutofill.current || hasUserEdited.current || productKey.trim()) return;
+    if (hasAttemptedAutofill.current || hasUserEdited.current || agentSlug.trim()) return;
     if (!currentProduct) return;
 
     hasAttemptedAutofill.current = true;
@@ -74,10 +74,10 @@ export function ApiKeyStepContent({ onComplete }: ApiKeyStepContentProps) {
             const key = response.available
               ? response.subdomain
               : response.suggestion || response.subdomain;
-            setProductKey(key);
-            setProductKeyStatus(response.available ? "available" : "taken");
-            setProductKeyError(
-              response.available ? null : "This product key is already taken"
+            setAgentSlug(key);
+            setAgentSlugStatus(response.available ? "available" : "taken");
+            setAgentSlugError(
+              response.available ? null : "This agent slug is already taken"
             );
           }
         })
@@ -93,54 +93,54 @@ export function ApiKeyStepContent({ onComplete }: ApiKeyStepContentProps) {
         .suggestSubdomain(suggestedUrl)
         .then((response) => {
           if (!hasUserEdited.current) {
-            setProductKey(response.suggestion);
-            setProductKeyStatus(response.available ? "available" : "taken");
-            setProductKeyError(
-              response.available ? null : "This product key is already taken"
+            setAgentSlug(response.suggestion);
+            setAgentSlugStatus(response.available ? "available" : "taken");
+            setAgentSlugError(
+              response.available ? null : "This agent slug is already taken"
             );
           }
         })
         .catch(() => {});
     }
-  }, [isDraft, user?.email, productKey, currentProduct]);
+  }, [isDraft, user?.email, agentSlug, currentProduct]);
 
   const checkAvailability = useCallback(async (value: string) => {
     if (!value.trim()) {
-      setProductKeyStatus("idle");
-      setProductKeyError(null);
-      setProductKeySuggestion(null);
+      setAgentSlugStatus("idle");
+      setAgentSlugError(null);
+      setAgentSlugSuggestion(null);
       return;
     }
-    setProductKeyStatus("checking");
-    setProductKeySuggestion(null);
+    setAgentSlugStatus("checking");
+    setAgentSlugSuggestion(null);
     try {
       const response = await productsAPI.checkSubdomain(value.trim());
       if (!response.valid) {
-        setProductKeyStatus("invalid");
-        setProductKeyError(response.error || "Invalid format");
-        setProductKeySuggestion(null);
+        setAgentSlugStatus("invalid");
+        setAgentSlugError(response.error || "Invalid format");
+        setAgentSlugSuggestion(null);
       } else if (!response.available) {
-        setProductKeyStatus("taken");
-        setProductKeyError("This product key is already taken");
-        setProductKeySuggestion(response.suggestion || null);
+        setAgentSlugStatus("taken");
+        setAgentSlugError("This agent slug is already taken");
+        setAgentSlugSuggestion(response.suggestion || null);
       } else {
-        setProductKeyStatus("available");
-        setProductKeyError(null);
-        setProductKeySuggestion(null);
+        setAgentSlugStatus("available");
+        setAgentSlugError(null);
+        setAgentSlugSuggestion(null);
       }
       if (response.subdomain !== value.trim()) {
-        setProductKey(response.subdomain);
+        setAgentSlug(response.subdomain);
       }
     } catch {
-      setProductKeyStatus("idle");
-      setProductKeyError("Failed to check availability");
+      setAgentSlugStatus("idle");
+      setAgentSlugError("Failed to check availability");
     }
   }, []);
 
-  const handleProductKeyChange = (value: string) => {
+  const handleAgentSlugChange = (value: string) => {
     hasUserEdited.current = true;
     const sanitized = value.toLowerCase().replace(/[^a-z0-9-]/g, "");
-    setProductKey(sanitized);
+    setAgentSlug(sanitized);
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
     debounceTimer.current = setTimeout(() => checkAvailability(sanitized), 300);
   };
@@ -160,17 +160,17 @@ export function ApiKeyStepContent({ onComplete }: ApiKeyStepContentProps) {
   });
 
   const handleContinue = async () => {
-    if (productKeyStatus !== "available") return;
+    if (agentSlugStatus !== "available") return;
 
     if (isDraft && currentProduct?.id) {
       try {
         await updateProduct.mutateAsync({
           id: currentProduct.id,
-          data: { subdomain: productKey.trim(), name: productKey.trim() },
+          data: { subdomain: agentSlug.trim(), name: agentSlug.trim() },
         });
       } catch (err) {
         const message =
-          err instanceof Error ? err.message : "Failed to save product key";
+          err instanceof Error ? err.message : "Failed to save agent slug";
         toast.error("Something went wrong", { description: message });
         return;
       }
@@ -178,52 +178,52 @@ export function ApiKeyStepContent({ onComplete }: ApiKeyStepContentProps) {
     onComplete();
   };
 
-  const isReady = productKeyStatus === "available";
+  const isReady = agentSlugStatus === "available";
 
   return (
     <div className="space-y-5">
       <div className="space-y-2">
-        <Label htmlFor="product-key" className="text-sm font-medium">
-          Product Key
+        <Label htmlFor="agent-slug" className="text-sm font-medium">
+          Agent Slug
         </Label>
         <div className="relative">
           <Input
-            id="product-key"
-            value={productKey}
-            onChange={(e) => handleProductKeyChange(e.target.value)}
-            placeholder="your-product"
+            id="agent-slug"
+            value={agentSlug}
+            onChange={(e) => handleAgentSlugChange(e.target.value)}
+            placeholder="your-agent-slug"
             className="h-11 pr-10 font-mono"
             disabled={!isDraft}
           />
           <div className="absolute right-3 top-1/2 -translate-y-1/2">
-            {productKeyStatus === "checking" && <Spinner size="sm" />}
-            {productKeyStatus === "available" && (
+            {agentSlugStatus === "checking" && <Spinner size="sm" />}
+            {agentSlugStatus === "available" && (
               <Check className="h-4 w-4 text-green-600" />
             )}
-            {(productKeyStatus === "taken" ||
-              productKeyStatus === "invalid") && (
+            {(agentSlugStatus === "taken" ||
+              agentSlugStatus === "invalid") && (
               <X className="h-4 w-4 text-destructive" />
             )}
           </div>
         </div>
-        {productKeyError ? (
+        {agentSlugError ? (
           <div className="space-y-1">
-            <p className="text-xs text-destructive">{productKeyError}</p>
-            {productKeySuggestion && (
+            <p className="text-xs text-destructive">{agentSlugError}</p>
+            {agentSlugSuggestion && (
               <p className="text-xs text-muted-foreground">
                 Try{" "}
                 <button
                   type="button"
                   onClick={() => {
-                    setProductKey(productKeySuggestion);
-                    setProductKeyStatus("available");
-                    setProductKeyError(null);
-                    setProductKeySuggestion(null);
+                    setAgentSlug(agentSlugSuggestion);
+                    setAgentSlugStatus("available");
+                    setAgentSlugError(null);
+                    setAgentSlugSuggestion(null);
                     hasUserEdited.current = true;
                   }}
                   className="font-medium text-primary hover:underline"
                 >
-                  {productKeySuggestion}
+                  {agentSlugSuggestion}
                 </button>{" "}
                 instead
               </p>

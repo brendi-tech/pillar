@@ -32,16 +32,18 @@ Respond with just the action name."""
 def get_smart_default_action(
     question: str,
     iteration: int = 0,
-    found_actions: Optional[List[Dict]] = None,
+    found_tools: Optional[List[Dict]] = None,
     found_knowledge: Optional[List[Dict]] = None,
     query_results: Optional[List[Dict]] = None,
     error_type: Optional[str] = None,
+    # backward compat alias
+    found_actions: Optional[List[Dict]] = None,
 ) -> Dict[str, Any]:
     """
     Return a simple default action based on current state.
     
     Decision tree:
-    1. If we have found_actions -> execute the first one
+    1. If we have found_tools -> execute the first one
     2. If we have found_knowledge or query_results -> search again
        (the model will see the context and respond directly)
     3. Otherwise -> search (most common fallback)
@@ -49,34 +51,38 @@ def get_smart_default_action(
     Args:
         question: The user's question
         iteration: Current iteration in the agent loop (0-indexed)
-        found_actions: Actions found in previous iterations
+        found_tools: Tools found in previous iterations
         found_knowledge: Knowledge found in previous iterations
-        query_results: Results from action execution
+        query_results: Results from tool execution
         error_type: Type of error that triggered fallback (for logging)
         
     Returns:
         Tool decision dict with tool, arguments, and reasoning
     """
+    # Accept old kwarg name for backward compat
+    if found_tools is None and found_actions is not None:
+        found_tools = found_actions
+
     logger.info(
         f"[Recovery] Last resort fallback: iteration={iteration}, "
-        f"actions={len(found_actions) if found_actions else 0}, "
+        f"tools={len(found_tools) if found_tools else 0}, "
         f"knowledge={len(found_knowledge) if found_knowledge else 0}, "
         f"query_results={len(query_results) if query_results else 0}, "
         f"error={error_type}"
     )
     
-    # Priority 1: If we have actions, execute the top one
-    if found_actions and len(found_actions) > 0:
-        top_action = found_actions[0]
-        action_name = top_action.get("name", "unknown_action")
-        logger.info(f"[Recovery] Executing action: {action_name}")
+    # Priority 1: If we have tools, execute the top one
+    if found_tools and len(found_tools) > 0:
+        top_tool = found_tools[0]
+        tool_name = top_tool.get("name", "unknown_tool")
+        logger.info(f"[Recovery] Executing tool: {tool_name}")
         return {
             "tool": "execute",
             "arguments": {
-                "action_name": action_name,
+                "action_name": tool_name,
                 "parameters": {},
             },
-            "reasoning": f"Executing top action '{action_name}' (recovery)",
+            "reasoning": f"Executing top tool '{tool_name}' (recovery)",
         }
     
     # Priority 2-4: Search (safe fallback for all cases)
@@ -241,27 +247,32 @@ async def try_recovery_llm(
 
 def build_state_summary(
     iteration: int,
-    found_actions: Optional[List[Dict]] = None,
+    found_tools: Optional[List[Dict]] = None,
     found_knowledge: Optional[List[Dict]] = None,
     query_results: Optional[List[Dict]] = None,
+    # backward compat alias
+    found_actions: Optional[List[Dict]] = None,
 ) -> str:
     """
     Build a brief summary of current agent state for recovery prompts.
     
     Args:
         iteration: Current iteration number
-        found_actions: Actions found so far
+        found_tools: Tools found so far
         found_knowledge: Knowledge found so far
         query_results: Query results received
         
     Returns:
         Brief text summary of state
     """
+    if found_tools is None and found_actions is not None:
+        found_tools = found_actions
+
     parts = [f"Iteration {iteration}"]
     
-    if found_actions:
-        action_names = [a.get("name", "?") for a in found_actions[:3]]
-        parts.append(f"Found actions: {', '.join(action_names)}")
+    if found_tools:
+        tool_names = [t.get("name", "?") for t in found_tools[:3]]
+        parts.append(f"Found tools: {', '.join(tool_names)}")
     
     if found_knowledge:
         knowledge_titles = [k.get("title", "?") for k in found_knowledge[:2]]
@@ -270,7 +281,7 @@ def build_state_summary(
     if query_results:
         parts.append(f"{len(query_results)} query result(s)")
     
-    if not found_actions and not found_knowledge and not query_results:
+    if not found_tools and not found_knowledge and not query_results:
         parts.append("No context gathered yet")
     
     return ". ".join(parts)

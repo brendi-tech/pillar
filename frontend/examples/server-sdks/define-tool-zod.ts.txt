@@ -1,0 +1,17 @@
+import { defineTool } from '@pillar-ai/server';
+import { z } from 'zod';
+
+const inviteMember = defineTool({
+  name: 'invite_member',
+  description: 'Invite a new member to the workspace',
+  input: z.object({
+    email: z.string().email().describe('Email of the person to invite'),
+    role: z.enum(['admin', 'member', 'viewer']).describe('Role to assign'),
+  }),
+  guidance: 'Only use when the user explicitly asks to invite someone.',
+  timeoutMs: 15_000,
+  execute: async ({ email, role }, ctx) => {
+    const invite = await workspace.invite(email, role);
+    return { inviteId: invite.id, status: 'sent' };
+  },
+});

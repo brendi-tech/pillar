@@ -36,6 +36,9 @@ class AgentToolExecutor:
         organization,
         platform: Optional[str] = None,
         version: Optional[str] = None,
+        channel: str = "web",
+        knowledge_source_ids: Optional[List[str]] = None,
+        endpoint_healthy: bool = False,
     ):
         """
         Initialize the tool executor.
@@ -45,11 +48,19 @@ class AgentToolExecutor:
             organization: Organization instance
             platform: Optional platform filter for action search
             version: Optional version filter for action search
+            channel: Channel to filter tools by compatibility
+            knowledge_source_ids: Restrict knowledge search to these source IDs.
+                Empty list or None = search all sources.
+            endpoint_healthy: Whether the product has a healthy server-side tool endpoint.
+                When False, server-side tools are excluded from search results.
         """
         self.product = product
         self.organization = organization
         self.platform = platform
         self.version = version
+        self.channel = channel
+        self.knowledge_source_ids = knowledge_source_ids or []
+        self.endpoint_healthy = endpoint_healthy
     
     async def execute_search_actions(
         self,
@@ -79,8 +90,29 @@ class AgentToolExecutor:
                 max_results=limit,
             )
             
-            logger.info(f"[AgentToolExecutor] Found {len(result.actions)} actions")
-            return result.actions
+            actions = result.actions
+
+            # Filter by channel compatibility (empty list = unavailable, ["*"] = all channels)
+            if self.channel:
+                actions = [
+                    a for a in actions
+                    if "*" in (a.get("channel_compatibility") or [])
+                    or self.channel in (a.get("channel_compatibility") or [])
+                ]
+
+            # Exclude server-side tools when no healthy endpoint is registered
+            if not self.endpoint_healthy:
+                before = len(actions)
+                actions = [a for a in actions if a.get("tool_type") != "server_side"]
+                dropped = before - len(actions)
+                if dropped:
+                    logger.info(
+                        "[AgentToolExecutor] Excluded %d server-side tool(s) (no healthy endpoint)",
+                        dropped,
+                    )
+
+            logger.info(f"[AgentToolExecutor] Found {len(actions)} actions (channel={self.channel})")
+            return actions
             
         except Exception as e:
             logger.error(f"[AgentToolExecutor] Action search failed: {e}", exc_info=True)
@@ -118,6 +150,7 @@ class AgentToolExecutor:
             results = await rag_service.hybrid_search(
                 query=query,
                 top_k=limit,
+                source_ids=self.knowledge_source_ids or None,
             )
             
             # Convert SearchResult objects to dicts
@@ -270,7 +303,7 @@ class AgentToolExecutor:
             Action dict if valid, None if not found
         """
         # First check if action is in context from previous search
-        action = context.get_action_by_name(action_name)
+        action = context.get_tool_by_name(action_name)
         
         # If not in context, search for it
         if not action:
@@ -284,7 +317,7 @@ class AgentToolExecutor:
                 # Fall back to top result
                 if not action:
                     action = actions[0]
-                context.add_action_results(actions, action_name)
+                context.add_tool_results(actions, action_name)
         
         if not action:
             logger.warning(f"[AgentToolExecutor] Action not found: {action_name}")

@@ -86,6 +86,8 @@ class ChatConversationListSerializer(serializers.ModelSerializer):
     last_assistant_message = serializers.SerializerMethodField()
     has_negative_feedback = serializers.SerializerMethodField()
     visitor = VisitorSummarySerializer(read_only=True)
+    channel = serializers.CharField(read_only=True)
+    agent_name = serializers.SerializerMethodField()
     
     class Meta:
         model = ChatConversation
@@ -93,9 +95,13 @@ class ChatConversationListSerializer(serializers.ModelSerializer):
             'id', 'status', 'page_url', 'started_at', 'last_message_at',
             'message_count', 'first_user_message', 'last_assistant_message',
             'has_negative_feedback', 'escalation_reason', 'escalated_to',
+            'channel', 'agent_name',
             'created_at', 'updated_at', 'visitor'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
+
+    def get_agent_name(self, obj) -> str | None:
+        return obj.agent.name if obj.agent else None
     
     def get_first_user_message(self, obj) -> str | None:
         """Get the first user message content."""

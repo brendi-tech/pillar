@@ -9,6 +9,7 @@ from apps.products.models import (
     ActionDeployment,
     ActionExecutionLog,
     ActionSyncJob,
+    Agent,
     Platform,
     Product,
     SyncSecret,
@@ -91,6 +92,45 @@ class ProductAdmin(admin.ModelAdmin):
     def public_url_display(self, obj):
         url = obj.public_url
         return format_html('<a href="{}" target="_blank">{}</a>', url, url)
+
+
+# ---------------------------------------------------------------------------
+# Agent
+# ---------------------------------------------------------------------------
+
+@admin.register(Agent)
+class AgentAdmin(admin.ModelAdmin):
+    list_display = ['name', 'channel', 'product', 'is_active', 'tone', 'created_at']
+    list_filter = ['channel', 'is_active', 'tone']
+    search_fields = ['name', 'product__name', 'product__subdomain']
+    ordering = ['-created_at']
+    readonly_fields = ['id', 'created_at', 'updated_at']
+    list_select_related = ['product', 'organization']
+
+    fieldsets = (
+        (None, {
+            'fields': ('id', 'organization', 'product', 'name', 'channel', 'is_active'),
+        }),
+        ('Personality', {
+            'fields': ('tone', 'guidance_override', 'default_language'),
+        }),
+        ('Tool Access', {
+            'fields': ('tool_allowlist', 'tool_denylist'),
+        }),
+        ('Response Configuration', {
+            'fields': ('max_response_tokens', 'include_sources', 'include_suggested_followups'),
+        }),
+        ('LLM Configuration', {
+            'fields': ('llm_model', 'temperature'),
+        }),
+        ('Channel Config JSON', {
+            'classes': ('collapse',),
+            'fields': ('channel_config',),
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+        }),
+    )
 
 
 # ---------------------------------------------------------------------------

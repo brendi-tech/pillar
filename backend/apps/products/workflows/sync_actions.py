@@ -39,6 +39,7 @@ class SyncActionsInput(BaseModel):
     actions: list[dict[str, Any]] = []
     deployed_by: str = 'ci/unknown'
     agent_guidance: Optional[str] = None
+    mode: str = 'additive'
 
 
 @hatchet.task(
@@ -106,9 +107,15 @@ async def sync_actions_workflow(workflow_input: SyncActionsInput, context: Conte
             product, actions_data
         )
         
-        # Step 4: Bulk delete removed actions
+        # Step 4: In replace mode, delete actions not in the manifest.
+        # In additive mode (default), skip deletion entirely.
         action_names = [a['name'] for a in actions_data]
-        deleted_count = await bulk_delete_actions(product, action_names)
+        deleted_count = 0
+        if workflow_input.mode == 'replace':
+            synced_tool_types = {
+                a.get('tool_type') or 'client_side' for a in actions_data
+            }
+            deleted_count = await bulk_delete_actions(product, action_names, synced_tool_types)
         
         # Update progress
         await update_job_progress(
@@ -256,6 +263,7 @@ def bulk_update_actions(product, actions_data: list[dict]):
             for action in Action.objects.filter(
                 product=product,
                 organization=product.organization,
+                source_type=Action.SourceType.CLI_SYNC,
                 name__in=[a['name'] for a in actions_data]
             )
         }
@@ -267,6 +275,12 @@ def bulk_update_actions(product, actions_data: list[dict]):
         
         for action_data in actions_data:
             name = action_data['name']
+            logger.info(
+                f"[ActionSync] Action '{name}': "
+                f"tool_type={action_data.get('tool_type')!r}, "
+                f"channel_compatibility={action_data.get('channel_compatibility')!r}, "
+                f"type={action_data.get('type')!r}"
+            )
             # Determine returns_data (explicit or inferred from type)
             returns_data = action_data.get('returns_data')
             if returns_data is None:
@@ -279,6 +293,7 @@ def bulk_update_actions(product, actions_data: list[dict]):
                 action.guidance = action_data.get('guidance') or ''
                 action.examples = action_data.get('examples') or []
                 action.action_type = action_data['type']
+                action.tool_type = action_data.get('tool_type') or 'client_side'
                 action.path_template = action_data.get('path') or ''
                 action.external_url = action_data.get('external_url') or ''
                 action.auto_run = action_data.get('auto_run', False)
@@ -289,6 +304,7 @@ def bulk_update_actions(product, actions_data: list[dict]):
                 action.default_data = action_data.get('default_data') or {}
                 action.parameter_examples = action_data.get('parameter_examples') or []
                 action.required_context = action_data.get('required_context') or {}
+                action.channel_compatibility = action_data.get('channel_compatibility') or ['*']
                 action.status = Action.Status.PUBLISHED
                 # Don't update embeddings here - will be done in batch
                 updated_actions.append(action)
@@ -303,6 +319,8 @@ def bulk_update_actions(product, actions_data: list[dict]):
                     guidance=action_data.get('guidance') or '',
                     examples=action_data.get('examples') or [],
                     action_type=action_data['type'],
+                    tool_type=action_data.get('tool_type') or 'client_side',
+                    source_type=Action.SourceType.CLI_SYNC,
                     path_template=action_data.get('path') or '',
                     external_url=action_data.get('external_url') or '',
                     auto_run=action_data.get('auto_run', False),
@@ -313,6 +331,7 @@ def bulk_update_actions(product, actions_data: list[dict]):
                     default_data=action_data.get('default_data') or {},
                     parameter_examples=action_data.get('parameter_examples') or [],
                     required_context=action_data.get('required_context') or {},
+                    channel_compatibility=action_data.get('channel_compatibility') or ['*'],
                     status=Action.Status.PUBLISHED,
                     description_embedding=None,  # Will be set later
                 )
@@ -338,10 +357,11 @@ def bulk_update_actions(product, actions_data: list[dict]):
             Action.objects.bulk_update(
                 updated_actions,
                 fields=[
-                    'description', 'guidance', 'examples', 'action_type',
+                    'description', 'guidance', 'examples', 'action_type', 'tool_type',
                     'path_template', 'external_url', 'auto_run', 'auto_complete',
                     'returns_data', 'data_schema', 'output_schema', 'default_data',
-                    'parameter_examples', 'required_context', 'status',
+                    'parameter_examples', 'required_context', 'channel_compatibility',
+                    'status',
                 ]
             )
         
@@ -349,14 +369,16 @@ def bulk_update_actions(product, actions_data: list[dict]):
 
 
 @sync_to_async
-def bulk_delete_actions(product, action_names: list[str]):
-    """Delete actions not in the manifest."""
+def bulk_delete_actions(product, action_names: list[str], tool_types: set[str]):
+    """Delete CLI-synced actions of matching tool_types not in the manifest."""
     from apps.products.models import Action
     
     with transaction.atomic():
         deleted_actions = Action.objects.filter(
             product=product,
             organization=product.organization,
+            source_type=Action.SourceType.CLI_SYNC,
+            tool_type__in=tool_types,
         ).exclude(name__in=action_names)
         
         deleted_count = deleted_actions.count()

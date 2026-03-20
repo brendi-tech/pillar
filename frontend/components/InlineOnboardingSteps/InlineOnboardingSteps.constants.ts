@@ -6,7 +6,7 @@ export const STEPS: Step[] = [
   {
     id: 1,
     title: "Create Your Product",
-    description: "Choose a unique product key to identify your copilot.",
+    description: "Choose a unique agent slug to identify your copilot.",
   },
   {
     id: 2,
@@ -47,13 +47,13 @@ export const INSTALL_COMMANDS: Record<FrameworkId, string> = {
 };
 
 export const getProviderCode = (
-  productKey: string
+  agentSlug: string
 ): Record<
   FrameworkId,
   { code: string; language: string; filePath?: string }
 > => ({
   react: {
-    code: installProviderExample.replace("your-product-key", productKey),
+    code: installProviderExample.replace("your-agent-slug", agentSlug),
     language: "tsx",
     filePath: "app/layout.tsx",
   },
@@ -63,7 +63,7 @@ import { PillarProvider } from '@pillar-ai/vue';
 </script>
 
 <template>
-  <PillarProvider product-key="${productKey}">
+  <PillarProvider agent-slug="${agentSlug}">
     <YourApp />
   </PillarProvider>
 </template>`,
@@ -79,7 +79,7 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideAppInitializer(() => {
       const pillar = inject(PillarService);
-      return pillar.init({ productKey: '${productKey}' });
+      return pillar.init({ agentSlug: '${agentSlug}' });
     }),
   ],
 };`,
@@ -90,7 +90,7 @@ export const appConfig: ApplicationConfig = {
     code: `import { Pillar } from '@pillar-ai/sdk';
 
 const pillar = await Pillar.init({
-  productKey: '${productKey}',
+  agentSlug: '${agentSlug}',
 });`,
     language: "javascript",
     filePath: "main.js",

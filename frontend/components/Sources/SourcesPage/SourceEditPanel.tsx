@@ -5,7 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import type { UpdateKnowledgeSourceRequest, KnowledgeSourceConfig } from "@/lib/admin/sources-api";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import type { UpdateKnowledgeSourceRequest, KnowledgeSourceConfig, KnowledgeSourceVisibility } from "@/lib/admin/sources-api";
 import { knowledgeSourceKeys, updateKnowledgeSourceMutation } from "@/queries/sources.queries";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, Save, X } from "lucide-react";
@@ -28,6 +35,7 @@ export function SourceEditPanel({
 
   // Edit form state
   const [name, setName] = useState(source.name);
+  const [visibility, setVisibility] = useState<KnowledgeSourceVisibility>(source.visibility || "all");
   const [url, setUrl] = useState(source.url || "");
   const [maxPages, setMaxPages] = useState(source.crawl_config?.max_pages?.toString() || "");
   const [includePaths, setIncludePaths] = useState(source.crawl_config?.include_paths?.join(", ") || "");
@@ -52,6 +60,7 @@ export function SourceEditPanel({
   const handleSave = useCallback(() => {
     const updates: UpdateKnowledgeSourceRequest = {
       name: name.trim(),
+      visibility,
     };
 
     // Only include URL for non-snippet sources
@@ -78,7 +87,7 @@ export function SourceEditPanel({
     }
 
     saveMutation.mutate({ id: source.id, data: updates });
-  }, [source.id, source.source_type, name, url, maxPages, includePaths, excludePaths, saveMutation]);
+  }, [source.id, source.source_type, name, visibility, url, maxPages, includePaths, excludePaths, saveMutation]);
 
   const canSave = name.trim().length > 0;
 
@@ -144,6 +153,23 @@ export function SourceEditPanel({
                 onChange={(e) => setName(e.target.value)}
                 placeholder="My Knowledge Source"
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="source-visibility">Visibility</Label>
+              <Select value={visibility} onValueChange={(v) => setVisibility(v as KnowledgeSourceVisibility)}>
+                <SelectTrigger id="source-visibility">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="internal">Internal</SelectItem>
+                  <SelectItem value="external">External</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Controls which agents can access this source when using visibility-based scoping.
+              </p>
             </div>
 
             {source.source_type !== 'snippets' && (

@@ -31,16 +31,11 @@ import { useCallback, useEffect } from "react";
 
 import { openApiKeysModal } from "@/components/ApiKeysModal";
 import { openInviteMembersModal } from "@/components/InviteMembersModal";
-import { openThemeSelectorModal } from "@/components/ThemeSelectorModal";
-import { actionsAPI } from "@/lib/admin/actions-api";
 import {
   analyticsAPI,
   getDateRangeFromPreset,
 } from "@/lib/admin/analytics-api";
-import { adminFetch, adminPatch, getCurrentOrganizationId } from "@/lib/admin/api-client";
-import { snippetsAPI } from "@/lib/admin/knowledge-api";
-import { organizationAPI } from "@/lib/admin/organization-api";
-import { knowledgeSourcesAPI } from "@/lib/admin/sources-api";
+import { adminPatch } from "@/lib/admin/api-client";
 import { navigateAndHighlight } from "@/lib/highlight";
 import { useProduct } from "@/providers/ProductProvider";
 import { configKeys } from "@/queries/config.queries";
@@ -133,6 +128,7 @@ export function usePillarTools() {
   usePillarTool({
     name: "escalate",
     type: "external_link",
+    outputSchema: { type: "object", properties: {} },
     description:
       "Connect user with human support when they request help or have account issues. " +
       "Use when user explicitly asks to talk to a person, contact support, or has issues " +
@@ -176,6 +172,7 @@ export function usePillarTools() {
     {
       name: "open_knowledge",
       type: "navigate",
+      outputSchema: { type: "object", properties: {} },
       webMCP: true,
       description:
         "Navigate to the Knowledge page to view and manage all connected knowledge sources. " +
@@ -196,18 +193,22 @@ export function usePillarTools() {
     },
     {
       name: "open_settings",
+      outputSchema: { type: "object", properties: {} },
       webMCP: true,
       type: "navigate",
       description:
-        "Navigate to the Configure page to manage help center appearance, branding, " +
-        "AI assistant, and other options. Use when user asks about settings, " +
-        "configuration, customization, or preferences.",
+        "Navigate to the Configure page to manage AI assistant settings, " +
+        "security, and other options. Use when user asks about settings, " +
+        "configuration, customization, preferences, configuring the assistant, " +
+        "AI setup, or customizing how the AI responds.",
       examples: [
         "open settings",
         "go to settings",
         "settings page",
-        "show me settings",
-        "where are the settings",
+        "open configure",
+        "configure the ai",
+        "setup ai",
+        "customize assistant",
       ],
       autoRun: true,
       autoComplete: true,
@@ -218,6 +219,7 @@ export function usePillarTools() {
     {
       name: "open_tools",
       type: "navigate",
+      outputSchema: { type: "object", properties: {} },
       description:
         "Navigate to the tools page to view and manage AI-suggested tools. " +
         "tools are buttons the AI can suggest to users. Use when user asks about " +
@@ -238,6 +240,7 @@ export function usePillarTools() {
     {
       name: "open_analytics",
       type: "navigate",
+      outputSchema: { type: "object", properties: {} },
       description:
         "Navigate to the Analytics dashboard to view help center performance metrics, " +
         "search analytics, and usage statistics. Use when user asks about analytics, " +
@@ -256,28 +259,9 @@ export function usePillarTools() {
       },
     },
     {
-      name: "open_configure",
-      type: "navigate",
-      description:
-        "Navigate to the Configure page to set up and customize the AI assistant behavior, " +
-        "prompts, and response settings. Use when user asks about configuring the assistant, " +
-        "AI setup, or customizing how the AI responds.",
-      examples: [
-        "open configure",
-        "go to configure",
-        "configure the ai",
-        "setup ai",
-        "customize assistant",
-      ],
-      autoRun: true,
-      autoComplete: true,
-      execute: (data: { highlight_selector?: string }) => {
-        nav("/configure", data.highlight_selector);
-      },
-    },
-    {
       name: "create_new_tool",
       type: "navigate",
+      outputSchema: { type: "object", properties: {} },
       description:
         "Navigate to create a new tool that the AI can suggest to users. " +
         "Use when user wants to add a new tool, create an automation, " +
@@ -302,20 +286,9 @@ export function usePillarTools() {
   // =========================================================================
   usePillarTool([
     {
-      name: "change_theme",
-      type: "open_modal",
-      description:
-        "Open the theme selector to switch to a different visual theme preset. " +
-        "Use when user wants to change theme, switch themes, or try a different look.",
-      autoRun: true,
-      autoComplete: true,
-      execute: () => {
-        openThemeSelectorModal();
-      },
-    },
-    {
       name: "enable_ai_assistant",
       type: "navigate",
+      outputSchema: { type: "object", properties: {} },
       description:
         "Enable the AI chat assistant widget so users can ask questions and get " +
         "AI-powered answers. Use when user wants to turn on, enable, or activate " +
@@ -329,6 +302,7 @@ export function usePillarTools() {
     {
       name: "disable_ai_assistant",
       type: "navigate",
+      outputSchema: { type: "object", properties: {} },
       description:
         "Disable the AI chat assistant widget to hide it from users. Use when user " +
         "wants to turn off, disable, or deactivate the AI assistant or chatbot.",
@@ -339,32 +313,9 @@ export function usePillarTools() {
       },
     },
     {
-      name: "update_logo",
-      type: "navigate",
-      description:
-        "Open the logo uploader to change or update the help center logo. Use when " +
-        "user wants to upload a new logo, change the logo, or update branding image.",
-      autoRun: true,
-      autoComplete: true,
-      execute: () => {
-        nav("/configure#branding");
-      },
-    },
-    {
-      name: "add_footer_link",
-      type: "navigate",
-      description:
-        "Add a new link to the help center footer. Use when user wants to add a " +
-        "footer link, add bottom navigation, or include additional links in footer.",
-      autoRun: true,
-      autoComplete: true,
-      execute: () => {
-        nav("/configure#footer");
-      },
-    },
-    {
       name: "configure_suggested_questions",
       type: "navigate",
+      outputSchema: { type: "object", properties: {} },
       description:
         "Configure the suggested questions that appear in the AI chat widget. " +
         "Use when user wants to set up suggested questions, conversation starters, " +
@@ -378,6 +329,7 @@ export function usePillarTools() {
     {
       name: "enable_dark_mode",
       type: "trigger_tool",
+      outputSchema: { type: "object", properties: {} },
       description:
         "Switch to dark mode / dark theme. Use when user explicitly wants to " +
         "turn ON dark mode, enable dark mode, or switch TO dark theme.",
@@ -397,6 +349,7 @@ export function usePillarTools() {
     {
       name: "disable_dark_mode",
       type: "trigger_tool",
+      outputSchema: { type: "object", properties: {} },
       description:
         "Switch to light mode / disable dark theme. Use when user explicitly wants to " +
         "turn OFF dark mode, disable dark mode, or switch TO light theme/mode.",
@@ -416,6 +369,7 @@ export function usePillarTools() {
     {
       name: "toggle_dark_mode",
       type: "trigger_tool",
+      outputSchema: { type: "object", properties: {} },
       description:
         "Toggle between dark and light mode. Use when user asks to 'toggle dark mode', " +
         "'switch theme', 'change to dark/light', or generally wants to flip their current " +
@@ -438,336 +392,13 @@ export function usePillarTools() {
   ]);
 
   // =========================================================================
-  // Settings Autosave tools
-  // =========================================================================
-  usePillarTool([
-    {
-      name: "update_brand_name",
-      type: "trigger_tool",
-      description:
-        "Update the brand name displayed in the help center. " +
-        "Use when user wants to change their company name, brand name, " +
-        "or help center title. This saves immediately.",
-      examples: [
-        "change my brand name to Acme",
-        "set company name to TechCorp",
-        "update the title to My Help Center",
-      ],
-      autoRun: false,
-      autoComplete: false,
-      inputSchema: {
-        type: "object",
-        properties: {
-          name: {
-            type: "string",
-            description: "The new brand name to display",
-          },
-        },
-        required: ["name"],
-      },
-      execute: async (data: { name?: string }) => {
-        if (!currentProduct?.id) {
-          return { success: false, error: "No product selected" };
-        }
-        const name = data.name;
-        if (!name?.trim()) {
-          return { success: false, error: "Name is required" };
-        }
-        try {
-          await adminPatch(`/configs/${currentProduct.id}/`, {
-            config: {
-              ...currentProduct.config,
-              branding: {
-                ...currentProduct.config?.branding,
-                name: name.trim(),
-              },
-            },
-          });
-          queryClient.invalidateQueries({ queryKey: configKeys.all });
-          return { success: true, message: `Brand name updated to "${name}"` };
-        } catch {
-          return { success: false, error: "Failed to update brand name" };
-        }
-      },
-    },
-    {
-      name: "update_primary_color",
-      type: "trigger_tool",
-      description:
-        "Update the primary/accent color used throughout the help center. " +
-        "Use when user wants to change their brand color, theme color, " +
-        "accent color, or primary color. Convert any color name the user " +
-        "mentions to a hex code before calling. This saves immediately.",
-      examples: [
-        "change my color to green",
-        "set primary color to #FF5733",
-        "update the accent color to blue",
-        "make the theme color red",
-      ],
-      autoRun: false,
-      autoComplete: false,
-      inputSchema: {
-        type: "object",
-        properties: {
-          hex: {
-            type: "string",
-            description:
-              "Hex color code including the # prefix (e.g. #22c55e for green, #3b82f6 for blue). " +
-              "Always convert color names to hex before calling.",
-          },
-        },
-        required: ["hex"],
-      },
-      execute: async (data: { hex?: string }) => {
-        if (!currentProduct?.id) {
-          return { success: false, error: "No product selected" };
-        }
-        const hex = data.hex?.trim();
-        if (!hex || !/^#[0-9a-f]{3,8}$/i.test(hex)) {
-          return {
-            success: false,
-            error: "A valid hex color code is required",
-          };
-        }
-        try {
-          await adminPatch(`/configs/${currentProduct.id}/`, {
-            config: {
-              ...currentProduct.config,
-              branding: {
-                ...currentProduct.config?.branding,
-                primaryColor: hex,
-              },
-            },
-          });
-          queryClient.invalidateQueries({ queryKey: configKeys.all });
-          return {
-            success: true,
-            message: `Primary color updated to ${hex}`,
-          };
-        } catch {
-          return { success: false, error: "Failed to update primary color" };
-        }
-      },
-    },
-    {
-      name: "update_ai_assistant_name",
-      type: "trigger_tool",
-      description:
-        "Update the AI assistant's display name shown in the chat widget. " +
-        "Use when user wants to rename the chatbot, change the assistant name, " +
-        "or personalize the AI identity. This saves immediately.",
-      examples: [
-        "call my AI assistant Luna",
-        "rename the chatbot to Helper",
-        "change assistant name to Support Bot",
-      ],
-      autoRun: false,
-      autoComplete: false,
-      inputSchema: {
-        type: "object",
-        properties: {
-          name: {
-            type: "string",
-            description: "The new name for the AI assistant",
-          },
-        },
-        required: ["name"],
-      },
-      execute: async (data: { name?: string }) => {
-        if (!currentProduct?.id) {
-          return { success: false, error: "No product selected" };
-        }
-        const name = data.name;
-        if (!name?.trim()) {
-          return { success: false, error: "Name is required" };
-        }
-        try {
-          await adminPatch(`/configs/${currentProduct.id}/`, {
-            config: {
-              ...currentProduct.config,
-              ai: {
-                ...currentProduct.config?.ai,
-                assistantName: name.trim(),
-              },
-            },
-          });
-          queryClient.invalidateQueries({ queryKey: configKeys.all });
-          return {
-            success: true,
-            message: `AI assistant name updated to "${name}"`,
-          };
-        } catch {
-          return {
-            success: false,
-            error: "Failed to update AI assistant name",
-          };
-        }
-      },
-    },
-    {
-      name: "update_ai_welcome_message",
-      type: "trigger_tool",
-      description:
-        "Update the welcome message shown when users open the AI chat. " +
-        "Use when user wants to change the greeting, update the intro message, " +
-        "or customize how the AI introduces itself. This saves immediately.",
-      examples: [
-        "set welcome message to Hi! How can I help?",
-        "change the greeting to Welcome to our help center",
-        "update the intro message",
-      ],
-      autoRun: false,
-      autoComplete: false,
-      inputSchema: {
-        type: "object",
-        properties: {
-          message: {
-            type: "string",
-            description: "The new welcome message to display",
-          },
-        },
-        required: ["message"],
-      },
-      execute: async (data: { message?: string }) => {
-        if (!currentProduct?.id) {
-          return { success: false, error: "No product selected" };
-        }
-        const message = data.message;
-        if (!message?.trim()) {
-          return { success: false, error: "Message is required" };
-        }
-        try {
-          await adminPatch(`/configs/${currentProduct.id}/`, {
-            config: {
-              ...currentProduct.config,
-              ai: {
-                ...currentProduct.config?.ai,
-                welcomeMessage: message.trim(),
-              },
-            },
-          });
-          queryClient.invalidateQueries({ queryKey: configKeys.all });
-          return { success: true, message: "Welcome message updated" };
-        } catch {
-          return { success: false, error: "Failed to update welcome message" };
-        }
-      },
-    },
-    {
-      name: "set_suggested_questions",
-      type: "trigger_tool",
-      description:
-        "Set the suggested questions that appear in the AI chat widget. " +
-        "Use when user wants to configure starter questions, conversation starters, " +
-        "or example queries. This saves immediately.",
-      examples: [
-        "set starter questions to How do I get started, What are the pricing plans",
-        "add suggested questions",
-        "update the example questions",
-      ],
-      autoRun: false,
-      autoComplete: false,
-      inputSchema: {
-        type: "object",
-        properties: {
-          questions: {
-            type: "array",
-            description: "List of suggested questions (3-5 recommended)",
-          },
-        },
-        required: ["questions"],
-      },
-      execute: async (data: { questions?: string[] }) => {
-        if (!currentProduct?.id) {
-          return { success: false, error: "No product selected" };
-        }
-        const questions = data.questions;
-        if (!questions || !Array.isArray(questions) || questions.length === 0) {
-          return { success: false, error: "At least one question is required" };
-        }
-        try {
-          await adminPatch(`/configs/${currentProduct.id}/`, {
-            config: {
-              ...currentProduct.config,
-              ai: {
-                ...currentProduct.config?.ai,
-                suggestedQuestions: questions
-                  .map((q) => q.trim())
-                  .filter(Boolean),
-              },
-            },
-          });
-          queryClient.invalidateQueries({ queryKey: configKeys.all });
-          return {
-            success: true,
-            message: `Set ${questions.length} suggested questions`,
-          };
-        } catch {
-          return {
-            success: false,
-            error: "Failed to update suggested questions",
-          };
-        }
-      },
-    },
-    {
-      name: "update_fallback_message",
-      type: "trigger_tool",
-      description:
-        "Update the fallback message shown when the AI cannot answer a question. " +
-        "Use when user wants to customize what happens when the AI doesn't know, " +
-        "or change the escalation message. This saves immediately.",
-      examples: [
-        "set fallback message to Let me connect you with support",
-        "change what the AI says when it doesn't know",
-        "update the I don't know response",
-      ],
-      autoRun: false,
-      autoComplete: false,
-      inputSchema: {
-        type: "object",
-        properties: {
-          message: {
-            type: "string",
-            description: "The new fallback message to display",
-          },
-        },
-        required: ["message"],
-      },
-      execute: async (data: { message?: string }) => {
-        if (!currentProduct?.id) {
-          return { success: false, error: "No product selected" };
-        }
-        const message = data.message;
-        if (!message?.trim()) {
-          return { success: false, error: "Message is required" };
-        }
-        try {
-          await adminPatch(`/configs/${currentProduct.id}/`, {
-            config: {
-              ...currentProduct.config,
-              ai: {
-                ...currentProduct.config?.ai,
-                fallbackMessage: message.trim(),
-              },
-            },
-          });
-          queryClient.invalidateQueries({ queryKey: configKeys.all });
-          return { success: true, message: "Fallback message updated" };
-        } catch {
-          return { success: false, error: "Failed to update fallback message" };
-        }
-      },
-    },
-  ]);
-
-  // =========================================================================
   // Knowledge Source tools
   // =========================================================================
   usePillarTool([
     {
       name: "add_new_source",
       type: "navigate",
+      outputSchema: { type: "object", properties: {} },
       description:
         "Navigate to add a new knowledge source. Opens a wizard to connect " +
         "external documentation, help centers, knowledge bases, websites, or cloud storage buckets. " +
@@ -829,6 +460,7 @@ export function usePillarTools() {
     {
       name: "crawl_website",
       type: "navigate",
+      outputSchema: { type: "object", properties: {} },
       description:
         "Crawl a website by URL to import content. Works for help centers, " +
         "documentation sites, marketing sites, and any public website. " +
@@ -844,6 +476,7 @@ export function usePillarTools() {
     {
       name: "connect_cloud_storage",
       type: "navigate",
+      outputSchema: { type: "object", properties: {} },
       description:
         "Connect a cloud storage bucket (AWS S3 or Google Cloud Storage) to sync documents. " +
         "Use when user wants to connect S3, GCS, cloud storage, or sync files from buckets.",
@@ -851,85 +484,6 @@ export function usePillarTools() {
       autoComplete: true,
       execute: () => {
         nav("/knowledge/new?type=bucket");
-      },
-    },
-    {
-      name: "resync_source",
-      type: "trigger_tool",
-      description:
-        "Trigger a re-sync for a knowledge source to refresh content. " +
-        "Use when user wants to update content, refresh docs, re-crawl a website, " +
-        "or sync the latest changes from a source. " +
-        "Call list_sources first if source_id is unknown.",
-      examples: [
-        "resync my documentation",
-        "refresh the knowledge base",
-        "re-crawl the website",
-        "update the docs source",
-        "sync the help center again",
-      ],
-      autoRun: false,
-      autoComplete: false,
-      inputSchema: {
-        type: "object",
-        properties: {
-          source_id: {
-            type: "string",
-            description: "ID of the source to resync (from list_sources)",
-          },
-        },
-        required: ["source_id"],
-      },
-      execute: async (data: { source_id?: string }) => {
-        const sourceId = data.source_id;
-        if (!sourceId) {
-          return { success: false, error: "source_id is required" };
-        }
-        try {
-          await knowledgeSourcesAPI.triggerSync(sourceId);
-          return { success: true, message: "Sync started successfully" };
-        } catch {
-          return { success: false, error: "Failed to start sync" };
-        }
-      },
-    },
-    {
-      name: "delete_source",
-      type: "trigger_tool",
-      description:
-        "Delete a knowledge source and remove all its content from the knowledge base. " +
-        "This is a destructive tool that cannot be undone. " +
-        "Use when user wants to remove a source, disconnect an integration, " +
-        "or delete imported content.",
-      examples: [
-        "delete the old documentation source",
-        "remove the website crawl",
-        "disconnect the help center",
-        "delete knowledge source",
-      ],
-      autoRun: false,
-      autoComplete: false,
-      inputSchema: {
-        type: "object",
-        properties: {
-          source_id: {
-            type: "string",
-            description: "ID of the source to delete (from list_sources)",
-          },
-        },
-        required: ["source_id"],
-      },
-      execute: async (data: { source_id?: string }) => {
-        const sourceId = data.source_id;
-        if (!sourceId) {
-          return { success: false, error: "source_id is required" };
-        }
-        try {
-          await knowledgeSourcesAPI.delete(sourceId);
-          return { success: true, message: "Source deleted successfully" };
-        } catch {
-          return { success: false, error: "Failed to delete source" };
-        }
       },
     },
   ]);
@@ -941,6 +495,7 @@ export function usePillarTools() {
     {
       name: "invite_members",
       type: "trigger_tool",
+      outputSchema: { type: "object", properties: { success: { type: "boolean" }, message: { type: "string" } } },
       description:
         "Open the invite members dialog to send team invitations. " +
         "Use when user wants to invite someone, add a team member, or send an invite. " +
@@ -980,6 +535,7 @@ export function usePillarTools() {
     {
       name: "open_team_settings",
       type: "navigate",
+      outputSchema: { type: "object", properties: {} },
       description:
         "Navigate to the Team settings page to view and manage team members, " +
         "invitations, and permissions. Use when user asks about team, members, " +
@@ -993,6 +549,7 @@ export function usePillarTools() {
     {
       name: "view_pending_invitations",
       type: "navigate",
+      outputSchema: { type: "object", properties: {} },
       description:
         "View all pending team invitations that haven't been accepted yet. " +
         "Use when user asks about outstanding invites, who hasn't joined yet, " +
@@ -1006,6 +563,7 @@ export function usePillarTools() {
     {
       name: "resend_invitation",
       type: "navigate",
+      outputSchema: { type: "object", properties: {} },
       description:
         "Resend a pending invitation email to a user who hasn't accepted yet. " +
         "Use when user asks to resend an invite, remind someone about their " +
@@ -1019,6 +577,7 @@ export function usePillarTools() {
     {
       name: "cancel_invitation",
       type: "navigate",
+      outputSchema: { type: "object", properties: {} },
       description:
         "Cancel a pending invitation so the link no longer works. " +
         "Use when user wants to revoke access before someone accepts, " +
@@ -1032,6 +591,7 @@ export function usePillarTools() {
     {
       name: "remove_team_member",
       type: "navigate",
+      outputSchema: { type: "object", properties: {} },
       description:
         "Remove a user from the organization and revoke their access. " +
         "Use when user wants to remove someone from the team, revoke access, " +
@@ -1045,6 +605,7 @@ export function usePillarTools() {
     {
       name: "promote_to_admin",
       type: "navigate",
+      outputSchema: { type: "object", properties: {} },
       description:
         "Promote a team member to organization admin role, giving them ability " +
         "to invite/remove team members. This changes their TEAM ROLE, not " +
@@ -1059,6 +620,7 @@ export function usePillarTools() {
     {
       name: "demote_to_member",
       type: "navigate",
+      outputSchema: { type: "object", properties: {} },
       description:
         "Change an organization admin back to regular member role. This changes " +
         "their TEAM ROLE, not resource permissions. Use only when user explicitly " +
@@ -1072,6 +634,7 @@ export function usePillarTools() {
     {
       name: "update_user_permissions",
       type: "navigate",
+      outputSchema: { type: "object", properties: {} },
       description:
         "Update a user's permission level for a specific RESOURCE (production, staging, " +
         "analytics, billing, or team). Use when user mentions a specific resource like " +
@@ -1121,6 +684,7 @@ export function usePillarTools() {
     {
       name: "open_billing",
       type: "navigate",
+      outputSchema: { type: "object", properties: {} },
       description:
         "Navigate to the Billing page to view subscription plan, usage stats, " +
         "invoices, and payment settings. Use when user asks about billing, " +
@@ -1134,6 +698,7 @@ export function usePillarTools() {
     {
       name: "set_usage_alert",
       type: "navigate",
+      outputSchema: { type: "object", properties: {} },
       description:
         "Configure spending alerts to get notified when monthly usage exceeds a threshold. " +
         "Use when user wants to set up budget alerts, spending notifications, cost limits, " +
@@ -1173,6 +738,7 @@ export function usePillarTools() {
     {
       name: "add_allowed_domain",
       type: "trigger_tool",
+      outputSchema: { type: "object", properties: { success: { type: "boolean" }, message: { type: "string" } } },
       description:
         "Add a domain to the allowed domains list for embed security. " +
         "Use when user wants to whitelist a domain, allow a new domain, " +
@@ -1216,61 +782,9 @@ export function usePillarTools() {
   // =========================================================================
   usePillarTool([
     {
-      name: "generate_api_key",
-      type: "trigger_tool" as const,
-      description:
-        "Generate a new API key (sync secret) for the current project. " +
-        "The raw key is securely delivered via a Reveal button — it never appears in conversation history. " +
-        "Use when user asks to create, generate, or add an API key. " +
-        "Always provide a name — do NOT ask the user for one. If they specified a name, use it. " +
-        "Otherwise, pick a sensible default like 'default', 'development', or 'api-key-1'.",
-      examples: [
-        "generate an API key",
-        "create a new API key",
-        "I need an API key",
-        "add an API key called production",
-        "generate a key for CI",
-      ],
-      autoRun: true,
-      autoComplete: true,
-      inputSchema: {
-        type: "object",
-        properties: {
-          name: {
-            type: "string",
-            description:
-              "Label for the key (e.g. production, staging, ci). " +
-              "Lowercase alphanumeric and hyphens only. " +
-              "Always provide a value — use the user's choice if given, otherwise default to 'default'.",
-          },
-        },
-        required: ["name"],
-      },
-      outputSchema: {
-        type: "object" as const,
-        properties: {
-          secret: { type: "string", sensitive: true },
-          name: { type: "string" },
-          id: { type: "string" },
-        },
-      },
-      execute: async (data: { name?: string }) => {
-        const name =
-          data.name?.trim().toLowerCase().replace(/[^a-z0-9-]/g, "") || "default";
-        const productId = currentProduct?.id;
-        if (!productId) {
-          return { error: "No product selected" };
-        }
-        const result = await adminFetch<{ id: string; name: string; secret: string; message?: string }>(
-          `/configs/${productId}/secrets/`,
-          { method: "POST", body: JSON.stringify({ name }) },
-        );
-        return result;
-      },
-    },
-    {
       name: "manage_api_keys",
       type: "trigger_tool" as const,
+      outputSchema: { type: "object", properties: { success: { type: "boolean" }, message: { type: "string" } } },
       description:
         "Open the API key manager dialog. Lists all existing keys " +
         "with the ability to create new keys or revoke existing ones. " +
@@ -1290,44 +804,6 @@ export function usePillarTools() {
         return { success: true, message: "API key manager opened." };
       },
     },
-    {
-      name: "list_api_keys",
-      type: "query",
-      description:
-        "Get the list of API keys (sync secrets) for the current project. " +
-        "Returns key names, creation dates, and last used dates. " +
-        "Call this when you need to reference keys by name before other operations.",
-      autoRun: true,
-      autoComplete: true,
-      execute: async () => {
-        const productId = currentProduct?.id;
-        if (!productId) {
-          return { error: "No product selected" };
-        }
-        try {
-          const secrets = await adminFetch<
-            Array<{
-              id: string;
-              name: string;
-              created_at: string;
-              last_used_at: string | null;
-            }>
-          >(`/configs/${productId}/secrets/`);
-          return {
-            keys: secrets.map((s) => ({
-              id: s.id,
-              name: s.name,
-              createdAt: s.created_at,
-              lastUsedAt: s.last_used_at,
-            })),
-            count: secrets.length,
-            canCreateMore: secrets.length < 10,
-          };
-        } catch {
-          return { keys: [], count: 0, error: "Failed to load API keys" };
-        }
-      },
-    },
   ]);
 
   // =========================================================================
@@ -1337,6 +813,7 @@ export function usePillarTools() {
     {
       name: "view_search_analytics",
       type: "navigate",
+      outputSchema: { type: "object", properties: {} },
       description:
         "View search analytics including popular queries, failed searches, and " +
         "search trends. Use when user asks about search analytics, popular searches, " +
@@ -1350,6 +827,7 @@ export function usePillarTools() {
     {
       name: "view_ai_analytics",
       type: "navigate",
+      outputSchema: { type: "object", properties: {} },
       description:
         "View AI assistant performance metrics including resolution rate, escalation rate, " +
         "and message volume. Use when user asks about AI analytics, chatbot stats, " +
@@ -1369,6 +847,7 @@ export function usePillarTools() {
     {
       name: "view_analytics_last_7_days",
       type: "navigate",
+      outputSchema: { type: "object", properties: {} },
       description:
         "View analytics dashboard for the last 7 days. " +
         "Use when user asks about this week's performance, recent metrics, " +
@@ -1387,6 +866,7 @@ export function usePillarTools() {
     {
       name: "view_analytics_last_30_days",
       type: "navigate",
+      outputSchema: { type: "object", properties: {} },
       description:
         "View analytics dashboard for the last 30 days. " +
         "Use when user asks about this month's performance or monthly metrics.",
@@ -1404,6 +884,7 @@ export function usePillarTools() {
     {
       name: "view_analytics_last_90_days",
       type: "navigate",
+      outputSchema: { type: "object", properties: {} },
       description:
         "View analytics dashboard for the last 90 days (quarterly). " +
         "Use when user asks about quarterly performance or longer-term trends.",
@@ -1421,6 +902,7 @@ export function usePillarTools() {
     {
       name: "search_conversations",
       type: "navigate",
+      outputSchema: { type: "object", properties: {} },
       description:
         "Search and filter individual chat conversations by keyword or topic. " +
         "Use when user wants to find specific conversations, look up what users asked about, " +
@@ -1456,6 +938,7 @@ export function usePillarTools() {
     {
       name: "export_conversations_csv",
       type: "trigger_tool",
+      outputSchema: { type: "object", properties: { success: { type: "boolean" }, message: { type: "string" }, error: { type: "string" } } },
       description:
         "Export conversations to a CSV file for the specified date range. " +
         "Use when user wants to download conversation data, export chat logs, " +
@@ -1526,265 +1009,6 @@ export function usePillarTools() {
     },
   ]);
 
-  // =========================================================================
-  // Query tools - Return data for agent reasoning
-  // =========================================================================
-  usePillarTool([
-    {
-      name: "list_sources",
-      type: "query",
-      description:
-        "Get the list of configured knowledge sources. " +
-        "Returns source IDs, names, types, and sync status. " +
-        "Call this before suggesting source-specific tools to know what exists. " +
-        "Example: Before suggesting 'crawl website', check if a website source exists.",
-      autoRun: true,
-      autoComplete: true,
-      execute: async () => {
-        try {
-          const response = await knowledgeSourcesAPI.list();
-          const sources = response.results || [];
-          return {
-            sources: sources.map((s) => ({
-              id: s.id,
-              name: s.name,
-              type: s.source_type,
-              url:
-                s.crawl_config?.start_url || s.connection_config?.bucket_name,
-              status: s.status,
-              lastSynced: s.last_synced_at,
-            })),
-            count: sources.length,
-            hasWebsite: sources.some((s) => s.source_type === "website_crawl"),
-            hasCloudStorage: sources.some(
-              (s) => s.source_type === "cloud_storage"
-            ),
-          };
-        } catch (error) {
-          console.error("[Pillar] Error listing sources:", error);
-          return { sources: [], count: 0, error: "Failed to load sources" };
-        }
-      },
-    },
-    {
-      name: "get_source_sync_status",
-      type: "query",
-      description:
-        "Get detailed sync status for a knowledge source. " +
-        "Returns last sync time, document count, errors, and progress. " +
-        "Call this when user asks about sync status or content freshness.",
-      autoRun: true,
-      autoComplete: true,
-      inputSchema: {
-        type: "object",
-        properties: {
-          source_id: {
-            type: "string",
-            description: "The source ID to check (from list_sources)",
-          },
-        },
-        required: ["source_id"],
-      },
-      execute: async (data: { source_id?: string }) => {
-        const sourceId = data.source_id;
-        if (!sourceId) {
-          return { error: "source_id is required" };
-        }
-        try {
-          const source = await knowledgeSourcesAPI.get(sourceId);
-          return {
-            id: source.id,
-            name: source.name,
-            status: source.status,
-            lastSyncedAt: source.last_synced_at,
-            documentCount: source.document_count,
-            errorMessage: source.error_message,
-          };
-        } catch (error) {
-          console.error("[Pillar] Error getting source status:", error);
-          return { error: "Failed to get source status" };
-        }
-      },
-    },
-    {
-      name: "list_team_members",
-      type: "query",
-      description:
-        "Get the list of team members and pending invitations. " +
-        "Returns member emails, roles, and status. " +
-        "Call this before suggesting invite or role-change tools.",
-      autoRun: true,
-      autoComplete: true,
-      execute: async () => {
-        const organizationId = getCurrentOrganizationId();
-        if (!organizationId) {
-          return { error: "No organization context" };
-        }
-        try {
-          const [members, invitations] = await Promise.all([
-            organizationAPI.getMembers(organizationId),
-            organizationAPI.getInvitations(organizationId),
-          ]);
-          return {
-            members: members.map((m) => ({
-              email: m.user.email,
-              name: m.user.full_name || m.user.email,
-              role: m.role,
-            })),
-            pendingInvitations: invitations
-              .filter((i) => i.status === "pending")
-              .map((i) => ({
-                email: i.email,
-                role: i.role,
-                invitedAt: i.created_at,
-              })),
-            memberCount: members.length,
-            pendingCount: invitations.filter((i) => i.status === "pending")
-              .length,
-          };
-        } catch (error) {
-          console.error("[Pillar] Error listing team members:", error);
-          return { error: "Failed to load team members" };
-        }
-      },
-    },
-    {
-      name: "get_help_center_status",
-      type: "query",
-      description:
-        "Get the overall help center setup status. " +
-        "Returns what's configured and what's missing. " +
-        "Call this when helping with initial setup or onboarding.",
-      autoRun: true,
-      autoComplete: true,
-      execute: async () => {
-        try {
-          const sourcesResponse = await knowledgeSourcesAPI.list();
-          const sources = sourcesResponse.results || [];
-          return {
-            hasContent: sources.length > 0,
-            sourceCount: sources.length,
-            hasWebsite: sources.some((s) => s.source_type === "website_crawl"),
-            hasCloudStorage: sources.some(
-              (s) => s.source_type === "cloud_storage"
-            ),
-            setupComplete: sources.length > 0,
-          };
-        } catch (error) {
-          console.error("[Pillar] Error getting help center status:", error);
-          return { error: "Failed to get status" };
-        }
-      },
-    },
-    {
-      name: "list_snippets",
-      type: "query",
-      description:
-        "Get the list of custom instruction snippets. " +
-        "Returns snippet titles and excerpts. " +
-        "Call this when user asks about custom instructions or AI behavior customization.",
-      autoRun: true,
-      autoComplete: true,
-      execute: async () => {
-        try {
-          const response = await snippetsAPI.list();
-          const snippets = response.results || [];
-          return {
-            snippets: snippets.map((s) => ({
-              id: s.id,
-              title: s.title,
-              excerpt: s.excerpt || s.raw_content || "",
-            })),
-            count: snippets.length,
-          };
-        } catch (error) {
-          console.error("[Pillar] Error listing snippets:", error);
-          return { snippets: [], count: 0, error: "Failed to load snippets" };
-        }
-      },
-    },
-    {
-      name: "get_conversation_stats",
-      type: "query",
-      webMCP: true,
-      description:
-        "Get AI conversation statistics for the past 30 days. " +
-        "Returns total conversations, resolution rate, feedback, and top questions. " +
-        "Call this when user asks about usage, performance, or analytics.",
-      autoRun: true,
-      autoComplete: true,
-      execute: async () => {
-        try {
-          const range = getDateRangeFromPreset("30d");
-          const stats = await analyticsAPI.getAIUsage(range);
-          return {
-            totalConversations: stats.stats.totalConversations,
-            changePercent: stats.stats.changePercent,
-            resolutionRate: stats.stats.resolutionRate,
-            avgMessagesPerChat: stats.stats.avgMessagesPerChat,
-            feedback: stats.stats.feedback,
-            topQuestions: stats.stats.topQuestions?.slice(0, 5) || [],
-            dateRange: stats.dateRange,
-          };
-        } catch (error) {
-          console.error("[Pillar] Error getting conversation stats:", error);
-          return { error: "Failed to load conversation statistics" };
-        }
-      },
-    },
-    {
-      name: "get_product_settings",
-      type: "query",
-      webMCP: true,
-      description:
-        "Get the current product configuration. " +
-        "Returns brand name, features enabled, and AI settings. " +
-        "Call this when user asks about settings or configuration.",
-      autoRun: true,
-      autoComplete: true,
-      execute: async () => {
-        if (!currentProduct) {
-          return { error: "No product context" };
-        }
-        return {
-          name: currentProduct.name,
-          subdomain: currentProduct.subdomain,
-          branding: currentProduct.config?.branding,
-          features: currentProduct.config?.features,
-          ai: currentProduct.config?.ai,
-        };
-      },
-    },
-    {
-      name: "list_tools",
-      type: "query",
-      description:
-        "Get the list of defined tools for this product. " +
-        "Returns tool names, descriptions, and types. " +
-        "Call this when user asks what you can do or what tools are available.",
-      autoRun: true,
-      autoComplete: true,
-      execute: async () => {
-        try {
-          const response = await actionsAPI.list({
-            status: "published",
-          });
-          const tools = response.results || [];
-          return {
-            tools: tools.map((a) => ({
-              name: a.name,
-              description: a.description,
-              type: a.action_type,
-            })),
-            count: tools.length,
-          };
-        } catch (error) {
-          console.error("[Pillar] Error listing tools:", error);
-          return { tools: [], count: 0, error: "Failed to load tools" };
-        }
-      },
-    },
-  ]);
 }
 
 /** @deprecated Use usePillarTools instead */

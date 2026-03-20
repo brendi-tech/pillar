@@ -2,9 +2,9 @@
 Agentic loop prompts for tool-based reasoning.
 
 Native tool calling architecture:
-- search: Find actions and documentation. Discovered actions become native tools.
+- search: Find tools and documentation. Discovered tools become native tools.
 - interact_with_page: Interact with elements on the user's current page.
-- [dynamic action tools]: Actions found via search are registered as callable tools.
+- [dynamic tools]: Tools found via search are registered as callable tools.
 
 The model responds directly via content tokens (no respond tool).
 When the model produces content with no tool calls, the turn is over.
@@ -121,7 +121,7 @@ def build_agentic_prompt(
     # Build tools section - core tools always listed, conditional tools only when relevant
     tools_lines = [
         "You have access to these tools:",
-        "- search: Find actions and documentation relevant to the user's request.",
+        "- search: Find tools and documentation relevant to the user's request.",
     ]
     if has_page_context:
         tools_lines.extend([
@@ -141,11 +141,12 @@ def build_agentic_prompt(
     # This avoids wasting tokens when those features don't exist for a given site.
     how_it_works_lines = [
         "Search returns two types of results:",
-        "- Actions: capabilities you can execute (create, navigate, fetch data). These become tools you can call directly with structured parameters.",
+        "- Tools: capabilities you can execute (create, navigate, fetch data). These become tools you can call directly with structured parameters.",
         "- Knowledge: documentation and help articles relevant to the user's question.",
         "",
-        "Use knowledge to inform your responses. Use actions to perform tasks.",
-        "Each action has a parameter schema -- fill in only the fields its schema requires.",
+        "Use knowledge to inform your responses. Use tools to perform tasks.",
+        "Each tool has a parameter schema -- fill in only the fields its schema requires.",
+        "IMPORTANT: You can ONLY call tools that appear in your tool definitions. Do not attempt to call tools based on what you read in knowledge articles.",
     ]
     how_it_works = "\n".join(how_it_works_lines)
     
@@ -168,9 +169,9 @@ You help users accomplish tasks in their app.
 </how_it_works>
 
 <response_guidelines>
-Actions are YOUR tools -- never mention action names, tool names, or API details to the user.
-Describe what you can do in natural language ("I can do that for you"), not in technical terms ("I'll call the create_report action").
-When answering "how do I" questions, use knowledge articles to explain the process in user-friendly terms, and offer to perform the action if one exists.
+Tools are YOUR capabilities -- never mention tool names or API details to the user.
+Describe what you can do in natural language ("I can do that for you"), not in technical terms ("I'll call the create_report tool").
+When answering "how do I" questions, use knowledge articles to explain the process in user-friendly terms, and offer to use the tool if one exists.
 </response_guidelines>
 
 <thoroughness>
@@ -178,11 +179,11 @@ Think before you act. Before executing, make sure you understand what the user a
 </thoroughness>
 
 <persistence>
-Keep working until the user's request is fully resolved. Use results from earlier actions to inform later ones. If something fails, retry with different parameters or try an alternative approach. If stuck after 2-3 attempts, explain what's blocking you.
+Keep working until the user's request is fully resolved. Use results from earlier tool calls to inform later ones. If something fails, retry with different parameters or try an alternative approach. If stuck after 2-3 attempts, explain what's blocking you.
 </persistence>
 
 <usefulness>
-Your goal is to actually help the user, not just call tools successfully. A successful action isn't the same as a useful outcome. If data is sparse or meaningless, say so rather than producing empty results. If the user's approach won't give them what they want, say so and suggest a better path. The user is better served by honest feedback than technically correct but useless output.
+Your goal is to actually help the user, not just call tools successfully. A successful tool call isn't the same as a useful outcome. If data is sparse or meaningless, say so rather than producing empty results. If the user's approach won't give them what they want, say so and suggest a better path. The user is better served by honest feedback than technically correct but useless output.
 </usefulness>
 
 <scope>
@@ -348,7 +349,7 @@ def format_tool_result_message_native(
 
 def format_search_result_content(
     query: str,
-    actions: list[dict] = None,
+    tools: list[dict] = None,
     knowledge: list[dict] = None,
 ) -> str:
     """
@@ -356,7 +357,7 @@ def format_search_result_content(
     
     Args:
         query: The search query
-        actions: List of action dicts found
+        tools: List of tool dicts found
         knowledge: List of knowledge dicts found
         
     Returns:
@@ -364,15 +365,21 @@ def format_search_result_content(
     """
     parts = [f"Search results for '{query}':"]
     
-    if actions:
-        parts.append(f"\nActions ({len(actions)} found):")
-        for action in actions[:5]:
-            name = action.get("name", "unknown")
-            desc = action.get("description", "")
-            action_type = action.get("action_type", "")
-            schema = action.get("schema") or action.get("data_schema", {})
+    if tools:
+        parts.append(f"\nTools ({len(tools)} found):")
+        for tool in tools[:5]:
+            name = tool.get("name", "unknown")
+            desc = tool.get("description", "")
+            tool_type = tool.get("tool_type") or tool.get("action_type", "")
+            schema = tool.get("schema") or tool.get("data_schema", {})
             schema_str = json.dumps(schema, indent=2) if schema else "{}"
-            parts.append(f"  - {name} [{action_type}]: {desc}\n    Schema: {schema_str}")
+            parts.append(f"  - {name} [{tool_type}]: {desc}\n    Schema: {schema_str}")
+    elif knowledge:
+        parts.append(
+            "\nNo executable tools found for this query. "
+            "Use the knowledge below to answer the user -- "
+            "do not attempt to call tools based on article content."
+        )
     
     if knowledge:
         parts.append(f"\nKnowledge ({len(knowledge)} found):")
@@ -384,7 +391,6 @@ def format_search_result_content(
             source_type = k.get("source_type", "")
             section = " > ".join(heading_path) if heading_path else ""
             
-            # Label corrections distinctly so LLM knows to prioritize them
             if source_type == "correction":
                 header = f"  - [CORRECTION] {title}"
             else:
@@ -396,7 +402,7 @@ def format_search_result_content(
                 header += f" (item_id: {item_id})"
             parts.append(f"{header}:\n    {content}")
     
-    if not actions and not knowledge:
+    if not tools and not knowledge:
         parts.append("\nNo results found. Try a different query or respond to the user.")
     
     # Append contextual hints only when relevant
@@ -426,7 +432,7 @@ def format_search_result_content(
 
 
 def format_execute_result_content(
-    action_name: str,
+    tool_name: str,
     success: bool,
     result: Any = None,
     error: str = None,
@@ -436,26 +442,25 @@ def format_execute_result_content(
     Format execute results as content string for tool result message.
     
     Args:
-        action_name: Name of the action executed
+        tool_name: Name of the tool executed
         success: Whether execution succeeded
         result: Result data if successful
         error: Error message if failed
-        dom_snapshot: Updated DOM content after action (for interact_with_page)
+        dom_snapshot: Updated DOM content after tool execution (for interact_with_page)
         
     Returns:
         Formatted string for tool result content
     """
     if success:
         result_preview = json.dumps(result, default=str) if result else "{}"
-        content = f"Action '{action_name}' completed successfully.\nResult: {result_preview}"
+        content = f"Tool '{tool_name}' completed successfully.\nResult: {result_preview}"
         
-        # Append DOM changes if provided (for interact_with_page actions)
         if dom_snapshot:
-            content += f"\n\n[Page changes after action]\n{dom_snapshot}"
+            content += f"\n\n[Page changes after tool execution]\n{dom_snapshot}"
         
         return content
     else:
-        return f"Action '{action_name}' failed: {error or 'Unknown error'}"
+        return f"Tool '{tool_name}' failed: {error or 'Unknown error'}"
 
 
 # =============================================================================

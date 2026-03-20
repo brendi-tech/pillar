@@ -10,7 +10,7 @@ const pillarConfig = {
 
 <template>
   <PillarProvider
-    :product-key="import.meta.env.VITE_PILLAR_PRODUCT_KEY"
+    :agent-slug="import.meta.env.VITE_PILLAR_AGENT_SLUG"
     :config="pillarConfig"
   >
     <RouterView />

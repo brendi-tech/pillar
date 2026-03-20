@@ -54,9 +54,9 @@ class TestCustomerRoundTrip:
 class TestCheckoutSession:
     def test_create_checkout_session(self, test_customer):
         """Create a real checkout session and verify the URL is returned."""
-        price_id = os.environ.get("STRIPE_PRICE_PRO_MONTHLY", "")
+        price_id = os.environ.get("STRIPE_PRICE_STARTER_MONTHLY", "")
         if not price_id:
-            pytest.skip("STRIPE_PRICE_PRO_MONTHLY not set")
+            pytest.skip("STRIPE_PRICE_STARTER_MONTHLY not set")
 
         session = stripe.checkout.Session.create(
             customer=test_customer.id,

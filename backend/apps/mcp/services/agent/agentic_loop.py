@@ -6,13 +6,18 @@ which tools to call based on query complexity and accumulated context.
 Tool execution is handled by tool_handlers.py; LLM tool decisions
 by tool_decision.py.
 """
+from __future__ import annotations
+
 import json
 import logging
 import time
 import uuid
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from opentelemetry import trace, context as otel_context
+
+if TYPE_CHECKING:
+    from apps.mcp.services.agent.models import AgentMessage
 
 from apps.mcp.services.agent.error_types import is_tool_error
 from apps.mcp.services.agent.messages import get_fallback_message
@@ -25,10 +30,11 @@ from apps.mcp.services.agent.streaming_events import (
 )
 from apps.mcp.services.agent.tool_decision import agent_decide_tool_native
 from apps.mcp.services.agent.tool_handlers import (
-    BUILTIN_ACTIONS,
+    BUILTIN_TOOLS,
     execute_client_action,
     execute_get_article,
     execute_search,
+    execute_server_tool,
     resolve_execute_action,
 )
 from common.observability.tracing import get_tracer
@@ -50,7 +56,7 @@ def _build_state_checkpoint(
         "type": "state_checkpoint",
         "llm_messages": messages[turn_start_idx:],
         "display_trace": display_trace,
-        "registered_actions": agent_context.registered_actions,
+        "registered_tools": agent_context.registered_tools,
         "model_used": model_name,
         "prompt_tokens": agent_context.token_budget.total_prompt_tokens if agent_context.token_budget else None,
         "completion_tokens": agent_context.token_budget.total_completion_tokens if agent_context.token_budget else None,
@@ -60,53 +66,18 @@ def _build_state_checkpoint(
 
 async def run_agentic_loop(
     service,
-    question: str,
-    top_k: int = 10,
-    cancel_event=None,
-    platform: str = None,
-    version: str = None,
-    user_context: list[dict] = None,
-    images: list[dict[str, str]] | None = None,
-    context: dict = None,
-    user_profile: dict = None,
-    page_url: str = None,
-    session_id: str = None,
-    language: str = 'en',
-    conversation_history: list[dict] = None,
-    registered_actions: list[dict] = None,
-    conversation_id: str = None,
-    assistant_message_id: str = None,
+    message: "AgentMessage",
 ):
     """
     Tool-based agentic reasoning loop.
 
-    Unlike the legacy _react_loop which searches for actions upfront, this loop
-    uses tools to dynamically search for actions and knowledge as needed.
-
-    Enables:
-    - Targeted searches per intent (multi-intent queries handled correctly)
-    - Natural mixing of knowledge and actions (hybrid queries)
-    - Graceful degradation with "guidance" steps when actions don't exist
-    - Query actions that fetch data from the client
-
-    Yields display_trace before 'complete' event for analytics.
+    Accepts a single AgentMessage that normalizes input from any channel.
+    The loop remains channel-agnostic -- it yields event dicts that
+    channel-specific ResponseAdapters consume.
 
     Args:
         service: AgentAnswerServiceReActAsync instance
-        question: User's question
-        top_k: Number of results per search
-        cancel_event: Optional cancellation event
-        platform: Optional platform filter
-        version: Optional version filter
-        user_context: Optional user context items
-        images: Optional image dicts for vision
-        context: Optional user context for action filtering
-        user_profile: Optional user profile (name, role, accountType, etc.)
-        page_url: Optional current page URL from X-Page-Url header
-        session_id: Session ID for query action result correlation
-        language: Language code for AI responses (e.g., 'en', 'es', 'fr')
-        conversation_history: Previous conversation messages
-        registered_actions: Actions from previous turns (persisted by client)
+        message: Canonical input from any channel
 
     Yields:
         Event dicts with 'type' key
@@ -124,27 +95,28 @@ async def run_agentic_loop(
     start_time = time.time()
     start_time_ms = int(start_time * 1000)
     display_trace = []
-    all_reasoning_details: list[dict] = []  # Accumulated across all LLM turns for DB persistence
-    all_thinking_text: str = ""  # Accumulated thinking text across all LLM turns for display
-    current_assistant_message_id: str | None = assistant_message_id  # Pre-created by ask.py; enables UPDATE instead of INSERT
+    all_reasoning_details: list[dict] = []
+    all_thinking_text: str = ""
+    current_assistant_message_id: str | None = message.assistant_message_id
 
     # OpenTelemetry: root span for the agentic loop
     _tracer = get_tracer("pillar.agent")
     run_id = str(uuid.uuid4())
-    thread_id = session_id or str(uuid.uuid4())
+    thread_id = message.session_id or str(uuid.uuid4())
     widget_id = str(service.help_center_config.id)
     org_id = str(service.organization.id) if service.organization else "unknown"
 
     _loop_span = _tracer.start_span(
         "agentic_loop",
         attributes={
-            "agent.question": question,
-            "agent.session_id": session_id or "",
+            "agent.question": message.text,
+            "agent.session_id": message.session_id or "",
             "agent.thread_id": thread_id,
             "agent.run_id": run_id,
-            "agent.conversation_id": conversation_id or "",
+            "agent.conversation_id": message.conversation_id or "",
             "agent.widget_id": widget_id,
             "agent.org_id": org_id,
+            "agent.channel": message.channel,
         },
     )
     _loop_ctx = trace.set_span_in_context(_loop_span)
@@ -155,9 +127,9 @@ async def run_agentic_loop(
 
     # Build environment context from SDK context and user profile
     environment_context = build_environment_context(
-        sdk_context=context,
-        user_profile=user_profile,
-        page_url=page_url,
+        sdk_context=message.sdk_context,
+        user_profile=message.caller.user_profile,
+        page_url=message.page_url,
     )
     if environment_context:
         logger.info(f"[AgenticLoop] Environment context built: {len(environment_context)} chars")
@@ -167,16 +139,21 @@ async def run_agentic_loop(
     if capabilities_summary:
         logger.info(f"[AgenticLoop] Capabilities summary built: {len(capabilities_summary)} chars")
 
-    # Get product-specific agent guidance
-    product_guidance = getattr(service.help_center_config, 'agent_guidance', '') or ''
-    if product_guidance:
-        logger.info(f"[AgenticLoop] Product guidance loaded: {len(product_guidance)} chars")
+    # Get agent guidance: prefer resolved AgentConfig, fall back to product-level field
+    agent_config = getattr(service, 'agent_config', None)
+    if agent_config and agent_config.guidance:
+        product_guidance = agent_config.guidance
+        logger.info(f"[AgenticLoop] Agent guidance loaded from AgentConfig: {len(product_guidance)} chars")
+    else:
+        product_guidance = getattr(service.help_center_config, 'agent_guidance', '') or ''
+        if product_guidance:
+            logger.info(f"[AgenticLoop] Product guidance loaded: {len(product_guidance)} chars")
 
-    logger.info(f"[AgenticLoop] Starting for question: {question[:100]}...")
+    logger.info(f"[AgenticLoop] Starting for question: {message.text[:100]}...")
 
     # Fast path check for simple cases
-    if is_fast_path_eligible(question):
-        fast_result = await fast_path_handle(question, platform, version)
+    if is_fast_path_eligible(message.text):
+        fast_result = await fast_path_handle(message.text, message.platform, message.version)
         if fast_result:
             for event in fast_result:
                 yield event
@@ -186,25 +163,75 @@ async def run_agentic_loop(
     agent_context = AgentContext()
     
     # Detect DOM snapshot in user_context to conditionally enable interact_with_page
-    if user_context:
-        has_dom = any(item.get('type') == 'dom_snapshot' for item in user_context)
+    if message.user_context:
+        has_dom = any(item.get('type') == 'dom_snapshot' for item in message.user_context)
         if has_dom:
             agent_context.has_page_context = True
             logger.info("[AgenticLoop] DOM snapshot detected, interact_with_page tool enabled")
     
-    # Restore actions from previous conversation turns
-    if registered_actions:
-        agent_context.register_actions_as_tools(registered_actions)
-        # Also add to found_actions so they're available via get_action_by_name()
-        for action in registered_actions:
-            if not any(a.get("name") == action.get("name") for a in agent_context.found_actions):
-                agent_context.found_actions.append(action)
-        logger.info(f"[AgenticLoop] Restored {len(registered_actions)} registered actions from previous turns")
-        _loop_span.add_event("actions_registered", {
+    # Restore tools from previous conversation turns
+    if message.registered_tools:
+        agent_context.register_tools(message.registered_tools)
+        for tool in message.registered_tools:
+            if not any(t.get("name") == tool.get("name") for t in agent_context.found_tools):
+                agent_context.found_tools.append(tool)
+        logger.info(f"[AgenticLoop] Restored {len(message.registered_tools)} registered tools from previous turns")
+        _loop_span.add_event("tools_registered", {
             "source": "restored_from_previous_turn",
-            "action_names": json.dumps([a.get("name", "unknown") for a in registered_actions]),
-            "count": len(registered_actions),
+            "tool_names": json.dumps([t.get("name", "unknown") for t in message.registered_tools]),
+            "count": len(message.registered_tools),
         })
+
+    # Load published server-side tools from the database
+    from apps.tools.services.health import is_endpoint_healthy
+
+    product_id = str(service.help_center_config.id)
+    endpoint_healthy = await is_endpoint_healthy(product_id)
+
+    if endpoint_healthy:
+        from apps.products.models import Action
+
+        server_tools = []
+        seen_names: set[str] = set()
+        async for tool in (
+            Action.objects
+            .filter(
+                product_id=product_id,
+                tool_type=Action.ToolType.SERVER_SIDE,
+                status=Action.Status.PUBLISHED,
+            )
+            .values(
+                "name", "description", "guidance",
+                "data_schema", "tool_type", "channel_compatibility",
+            )
+            .aiterator()
+        ):
+            compat = tool.get("channel_compatibility") or []
+            if message.channel and ("*" not in compat and message.channel not in compat):
+                continue
+            if tool["name"] in seen_names:
+                continue
+            seen_names.add(tool["name"])
+            server_tools.append(tool)
+
+        # Apply agent-level tool allowlist/denylist
+        if agent_config and (agent_config.tool_allowlist or agent_config.tool_denylist):
+            from apps.products.services.agent_resolver import filter_tools_for_agent
+            server_tools = filter_tools_for_agent(
+                server_tools,
+                channel=message.channel or 'web',
+                allowlist=agent_config.tool_allowlist,
+                denylist=agent_config.tool_denylist,
+            )
+
+        if server_tools:
+            agent_context.register_tools(server_tools)
+            logger.info(
+                "[AgenticLoop] Loaded %d server-side tools (channel=%s): %s",
+                len(server_tools),
+                message.channel,
+                [t["name"] for t in server_tools],
+            )
 
     # Initialize token budget tracking
     model_name = getattr(service, 'model_name', None) or 'unknown'
@@ -222,8 +249,11 @@ async def run_agentic_loop(
     tool_executor = AgentToolExecutor(
         product=service.help_center_config,
         organization=service.organization,
-        platform=platform,
-        version=version,
+        platform=message.platform,
+        version=message.version,
+        channel=message.channel,
+        knowledge_source_ids=agent_config.knowledge_source_ids if agent_config else [],
+        endpoint_healthy=endpoint_healthy,
     )
 
     from apps.mcp.services.prompts.agentic_prompts import (
@@ -235,19 +265,19 @@ async def run_agentic_loop(
 
     # Merge user_context (e.g., DOM snapshot) into environment context
     full_environment = environment_context or ""
-    if user_context:
-        user_context_section = build_user_context_prompt(user_context)
+    if message.user_context:
+        user_context_section = build_user_context_prompt(message.user_context)
         if user_context_section:
             full_environment = f"{full_environment}\n{user_context_section}" if full_environment else user_context_section
 
     messages = build_agentic_prompt(
-        question=question,
+        question=message.text,
         site_context=site_context,
         environment=full_environment,
         capabilities=capabilities_summary,
         product_guidance=product_guidance,
-        images=images,
-        conversation_history=conversation_history,
+        images=message.images,
+        conversation_history=message.conversation_history,
         has_page_context=agent_context.has_page_context,
     )
 
@@ -266,7 +296,7 @@ async def run_agentic_loop(
     # Main agentic loop
     _iter_span = None
     for iteration in range(MAX_AGENT_ITERATIONS):
-        if cancel_event and cancel_event.is_set():
+        if message.cancel_event and message.cancel_event.is_set():
             _loop_span.set_attribute("agent.status", "CANCELLED")
             _loop_span.set_attribute("agent.total_tokens_prompt", agent_context.token_budget.total_prompt_tokens if agent_context.token_budget else 0)
             _loop_span.set_attribute("agent.total_tokens_completion", agent_context.token_budget.total_completion_tokens if agent_context.token_budget else 0)
@@ -285,7 +315,7 @@ async def run_agentic_loop(
         yield emit_debug_iteration(iteration + 1, MAX_AGENT_ITERATIONS)
 
         # Enrich iteration span with context state
-        _iter_span.set_attribute("context.found_actions_count", len(agent_context.found_actions))
+        _iter_span.set_attribute("context.found_tools_count", len(agent_context.found_tools))
         _iter_span.set_attribute("context.found_knowledge_count", len(agent_context.found_knowledge))
         _iter_span.set_attribute("context.query_results_count", len(agent_context.query_results))
         _iter_span.set_attribute("context.tool_calls_count", len(agent_context.tool_calls))
@@ -305,8 +335,8 @@ async def run_agentic_loop(
         thinking_content = []
         content_tokens: list[str] = []  # Accumulated content tokens from the model
 
-        # Build action tools from registered actions for this iteration
-        action_tools = agent_context.get_action_tools()
+        # Build dynamic tool defs from registered tools for this iteration
+        dynamic_tool_defs = agent_context.get_registered_tool_defs()
 
         _llm_span = _tracer.start_span(
             "llm.tool_decision",
@@ -318,8 +348,8 @@ async def run_agentic_loop(
             messages=messages,
             context=agent_context,
             iteration=iteration,
-            cancel_event=cancel_event,
-            extra_tools=action_tools,
+            cancel_event=message.cancel_event,
+            extra_tools=dynamic_tool_defs,
         ):
             if event['type'] == 'thinking':
                 thinking_text = event.get('content', '')
@@ -399,7 +429,7 @@ async def run_agentic_loop(
 
             yield {
                 "type": "complete",
-                "registered_actions": agent_context.registered_actions,
+                "registered_tools": agent_context.registered_tools,
                 "display_trace": display_trace,
                 "thinking_text": all_thinking_text.strip(),
             }
@@ -409,9 +439,9 @@ async def run_agentic_loop(
         if not tool_calls:
             from apps.mcp.services.agent.recovery import get_smart_default_action
             fallback = get_smart_default_action(
-                question=question,
+                question=message.text,
                 iteration=iteration,
-                found_actions=agent_context.found_actions,
+                found_tools=agent_context.found_tools,
                 found_knowledge=agent_context.found_knowledge,
                 query_results=agent_context.query_results,
                 error_type="empty_stream",
@@ -490,14 +520,16 @@ async def run_agentic_loop(
         _handler_common = dict(
             messages=messages,
             service=service,
-            session_id=session_id,
+            session_id=message.session_id,
             display_trace=display_trace,
             iteration=iteration,
             start_time_ms=start_time_ms,
-            cancel_event=cancel_event,
-            conversation_id=conversation_id,
+            cancel_event=message.cancel_event,
+            conversation_id=message.conversation_id,
             tracer=_tracer,
         )
+
+        confirmation_pending = False
 
         for i, tc in enumerate(tool_calls):
             tool_name = tc.get("tool", "unknown")
@@ -515,7 +547,7 @@ async def run_agentic_loop(
                     iter_span=_iter_span,
                     tool_call_id=tool_call_id,
                     arguments=arguments,
-                    question=question,
+                    question=message.text,
                 ):
                     yield event
 
@@ -533,7 +565,7 @@ async def run_agentic_loop(
                     yield event
 
             elif tool_name == "interact_with_page":
-                action = BUILTIN_ACTIONS["interact_with_page"]
+                action = BUILTIN_TOOLS["interact_with_page"]
                 async for event in execute_client_action(
                     **_handler_common,
                     tool_call_id=tool_call_id,
@@ -544,23 +576,37 @@ async def run_agentic_loop(
                 ):
                     yield event
 
-            elif agent_context.is_action_tool(tool_name):
-                action = agent_context.get_action_by_name(tool_name)
+            elif agent_context.is_registered_tool(tool_name):
+                action = agent_context.get_tool_by_name(tool_name)
                 if not action:
                     messages.append(format_tool_result_message_native(
                         tool_call_id=tool_call_id,
-                        result_content=f"Action '{tool_name}' not found in registered actions.",
+                        result_content=f"Tool '{tool_name}' not found in registered tools.",
                     ))
                     continue
-                async for event in execute_client_action(
-                    **_handler_common,
-                    tool_call_id=tool_call_id,
-                    action_name=tool_name,
-                    parameters=arguments,
-                    action=action,
-                    thinking_text=thinking_text,
-                ):
-                    yield event
+
+                if action.get("tool_type") == "server_side":
+                    async for event in execute_server_tool(
+                        **_handler_common,
+                        tool_call_id=tool_call_id,
+                        tool_name=tool_name,
+                        arguments=arguments,
+                        tool_config=action,
+                        caller=message.caller,
+                    ):
+                        yield event
+                        if event.get("type") == "confirmation_request":
+                            confirmation_pending = True
+                else:
+                    async for event in execute_client_action(
+                        **_handler_common,
+                        tool_call_id=tool_call_id,
+                        action_name=tool_name,
+                        parameters=arguments,
+                        action=action,
+                        thinking_text=thinking_text,
+                    ):
+                        yield event
 
             elif tool_name == "execute":
                 resolved = resolve_execute_action(
@@ -583,11 +629,11 @@ async def run_agentic_loop(
                         if not action and search_results:
                             action = search_results[0]
                         if search_results:
-                            agent_context.add_action_results(search_results, action_name)
+                            agent_context.add_tool_results(search_results, action_name)
                 if not action:
                     messages.append(format_tool_result_message_native(
                         tool_call_id=tool_call_id,
-                        result_content=f"Action '{action_name}' not found. Use search to find available actions.",
+                        result_content=f"Tool '{action_name}' not found. Use search to find available tools.",
                     ))
                     continue
                 async for event in execute_client_action(
@@ -602,13 +648,16 @@ async def run_agentic_loop(
 
             else:
                 base_tools = ["search", "interact_with_page"]
-                action_tool_names = [a.get("name") for a in agent_context.registered_actions]
+                action_tool_names = [t.get("name") for t in agent_context.registered_tools]
                 all_tools = base_tools + action_tool_names
                 logger.warning(f"[AgenticLoop] Unknown tool: {tool_name}")
                 messages.append(format_tool_result_message_native(
                     tool_call_id=tool_call_id or f"call_unknown_{iteration}",
                     result_content=f"Unknown tool '{tool_name}'. Available tools: {', '.join(all_tools)}",
                 ))
+
+            if confirmation_pending:
+                break
 
         if thinking_started:
             yield emit_thinking_done(thinking_id)
@@ -618,6 +667,21 @@ async def run_agentic_loop(
             _iter_span.end()
             _iter_span = None
         yield _build_state_checkpoint(messages, turn_start_idx, display_trace, agent_context, model_name)
+
+        if confirmation_pending:
+            logger.info("[AgenticLoop] Confirmation requested, stopping loop")
+            _loop_span.set_attribute("agent.status", "CONFIRMATION_PENDING")
+            _loop_span.set_attribute("agent.iterations", iteration + 1)
+            _loop_span.set_attribute("agent.duration_ms", int((time.time() - start_time) * 1000))
+            _loop_span.end()
+            otel_context.detach(_loop_token)
+            yield {
+                "type": "complete",
+                "registered_tools": agent_context.registered_tools,
+                "display_trace": display_trace,
+                "thinking_text": all_thinking_text.strip(),
+            }
+            return
 
     # Max iterations reached - generate fallback response
     logger.warning(f"[AgenticLoop] Max iterations ({MAX_AGENT_ITERATIONS}) reached")
@@ -638,18 +702,18 @@ async def run_agentic_loop(
         async for event in generate_answer_stream(
             llm_client=service.llm_client,
             help_center_config=service.help_center_config,
-            question=question,
+            question=message.text,
             sources=sources,
             classification=classification,
             site_context=site_context,
             site_description=site_description,
-            cancel_event=cancel_event,
-            user_context=user_context,
-            images=images,
+            cancel_event=message.cancel_event,
+            user_context=message.user_context,
+            images=message.images,
             environment_context=environment_context,
             temperature=service.temperature,
             max_tokens=service.max_tokens,
-            language=language,
+            language=message.language,
         ):
             yield event
     else:
@@ -684,7 +748,7 @@ async def run_agentic_loop(
 
     yield {
         "type": "complete",
-        "registered_actions": agent_context.registered_actions,
+        "registered_tools": agent_context.registered_tools,
         "display_trace": display_trace,
         "thinking_text": all_thinking_text.strip(),
     }

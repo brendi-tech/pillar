@@ -43,6 +43,22 @@ def get_all_workflows():
     # Import demos workflows
     from apps.demos.workflows import superset_reset_workflow
     
+    # Import tools workflows (server-side tool infrastructure)
+    from apps.tools.workflows import (
+        endpoint_health_check_workflow,
+        mcp_discovery_workflow,
+    )
+
+    # Import Slack integration workflows
+    from apps.integrations.slack.workflows.handle_message import handle_slack_message
+    from apps.integrations.slack.workflows.account_link import handle_account_link
+
+    # Import Discord integration workflows
+    from apps.integrations.discord.workflows.handle_message import handle_discord_message
+
+    # Import Email channel workflows
+    from apps.integrations.email_channel.workflows.handle_email import handle_inbound_email
+
     # Import agent score workflows
     from apps.agent_score.workflows import (
         http_probes_workflow,
@@ -70,11 +86,21 @@ def get_all_workflows():
         resync_active_sources_workflow,
         # Products app workflows
         sync_actions_workflow,
+        # Tools app workflows (server-side tool infrastructure)
+        endpoint_health_check_workflow,
+        mcp_discovery_workflow,
         # Billing app workflows (cron jobs)
         early_adopter_bonus_workflow,
         free_tier_early_adopter_bonus_workflow,
         # Demos app workflows
         superset_reset_workflow,
+        # Slack integration workflows
+        handle_slack_message,
+        handle_account_link,
+        # Discord integration workflows
+        handle_discord_message,
+        # Email channel workflows
+        handle_inbound_email,
         # Agent Score workflows (public scoring tool)
         http_probes_workflow,
         browser_analysis_workflow,

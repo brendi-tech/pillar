@@ -1,5 +1,5 @@
 <script
   src="https://cdn.trypillar.com/sdk.js"
-  data-product-key="your-product-key"
+  data-agent-slug="your-agent-slug"
   data-public-key="pk_live_xxx"
 ></script>

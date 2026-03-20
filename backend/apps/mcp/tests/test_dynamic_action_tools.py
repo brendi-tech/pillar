@@ -220,68 +220,68 @@ class TestGetDynamicTools:
         assert "get_article" in names_with
 
 
-class TestAgentContextRegisteredActions:
-    """Tests for AgentContext registered_actions management."""
+class TestAgentContextRegisteredTools:
+    """Tests for AgentContext registered_tools management."""
 
-    def test_register_actions_as_tools(self):
-        """register_actions_as_tools should add actions to registered list."""
+    def test_register_tools(self):
+        """register_tools should add tools to registered list."""
         context = AgentContext()
         
-        actions = [
+        tools = [
             {"name": "action_a", "description": "A"},
             {"name": "action_b", "description": "B"},
         ]
         
-        context.register_actions_as_tools(actions)
+        context.register_tools(tools)
         
-        assert len(context.registered_actions) == 2
-        assert context.registered_actions[0]["name"] == "action_a"
-        assert context.registered_actions[1]["name"] == "action_b"
+        assert len(context.registered_tools) == 2
+        assert context.registered_tools[0]["name"] == "action_a"
+        assert context.registered_tools[1]["name"] == "action_b"
 
-    def test_register_actions_deduplicates_by_name(self):
-        """register_actions_as_tools should not add duplicate actions."""
+    def test_register_tools_deduplicates_by_name(self):
+        """register_tools should not add duplicate tools."""
         context = AgentContext()
         
         # Register first batch
-        context.register_actions_as_tools([
+        context.register_tools([
             {"name": "action_a", "description": "A"},
             {"name": "action_b", "description": "B"},
         ])
         
         # Register second batch with overlap
-        context.register_actions_as_tools([
+        context.register_tools([
             {"name": "action_b", "description": "B updated"},  # Duplicate
             {"name": "action_c", "description": "C"},  # New
         ])
         
-        assert len(context.registered_actions) == 3
-        names = [a["name"] for a in context.registered_actions]
+        assert len(context.registered_tools) == 3
+        names = [t["name"] for t in context.registered_tools]
         assert names == ["action_a", "action_b", "action_c"]
         
         # Original description should be preserved
-        action_b = next(a for a in context.registered_actions if a["name"] == "action_b")
-        assert action_b["description"] == "B"  # Not "B updated"
+        tool_b = next(t for t in context.registered_tools if t["name"] == "action_b")
+        assert tool_b["description"] == "B"  # Not "B updated"
 
-    def test_is_action_tool_returns_true_for_registered(self):
-        """is_action_tool should return True for registered actions."""
+    def test_is_registered_tool_returns_true_for_registered(self):
+        """is_registered_tool should return True for registered tools."""
         context = AgentContext()
-        context.register_actions_as_tools([
+        context.register_tools([
             {"name": "my_action", "description": "My action"},
         ])
         
-        assert context.is_action_tool("my_action") is True
-        assert context.is_action_tool("unknown_action") is False
+        assert context.is_registered_tool("my_action") is True
+        assert context.is_registered_tool("unknown_action") is False
 
-    def test_is_action_tool_returns_false_for_base_tools(self):
-        """is_action_tool should return False for base tools."""
+    def test_is_registered_tool_returns_false_for_base_tools(self):
+        """is_registered_tool should return False for base tools."""
         context = AgentContext()
         
-        assert context.is_action_tool("search") is False
+        assert context.is_registered_tool("search") is False
 
-    def test_get_action_tools_returns_openai_format(self):
-        """get_action_tools should return tools in OpenAI format."""
+    def test_get_registered_tool_defs_returns_openai_format(self):
+        """get_registered_tool_defs should return tools in OpenAI format."""
         context = AgentContext()
-        context.register_actions_as_tools([
+        context.register_tools([
             {
                 "name": "create_chart",
                 "description": "Creates a chart",
@@ -292,48 +292,48 @@ class TestAgentContextRegisteredActions:
             },
         ])
         
-        tools = context.get_action_tools()
+        defs = context.get_registered_tool_defs()
         
-        assert len(tools) == 1
-        assert tools[0]["type"] == "function"
-        assert tools[0]["function"]["name"] == "create_chart"
-        assert "title" in tools[0]["function"]["parameters"]["properties"]
+        assert len(defs) == 1
+        assert defs[0]["type"] == "function"
+        assert defs[0]["function"]["name"] == "create_chart"
+        assert "title" in defs[0]["function"]["parameters"]["properties"]
 
-    def test_get_action_by_name_finds_action(self):
-        """get_action_by_name should find action in found_actions."""
+    def test_get_tool_by_name_finds_tool_in_found_tools(self):
+        """get_tool_by_name should find tool in found_tools."""
         context = AgentContext()
-        context.found_actions = [
+        context.found_tools = [
             {"name": "action_a", "description": "A"},
             {"name": "action_b", "description": "B"},
         ]
         
-        action = context.get_action_by_name("action_b")
+        found = context.get_tool_by_name("action_b")
         
-        assert action is not None
-        assert action["name"] == "action_b"
+        assert found is not None
+        assert found["name"] == "action_b"
 
-    def test_get_action_by_name_returns_none_for_unknown(self):
-        """get_action_by_name should return None for unknown action."""
+    def test_get_tool_by_name_returns_none_for_unknown(self):
+        """get_tool_by_name should return None for unknown tool."""
         context = AgentContext()
-        context.found_actions = [
+        context.found_tools = [
             {"name": "action_a", "description": "A"},
         ]
         
-        action = context.get_action_by_name("unknown")
+        found = context.get_tool_by_name("unknown")
         
-        assert action is None
+        assert found is None
 
-    def test_get_action_by_name_finds_registered_action(self):
-        """get_action_by_name should find action in registered_actions."""
+    def test_get_tool_by_name_finds_registered_tool(self):
+        """get_tool_by_name should find tool in registered_tools."""
         context = AgentContext()
-        context.register_actions_as_tools([
+        context.register_tools([
             {"name": "restored_action", "description": "From previous turn"},
         ])
         
-        action = context.get_action_by_name("restored_action")
+        found = context.get_tool_by_name("restored_action")
         
-        assert action is not None
-        assert action["name"] == "restored_action"
+        assert found is not None
+        assert found["name"] == "restored_action"
 
 
 class TestConditionalToolFlags:
@@ -419,35 +419,35 @@ class TestDynamicToolsIntegration:
         ]
         
         # Add to context (as happens in agentic loop)
-        context.add_action_results(search_results, "test query")
-        context.register_actions_as_tools(search_results)
+        context.add_tool_results(search_results, "test query")
+        context.register_tools(search_results)
         
         # Verify action is now a tool
-        assert context.is_action_tool("test_query") is True
+        assert context.is_registered_tool("test_query") is True
         
         # Verify tool has correct schema
-        tools = context.get_action_tools()
+        tools = context.get_registered_tool_defs()
         assert len(tools) == 1
         assert tools[0]["function"]["parameters"]["required"] == ["sql"]
 
-    def test_registered_actions_persist_across_initialization(self):
-        """Actions can be passed to a new context for multi-turn persistence."""
+    def test_registered_tools_persist_across_initialization(self):
+        """Tools can be passed to a new context for multi-turn persistence."""
         # First turn
         context1 = AgentContext()
-        context1.register_actions_as_tools([
+        context1.register_tools([
             {"name": "action_from_turn_1", "description": "From turn 1"},
         ])
         
-        # Get registered actions for persistence
-        persisted_actions = context1.registered_actions
+        # Get registered tools for persistence
+        persisted_tools = context1.registered_tools
         
-        # Second turn - create new context with persisted actions
+        # Second turn - create new context with persisted tools
         context2 = AgentContext()
-        context2.register_actions_as_tools(persisted_actions)
+        context2.register_tools(persisted_tools)
         
-        # Actions should be available
-        assert context2.is_action_tool("action_from_turn_1") is True
-        assert len(context2.registered_actions) == 1
+        # Tools should be available
+        assert context2.is_registered_tool("action_from_turn_1") is True
+        assert len(context2.registered_tools) == 1
 
 
 class TestSanitizeSchema:

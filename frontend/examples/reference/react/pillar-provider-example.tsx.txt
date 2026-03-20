@@ -1,7 +1,7 @@
 import { PillarProvider } from '@pillar-ai/react';
 
 <PillarProvider
-  productKey="your-product-key"
+  agentSlug="your-agent-slug"
   config={{
     panel: { position: 'right', mode: 'push', width: 400 },
     theme: { mode: 'auto', colors: { primary: '#2563eb' } },

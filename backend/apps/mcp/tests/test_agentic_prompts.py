@@ -12,10 +12,10 @@ class TestFormatSearchResultContent:
     """Tests for format_search_result_content()."""
 
     def test_formats_empty_results(self):
-        """Returns 'no results' message when both actions and knowledge are empty."""
+        """Returns 'no results' message when both tools and knowledge are empty."""
         result = format_search_result_content(
             query="test query",
-            actions=None,
+            tools=None,
             knowledge=None,
         )
         assert "Search results for 'test query':" in result
@@ -34,7 +34,7 @@ class TestFormatSearchResultContent:
         ]
         result = format_search_result_content(
             query="getting started",
-            actions=None,
+            tools=None,
             knowledge=knowledge,
         )
         assert "Knowledge (1 found):" in result
@@ -55,7 +55,7 @@ class TestFormatSearchResultContent:
         ]
         result = format_search_result_content(
             query="password reset",
-            actions=None,
+            tools=None,
             knowledge=knowledge,
         )
         assert "[CORRECTION] Password reset instructions" in result
@@ -81,7 +81,7 @@ class TestFormatSearchResultContent:
         ]
         result = format_search_result_content(
             query="password",
-            actions=None,
+            tools=None,
             knowledge=knowledge,
         )
         assert "  - Password help" in result
@@ -109,7 +109,7 @@ class TestFormatSearchResultContent:
         ]
         result = format_search_result_content(
             query="login",
-            actions=None,
+            tools=None,
             knowledge=knowledge,
         )
         # Correction should be labeled
@@ -131,16 +131,16 @@ class TestFormatSearchResultContent:
         ]
         result = format_search_result_content(
             query="article",
-            actions=None,
+            tools=None,
             knowledge=knowledge,
         )
         # Should NOT be labeled as correction
         assert "  - Some article" in result
         assert "[CORRECTION]" not in result
 
-    def test_formats_actions(self):
-        """Formats action results with name, type, description, and schema."""
-        actions = [
+    def test_formats_tools(self):
+        """Formats tool results with name, type, description, and schema."""
+        tools = [
             {
                 "name": "create_report",
                 "description": "Create a new report",
@@ -150,10 +150,10 @@ class TestFormatSearchResultContent:
         ]
         result = format_search_result_content(
             query="report",
-            actions=actions,
+            tools=tools,
             knowledge=None,
         )
-        assert "Actions (1 found):" in result
+        assert "Tools (1 found):" in result
         assert "create_report [trigger]" in result
         assert "Create a new report" in result
         assert "Schema:" in result

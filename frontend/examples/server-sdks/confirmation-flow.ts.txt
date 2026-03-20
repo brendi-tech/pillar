@@ -1,0 +1,29 @@
+import { defineTool, type ConfirmationResponse } from '@pillar-ai/server';
+import { z } from 'zod';
+
+const deleteMember = defineTool({
+  name: 'delete_member',
+  description: 'Remove a member from the workspace',
+  input: z.object({
+    userId: z.string().describe('ID of the member to remove'),
+  }),
+  execute: async ({ userId }, ctx): Promise<ConfirmationResponse | { removed: boolean }> => {
+    if (!ctx.confirmed) {
+      const user = await db.getUser(userId);
+      return {
+        confirmation_required: true,
+        title: 'Remove member',
+        message: `Remove ${user.name} from the workspace?`,
+        details: {
+          'Member': user.name,
+          'Email': user.email,
+          'Role': user.role,
+        },
+        confirm_payload: { userId },
+      };
+    }
+
+    await workspace.removeMember(userId);
+    return { removed: true };
+  },
+});

@@ -3,7 +3,7 @@ import { PillarProvider } from '@pillar-ai/vue';
 </script>
 
 <template>
-  <PillarProvider product-key="your-product-key">
+  <PillarProvider agent-slug="your-agent-slug">
     <RouterView />
   </PillarProvider>
 </template>

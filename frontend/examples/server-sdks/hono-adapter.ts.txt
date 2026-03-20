@@ -1,0 +1,8 @@
+import { Hono } from 'hono';
+import { pillar } from './pillar-tools';
+
+const app = new Hono();
+
+app.post('/pillar', pillar.honoHandler());
+
+export default app;

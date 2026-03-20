@@ -4,7 +4,7 @@ import { PillarService } from '@pillar-ai/angular';
 function initPillar() {
   const pillarService = inject(PillarService);
   return () => pillarService.init({
-    productKey: 'your-product-key',
+    agentSlug: 'your-agent-slug',
   });
 }
 

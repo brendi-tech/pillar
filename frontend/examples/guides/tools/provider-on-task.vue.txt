@@ -19,7 +19,7 @@ function handleTask(task: { name: string; data: any }) {
 
 <template>
   <PillarProvider
-    product-key="your-product-key"
+    agent-slug="your-agent-slug"
     :on-task="handleTask"
   >
     <PillarPanel />

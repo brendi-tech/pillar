@@ -52,38 +52,13 @@ class ConversationLoggingService:
         images: Optional[list[dict]] = None,
         visitor_id: str = '',
         external_user_id: str = '',
+        channel: str = 'web',
     ) -> tuple[str, str, str]:
         """
         Log a Q&A exchange to the database.
         
         Creates or retrieves a conversation, then creates user and assistant
         message records with all relevant metadata.
-        
-        Args:
-            organization_id: Organization UUID
-            question: User's question text
-            response: Assistant's response text
-            response_time_ms: Response generation latency in ms
-            chunks_retrieved: List of RAG chunks [{chunk_id, score, source_article_id}]
-            model_used: LLM model name (e.g., 'claude-sonnet-4-5')
-            conversation_id: Existing conversation UUID (optional, creates new if None)
-            query_type: 'ask' or 'search'
-            help_center_id: Help center config UUID
-            page_url: Page URL where query was submitted
-            user_agent: Client user agent string
-            ip_address: Client IP address
-            referer: Referer URL
-            external_session_id: Widget session ID string
-            display_trace: ReAct agent reasoning steps
-            skip_analytics: If True, marks logging_enabled=False
-            intent_category: Classified intent category
-            intent_confidence: Intent classification confidence (0-1)
-            was_stopped: Whether user stopped streaming early
-            tokens_generated: Tokens generated before stop
-            product_context: SDK ProductContext snapshot
-            images: List of images attached to user message [{url, detail}]
-            visitor_id: Persistent browser ID from SDK localStorage
-            external_user_id: Client's authenticated user ID (for cross-device history)
         
         Returns:
             Tuple of (conversation_id, user_message_id, assistant_message_id)
@@ -112,6 +87,7 @@ class ConversationLoggingService:
                 product_context=product_context or {},
                 product_id=help_center_id,
                 visitor=visitor,
+                channel=channel,
             )
             
             # Generate query hash for clustering
@@ -217,6 +193,7 @@ class ConversationLoggingService:
         product_context: Optional[dict] = None,
         product_id: Optional[str] = None,
         visitor: Optional[Visitor] = None,
+        channel: str = 'web',
     ) -> ChatConversation:
         """
         Get existing conversation or create with provided ID.
@@ -254,6 +231,7 @@ class ConversationLoggingService:
                     'external_session_id': external_session_id[:100] if external_session_id else '',
                     'logging_enabled': not skip_analytics,
                     'product_context': product_context or {},
+                    'channel': channel,
                 }
             )
             if created:
@@ -279,6 +257,7 @@ class ConversationLoggingService:
             external_session_id=external_session_id[:100] if external_session_id else '',
             logging_enabled=not skip_analytics,
             product_context=product_context or {},
+            channel=channel,
         )
         
         logger.info(f"[ConversationLogging] Created conversation {conversation.id}")
@@ -304,6 +283,7 @@ class ConversationLoggingService:
         product_context: Optional[dict] = None,
         visitor_id: str = '',
         external_user_id: str = '',
+        channel: str = 'web',
     ) -> None:
         """
         Create conversation + user message + empty assistant message with pre-generated IDs.
@@ -358,6 +338,7 @@ class ConversationLoggingService:
                 product_context=product_context or {},
                 product_id=product_id,
                 visitor=visitor,
+                channel=channel,
             )
             
             # Generate query hash for clustering

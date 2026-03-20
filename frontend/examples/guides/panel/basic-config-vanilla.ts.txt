@@ -1,7 +1,7 @@
 import { Pillar } from '@pillar-ai/sdk';
 
 await Pillar.init({
-  productKey: 'your-product-key',
+  agentSlug: 'your-agent-slug',
   config: {
     panel: {
       enabled: true,

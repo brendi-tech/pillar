@@ -1,7 +1,7 @@
 """
 Agent context accumulator for the agentic reasoning loop.
 
-Tracks all actions, knowledge, and query results found during tool calls,
+Tracks all tools, knowledge, and query results found during tool calls,
 plus the history of tool calls for reasoning. Also tracks tool errors for
 LLM-based recovery.
 """
@@ -21,16 +21,16 @@ class AgentContext:
     """
     Accumulator for context gathered during the agentic loop.
     
-    Tracks all actions, knowledge, and query results found during tool calls,
+    Tracks all tools, knowledge, and query results found during tool calls,
     plus the history of tool calls for reasoning.
     
     Also maintains the multi-turn conversation history for LLM calls
     and tracks tool errors for LLM-based recovery decisions.
     
-    Registered actions persist across conversation turns, enabling the LLM
-    to call previously discovered actions without re-searching.
+    Registered tools persist across conversation turns, enabling the LLM
+    to call previously discovered tools without re-searching.
     """
-    found_actions: List[Dict[str, Any]] = field(default_factory=list)
+    found_tools: List[Dict[str, Any]] = field(default_factory=list)
     found_knowledge: List[Dict[str, Any]] = field(default_factory=list)
     query_results: List[Dict[str, Any]] = field(default_factory=list)
     tool_calls: List[Dict[str, Any]] = field(default_factory=list)
@@ -44,9 +44,9 @@ class AgentContext:
     # Tool errors for LLM-based recovery decisions
     tool_errors: List[Dict[str, Any]] = field(default_factory=list)
     
-    # Registered actions as native tools (persisted across conversation turns)
+    # Registered tools as native LLM tools (persisted across conversation turns)
     # Full action dicts for tool generation via action_to_tool()
-    registered_actions: List[Dict[str, Any]] = field(default_factory=list)
+    registered_tools: List[Dict[str, Any]] = field(default_factory=list)
     
     # Conditional tool flags
     # has_page_context: True when DOM snapshot with element refs is present
@@ -91,17 +91,16 @@ class AgentContext:
             "content": f"[Tool Result: {tool}]\n{result_summary}"
         })
     
-    def add_action_results(self, actions: List[Dict[str, Any]], query: str) -> None:
-        """Add action search results to context."""
-        for action in actions:
-            # Avoid duplicates by name
-            if not any(a.get("name") == action.get("name") for a in self.found_actions):
-                self.found_actions.append(action)
+    def add_tool_results(self, tools: List[Dict[str, Any]], query: str) -> None:
+        """Add tool search results to context."""
+        for tool in tools:
+            if not any(t.get("name") == tool.get("name") for t in self.found_tools):
+                self.found_tools.append(tool)
         
         self.tool_calls.append({
             "tool": "search",
             "query": query,
-            "results_count": len(actions),
+            "results_count": len(tools),
         })
     
     def add_knowledge_results(self, results: List[Dict[str, Any]], query: str) -> None:
@@ -120,27 +119,27 @@ class AgentContext:
     
     def add_query_result(
         self,
-        action_name: str,
+        tool_name: str,
         result: Any,
         success: bool = True,
         error: str = None,
         hint: str = None,
     ) -> None:
         """
-        Add action execution result to context.
+        Add tool execution result to context.
         
         Query results are data fetched from the client application via
         execute tool calls. The agent can use this data for reasoning.
         
         Args:
-            action_name: Name of the query action that was executed
+            tool_name: Name of the tool that was executed
             result: The result data returned by the client (or None on failure)
             success: Whether the query executed successfully
             error: Error message if success=False
             hint: Hint for LLM to fix the error (e.g., expected parameters)
         """
         self.query_results.append({
-            "action_name": action_name,
+            "tool_name": tool_name,
             "result": result,
             "success": success,
             "error": error,
@@ -149,43 +148,41 @@ class AgentContext:
         
         self.tool_calls.append({
             "tool": "execute",
-            "action_name": action_name,
+            "tool_name": tool_name,
             "success": success,
             "error": error,
         })
     
-    def get_query_result(self, action_name: str) -> Optional[Any]:
+    def get_query_result(self, tool_name: str) -> Optional[Any]:
         """
-        Get the result of a query action by name.
+        Get the result of a tool query by name.
         
         Args:
-            action_name: Name of the query action
+            tool_name: Name of the tool
             
         Returns:
             The result data, or None if not found or failed
         """
         for qr in self.query_results:
-            if qr.get("action_name") == action_name and qr.get("success"):
+            if qr.get("tool_name") == tool_name and qr.get("success"):
                 return qr.get("result")
         return None
     
-    def get_action_by_name(self, name: str) -> Optional[Dict[str, Any]]:
-        """Find an action by name in found_actions or registered_actions."""
-        # Check found_actions first (discovered this turn)
-        for action in self.found_actions:
-            if action.get("name") == name:
-                return action
-        # Also check registered_actions (restored from previous turn or registered as tools)
-        for action in self.registered_actions:
-            if action.get("name") == name:
-                return action
+    def get_tool_by_name(self, name: str) -> Optional[Dict[str, Any]]:
+        """Find a tool by name in found_tools or registered_tools."""
+        for tool in self.found_tools:
+            if tool.get("name") == name:
+                return tool
+        for tool in self.registered_tools:
+            if tool.get("name") == name:
+                return tool
         return None
     
-    def get_best_action_for_query(self, query: str) -> Optional[Dict[str, Any]]:
+    def get_best_tool_for_query(self, query: str) -> Optional[Dict[str, Any]]:
         """
-        Find the best matching action for a query from accumulated results.
+        Find the best matching tool for a query from accumulated results.
         
-        Looks for actions where the name or description contains keywords from the query.
+        Looks for tools where the name or description contains keywords from the query.
         Returns None if no good match is found.
         """
         query_lower = query.lower()
@@ -194,24 +191,22 @@ class AgentContext:
         best_match = None
         best_score = 0
         
-        for action in self.found_actions:
-            name = action.get("name", "").lower()
-            description = action.get("description", "").lower()
-            action_score = action.get("score", 0)
+        for tool in self.found_tools:
+            name = tool.get("name", "").lower()
+            description = tool.get("description", "").lower()
+            tool_score = tool.get("score", 0)
             
-            # Simple word overlap matching
             name_words = set(name.replace("_", " ").split())
             desc_words = set(description.split())
             
             name_overlap = len(query_words & name_words)
             desc_overlap = len(query_words & desc_words)
             
-            # Combine embedding score with word overlap
-            match_score = action_score + (name_overlap * 0.1) + (desc_overlap * 0.05)
+            match_score = tool_score + (name_overlap * 0.1) + (desc_overlap * 0.05)
             
-            if match_score > best_score and action_score >= ACTION_MATCH_THRESHOLD:
+            if match_score > best_score and tool_score >= ACTION_MATCH_THRESHOLD:
                 best_score = match_score
-                best_match = action
+                best_match = tool
         
         return best_match
     
@@ -277,50 +272,50 @@ class AgentContext:
         return len(self.tool_errors) > 0
     
     # =========================================================================
-    # REGISTERED ACTIONS - Persist actions as native tools across turns
+    # REGISTERED TOOLS - Persist tools as native LLM tools across turns
     # =========================================================================
     
-    def register_actions_as_tools(self, actions: List[Dict[str, Any]]) -> None:
+    def register_tools(self, tools: List[Dict[str, Any]]) -> None:
         """
-        Add actions to the registered set (deduplicates by name).
+        Add tools to the registered set (deduplicates by name).
         
-        Actions registered here will be available as native LLM tools,
+        Tools registered here will be available as native LLM tools,
         enabling direct calls with schema validation.
         
         Args:
-            actions: List of action dicts from search results
+            tools: List of tool/action dicts from search results
         """
-        existing_names = {a["name"] for a in self.registered_actions}
-        for action in actions:
-            action_name = action.get("name")
-            if action_name and action_name not in existing_names:
-                self.registered_actions.append(action)
-                existing_names.add(action_name)
+        existing_names = {t["name"] for t in self.registered_tools}
+        for tool in tools:
+            name = tool.get("name")
+            if name and name not in existing_names:
+                self.registered_tools.append(tool)
+                existing_names.add(name)
     
-    def is_action_tool(self, tool_name: str) -> bool:
+    def is_registered_tool(self, tool_name: str) -> bool:
         """
-        Check if a tool name is a registered action.
+        Check if a tool name is a registered tool.
         
-        Used to route tool calls: if the tool is a registered action,
-        it should be handled as an action_request rather than a built-in.
+        Used to route tool calls: if the tool is registered,
+        it should be handled as a tool execution rather than a built-in.
         
         Args:
             tool_name: Name of the tool being called
             
         Returns:
-            True if the tool is a registered action, False otherwise
+            True if the tool is registered, False otherwise
         """
-        return any(a.get("name") == tool_name for a in self.registered_actions)
+        return any(t.get("name") == tool_name for t in self.registered_tools)
     
-    def get_action_tools(self) -> List[Dict[str, Any]]:
+    def get_registered_tool_defs(self) -> List[Dict[str, Any]]:
         """
-        Get all registered actions as OpenAI tool format.
+        Get all registered tools as OpenAI tool format.
         
         Returns:
             List of tool definitions ready for the LLM API
         """
         from apps.mcp.services.agent_tools.definitions import action_to_tool
-        return [action_to_tool(a) for a in self.registered_actions]
+        return [action_to_tool(a) for a in self.registered_tools]
     
     def get_base_tools(self) -> List[Dict[str, Any]]:
         """

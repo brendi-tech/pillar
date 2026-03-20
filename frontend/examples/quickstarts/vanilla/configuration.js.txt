@@ -1,5 +1,5 @@
 Pillar.init({
-  productKey: 'your-product-key',
+  agentSlug: 'your-agent-slug',
   
   panel: {
     position: 'right',

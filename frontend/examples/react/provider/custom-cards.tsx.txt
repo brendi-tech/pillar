@@ -1,7 +1,7 @@
 import { InviteMembersCard } from './cards/InviteMembersCard';
 
 <PillarProvider
-  productKey="your-product-key"
+  agentSlug="your-agent-slug"
   cards={{
     invite_members: InviteMembersCard,
   }}

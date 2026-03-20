@@ -45,6 +45,8 @@ class ChatConversationFilter(FilterSet):
     )
     search = django_filters.CharFilter(method='filter_search')
     product = django_filters.UUIDFilter(field_name='product_id')
+    channel = django_filters.CharFilter(field_name='channel')
+    agent = django_filters.UUIDFilter(field_name='agent_id')
     query_type = django_filters.CharFilter(field_name='query_type')
     intent_category = django_filters.CharFilter(field_name='intent_category')
 
@@ -52,7 +54,7 @@ class ChatConversationFilter(FilterSet):
         model = ChatConversation
         fields = [
             'status', 'started_at_gte', 'started_at_lte', 'has_negative_feedback',
-            'search', 'product', 'query_type', 'intent_category',
+            'search', 'product', 'channel', 'agent', 'query_type', 'intent_category',
         ]
     
     def filter_negative_feedback(self, queryset, name, value):
@@ -135,7 +137,7 @@ class ChatConversationViewSet(viewsets.ReadOnlyModelViewSet):
         """
         queryset = ChatConversation.objects.filter(
             organization__in=self.request.user.organizations.all()
-        ).select_related('visitor')
+        ).select_related('visitor', 'agent')
         
         if self.action == 'list':
             # Annotate with message count for list view

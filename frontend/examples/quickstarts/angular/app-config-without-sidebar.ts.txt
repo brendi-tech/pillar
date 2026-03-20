@@ -6,7 +6,7 @@ import { environment } from '../environments/environment';
 function initPillar() {
   const pillarService = inject(PillarService);
   return () => pillarService.init({
-    productKey: environment.pillarProductKey,
+    agentSlug: environment.pillarAgentSlug,
     config: {
       edgeTrigger: { enabled: false },
       mobileTrigger: { enabled: false },

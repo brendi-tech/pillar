@@ -8,8 +8,30 @@ import type {
   ConversationStatus,
 } from "@/types/admin";
 import { format } from "date-fns";
-import { ChevronRight, MessageSquare, ThumbsDown } from "lucide-react";
+import {
+  ChevronRight,
+  Globe,
+  Hash,
+  Mail,
+  MessageSquare,
+  Terminal,
+  ThumbsDown,
+} from "lucide-react";
 import { useEffect, useRef } from "react";
+
+const CHANNEL_ICON_MAP: Record<string, React.ElementType> = {
+  web: Globe,
+  slack: MessageSquare,
+  discord: Hash,
+  email: Mail,
+  api: Terminal,
+};
+
+function ChannelIcon({ channel }: { channel: string }) {
+  const Icon = CHANNEL_ICON_MAP[channel];
+  if (!Icon) return null;
+  return <Icon className="h-3 w-3" />;
+}
 
 export interface ConversationCardListProps {
   conversations: ChatConversationListItem[];
@@ -65,12 +87,20 @@ function ConversationCard({
         <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+        {conversation.channel && (
+          <ChannelIcon channel={conversation.channel} />
+        )}
         <Badge
           variant={getStatusBadgeVariant(conversation.status)}
           className="text-xs"
         >
           {getStatusLabel(conversation.status)}
         </Badge>
+        {conversation.agent_name && (
+          <Badge variant="outline" className="text-[10px]">
+            {conversation.agent_name}
+          </Badge>
+        )}
         <span className="inline-flex items-center gap-1">
           <MessageSquare className="h-3 w-3" />
           {conversation.message_count}

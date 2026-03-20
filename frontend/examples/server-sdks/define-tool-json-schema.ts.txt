@@ -1,0 +1,22 @@
+import { defineTool } from '@pillar-ai/server';
+
+const inviteMember = defineTool({
+  name: 'invite_member',
+  description: 'Invite a new member to the workspace',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      email: { type: 'string', description: 'Email of the person to invite' },
+      role: {
+        type: 'string',
+        enum: ['admin', 'member', 'viewer'],
+        description: 'Role to assign',
+      },
+    },
+    required: ['email', 'role'],
+  },
+  execute: async ({ email, role }: { email: string; role: string }, ctx) => {
+    const invite = await workspace.invite(email, role);
+    return { inviteId: invite.id, status: 'sent' };
+  },
+});

@@ -1,7 +1,7 @@
 import { PillarProvider } from '@pillar-ai/react';
 
 <PillarProvider
-  productKey={process.env.NEXT_PUBLIC_PILLAR_PRODUCT_KEY!}
+  agentSlug={process.env.NEXT_PUBLIC_PILLAR_AGENT_SLUG!}
 >
   {children}
 </PillarProvider>

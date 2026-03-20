@@ -33,6 +33,10 @@ export type DeploymentPlatform = 'web' | 'ios' | 'android' | 'desktop';
  */
 export type ImplementationStatus = 'unknown' | 'verified' | 'failing' | 'stale';
 
+export type ToolExecutionType = 'client_side' | 'server_side';
+
+export type Channel = 'web' | 'slack' | 'discord' | 'email' | 'api';
+
 /**
  * Main Action interface - matches backend serializer output.
  * 
@@ -53,6 +57,8 @@ export interface Action {
   
   // Type & Config
   action_type: ActionType;
+  tool_type: ToolExecutionType;
+  channel_compatibility: Channel[];
   path_template?: string;  // For navigate type
   external_url?: string;   // For external_link type
   

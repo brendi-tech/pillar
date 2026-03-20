@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 
 RELEVANCE_THRESHOLD = 0.20
 
-BUILTIN_ACTIONS = {
+BUILTIN_TOOLS = {
     "interact_with_page": {
         "name": "interact_with_page",
         "description": "Interact with elements on the user's current page",
@@ -66,6 +66,7 @@ BUILTIN_ACTIONS = {
         "returns_data": False,
     }
 }
+BUILTIN_ACTIONS = BUILTIN_TOOLS
 
 
 async def execute_search(
@@ -106,12 +107,12 @@ async def execute_search(
     knowledge = results.get("knowledge", [])
 
     if actions:
-        agent_context.add_action_results(actions, query)
-        agent_context.register_actions_as_tools(actions)
-        logger.info(f"[AgenticLoop] Registered {len(actions)} actions as native tools")
-        iter_span.add_event("actions_registered", {
+        agent_context.add_tool_results(actions, query)
+        agent_context.register_tools(actions)
+        logger.info(f"[AgenticLoop] Registered {len(actions)} tools from search")
+        iter_span.add_event("tools_registered", {
             "source": "search",
-            "action_names": json.dumps([a.get("name", "unknown") for a in actions]),
+            "tool_names": json.dumps([a.get("name", "unknown") for a in actions]),
             "count": len(actions),
         })
     if knowledge:
@@ -170,14 +171,14 @@ async def execute_search(
 
     result_content = format_search_result_content(
         query=query,
-        actions=actions,
+        tools=actions,
         knowledge=knowledge,
     )
     messages.append(format_tool_result_message_native(
         tool_call_id=tool_call_id,
         result_content=result_content,
     ))
-    logger.info(f"[AgenticLoop] search -> OK: {len(actions)} actions, {len(knowledge)} knowledge items")
+    logger.info(f"[AgenticLoop] search -> OK: {len(actions)} tools, {len(knowledge)} knowledge items")
 
     yield emit_search_complete(
         search_id,
@@ -456,7 +457,7 @@ async def execute_client_action(
     })
 
     result_content = format_execute_result_content(
-        action_name=action_name,
+        tool_name=action_name,
         success=is_success,
         result=result_data if is_success else None,
         error=error_msg if not is_success else None,
@@ -473,6 +474,284 @@ async def execute_client_action(
         result_summary=result_summary,
         arguments=parameters,
     )
+
+
+async def execute_server_tool(
+    *,
+    messages: list[dict],
+    service: Any,
+    session_id: str,
+    display_trace: list[dict],
+    iteration: int,
+    start_time_ms: int,
+    cancel_event: Any,
+    conversation_id: str | None,
+    tracer: Any,
+    tool_call_id: str,
+    tool_name: str,
+    arguments: dict,
+    tool_config: dict,
+    caller: Any,
+) -> AsyncGenerator[dict, None]:
+    """Execute a server-side tool via HTTP POST to the customer's endpoint."""
+    from apps.tools.services.dispatch import get_tool_endpoint, post_tool_call
+
+    tool_event = emit_tool_call_start(tool_name, arguments)
+    tool_id = tool_event["data"]["id"]
+    yield tool_event
+
+    _span = tracer.start_span(
+        "server_tool.round_trip",
+        attributes={"server_tool.name": tool_name, "server_tool.call_id": tool_call_id},
+    )
+
+    endpoint = await get_tool_endpoint(str(service.help_center_config.id))
+    sdk_version = getattr(endpoint, "sdk_version", "") if endpoint else ""
+    if sdk_version:
+        _span.set_attribute("server_tool.sdk_version", sdk_version)
+
+    if not endpoint:
+        _span.set_status(StatusCode.ERROR, "No endpoint registered")
+        _span.end()
+
+        error_msg = (
+            f"Tool '{tool_name}' requires a server-side endpoint, "
+            f"but no endpoint is registered."
+        )
+        messages.append(format_tool_result_message_native(
+            tool_call_id=tool_call_id,
+            result_content=error_msg,
+        ))
+
+        display_name = format_tool_name_for_display(tool_name)
+        display_trace.append({
+            "step_type": "tool_result",
+            "iteration": iteration,
+            "timestamp_ms": int(time.time() * 1000) - start_time_ms,
+            "tool": tool_name,
+            "kind": "tool_call",
+            "label": f"Failed {display_name}",
+            "text": "No endpoint registered",
+            "arguments": arguments,
+            "success": False,
+            "error": "No endpoint registered",
+        })
+
+        logger.warning(
+            "[AgenticLoop] %s -> ERROR: No endpoint registered for product %s",
+            tool_name, service.help_center_config.id,
+        )
+
+        yield emit_tool_call_complete(
+            tool_id, tool_name, success=False,
+            result_summary="No endpoint registered",
+            arguments=arguments,
+        )
+        return
+
+    timeout = tool_config.get("timeout_ms", 30000) / 1000
+
+    call_start = time.time()
+    result = await post_tool_call(
+        endpoint_url=endpoint.endpoint_url,
+        call_id=tool_call_id,
+        tool_name=tool_name,
+        arguments=arguments,
+        caller=caller,
+        timeout=timeout,
+        conversation_id=conversation_id,
+        product=service.help_center_config,
+    )
+    call_duration_ms = int((time.time() - call_start) * 1000)
+    _span.set_attribute("server_tool.duration_ms", call_duration_ms)
+
+    display_name = format_tool_name_for_display(tool_name)
+
+    if result.get("timed_out"):
+        _span.set_status(StatusCode.ERROR, "Timeout")
+        _span.end()
+
+        messages.append(format_tool_result_message_native(
+            tool_call_id=tool_call_id,
+            result_content=f"Tool '{tool_name}' timed out after {timeout}s.",
+        ))
+        display_trace.append({
+            "step_type": "tool_result",
+            "iteration": iteration,
+            "timestamp_ms": int(time.time() * 1000) - start_time_ms,
+            "tool": tool_name,
+            "kind": "tool_call",
+            "label": f"Failed {display_name}",
+            "text": f"Timed out after {timeout}s",
+            "arguments": arguments,
+            "success": False,
+            "error": "Timeout",
+        })
+
+        logger.warning(
+            "[AgenticLoop] server_tool %s -> TIMEOUT after %ss",
+            tool_name, timeout,
+        )
+
+        yield emit_tool_call_complete(
+            tool_id, tool_name, success=False,
+            result_summary="Timeout",
+            arguments=arguments,
+        )
+
+    elif result.get("connection_error"):
+        _span.set_status(StatusCode.ERROR, "Endpoint unreachable")
+        _span.end()
+
+        messages.append(format_tool_result_message_native(
+            tool_call_id=tool_call_id,
+            result_content=(
+                f"Tool '{tool_name}' endpoint is unreachable. "
+                f"The server may be offline."
+            ),
+        ))
+        display_trace.append({
+            "step_type": "tool_result",
+            "iteration": iteration,
+            "timestamp_ms": int(time.time() * 1000) - start_time_ms,
+            "tool": tool_name,
+            "kind": "tool_call",
+            "label": f"Failed {display_name}",
+            "text": "Endpoint unreachable",
+            "arguments": arguments,
+            "success": False,
+            "error": "Endpoint unreachable",
+        })
+
+        logger.warning(
+            "[AgenticLoop] server_tool %s -> ERROR: Endpoint unreachable",
+            tool_name,
+        )
+
+        yield emit_tool_call_complete(
+            tool_id, tool_name, success=False,
+            result_summary="Endpoint unreachable",
+            arguments=arguments,
+        )
+
+    elif result.get("server_error"):
+        error_msg = result.get("error", "Unknown server error")
+        _span.set_status(StatusCode.ERROR, f"Server error: {error_msg}")
+        _span.end()
+
+        messages.append(format_tool_result_message_native(
+            tool_call_id=tool_call_id,
+            result_content=f"Tool '{tool_name}' failed: {error_msg}",
+        ))
+        display_trace.append({
+            "step_type": "tool_result",
+            "iteration": iteration,
+            "timestamp_ms": int(time.time() * 1000) - start_time_ms,
+            "tool": tool_name,
+            "kind": "tool_call",
+            "label": f"Failed {display_name}",
+            "text": error_msg,
+            "arguments": arguments,
+            "success": False,
+            "error": error_msg,
+        })
+
+        logger.warning(
+            "[AgenticLoop] server_tool %s -> SERVER_ERROR (%dms): %s",
+            tool_name, call_duration_ms, error_msg,
+        )
+
+        yield emit_tool_call_complete(
+            tool_id, tool_name, success=False,
+            result_summary=error_msg,
+            arguments=arguments,
+        )
+
+    else:
+        _span.end()
+
+        raw_result = result.get("result")
+        is_confirmation = (
+            isinstance(raw_result, dict)
+            and raw_result.get("confirmation_required") is True
+        )
+
+        if is_confirmation:
+            confirm_title = raw_result.get("title") or tool_name
+            confirm_message = (
+                raw_result.get("message")
+                or raw_result.get("summary")
+                or f"Confirm {tool_name}?"
+            )
+            confirm_details = raw_result.get("details")
+            confirm_payload = raw_result.get("confirm_payload", arguments)
+
+            logger.info(
+                "[AgenticLoop] server_tool %s returned confirmation_required (%dms): %s",
+                tool_name, call_duration_ms, confirm_message,
+            )
+
+            display_trace.append({
+                "step_type": "confirmation_request",
+                "iteration": iteration,
+                "timestamp_ms": int(time.time() * 1000) - start_time_ms,
+                "tool": tool_name,
+                "message": confirm_message,
+            })
+
+            yield emit_tool_call_complete(
+                tool_id, tool_name, success=True,
+                result_summary=f"Confirmation required: {confirm_message}",
+                arguments=arguments,
+            )
+
+            yield {
+                "type": "confirmation_request",
+                "tool_name": tool_name,
+                "call_id": tool_call_id,
+                "title": confirm_title,
+                "message": confirm_message,
+                "details": confirm_details,
+                "confirm_payload": confirm_payload,
+                "conversation_id": conversation_id,
+            }
+            return
+
+        is_success = result.get("success", True)
+        result_content = raw_result if raw_result is not None else result.get("error", "")
+        if not isinstance(result_content, str):
+            result_content = json.dumps(result_content, default=str)
+
+        messages.append(format_tool_result_message_native(
+            tool_call_id=tool_call_id,
+            result_content=result_content,
+        ))
+
+        label = f"Completed {display_name}" if is_success else f"Failed {display_name}"
+        display_trace.append({
+            "step_type": "tool_result",
+            "iteration": iteration,
+            "timestamp_ms": int(time.time() * 1000) - start_time_ms,
+            "tool": tool_name,
+            "kind": "tool_call",
+            "label": label,
+            "text": result_content[:500],
+            "arguments": arguments,
+            "success": is_success,
+        })
+
+        logger.info(
+            "[AgenticLoop] server_tool %s -> %s (%dms): %s",
+            tool_name, "OK" if is_success else "ERROR",
+            call_duration_ms, result_content[:300],
+        )
+
+        yield emit_tool_call_complete(
+            tool_id, tool_name,
+            success=is_success,
+            result_summary=result_content[:500],
+            arguments=arguments,
+        )
 
 
 def resolve_execute_action(
@@ -505,9 +784,9 @@ def resolve_execute_action(
         ))
         return None
 
-    action = BUILTIN_ACTIONS.get(action_name)
+    action = BUILTIN_TOOLS.get(action_name)
     if not action:
-        action = agent_context.get_action_by_name(action_name)
+        action = agent_context.get_tool_by_name(action_name)
 
     if action and action.get("data_schema"):
         validation_result = validate_query_params(parameters, action["data_schema"])

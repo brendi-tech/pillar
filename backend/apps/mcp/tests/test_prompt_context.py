@@ -256,10 +256,10 @@ class TestBuildCapabilitiesSummary:
                 result = await build_capabilities_summary(mock_product)
                 
                 assert "<<available_capabilities>>" in result
-                assert "<navigation_actions>open_settings, go_to_billing</navigation_actions>" in result
-                assert "<trigger_actions>invite_user</trigger_actions>" in result
-                assert "<query_actions>list_orders</query_actions>" in result
-                assert "<total_actions>4</total_actions>" in result
+                assert "<navigation_tools>open_settings, go_to_billing</navigation_tools>" in result
+                assert "<trigger_tools>invite_user</trigger_tools>" in result
+                assert "<query_tools>list_orders</query_tools>" in result
+                assert "<total_tools>4</total_tools>" in result
     
     @pytest.mark.asyncio
     async def test_notes_restricted_actions(self):
@@ -282,7 +282,7 @@ class TestBuildCapabilitiesSummary:
                 
                 result = await build_capabilities_summary(mock_product)
                 
-                assert "<note>1 actions require specific user roles/contexts</note>" in result
+                assert "<note>1 tools require specific user roles/contexts</note>" in result
 
 
 class TestInvalidateCapabilitiesCache:

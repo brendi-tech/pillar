@@ -4,7 +4,7 @@ Tests for multi-turn conversation history persistence and loading.
 Covers:
 - _build_state_checkpoint: building checkpoint events for flush
 - _load_conversation_history: loading and replaying messages from DB
-  (including new dict format {messages, registered_actions} and legacy list format)
+  (including new dict format {messages, registered_tools} and legacy list format)
 """
 import json
 import pytest
@@ -67,10 +67,10 @@ def _tool_result(tool_call_id, content):
     }
 
 
-def _mock_agent_context(registered_actions=None, total_prompt=100, total_completion=50, peak_pct=0.25):
+def _mock_agent_context(registered_tools=None, total_prompt=100, total_completion=50, peak_pct=0.25):
     """Create a mock AgentContext for checkpoint tests."""
     ctx = MagicMock()
-    ctx.registered_actions = registered_actions or []
+    ctx.registered_tools = registered_tools or []
     ctx.token_budget = MagicMock()
     ctx.token_budget.total_prompt_tokens = total_prompt
     ctx.token_budget.total_completion_tokens = total_completion
@@ -110,13 +110,13 @@ class TestBuildStateCheckpoint:
 
         assert checkpoint["display_trace"] == trace
 
-    def test_includes_registered_actions(self):
-        """Checkpoint includes registered actions from context."""
+    def test_includes_registered_tools(self):
+        """Checkpoint includes registered tools from context."""
         actions = [{"name": "open_settings"}]
-        ctx = _mock_agent_context(registered_actions=actions)
+        ctx = _mock_agent_context(registered_tools=actions)
         checkpoint = _build_state_checkpoint([], 0, [], ctx, "gpt-4")
 
-        assert checkpoint["registered_actions"] == actions
+        assert checkpoint["registered_tools"] == actions
 
     def test_includes_token_metrics(self):
         """Checkpoint includes token usage and model info."""
@@ -131,7 +131,7 @@ class TestBuildStateCheckpoint:
     def test_handles_no_token_budget(self):
         """Checkpoint handles missing token budget gracefully."""
         ctx = MagicMock()
-        ctx.registered_actions = []
+        ctx.registered_tools = []
         ctx.token_budget = None
         checkpoint = _build_state_checkpoint([], 0, [], ctx, "gpt-4")
 
@@ -172,7 +172,7 @@ class TestBuildStateCheckpoint:
             {"step_type": "tool_result", "tool": "get_article"},
         ]
         ctx = _mock_agent_context(
-            registered_actions=[{"name": "create_chart"}],
+            registered_tools=[{"name": "create_chart"}],
             total_prompt=1200,
             total_completion=400,
             peak_pct=0.67,
@@ -183,7 +183,7 @@ class TestBuildStateCheckpoint:
         assert checkpoint["llm_messages"][0]["role"] == "assistant"
         assert checkpoint["llm_messages"][-1]["role"] == "assistant"
         assert len(checkpoint["display_trace"]) == 5
-        assert checkpoint["registered_actions"] == [{"name": "create_chart"}]
+        assert checkpoint["registered_tools"] == [{"name": "create_chart"}]
         assert checkpoint["model_used"] == "claude-4"
         assert checkpoint["prompt_tokens"] == 1200
         assert checkpoint["completion_tokens"] == 400
@@ -233,7 +233,7 @@ class TestLoadConversationHistory:
 
     @pytest.mark.asyncio
     async def test_loads_new_dict_format(self):
-        """New dict format {messages: [...], registered_actions: [...]} is loaded correctly."""
+        """New dict format {messages: [...], registered_tools: [...]} is loaded correctly."""
         turn_messages = [
             _assistant_tool_call("search", {"query": "names"}, "tc_001"),
             _tool_result("tc_001", "Found results"),
@@ -241,7 +241,7 @@ class TestLoadConversationHistory:
         ]
         llm_data = {
             "messages": turn_messages,
-            "registered_actions": [{"name": "open_settings"}],
+            "registered_tools": [{"name": "open_settings"}],
         }
         assistant_msg = self._make_mock_message("assistant", "Here are the results.", llm_message=llm_data)
 
@@ -336,7 +336,7 @@ class TestLoadConversationHistory:
     @pytest.mark.asyncio
     async def test_dict_format_with_empty_messages_list(self):
         """Dict format with empty messages list falls back to plain content."""
-        llm_data = {"messages": [], "registered_actions": []}
+        llm_data = {"messages": [], "registered_tools": []}
         assistant_msg = self._make_mock_message(
             "assistant", "Hello from assistant", llm_message=llm_data
         )
@@ -385,7 +385,7 @@ class TestLoadConversationHistory:
         ]
         assistant1 = self._make_mock_message(
             "assistant", "First answer",
-            llm_message={"messages": assistant1_msgs, "registered_actions": []},
+            llm_message={"messages": assistant1_msgs, "registered_tools": []},
         )
         user2 = self._make_mock_message("user", "Follow up question")
         assistant2_msgs = [
@@ -395,7 +395,7 @@ class TestLoadConversationHistory:
         ]
         assistant2 = self._make_mock_message(
             "assistant", "Here you go.",
-            llm_message={"messages": assistant2_msgs, "registered_actions": [{"name": "chart"}]},
+            llm_message={"messages": assistant2_msgs, "registered_tools": [{"name": "chart"}]},
         )
 
         with patch("apps.analytics.models.ChatMessage") as MockChatMessage:

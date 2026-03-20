@@ -50,27 +50,54 @@ class CustomerIdMiddleware:
         customer_id = None
         customer_organization = None
         product = None
+        agent = None
 
-        # Try x-customer-id header first
-        customer_id_header = request.headers.get('x-customer-id')
-        if customer_id_header:
-            result = await self._resolve_from_header(customer_id_header)
+        agent_slug = request.headers.get('x-agent-slug')
+        if agent_slug:
+            result = await self._resolve_from_agent_slug(agent_slug)
             if result:
-                customer_id, customer_organization, product = result
+                customer_id, customer_organization, product, agent = result
 
-        # If not found via header, try subdomain resolution
         if not customer_organization:
-            host = request.get_host().split(':')[0]  # Remove port
+            customer_id_header = request.headers.get('x-customer-id')
+            if customer_id_header:
+                result = await self._resolve_from_header(customer_id_header)
+                if result:
+                    customer_id, customer_organization, product = result
+
+        if not customer_organization:
+            host = request.get_host().split(':')[0]
             result = await self._resolve_from_subdomain(host)
             if result:
                 customer_id, customer_organization, product = result
 
-        # Set on request for use in views
         request.customer_id = customer_id
         request.customer_organization = customer_organization
         request.product = product
+        request.agent = agent
 
         return None
+
+    async def _resolve_from_agent_slug(self, slug: str):
+        """
+        Resolve agent, product, and organization from an agent slug.
+
+        Returns tuple of (customer_id, organization, product, agent) or None.
+        """
+        from apps.products.models.agent import Agent
+
+        try:
+            agent = await (
+                Agent.objects.select_related('product__organization')
+                .aget(slug=slug, is_active=True)
+            )
+            product = agent.product
+            organization = product.organization
+            logger.debug(f"Resolved agent slug '{slug}' -> agent {agent.id}, org {organization.id}")
+            return str(organization.id), organization, product, agent
+        except Agent.DoesNotExist:
+            logger.warning(f"No active agent found for slug: {slug}")
+            return None
 
     async def _resolve_from_header(self, customer_id_header: str):
         """

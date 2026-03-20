@@ -334,14 +334,13 @@ def superset_product():
     except Product.DoesNotExist:
         pass
 
-    # Create test organization and product for CI
     # Use filter().first() to handle race conditions with parallel xdist workers
     # that may create duplicate orgs before unique constraints catch them.
     org = Organization.objects.filter(name="Test Organization").first()
     if not org:
-        org, _ = Organization.objects.get_or_create(
+        org = Organization.objects.create(
             name="Test Organization",
-            defaults={"domain": "test-org.example.com"}
+            domain="test-org.example.com",
         )
 
     product, created = Product.objects.get_or_create(

@@ -7,7 +7,7 @@ function initPillar() {
   const pillarService = inject(PillarService);
   return () =>
     pillarService.init({
-      productKey: environment.pillarProductKey,
+      agentSlug: environment.pillarAgentSlug,
       config: {
         sidebarTabs: [
           { id: 'assistant', label: 'Co-pilot', icon: 'sparkle' },

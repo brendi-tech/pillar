@@ -1,8 +1,8 @@
 /**
  * Global store for the Invite Members Modal.
  *
- * Uses the same event-based pattern as ApiKeysModal / ThemeSelectorModal
- * to allow opening from anywhere (including non-React tool handlers).
+ * Uses the same event-based pattern as ApiKeysModal to allow opening
+ * from anywhere (including non-React tool handlers).
  */
 
 import { useEffect, useState } from "react";

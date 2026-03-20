@@ -61,7 +61,7 @@ export function QuickStartSection() {
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2 text-sm font-medium">
               <Key className="h-4 w-4 text-muted-foreground" />
-              Product Key
+              Agent Slug
             </div>
             <Button
               variant="ghost"
@@ -86,7 +86,7 @@ export function QuickStartSection() {
             {helpCenterSlug}
           </code>
           <p className="text-xs text-muted-foreground mt-2">
-            Use this as the <code className="bg-muted px-1 rounded">productKey</code> when initializing the SDK.
+            Use this as the <code className="bg-muted px-1 rounded">agentSlug</code> when initializing the SDK.
           </p>
         </div>
 

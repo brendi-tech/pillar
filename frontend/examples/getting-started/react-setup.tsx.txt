@@ -6,7 +6,7 @@ export default function RootLayout({ children }) {
     <html>
       <body>
         <PillarProvider
-          productKey="your-product-key"
+          agentSlug="your-agent-slug"
         >
           {children} {/* Your app content */}
         </PillarProvider>

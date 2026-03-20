@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-10T23:36:18.084Z",
+  "generatedAt": "2026-03-18T23:55:02.987Z",
   "pages": [
     {
       "slug": "react/PillarProvider",
@@ -40,7 +40,8 @@
           "name": "cards",
           "type": "Record<string, CardComponent>",
           "required": false,
-          "description": "Custom card components to render for inline_ui type actions.\nMap card type names to React components that will render the inline UI."
+          "description": "Custom card components to render for inline_ui type actions.\nMap card type names to React components that will render the inline UI.",
+          "deprecated": true
         },
         {
           "name": "domScanning",
@@ -190,7 +191,7 @@
       "title": "usePillarTool()",
       "category": "hook",
       "package": "@pillar-ai/react",
-      "description": "Register one or more Pillar tools with co-located metadata and handlers.\n\nThe tools are registered when the component mounts and automatically\nunregistered when it unmounts. The `execute` functions always capture\nthe latest React state and props via refs, so you don't need to worry\nabout stale closures.",
+      "description": "Register one or more Pillar tools with co-located metadata and handlers.\n\nThe tools are registered when the component mounts and automatically\nunregistered when it unmounts. The `execute` functions always capture\nthe latest React state and props via refs, so you don't need to worry\nabout stale closures.\n\n- `inline_ui` tools register a card renderer from the `render` prop.\n- All other tools register the `execute` handler.",
       "sourceFile": "packages/sdk-react/src/hooks/usePillarTool.ts",
       "signature": "function usePillarTool(): void",
       "importStatement": "import { usePillarTool } from '@pillar-ai/react'",
@@ -275,7 +276,8 @@
           "name": "cards",
           "type": "Record<string, CardComponent>",
           "required": false,
-          "description": "Custom card components to render for inline_ui type actions.\nMap card type names to Vue components that will render the inline UI."
+          "description": "Custom card components to render for inline_ui type actions.\nMap card type names to Vue components that will render the inline UI.",
+          "deprecated": true
         }
       ],
       "examples": [],
@@ -410,7 +412,7 @@
       "title": "usePillarTool()",
       "category": "composable",
       "package": "@pillar-ai/vue",
-      "description": "Register one or more Pillar tools with co-located metadata and handlers.\n\nThe tools are registered when the component mounts and automatically\nunregistered when it unmounts. The `execute` functions always capture\nthe latest Vue reactive state via refs, so you don't need to worry\nabout stale closures.",
+      "description": "Register one or more Pillar tools with co-located metadata and handlers.\n\nThe tools are registered when the component mounts and automatically\nunregistered when it unmounts. The `execute` functions always capture\nthe latest Vue reactive state via refs, so you don't need to worry\nabout stale closures.\n\n- `inline_ui` tools register a card renderer from the `render` prop.\n- All other tools register the `execute` handler.",
       "sourceFile": "packages/sdk-vue/src/composables/usePillarTool.ts",
       "signature": "function usePillarTool(): void",
       "importStatement": "import { usePillarTool } from '@pillar-ai/vue'",
@@ -532,7 +534,7 @@
       "title": "injectPillarTool()",
       "category": "inject-function",
       "package": "@pillar-ai/angular",
-      "description": "Register one or more Pillar tools with co-located metadata and handlers.\n\nThe tools are registered when this function is called and automatically\nunregistered when the component is destroyed. Must be called within\nan injection context (constructor, field initializer, or inject()).",
+      "description": "Register one or more Pillar tools with co-located metadata and handlers.\n\nThe tools are registered when this function is called and automatically\nunregistered when the component is destroyed. Must be called within\nan injection context (constructor, field initializer, or inject()).\n\n- `inline_ui` tools register a card renderer from the `render` prop.\n- All other tools register the `execute` handler.",
       "sourceFile": "packages/sdk-angular/src/lib/inject-pillar-tool.ts",
       "signature": "function injectPillarTool(): void",
       "importStatement": "import { injectPillarTool } from '@pillar-ai/angular'",
@@ -1831,7 +1833,7 @@
           "name": "assistantDisplayName",
           "type": "string",
           "required": false,
-          "default": "'Assistant'",
+          "default": "'Copilot'",
           "description": "Display name for the assistant shown in the sidebar tab."
         },
         {
@@ -1968,7 +1970,7 @@
           "description": "Called when the SDK encounters an error."
         }
       ],
-      "typeDefinition": "interface PillarConfig {\n  /**\n   * Your product key from the Pillar app.\n   * Get it at app.trypillar.com\n   */\n  productKey?: string;\n  \n  /**\n   * Display name for the assistant shown in the sidebar tab.\n   * @default 'Assistant'\n   */\n  assistantDisplayName?: string;\n  \n  /**\n   * Placeholder text shown in the chat input field.\n   * @default 'Ask anything...'\n   */\n  inputPlaceholder?: string;\n  \n  /**\n   * Welcome message shown in the home view.\n   * @default 'Hi! How can I help you today?'\n   */\n  welcomeMessage?: string;\n  \n  /**\n   * Platform identifier for code-first actions.\n   * Used to filter actions by deployment platform.\n   * @default 'web'\n   */\n  platform?: Platform;\n  \n  /**\n   * App version for code-first actions.\n   * Used to match actions to the correct deployment version.\n   * @example '1.2.3' or git commit SHA\n   */\n  version?: string;\n  \n  /**\n   * Enable debug mode for verbose logging and debug panel.\n   * When enabled:\n   * - All SDK events are logged to console\n   * - A debug panel shows real-time execution flow\n   * - Network requests/responses are captured\n   * @default false\n   */\n  debug?: boolean;\n  \n  /** Panel layout and behavior settings. */\n  panel?: PanelConfig;\n  \n  /** Edge trigger (sidebar tab that opens the panel). */\n  edgeTrigger?: EdgeTriggerConfig;\n  \n  /** Mobile trigger (floating button on small screens). */\n  mobileTrigger?: MobileTriggerConfig;\n  \n  /** URL params for auto-opening the panel. */\n  urlParams?: UrlParamsConfig;\n  \n  /** Text selection \"Ask AI\" popover. */\n  textSelection?: TextSelectionConfig;\n  \n  /**\n   * DOM scanning for page context.\n   * @internal DOM scanning is currently disabled.\n   * @deprecated This feature is not available.\n   */\n  domScanning?: DOMScanningConfig;\n  \n  /** Page-aware suggestions. */\n  suggestions?: SuggestionsConfig;\n  \n  /** Sidebar tabs configuration. */\n  sidebarTabs?: SidebarTabConfig[];\n  \n  /** API base URL. Defaults to Pillar's production API. */\n  apiBaseUrl?: string;\n  \n  /**\n   * Enable OpenTelemetry tracing. Browser spans are exported to the server's\n   * Cloud Trace project via the OTLP proxy endpoint. Also enabled when debug\n   * is true.\n   * @default false\n   */\n  tracing?: boolean;\n  \n  /** Theme customization. */\n  theme?: ThemeConfig;\n  \n  /** \n   * Custom CSS to inject into the panel's Shadow DOM.\n   * Use public class names (pillar-*) to override default styles.\n   * @example\n   * ```css\n   * .pillar-header { padding: 24px; }\n   * .pillar-message-user { border-radius: 8px; }\n   * ```\n   */\n  customCSS?: string;\n  \n  /**\n   * Z-index configuration for the SDK root container.\n   * Controls stacking order relative to host app content.\n   */\n  zIndex?: ZIndexConfig;\n  \n  /**\n   * Route prefixes where the SDK UI is hidden.\n   * When the current pathname matches any entry (exact match or starts with\n   * the entry followed by `/`), the panel, edge trigger, mobile trigger,\n   * and text selection popover are all hidden. UI is restored when the user\n   * navigates to a non-excluded route.\n   *\n   * Pass an empty array to show the SDK on every route.\n   * @default ['/login', '/signup']\n   * @example ['/login', '/signup', '/onboarding']\n   */\n  excludeRoutes?: string[];\n  \n  /** Called when the SDK is initialized and ready. */\n  onReady?: () => void;\n  /** Called when the SDK encounters an error. */\n  onError?: (error: Error) => void;\n}",
+      "typeDefinition": "interface PillarConfig {\n  /**\n   * Your product key from the Pillar app.\n   * Get it at app.trypillar.com\n   */\n  productKey?: string;\n  \n  /**\n   * Display name for the assistant shown in the sidebar tab.\n   * @default 'Copilot'\n   */\n  assistantDisplayName?: string;\n  \n  /**\n   * Placeholder text shown in the chat input field.\n   * @default 'Ask anything...'\n   */\n  inputPlaceholder?: string;\n  \n  /**\n   * Welcome message shown in the home view.\n   * @default 'Hi! How can I help you today?'\n   */\n  welcomeMessage?: string;\n  \n  /**\n   * Platform identifier for code-first actions.\n   * Used to filter actions by deployment platform.\n   * @default 'web'\n   */\n  platform?: Platform;\n  \n  /**\n   * App version for code-first actions.\n   * Used to match actions to the correct deployment version.\n   * @example '1.2.3' or git commit SHA\n   */\n  version?: string;\n  \n  /**\n   * Enable debug mode for verbose logging and debug panel.\n   * When enabled:\n   * - All SDK events are logged to console\n   * - A debug panel shows real-time execution flow\n   * - Network requests/responses are captured\n   * @default false\n   */\n  debug?: boolean;\n  \n  /** Panel layout and behavior settings. */\n  panel?: PanelConfig;\n  \n  /** Edge trigger (sidebar tab that opens the panel). */\n  edgeTrigger?: EdgeTriggerConfig;\n  \n  /** Mobile trigger (floating button on small screens). */\n  mobileTrigger?: MobileTriggerConfig;\n  \n  /** URL params for auto-opening the panel. */\n  urlParams?: UrlParamsConfig;\n  \n  /** Text selection \"Ask AI\" popover. */\n  textSelection?: TextSelectionConfig;\n  \n  /**\n   * DOM scanning for page context.\n   * @internal DOM scanning is currently disabled.\n   * @deprecated This feature is not available.\n   */\n  domScanning?: DOMScanningConfig;\n  \n  /** Page-aware suggestions. */\n  suggestions?: SuggestionsConfig;\n  \n  /** Sidebar tabs configuration. */\n  sidebarTabs?: SidebarTabConfig[];\n  \n  /** API base URL. Defaults to Pillar's production API. */\n  apiBaseUrl?: string;\n  \n  /**\n   * Enable OpenTelemetry tracing. Browser spans are exported to the server's\n   * Cloud Trace project via the OTLP proxy endpoint. Also enabled when debug\n   * is true.\n   * @default false\n   */\n  tracing?: boolean;\n  \n  /** Theme customization. */\n  theme?: ThemeConfig;\n  \n  /** \n   * Custom CSS to inject into the panel's Shadow DOM.\n   * Use public class names (pillar-*) to override default styles.\n   * @example\n   * ```css\n   * .pillar-header { padding: 24px; }\n   * .pillar-message-user { border-radius: 8px; }\n   * ```\n   */\n  customCSS?: string;\n  \n  /**\n   * Z-index configuration for the SDK root container.\n   * Controls stacking order relative to host app content.\n   */\n  zIndex?: ZIndexConfig;\n  \n  /**\n   * Route prefixes where the SDK UI is hidden.\n   * When the current pathname matches any entry (exact match or starts with\n   * the entry followed by `/`), the panel, edge trigger, mobile trigger,\n   * and text selection popover are all hidden. UI is restored when the user\n   * navigates to a non-excluded route.\n   *\n   * Pass an empty array to show the SDK on every route.\n   * @default ['/login', '/signup']\n   * @example ['/login', '/signup', '/onboarding']\n   */\n  excludeRoutes?: string[];\n  \n  /** Called when the SDK is initialized and ready. */\n  onReady?: () => void;\n  /** Called when the SDK encounters an error. */\n  onError?: (error: Error) => void;\n}",
       "examples": [],
       "relatedTypes": [
         "PanelConfig",

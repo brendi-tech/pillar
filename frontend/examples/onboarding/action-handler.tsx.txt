@@ -10,7 +10,7 @@ function PillarToolsProvider({ children }) {
 
 export default function RootLayout({ children }) {
   return (
-    <PillarProvider productKey="your-product-key">
+    <PillarProvider agentSlug="your-agent-slug">
       <PillarToolsProvider>
         {children}
       </PillarToolsProvider>
