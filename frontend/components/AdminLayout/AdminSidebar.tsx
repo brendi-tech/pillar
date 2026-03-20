@@ -29,7 +29,6 @@ import {
   FileText,
   Key,
   MessageSquare,
-  Plug2,
   Rocket,
   Search,
   Sliders,
@@ -96,12 +95,6 @@ const navigationItems: NavItem[] = [
     href: "/users",
     icon: Users,
     category: "insights",
-  },
-  {
-    title: "Integrations",
-    href: "/integrations",
-    icon: Plug2,
-    category: "settings",
   },
   {
     title: "Agents",

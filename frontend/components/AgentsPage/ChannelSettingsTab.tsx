@@ -1,5 +1,7 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -11,14 +13,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { v2Fetch } from "@/lib/admin/v2/api-client";
 import type { Agent } from "@/types/agent";
+
+interface SlackInstallationStatus {
+  id: string;
+  team_name: string;
+  is_active: boolean;
+  is_byob: boolean;
+}
 
 interface ChannelSettingsTabProps {
   agent: Agent;
+  productId: string;
   onChange: (updates: Partial<Agent>) => void;
 }
 
-export function ChannelSettingsTab({ agent, onChange }: ChannelSettingsTabProps) {
+export function ChannelSettingsTab({ agent, productId, onChange }: ChannelSettingsTabProps) {
   const cc = (agent.channel_config || {}) as Record<string, unknown>;
 
   const updateConfig = (key: string, value: unknown) => {
@@ -28,7 +39,7 @@ export function ChannelSettingsTab({ agent, onChange }: ChannelSettingsTabProps)
   return (
     <div className="space-y-6">
       {agent.channel === "web" && <WebSettings config={cc} updateConfig={updateConfig} />}
-      {agent.channel === "slack" && <SlackSettings config={cc} updateConfig={updateConfig} />}
+      {agent.channel === "slack" && <SlackSettings config={cc} updateConfig={updateConfig} productId={productId} />}
       {agent.channel === "email" && <EmailSettings config={cc} updateConfig={updateConfig} />}
       {agent.channel === "api" && <ApiSettings config={cc} updateConfig={updateConfig} />}
       {!["web", "slack", "email", "api"].includes(agent.channel) && (
@@ -166,15 +177,50 @@ function WebSettings({
 function SlackSettings({
   config,
   updateConfig,
+  productId,
 }: {
   config: Record<string, unknown>;
   updateConfig: (key: string, value: unknown) => void;
+  productId: string;
 }) {
   const channelIds = (config.slack_channel_ids as string[]) || [];
   const channelIdsStr = channelIds.join(", ");
 
+  const { data: slackInstallation } = useQuery({
+    queryKey: ["slack-installation", productId],
+    queryFn: () =>
+      v2Fetch<SlackInstallationStatus | null>(
+        `/products/${productId}/integrations/slack/`
+      ).catch(() => null),
+    enabled: !!productId,
+  });
+
   return (
     <>
+      {slackInstallation?.is_active ? (
+        <div className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-3 py-2">
+          <Badge
+            variant="outline"
+            className="border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+          >
+            Connected
+          </Badge>
+          <span className="text-sm text-muted-foreground">
+            {slackInstallation.team_name}
+          </span>
+          {slackInstallation.is_byob && (
+            <Badge variant="outline" className="text-xs">
+              Custom Bot
+            </Badge>
+          )}
+        </div>
+      ) : (
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2">
+          <p className="text-sm text-amber-600 dark:text-amber-400">
+            No Slack bot connected. Create a new Slack agent to set one up.
+          </p>
+        </div>
+      )}
       <div className="space-y-2">
         <Label htmlFor="slack-channel-ids">Slack Channel IDs</Label>
         <Input

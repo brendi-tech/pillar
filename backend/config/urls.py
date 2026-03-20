@@ -54,12 +54,13 @@ from apps.mcp.views_api import HeadlessChatView, HeadlessChatStreamView
 from apps.products.views import ProductViewSet, ActionSyncView, ActionSyncStatusView, EmbedConfigView, AgentEmbedConfigView, CLIInitView, AgentViewSet
 
 # Slack admin view
-from apps.integrations.slack.views import SlackInstallationAdminView, SlackInstallAdminView, SlackBYOBAdminView
+from apps.integrations.slack.views import SlackInstallationAdminView, SlackInstallAdminView, SlackBYOBAdminView, SlackManifestAdminView
 from apps.integrations.discord.views import DiscordInstallationAdminView, DiscordInstallAdminView
 from apps.integrations.email_channel.views import EmailChannelAdminView
 _slack_admin_view = SlackInstallationAdminView.as_view()
 _slack_install_admin_view = SlackInstallAdminView.as_view()
 _slack_byob_admin_view = SlackBYOBAdminView.as_view()
+_slack_manifest_admin_view = SlackManifestAdminView.as_view()
 _discord_admin_view = DiscordInstallationAdminView.as_view()
 _discord_install_admin_view = DiscordInstallAdminView.as_view()
 _email_admin_view = EmailChannelAdminView.as_view()
@@ -193,6 +194,8 @@ urlpatterns = [
          _slack_install_admin_view, name='slack-install-admin'),
     path('api/admin/products/<uuid:product_id>/integrations/slack/byob/',
          _slack_byob_admin_view, name='slack-byob-admin'),
+    path('api/admin/products/<uuid:product_id>/integrations/slack/manifest/',
+         _slack_manifest_admin_view, name='slack-manifest-admin'),
     path('api/admin/products/<uuid:product_id>/integrations/slack/',
          _slack_admin_view, name='slack-admin'),
     path('api/admin/products/<uuid:product_id>/integrations/discord/install/',

@@ -218,7 +218,7 @@ export function AgentEditForm({ agent, productGuidance }: AgentEditFormProps) {
         </TabsContent>
 
         <TabsContent value="channel" className="mt-6">
-          <ChannelSettingsTab agent={draft} onChange={handleChange} />
+          <ChannelSettingsTab agent={draft} productId={agent.product} onChange={handleChange} />
         </TabsContent>
 
         <TabsContent value="knowledge" className="mt-6">

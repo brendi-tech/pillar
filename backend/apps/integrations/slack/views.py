@@ -23,6 +23,7 @@ from slack_sdk.signature import SignatureVerifier
 from slack_sdk.webhook import WebhookClient
 
 from apps.products.models import Product
+from apps.products.models.agent import Agent
 from common.task_router import TaskRouter
 
 from .models import SlackInstallation
@@ -101,12 +102,15 @@ def _verify_slack_request(
 
 # ── OAuth helpers ─────────────────────────────────────────────────────
 
-def _build_slack_oauth_url(product, user) -> str:
+def _build_slack_oauth_url(product, user, agent_id: str | None = None) -> str:
     """Generate a Slack OAuth authorize URL with CSRF state stored in cache."""
     state = secrets.token_urlsafe(32)
+    state_data = {"product_id": str(product.id), "user_id": str(user.id)}
+    if agent_id:
+        state_data["agent_id"] = str(agent_id)
     cache.set(
         f"slack_oauth_state:{state}",
-        {"product_id": str(product.id), "user_id": str(user.id)},
+        state_data,
         timeout=300,
     )
     return AuthorizeUrlGenerator(
@@ -187,6 +191,11 @@ class SlackCallbackView(APIView):
             logger.exception("[SLACK] OAuth token exchange failed")
             return HttpResponseBadRequest("Failed to exchange OAuth code")
 
+        agent_id = state_data.get('agent_id')
+        agent = None
+        if agent_id:
+            agent = Agent.objects.filter(id=agent_id, product=product).first()
+
         app_id = oauth_response.get('app_id', '')
         SlackInstallation.objects.update_or_create(
             team_id=oauth_response['team']['id'],
@@ -202,12 +211,14 @@ class SlackCallbackView(APIView):
                 'scopes': oauth_response.get('scope', '').split(','),
                 'is_byob': False,
                 'signing_secret': '',
+                'agent': agent,
             },
         )
 
-        dashboard_url = (
-            f"{settings.FRONTEND_URL}/integrations?slack=connected"
-        )
+        if agent_id:
+            dashboard_url = f"{settings.FRONTEND_URL}/agents/{agent_id}?slack=connected"
+        else:
+            dashboard_url = f"{settings.FRONTEND_URL}/integrations?slack=connected"
         return redirect(dashboard_url)
 
 
@@ -440,6 +451,7 @@ class SlackInstallAdminView(APIView):
     Generate a Slack OAuth URL for the dashboard.
 
     POST /api/admin/products/<id>/integrations/slack/install/
+    Body (optional): {"agent_id": "<uuid>"}
     → {"authorize_url": "https://slack.com/oauth/v2/authorize?..."}
     """
     permission_classes = [IsAuthenticated]
@@ -450,8 +462,90 @@ class SlackInstallAdminView(APIView):
             id=product_id,
             organization__in=request.user.organizations.all(),
         )
-        authorize_url = _build_slack_oauth_url(product, request.user)
+        agent_id = request.data.get('agent_id')
+        authorize_url = _build_slack_oauth_url(product, request.user, agent_id=agent_id)
         return JsonResponse({"authorize_url": authorize_url})
+
+
+# ── Manifest generation ──────────────────────────────────────────────
+
+REQUIRED_BOT_SCOPES = [
+    "app_mentions:read", "chat:write", "commands",
+    "im:history", "im:read", "im:write",
+    "reactions:read", "reactions:write",
+    "users:read", "users:read.email",
+]
+
+BOT_EVENTS = ["app_mention", "message.im", "app_uninstalled"]
+
+
+def _build_slack_manifest(product: Product, api_base: str) -> dict:
+    """Build a Slack app manifest dict pre-filled with product name and webhook URLs."""
+    name = product.name[:35]
+    return {
+        "display_information": {
+            "name": name,
+            "description": f"{product.name} AI assistant — powered by Pillar",
+        },
+        "features": {
+            "app_home": {
+                "home_tab_enabled": False,
+                "messages_tab_enabled": True,
+                "messages_tab_read_only_enabled": False,
+            },
+            "bot_user": {
+                "display_name": name,
+                "always_online": True,
+            },
+            "slash_commands": [
+                {
+                    "command": "/ask",
+                    "url": f"{api_base}/api/integrations/slack/commands/",
+                    "description": f"Ask {product.name} a question",
+                    "usage_hint": "[your question]",
+                    "should_escape": False,
+                }
+            ],
+        },
+        "oauth_config": {
+            "scopes": {
+                "bot": REQUIRED_BOT_SCOPES,
+            },
+        },
+        "settings": {
+            "event_subscriptions": {
+                "request_url": f"{api_base}/api/integrations/slack/events/",
+                "bot_events": BOT_EVENTS,
+            },
+            "interactivity": {
+                "is_enabled": True,
+                "request_url": f"{api_base}/api/integrations/slack/interactions/",
+            },
+            "org_deploy_enabled": False,
+            "socket_mode_enabled": False,
+            "token_rotation_enabled": False,
+        },
+    }
+
+
+class SlackManifestAdminView(APIView):
+    """
+    Generate a pre-filled Slack app manifest for BYOB setup.
+
+    GET /api/admin/products/<id>/integrations/slack/manifest/
+    Returns a JSON manifest the user can paste into Slack's "From a manifest" flow.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, product_id):
+        product = get_object_or_404(
+            Product,
+            id=product_id,
+            organization__in=request.user.organizations.all(),
+        )
+        api_base = (settings.BACKEND_URL or request.build_absolute_uri('/').rstrip('/')).rstrip('/')
+        manifest = _build_slack_manifest(product, api_base)
+        return JsonResponse({"manifest": manifest})
 
 
 # ── BYOB Setup ───────────────────────────────────────────────────────
@@ -480,6 +574,7 @@ class SlackBYOBAdminView(APIView):
 
         bot_token = serializer.validated_data['bot_token']
         signing_secret = serializer.validated_data['signing_secret']
+        agent_id = request.data.get('agent_id')
 
         client = WebClient(token=bot_token)
         try:
@@ -490,6 +585,10 @@ class SlackBYOBAdminView(APIView):
                 {'error': 'Invalid bot token. Could not authenticate with Slack.'},
                 status=400,
             )
+
+        agent = None
+        if agent_id:
+            agent = Agent.objects.filter(id=agent_id, product=product).first()
 
         team_id = auth_response['team_id']
         team_name = auth_response.get('team', '')
@@ -508,6 +607,7 @@ class SlackBYOBAdminView(APIView):
                 'signing_secret': signing_secret,
                 'is_active': True,
                 'is_byob': True,
+                'agent': agent,
             },
         )
 
