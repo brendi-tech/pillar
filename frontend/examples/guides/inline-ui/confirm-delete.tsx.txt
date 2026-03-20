@@ -6,18 +6,15 @@ interface DeleteData {
   itemName: string;
 }
 
-function ConfirmDeleteCard({ data, onConfirm, onCancel, onStateChange }: ToolRenderProps<DeleteData>) {
+function ConfirmDeleteCard({ data, sendResult, context }: ToolRenderProps<DeleteData>) {
   const [loading, setLoading] = useState(false);
 
   const handleDelete = async () => {
     setLoading(true);
-    onStateChange?.('loading', 'Deleting...');
     try {
       await deleteItem(data.itemId);
-      onStateChange?.('success', 'Deleted successfully');
-      onConfirm({ deleted: true });
+      sendResult({ deleted: true, itemId: data.itemId });
     } catch {
-      onStateChange?.('error', 'Failed to delete');
       setLoading(false);
     }
   };
@@ -27,8 +24,17 @@ function ConfirmDeleteCard({ data, onConfirm, onCancel, onStateChange }: ToolRen
       <h3 className="font-semibold text-red-900">Delete {data.itemName}?</h3>
       <p className="text-red-700 text-sm mt-1">This action cannot be undone.</p>
       <div className="flex gap-2 mt-4">
-        <button onClick={() => onCancel()} disabled={loading}>Cancel</button>
-        <button onClick={handleDelete} disabled={loading} className="bg-red-600 text-white">
+        <button
+          onClick={() => sendResult({ deleted: false })}
+          disabled={loading || !context.isReady}
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleDelete}
+          disabled={loading || !context.isReady}
+          className="bg-red-600 text-white"
+        >
           {loading ? 'Deleting...' : 'Delete'}
         </button>
       </div>
@@ -44,8 +50,8 @@ export function useDeleteTools() {
     inputSchema: {
       type: 'object',
       properties: {
-        itemId: { type: 'string' },
-        itemName: { type: 'string' },
+        itemId: { type: 'string', description: 'ID of the item to delete' },
+        itemName: { type: 'string', description: 'Display name of the item' },
       },
       required: ['itemId', 'itemName'],
     },

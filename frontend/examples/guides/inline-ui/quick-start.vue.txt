@@ -1,25 +1,45 @@
+// ----- InviteCard.vue -----
+
 <script setup lang="ts">
-import { usePillarTool, type ToolRenderProps } from '@pillar-ai/vue';
-import { defineComponent, h } from 'vue';
+import type { ToolRenderProps } from '@pillar-ai/vue';
 
 interface InviteData {
   emails: string[];
   role: string;
 }
 
-const InviteCard = defineComponent({
-  props: ['data', 'onConfirm', 'onCancel'],
-  setup(props: ToolRenderProps<InviteData>) {
-    return () => h('div', { class: 'p-4 border rounded-lg' }, [
-      h('h3', { class: 'font-semibold mb-3' }, 'Invite Team Members'),
-      h('p', { class: 'mb-4' }, `Inviting ${props.data.emails.length} members as ${props.data.role}`),
-      h('div', { class: 'flex gap-2' }, [
-        h('button', { onClick: () => props.onCancel() }, 'Cancel'),
-        h('button', { onClick: () => props.onConfirm() }, 'Send Invites'),
-      ]),
-    ]);
-  },
-});
+const props = defineProps<ToolRenderProps<InviteData>>();
+
+const handleSend = async () => {
+  await inviteApi.send(props.data.emails, props.data.role);
+  props.sendResult({ sent: props.data.emails.length, role: props.data.role });
+};
+</script>
+
+<template>
+  <div class="p-4 border rounded-lg">
+    <h3 class="font-semibold mb-3">Invite Team Members</h3>
+    <p class="text-sm text-gray-600 mb-4">
+      {{ data.emails.length }} member{{ data.emails.length > 1 ? 's' : '' }} as {{ data.role }}
+    </p>
+    <ul class="mb-4 space-y-1">
+      <li v-for="email in data.emails" :key="email" class="text-sm">{{ email }}</li>
+    </ul>
+    <button
+      @click="handleSend"
+      :disabled="!context.isReady"
+      class="px-4 py-2 bg-blue-600 text-white rounded"
+    >
+      Send Invites
+    </button>
+  </div>
+</template>
+
+// ----- useInviteTools.vue -----
+
+<script setup lang="ts">
+import { usePillarTool } from '@pillar-ai/vue';
+import InviteCard from './InviteCard.vue';
 
 usePillarTool({
   name: 'invite_members',
@@ -29,7 +49,7 @@ usePillarTool({
     type: 'object',
     properties: {
       emails: { type: 'array', items: { type: 'string' }, description: 'Email addresses' },
-      role: { type: 'string', enum: ['admin', 'member'], description: 'Role for members' },
+      role: { type: 'string', enum: ['admin', 'member'], description: 'Role for new members' },
     },
     required: ['emails'],
   },

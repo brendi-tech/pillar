@@ -1,5 +1,5 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { injectPillarTool } from '@anthropic-ai/pillar-angular';
+import { Component, Input } from '@angular/core';
+import { injectPillarTool, type ToolCardContext } from '@pillar-ai/angular';
 
 interface DeleteData {
   itemId: string;
@@ -14,8 +14,12 @@ interface DeleteData {
       <h3 class="font-semibold text-red-900">Delete {{ data.itemName }}?</h3>
       <p class="text-red-700 text-sm mt-1">This action cannot be undone.</p>
       <div class="flex gap-2 mt-4">
-        <button (click)="onCancel.emit()" [disabled]="loading">Cancel</button>
-        <button (click)="handleDelete()" [disabled]="loading" class="bg-red-600 text-white">
+        <button (click)="handleCancel()" [disabled]="loading || !context.isReady">Cancel</button>
+        <button
+          (click)="handleDelete()"
+          [disabled]="loading || !context.isReady"
+          class="bg-red-600 text-white"
+        >
           {{ loading ? 'Deleting...' : 'Delete' }}
         </button>
       </div>
@@ -24,21 +28,21 @@ interface DeleteData {
 })
 export class ConfirmDeleteCardComponent {
   @Input() data!: DeleteData;
-  @Output() onConfirm = new EventEmitter<Record<string, unknown>>();
-  @Output() onCancel = new EventEmitter<void>();
-  @Output() onStateChange = new EventEmitter<{ state: string; message?: string }>();
+  @Input() sendResult!: (result: Record<string, unknown>) => Promise<void>;
+  @Input() context!: ToolCardContext;
 
   loading = false;
 
+  handleCancel() {
+    this.sendResult({ deleted: false });
+  }
+
   async handleDelete() {
     this.loading = true;
-    this.onStateChange.emit({ state: 'loading', message: 'Deleting...' });
     try {
       await deleteItem(this.data.itemId);
-      this.onStateChange.emit({ state: 'success', message: 'Deleted successfully' });
-      this.onConfirm.emit({ deleted: true });
+      this.sendResult({ deleted: true, itemId: this.data.itemId });
     } catch {
-      this.onStateChange.emit({ state: 'error', message: 'Failed to delete' });
       this.loading = false;
     }
   }
@@ -58,8 +62,8 @@ export class DeleteToolsComponent {
       inputSchema: {
         type: 'object',
         properties: {
-          itemId: { type: 'string' },
-          itemName: { type: 'string' },
+          itemId: { type: 'string', description: 'ID of the item to delete' },
+          itemName: { type: 'string', description: 'Display name of the item' },
         },
         required: ['itemId', 'itemName'],
       },

@@ -1,24 +1,53 @@
+// ----- ConfirmDeleteCard.vue -----
+
 <script setup lang="ts">
-import { usePillarTool, type ToolRenderProps } from '@pillar-ai/vue';
-import { defineComponent } from 'vue';
+import { ref } from 'vue';
+import type { ToolRenderProps } from '@pillar-ai/vue';
 
 interface DeleteData {
   itemId: string;
   itemName: string;
 }
 
-const ConfirmDeleteCard = defineComponent({
-  props: ['data', 'onStateChange'],
-  setup(props: ToolRenderProps<DeleteData>) {
-    return {};
-  },
-  template: `
-    <div class="p-4 border border-red-200 rounded-lg bg-red-50">
-      <h3 class="font-semibold text-red-900">Delete {{ data.itemName }}?</h3>
-      <p class="text-red-700 text-sm mt-1">This action cannot be undone.</p>
+const props = defineProps<ToolRenderProps<DeleteData>>();
+
+const loading = ref(false);
+
+const handleDelete = async () => {
+  loading.value = true;
+  try {
+    await deleteItem(props.data.itemId);
+    props.sendResult({ deleted: true, itemId: props.data.itemId });
+  } catch {
+    loading.value = false;
+  }
+};
+</script>
+
+<template>
+  <div class="p-4 border border-red-200 rounded-lg bg-red-50">
+    <h3 class="font-semibold text-red-900">Delete {{ data.itemName }}?</h3>
+    <p class="text-red-700 text-sm mt-1">This action cannot be undone.</p>
+    <div class="flex gap-2 mt-4">
+      <button @click="sendResult({ deleted: false })" :disabled="loading || !context.isReady">
+        Cancel
+      </button>
+      <button
+        @click="handleDelete"
+        :disabled="loading || !context.isReady"
+        class="bg-red-600 text-white"
+      >
+        {{ loading ? 'Deleting...' : 'Delete' }}
+      </button>
     </div>
-  `,
-});
+  </div>
+</template>
+
+// ----- useDeleteTools.vue -----
+
+<script setup lang="ts">
+import { usePillarTool } from '@pillar-ai/vue';
+import ConfirmDeleteCard from './ConfirmDeleteCard.vue';
 
 usePillarTool({
   name: 'delete_item',
@@ -27,8 +56,8 @@ usePillarTool({
   inputSchema: {
     type: 'object',
     properties: {
-      itemId: { type: 'string' },
-      itemName: { type: 'string' },
+      itemId: { type: 'string', description: 'ID of the item to delete' },
+      itemName: { type: 'string', description: 'Display name of the item' },
     },
     required: ['itemId', 'itemName'],
   },

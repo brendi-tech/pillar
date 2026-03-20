@@ -5,39 +5,40 @@ pillar.defineTool({
   inputSchema: {
     type: 'object',
     properties: {
-      itemId: { type: 'string' },
-      itemName: { type: 'string' },
+      itemId: { type: 'string', description: 'ID of the item to delete' },
+      itemName: { type: 'string', description: 'Display name of the item' },
     },
     required: ['itemId', 'itemName'],
   },
-  render: (container, data, { onConfirm, onCancel, onStateChange }) => {
+  render: (container, data, callbacks) => {
     let loading = false;
 
     function render() {
+      const disabled = loading ? 'disabled' : '';
       container.innerHTML = `
         <div style="padding: 16px; border: 1px solid #fecaca; border-radius: 8px; background: #fef2f2;">
           <h3 style="font-weight: 600; color: #7f1d1d;">Delete ${data.itemName}?</h3>
           <p style="color: #b91c1c; font-size: 14px; margin-top: 4px;">This action cannot be undone.</p>
           <div style="display: flex; gap: 8px; margin-top: 16px;">
-            <button id="cancel-btn" ${loading ? 'disabled' : ''}>Cancel</button>
-            <button id="delete-btn" ${loading ? 'disabled' : ''} style="background: #dc2626; color: white;">
+            <button id="cancel-btn" ${disabled}>Cancel</button>
+            <button id="delete-btn" ${disabled} style="background: #dc2626; color: white;">
               ${loading ? 'Deleting...' : 'Delete'}
             </button>
           </div>
         </div>
       `;
 
-      container.querySelector('#cancel-btn').onclick = onCancel;
+      container.querySelector('#cancel-btn').onclick = () => {
+        callbacks.sendResult({ deleted: false });
+      };
+
       container.querySelector('#delete-btn').onclick = async () => {
         loading = true;
         render();
-        onStateChange?.('loading', 'Deleting...');
         try {
           await deleteItem(data.itemId);
-          onStateChange?.('success', 'Deleted successfully');
-          onConfirm({ deleted: true });
+          callbacks.sendResult({ deleted: true, itemId: data.itemId });
         } catch {
-          onStateChange?.('error', 'Failed to delete');
           loading = false;
           render();
         }

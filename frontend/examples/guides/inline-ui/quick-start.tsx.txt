@@ -1,14 +1,34 @@
 import { usePillarTool, type ToolRenderProps } from '@pillar-ai/react';
 
-function InviteCard({ data, onConfirm, onCancel }: ToolRenderProps<{ emails: string[]; role: string }>) {
+interface InviteData {
+  emails: string[];
+  role: string;
+}
+
+function InviteCard({ data, sendResult, context }: ToolRenderProps<InviteData>) {
+  const handleSend = async () => {
+    await inviteApi.send(data.emails, data.role);
+    sendResult({ sent: data.emails.length, role: data.role });
+  };
+
   return (
     <div className="p-4 border rounded-lg">
       <h3 className="font-semibold mb-3">Invite Team Members</h3>
-      <p className="mb-4">Inviting {data.emails.length} members as {data.role}</p>
-      <div className="flex gap-2">
-        <button onClick={() => onCancel()}>Cancel</button>
-        <button onClick={() => onConfirm()}>Send Invites</button>
-      </div>
+      <p className="text-sm text-gray-600 mb-4">
+        {data.emails.length} member{data.emails.length > 1 ? 's' : ''} as {data.role}
+      </p>
+      <ul className="mb-4 space-y-1">
+        {data.emails.map(email => (
+          <li key={email} className="text-sm">{email}</li>
+        ))}
+      </ul>
+      <button
+        onClick={handleSend}
+        disabled={!context.isReady}
+        className="px-4 py-2 bg-blue-600 text-white rounded"
+      >
+        Send Invites
+      </button>
     </div>
   );
 }
@@ -22,7 +42,7 @@ export function useInviteTools() {
       type: 'object',
       properties: {
         emails: { type: 'array', items: { type: 'string' }, description: 'Email addresses' },
-        role: { type: 'string', enum: ['admin', 'member'], description: 'Role for members' },
+        role: { type: 'string', enum: ['admin', 'member'], description: 'Role for new members' },
       },
       required: ['emails'],
     },

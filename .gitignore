@@ -17,6 +17,7 @@ node_modules/
 
 # Build artifacts
 dist/
+.angular/
 backend/static/dev/
 
 # Logs directory

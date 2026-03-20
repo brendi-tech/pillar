@@ -24,6 +24,8 @@ usePillarTool({
   },
   autoRun?: boolean,        // Execute without user clicking (default: false)
   autoComplete?: boolean,   // Mark done immediately (default: true)
+  needsConfirmation?: boolean, // Show Confirm/Cancel UI before execute (default: false)
+  renderConfirmation?: Component, // Custom confirmation UI (implies needsConfirmation)
   requiredContext?: object,  // Context required for tool to be available
   webMCP?: boolean,         // Also register with WebMCP (navigator.modelContext)
 });

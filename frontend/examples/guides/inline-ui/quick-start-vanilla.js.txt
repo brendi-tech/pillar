@@ -8,23 +8,31 @@ pillar.defineTool({
     type: 'object',
     properties: {
       emails: { type: 'array', items: { type: 'string' }, description: 'Email addresses' },
-      role: { type: 'string', enum: ['admin', 'member'], description: 'Role for members' },
+      role: { type: 'string', enum: ['admin', 'member'], description: 'Role for new members' },
     },
     required: ['emails'],
   },
-  render: (container, data, { onConfirm, onCancel }) => {
+  render: (container, data, callbacks, context) => {
     container.innerHTML = `
       <div style="padding: 16px; border: 1px solid #e5e7eb; border-radius: 8px;">
         <h3 style="font-weight: 600; margin-bottom: 12px;">Invite Team Members</h3>
-        <p style="margin-bottom: 16px;">Inviting ${data.emails.length} members as ${data.role}</p>
-        <div style="display: flex; gap: 8px;">
-          <button id="cancel-btn">Cancel</button>
-          <button id="confirm-btn">Send Invites</button>
-        </div>
+        <p style="margin-bottom: 16px;">
+          ${data.emails.length} member${data.emails.length > 1 ? 's' : ''} as ${data.role}
+        </p>
+        <ul style="margin-bottom: 16px;">
+          ${data.emails.map(e => `<li>${e}</li>`).join('')}
+        </ul>
+        <button id="send-btn" style="padding: 8px 16px; background: #2563eb; color: white; border-radius: 4px;">
+          Send Invites
+        </button>
       </div>
     `;
-    container.querySelector('#cancel-btn').onclick = onCancel;
-    container.querySelector('#confirm-btn').onclick = () => onConfirm();
+
+    container.querySelector('#send-btn').onclick = async () => {
+      await inviteApi.send(data.emails, data.role);
+      callbacks.sendResult({ sent: data.emails.length, role: data.role });
+    };
+
     return () => { container.innerHTML = ''; };
   },
 });
