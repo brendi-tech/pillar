@@ -67,10 +67,10 @@ export function ToolsTab({ agent, productId, onChange }: ToolsTabProps) {
   const compatibleTools = allTools.filter(isChannelCompatible);
   const incompatibleTools = allTools.filter((t) => !isChannelCompatible(t));
 
-  const serverSideCount = compatibleTools.filter(
+  const serverSideCount = allTools.filter(
     (t) => t.tool_type === "server_side"
   ).length;
-  const clientSideCount = compatibleTools.filter(
+  const clientSideCount = allTools.filter(
     (t) => t.tool_type === "client_side"
   ).length;
 
@@ -79,10 +79,17 @@ export function ToolsTab({ agent, productId, onChange }: ToolsTabProps) {
   const allowanceIds = agent.tool_allowance_ids || [];
   const showChecklist = scope === "restricted" || scope === "allowed";
 
+  const compatibleServerSideCount = compatibleTools.filter(
+    (t) => t.tool_type === "server_side"
+  ).length;
+  const compatibleClientSideCount = compatibleTools.filter(
+    (t) => t.tool_type === "client_side"
+  ).length;
+
   const getAccessibleCount = (): number => {
     if (scope === "all") return compatibleTools.length;
-    if (scope === "all_server_side") return serverSideCount;
-    if (scope === "all_client_side") return clientSideCount;
+    if (scope === "all_server_side") return compatibleServerSideCount;
+    if (scope === "all_client_side") return compatibleClientSideCount;
     if (scope === "restricted")
       return compatibleTools.length - restrictionIds.length;
     if (scope === "allowed") return allowanceIds.length;
@@ -154,7 +161,11 @@ export function ToolsTab({ agent, productId, onChange }: ToolsTabProps) {
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="all" id="scope-all" />
             <Label htmlFor="scope-all" className="cursor-pointer text-sm">
-              All tools ({compatibleTools.length})
+              All tools (
+              {compatibleTools.length === allTools.length
+                ? compatibleTools.length
+                : `${compatibleTools.length} of ${allTools.length}`}
+              )
             </Label>
           </div>
           <div className="flex items-center space-x-2">
@@ -211,11 +222,11 @@ export function ToolsTab({ agent, productId, onChange }: ToolsTabProps) {
 
       <p className="text-xs text-muted-foreground">
         {scope === "all" &&
-          `This agent can access all ${compatibleTools.length} tools, including any new tools added in the future.`}
+          `This agent can access all ${compatibleTools.length} compatible tools${compatibleTools.length < allTools.length ? ` of ${allTools.length} total` : ""}, including any new compatible tools added in the future.`}
         {scope === "all_server_side" &&
-          `This agent can access ${serverSideCount} server-side tools, including any new server-side tools added in the future.`}
+          `This agent can access ${compatibleServerSideCount} server-side tools, including any new server-side tools added in the future.`}
         {scope === "all_client_side" &&
-          `This agent can access ${clientSideCount} client-side tools, including any new client-side tools added in the future.`}
+          `This agent can access ${compatibleClientSideCount} client-side tools, including any new client-side tools added in the future.`}
         {scope === "restricted" &&
           `This agent can access ${getAccessibleCount()} of ${compatibleTools.length} tools. New tools will be automatically included unless explicitly restricted.`}
         {scope === "allowed" &&
