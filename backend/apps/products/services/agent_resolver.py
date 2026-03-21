@@ -249,6 +249,9 @@ async def resolve_agent_config(
     )
 
 
+CLIENT_SIDE_CHANNELS = {'web', 'api'}
+
+
 def filter_tools_for_agent(
     all_tools: list[dict],
     channel: str,
@@ -261,13 +264,17 @@ def filter_tools_for_agent(
 
     Filtering order:
     1. Channel compatibility (from tool.channel_compatibility field)
-    2. Scope-based filtering (tool_type, restrictions, allowances, or none)
+    2. Client-side eligibility (only web/api channels can use client-side tools)
+    3. Scope-based filtering (tool_type, restrictions, allowances, or none)
     """
     compatible = [
         t for t in all_tools
         if '*' in t.get('channel_compatibility', ['web'])
         or channel in t.get('channel_compatibility', ['web'])
     ]
+
+    if channel not in CLIENT_SIDE_CHANNELS:
+        compatible = [t for t in compatible if t.get('tool_type') != 'client_side']
 
     if tool_scope == ToolScope.NONE:
         return []

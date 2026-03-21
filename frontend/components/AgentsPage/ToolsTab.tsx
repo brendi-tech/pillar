@@ -53,10 +53,16 @@ export function ToolsTab({ agent, productId, onChange }: ToolsTabProps) {
   }
 
   const allTools = tools || [];
-  const isChannelCompatible = (t: ToolItem) =>
-    !t.channel_compatibility?.length ||
-    t.channel_compatibility.includes("*") ||
-    t.channel_compatibility.includes(agent.channel);
+  const supportsClientSide = CLIENT_SIDE_CHANNELS.includes(agent.channel);
+
+  const isChannelCompatible = (t: ToolItem) => {
+    if (!supportsClientSide && t.tool_type === "client_side") return false;
+    return (
+      !t.channel_compatibility?.length ||
+      t.channel_compatibility.includes("*") ||
+      t.channel_compatibility.includes(agent.channel)
+    );
+  };
 
   const compatibleTools = allTools.filter(isChannelCompatible);
   const incompatibleTools = allTools.filter((t) => !isChannelCompatible(t));
@@ -71,8 +77,6 @@ export function ToolsTab({ agent, productId, onChange }: ToolsTabProps) {
   const scope = agent.tool_scope || "all";
   const restrictionIds = agent.tool_restriction_ids || [];
   const allowanceIds = agent.tool_allowance_ids || [];
-
-  const supportsClientSide = CLIENT_SIDE_CHANNELS.includes(agent.channel);
   const showChecklist = scope === "restricted" || scope === "allowed";
 
   const getAccessibleCount = (): number => {

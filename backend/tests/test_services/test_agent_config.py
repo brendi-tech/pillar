@@ -424,3 +424,25 @@ class TestFilterToolsForAgent:
         assert "create_ticket" not in names
         assert "search_kb" in names
         assert "lookup_order" in names
+
+    def test_client_side_tools_excluded_for_non_browser_channels(self):
+        """Client-side tools are excluded for slack/discord/email even with wildcard compat."""
+        from apps.products.services.agent_resolver import filter_tools_for_agent
+
+        tools = [
+            {"id": "10", "name": "server_tool", "tool_type": "server_side", "channel_compatibility": ["*"]},
+            {"id": "11", "name": "client_wildcard", "tool_type": "client_side", "channel_compatibility": ["*"]},
+            {"id": "12", "name": "client_web", "tool_type": "client_side", "channel_compatibility": ["web"]},
+        ]
+        for channel in ("slack", "discord", "email"):
+            result = filter_tools_for_agent(tools, channel)
+            names = [t["name"] for t in result]
+            assert "server_tool" in names, f"server_tool missing for {channel}"
+            assert "client_wildcard" not in names, f"client_wildcard should be excluded for {channel}"
+            assert "client_web" not in names, f"client_web should be excluded for {channel}"
+
+        for channel in ("web", "api"):
+            result = filter_tools_for_agent(tools, channel)
+            names = [t["name"] for t in result]
+            assert "server_tool" in names, f"server_tool missing for {channel}"
+            assert "client_wildcard" in names, f"client_wildcard should be included for {channel}"
