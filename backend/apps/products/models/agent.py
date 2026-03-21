@@ -49,6 +49,15 @@ class KnowledgeScope(models.TextChoices):
     SELECTED = 'selected', 'Selected Sources'
 
 
+class ToolScope(models.TextChoices):
+    ALL = 'all', 'All Tools'
+    ALL_SERVER_SIDE = 'all_server_side', 'All Server-Side'
+    ALL_CLIENT_SIDE = 'all_client_side', 'All Client-Side'
+    RESTRICTED = 'restricted', 'All With Restrictions'
+    ALLOWED = 'allowed', 'Allowed Only'
+    NONE = 'none', 'No Tools'
+
+
 class Agent(TenantAwareModel):
     """
     Per-channel deployment configuration for a product's AI agent.
@@ -119,15 +128,23 @@ class Agent(TenantAwareModel):
     )
 
     # Tool access control
-    tool_allowlist = models.JSONField(
-        default=list,
-        blank=True,
-        help_text="Tool names this agent CAN use. Empty = all compatible tools.",
+    tool_scope = models.CharField(
+        max_length=20,
+        choices=ToolScope.choices,
+        default=ToolScope.ALL,
+        help_text="How this agent's tool access is scoped.",
     )
-    tool_denylist = models.JSONField(
-        default=list,
+    tool_restrictions = models.ManyToManyField(
+        'products.Action',
         blank=True,
-        help_text="Tool names this agent CANNOT use. Applied after allowlist.",
+        related_name='restricted_by_agents',
+        help_text="Tools excluded when scope is 'restricted'.",
+    )
+    tool_allowances = models.ManyToManyField(
+        'products.Action',
+        blank=True,
+        related_name='allowed_by_agents',
+        help_text="Tools included when scope is 'allowed'.",
     )
 
     # Response format

@@ -181,13 +181,25 @@ class AgentSerializer(serializers.ModelSerializer):
         queryset=KnowledgeSource.objects.all(),
         required=False,
     )
+    tool_restriction_ids = serializers.PrimaryKeyRelatedField(
+        many=True,
+        source='tool_restrictions',
+        queryset=Action.objects.all(),
+        required=False,
+    )
+    tool_allowance_ids = serializers.PrimaryKeyRelatedField(
+        many=True,
+        source='tool_allowances',
+        queryset=Action.objects.all(),
+        required=False,
+    )
 
     class Meta:
         model = Agent
         fields = [
             'id', 'organization', 'product', 'name', 'slug', 'channel', 'is_active',
             'tone', 'guidance_override',
-            'tool_allowlist', 'tool_denylist',
+            'tool_scope', 'tool_restriction_ids', 'tool_allowance_ids',
             'max_response_tokens', 'include_sources', 'include_suggested_followups',
             'llm_model', 'temperature',
             'channel_config', 'default_language',
@@ -206,13 +218,25 @@ class AgentCreateSerializer(serializers.ModelSerializer):
         queryset=KnowledgeSource.objects.all(),
         required=False,
     )
+    tool_restriction_ids = serializers.PrimaryKeyRelatedField(
+        many=True,
+        source='tool_restrictions',
+        queryset=Action.objects.all(),
+        required=False,
+    )
+    tool_allowance_ids = serializers.PrimaryKeyRelatedField(
+        many=True,
+        source='tool_allowances',
+        queryset=Action.objects.all(),
+        required=False,
+    )
 
     class Meta:
         model = Agent
         fields = [
             'name', 'slug', 'channel', 'is_active',
             'tone', 'guidance_override',
-            'tool_allowlist', 'tool_denylist',
+            'tool_scope', 'tool_restriction_ids', 'tool_allowance_ids',
             'max_response_tokens', 'include_sources', 'include_suggested_followups',
             'llm_model', 'temperature',
             'channel_config', 'default_language',

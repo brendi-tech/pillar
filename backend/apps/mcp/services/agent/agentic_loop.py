@@ -214,14 +214,15 @@ async def run_agentic_loop(
             seen_names.add(tool["name"])
             server_tools.append(tool)
 
-        # Apply agent-level tool allowlist/denylist
-        if agent_config and (agent_config.tool_allowlist or agent_config.tool_denylist):
+        # Apply agent-level tool scope filtering
+        if agent_config and agent_config.tool_scope != 'all':
             from apps.products.services.agent_resolver import filter_tools_for_agent
             server_tools = filter_tools_for_agent(
                 server_tools,
                 channel=message.channel or 'web',
-                allowlist=agent_config.tool_allowlist,
-                denylist=agent_config.tool_denylist,
+                tool_scope=agent_config.tool_scope,
+                restriction_ids=agent_config.tool_restriction_ids,
+                allowance_ids=agent_config.tool_allowance_ids,
             )
 
         if server_tools:

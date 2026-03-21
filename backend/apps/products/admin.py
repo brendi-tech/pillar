@@ -115,7 +115,7 @@ class AgentAdmin(admin.ModelAdmin):
             'fields': ('tone', 'guidance_override', 'default_language'),
         }),
         ('Tool Access', {
-            'fields': ('tool_allowlist', 'tool_denylist'),
+            'fields': ('tool_scope', 'tool_restrictions', 'tool_allowances'),
         }),
         ('Response Configuration', {
             'fields': ('max_response_tokens', 'include_sources', 'include_suggested_followups'),

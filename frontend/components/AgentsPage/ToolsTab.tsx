@@ -13,7 +13,9 @@ import {
 } from "@/components/ui/tooltip";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { adminFetch } from "@/lib/admin/api-client";
-import type { Agent } from "@/types/agent";
+import { AlertTriangle } from "lucide-react";
+import type { Agent, ToolScopeMode } from "@/types/agent";
+import { CLIENT_SIDE_CHANNELS } from "@/types/agent";
 
 interface ToolItem {
   id: string;
@@ -59,72 +61,209 @@ export function ToolsTab({ agent, productId, onChange }: ToolsTabProps) {
   const compatibleTools = allTools.filter(isChannelCompatible);
   const incompatibleTools = allTools.filter((t) => !isChannelCompatible(t));
 
-  const useAllTools =
-    agent.tool_allowlist.length === 0 && agent.tool_denylist.length === 0;
+  const serverSideCount = compatibleTools.filter(
+    (t) => t.tool_type === "server_side"
+  ).length;
+  const clientSideCount = compatibleTools.filter(
+    (t) => t.tool_type === "client_side"
+  ).length;
 
-  const isToolEnabled = (name: string) => {
-    if (useAllTools) return true;
-    if (agent.tool_allowlist.length > 0)
-      return agent.tool_allowlist.includes(name);
-    return !agent.tool_denylist.includes(name);
+  const scope = agent.tool_scope || "all";
+  const restrictionIds = agent.tool_restriction_ids || [];
+  const allowanceIds = agent.tool_allowance_ids || [];
+
+  const supportsClientSide = CLIENT_SIDE_CHANNELS.includes(agent.channel);
+  const showChecklist = scope === "restricted" || scope === "allowed";
+
+  const getAccessibleCount = (): number => {
+    if (scope === "all") return compatibleTools.length;
+    if (scope === "all_server_side") return serverSideCount;
+    if (scope === "all_client_side") return clientSideCount;
+    if (scope === "restricted")
+      return compatibleTools.length - restrictionIds.length;
+    if (scope === "allowed") return allowanceIds.length;
+    return 0;
   };
 
-  const handleModeChange = (mode: string) => {
-    if (mode === "all") {
-      onChange({ tool_allowlist: [], tool_denylist: [] });
-    } else {
-      const allowlist = compatibleTools.map((t) => t.name);
-      onChange({ tool_allowlist: allowlist, tool_denylist: [] });
+  const isToolChecked = (toolId: string): boolean => {
+    if (scope === "restricted") return !restrictionIds.includes(toolId);
+    if (scope === "allowed") return allowanceIds.includes(toolId);
+    return true;
+  };
+
+  const handleScopeChange = (value: string) => {
+    const newScope = value as ToolScopeMode;
+    onChange({
+      tool_scope: newScope,
+      tool_restriction_ids: [],
+      tool_allowance_ids: [],
+    });
+  };
+
+  const handleToolToggle = (toolId: string, checked: boolean) => {
+    if (scope === "restricted") {
+      const newIds = checked
+        ? restrictionIds.filter((id) => id !== toolId)
+        : [...restrictionIds, toolId];
+      onChange({ tool_restriction_ids: newIds });
+    } else if (scope === "allowed") {
+      const newIds = checked
+        ? [...allowanceIds, toolId]
+        : allowanceIds.filter((id) => id !== toolId);
+      onChange({ tool_allowance_ids: newIds });
     }
   };
 
-  const handleToolToggle = (name: string, checked: boolean) => {
-    if (useAllTools) {
-      if (!checked) {
-        onChange({ tool_denylist: [name] });
-      }
-      return;
+  const handleSelectAll = () => {
+    if (scope === "restricted") {
+      onChange({ tool_restriction_ids: [] });
+    } else if (scope === "allowed") {
+      onChange({
+        tool_allowance_ids: compatibleTools.map((t) => t.id),
+      });
     }
+  };
 
-    if (agent.tool_allowlist.length > 0) {
-      const newAllowlist = checked
-        ? [...agent.tool_allowlist, name]
-        : agent.tool_allowlist.filter((n) => n !== name);
-      onChange({ tool_allowlist: newAllowlist });
-    } else {
-      const newDenylist = checked
-        ? agent.tool_denylist.filter((n) => n !== name)
-        : [...agent.tool_denylist, name];
-      onChange({ tool_denylist: newDenylist });
+  const handleDeselectAll = () => {
+    if (scope === "restricted") {
+      onChange({
+        tool_restriction_ids: compatibleTools.map((t) => t.id),
+      });
+    } else if (scope === "allowed") {
+      onChange({ tool_allowance_ids: [] });
     }
   };
 
   return (
     <div className="space-y-6">
-      <RadioGroup
-        value={useAllTools ? "all" : "selected"}
-        onValueChange={handleModeChange}
-        className="gap-3"
-      >
-        <div className="flex items-center space-x-2">
-          <RadioGroupItem value="all" id="tools-all" />
-          <Label htmlFor="tools-all" className="cursor-pointer text-sm">
-            All compatible tools ({compatibleTools.length} of {allTools.length})
-          </Label>
-        </div>
-        <div className="flex items-center space-x-2">
-          <RadioGroupItem value="selected" id="tools-selected" />
-          <Label htmlFor="tools-selected" className="cursor-pointer text-sm">
-            Selected tools only
-          </Label>
-        </div>
-      </RadioGroup>
+      <div>
+        <h4 className="text-sm font-medium mb-1">Tool Scope</h4>
+        <p className="text-xs text-muted-foreground mb-4">
+          Control which tools this agent can use.
+        </p>
 
-      {compatibleTools.length > 0 && (
+        <RadioGroup
+          value={scope}
+          onValueChange={handleScopeChange}
+          className="gap-3"
+        >
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="all" id="scope-all" />
+            <Label htmlFor="scope-all" className="cursor-pointer text-sm">
+              All tools ({compatibleTools.length})
+            </Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="all_server_side" id="scope-server" />
+            <Label htmlFor="scope-server" className="cursor-pointer text-sm">
+              All server-side ({serverSideCount})
+            </Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem
+              value="all_client_side"
+              id="scope-client"
+              disabled={!supportsClientSide}
+            />
+            <Label
+              htmlFor="scope-client"
+              className={
+                supportsClientSide
+                  ? "cursor-pointer text-sm"
+                  : "cursor-not-allowed text-sm text-muted-foreground"
+              }
+            >
+              All client-side ({clientSideCount})
+              {!supportsClientSide && (
+                <span className="ml-1 text-[10px] text-muted-foreground">
+                  — web &amp; API only
+                </span>
+              )}
+            </Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="restricted" id="scope-restricted" />
+            <Label
+              htmlFor="scope-restricted"
+              className="cursor-pointer text-sm"
+            >
+              All with restrictions
+            </Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="allowed" id="scope-allowed" />
+            <Label htmlFor="scope-allowed" className="cursor-pointer text-sm">
+              Allowed only
+            </Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="none" id="scope-none" />
+            <Label htmlFor="scope-none" className="cursor-pointer text-sm">
+              No tools
+            </Label>
+          </div>
+        </RadioGroup>
+      </div>
+
+      <p className="text-xs text-muted-foreground">
+        {scope === "all" &&
+          `This agent can access all ${compatibleTools.length} tools, including any new tools added in the future.`}
+        {scope === "all_server_side" &&
+          `This agent can access ${serverSideCount} server-side tools, including any new server-side tools added in the future.`}
+        {scope === "all_client_side" &&
+          `This agent can access ${clientSideCount} client-side tools, including any new client-side tools added in the future.`}
+        {scope === "restricted" &&
+          `This agent can access ${getAccessibleCount()} of ${compatibleTools.length} tools. New tools will be automatically included unless explicitly restricted.`}
+        {scope === "allowed" &&
+          `This agent can access ${allowanceIds.length} of ${compatibleTools.length} tools. New tools will not be included until explicitly allowed.`}
+        {scope === "none" &&
+          `This agent has no access to any tools.`}
+      </p>
+
+      {scope === "none" && (
+        <div className="flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400">
+          <AlertTriangle className="h-4 w-4 shrink-0" />
+          <span>
+            This agent has no tools enabled and won&apos;t be able to perform
+            any actions.
+          </span>
+        </div>
+      )}
+
+      {scope === "allowed" && allowanceIds.length === 0 && (
+        <div className="flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400">
+          <AlertTriangle className="h-4 w-4 shrink-0" />
+          <span>
+            No tools selected — this agent won&apos;t have access to any tools.
+          </span>
+        </div>
+      )}
+
+      {showChecklist && (
         <div className="space-y-2">
-          <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-            Compatible Tools
-          </h4>
+          <div className="flex items-center justify-between">
+            <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              {scope === "restricted" ? "Restrict Tools" : "Select Tools"}
+            </h4>
+            <div className="flex items-center gap-1 text-xs">
+              <button
+                type="button"
+                onClick={handleSelectAll}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Select all
+              </button>
+              <span className="text-muted-foreground">&middot;</span>
+              <button
+                type="button"
+                onClick={handleDeselectAll}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Deselect all
+              </button>
+            </div>
+          </div>
+
           <div className="space-y-1">
             {compatibleTools.map((tool) => (
               <label
@@ -132,9 +271,9 @@ export function ToolsTab({ agent, productId, onChange }: ToolsTabProps) {
                 className="flex items-center gap-3 rounded-md border px-3 py-2 cursor-pointer hover:bg-muted/50"
               >
                 <Checkbox
-                  checked={isToolEnabled(tool.name)}
+                  checked={isToolChecked(tool.id)}
                   onCheckedChange={(checked) =>
-                    handleToolToggle(tool.name, !!checked)
+                    handleToolToggle(tool.id, !!checked)
                   }
                 />
                 <div className="flex-1 min-w-0">

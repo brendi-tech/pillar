@@ -22,8 +22,7 @@ class TestAgentModel:
         assert agent.is_active is True
         assert agent.tone == ""
         assert agent.guidance_override == ""
-        assert agent.tool_allowlist == []
-        assert agent.tool_denylist == []
+        assert agent.tool_scope == "all"
         assert agent.include_sources is True
         assert agent.include_suggested_followups is True
         assert str(agent) == "Test Bot (web)"
@@ -322,76 +321,106 @@ class TestMultiAgentRouting:
 class TestFilterToolsForAgent:
     """Tests for filter_tools_for_agent()."""
 
+    TOOLS = [
+        {"id": "1", "name": "navigate", "tool_type": "client_side", "channel_compatibility": ["web"]},
+        {"id": "2", "name": "search_kb", "tool_type": "server_side", "channel_compatibility": ["web", "slack"]},
+        {"id": "3", "name": "create_ticket", "tool_type": "server_side", "channel_compatibility": ["web", "slack", "email"]},
+        {"id": "4", "name": "open_modal", "tool_type": "client_side", "channel_compatibility": ["web"]},
+        {"id": "5", "name": "lookup_order", "tool_type": "server_side", "channel_compatibility": ["*"]},
+    ]
+
     def test_channel_compatibility_filter(self):
         from apps.products.services.agent_resolver import filter_tools_for_agent
 
-        tools = [
-            {"name": "navigate", "channel_compatibility": ["web"]},
-            {"name": "search_kb", "channel_compatibility": ["web", "slack"]},
-            {"name": "create_ticket", "channel_compatibility": ["web", "slack", "email"]},
-        ]
-        result = filter_tools_for_agent(tools, "slack", [], [])
+        result = filter_tools_for_agent(self.TOOLS, "slack")
         names = [t["name"] for t in result]
         assert "navigate" not in names
+        assert "open_modal" not in names
         assert "search_kb" in names
         assert "create_ticket" in names
+        assert "lookup_order" in names
 
-    def test_allowlist(self):
+    def test_scope_all_returns_all_compatible(self):
         from apps.products.services.agent_resolver import filter_tools_for_agent
 
-        tools = [
-            {"name": "a", "channel_compatibility": ["web"]},
-            {"name": "b", "channel_compatibility": ["web"]},
-            {"name": "c", "channel_compatibility": ["web"]},
-        ]
-        result = filter_tools_for_agent(tools, "web", ["a", "b"], [])
+        result = filter_tools_for_agent(self.TOOLS, "web", tool_scope="all")
+        assert len(result) == 5
+
+    def test_scope_all_server_side(self):
+        from apps.products.services.agent_resolver import filter_tools_for_agent
+
+        result = filter_tools_for_agent(self.TOOLS, "web", tool_scope="all_server_side")
         names = [t["name"] for t in result]
-        assert names == ["a", "b"]
+        assert set(names) == {"search_kb", "create_ticket", "lookup_order"}
 
-    def test_denylist(self):
+    def test_scope_all_client_side(self):
         from apps.products.services.agent_resolver import filter_tools_for_agent
 
-        tools = [
-            {"name": "a", "channel_compatibility": ["web"]},
-            {"name": "b", "channel_compatibility": ["web"]},
-            {"name": "c", "channel_compatibility": ["web"]},
-        ]
-        result = filter_tools_for_agent(tools, "web", [], ["b"])
+        result = filter_tools_for_agent(self.TOOLS, "web", tool_scope="all_client_side")
         names = [t["name"] for t in result]
-        assert "b" not in names
-        assert "a" in names
-        assert "c" in names
+        assert set(names) == {"navigate", "open_modal"}
 
-    def test_allowlist_then_denylist(self):
+    def test_scope_restricted_excludes_specified_tools(self):
         from apps.products.services.agent_resolver import filter_tools_for_agent
 
-        tools = [
-            {"name": "a", "channel_compatibility": ["web"]},
-            {"name": "b", "channel_compatibility": ["web"]},
-            {"name": "c", "channel_compatibility": ["web"]},
-        ]
-        result = filter_tools_for_agent(tools, "web", ["a", "b"], ["b"])
+        result = filter_tools_for_agent(
+            self.TOOLS, "web", tool_scope="restricted", restriction_ids=["2", "4"],
+        )
         names = [t["name"] for t in result]
-        assert names == ["a"]
+        assert "search_kb" not in names
+        assert "open_modal" not in names
+        assert "navigate" in names
+        assert "create_ticket" in names
+        assert "lookup_order" in names
 
-    def test_empty_lists_returns_all_compatible(self):
+    def test_scope_restricted_empty_restrictions_returns_all(self):
         from apps.products.services.agent_resolver import filter_tools_for_agent
 
-        tools = [
-            {"name": "a", "channel_compatibility": ["web"]},
-            {"name": "b", "channel_compatibility": ["web"]},
-        ]
-        result = filter_tools_for_agent(tools, "web", [], [])
-        assert len(result) == 2
+        result = filter_tools_for_agent(self.TOOLS, "web", tool_scope="restricted")
+        assert len(result) == 5
+
+    def test_scope_allowed_includes_only_specified_tools(self):
+        from apps.products.services.agent_resolver import filter_tools_for_agent
+
+        result = filter_tools_for_agent(
+            self.TOOLS, "web", tool_scope="allowed", allowance_ids=["1", "3"],
+        )
+        names = [t["name"] for t in result]
+        assert set(names) == {"navigate", "create_ticket"}
+
+    def test_scope_allowed_empty_allowances_returns_none(self):
+        from apps.products.services.agent_resolver import filter_tools_for_agent
+
+        result = filter_tools_for_agent(self.TOOLS, "web", tool_scope="allowed")
+        assert len(result) == 0
+
+    def test_scope_none_returns_empty(self):
+        from apps.products.services.agent_resolver import filter_tools_for_agent
+
+        result = filter_tools_for_agent(self.TOOLS, "web", tool_scope="none")
+        assert len(result) == 0
 
     def test_wildcard_compatible_with_all_channels(self):
         from apps.products.services.agent_resolver import filter_tools_for_agent
 
         tools = [
-            {"name": "server_tool", "channel_compatibility": ["*"]},
-            {"name": "web_only", "channel_compatibility": ["web"]},
+            {"id": "10", "name": "server_tool", "tool_type": "server_side", "channel_compatibility": ["*"]},
+            {"id": "11", "name": "web_only", "tool_type": "client_side", "channel_compatibility": ["web"]},
         ]
-        result = filter_tools_for_agent(tools, "slack", [], [])
+        result = filter_tools_for_agent(tools, "slack")
         names = [t["name"] for t in result]
         assert "server_tool" in names
         assert "web_only" not in names
+
+    def test_scope_restricted_respects_channel_compat(self):
+        """Restricted mode should still filter by channel compatibility first."""
+        from apps.products.services.agent_resolver import filter_tools_for_agent
+
+        result = filter_tools_for_agent(
+            self.TOOLS, "slack", tool_scope="restricted", restriction_ids=["3"],
+        )
+        names = [t["name"] for t in result]
+        assert "navigate" not in names
+        assert "create_ticket" not in names
+        assert "search_kb" in names
+        assert "lookup_order" in names

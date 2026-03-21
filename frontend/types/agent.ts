@@ -11,6 +11,17 @@ export const KNOWLEDGE_SCOPE_LABELS: Record<KnowledgeScopeMode, string> = {
   selected: 'Selected Sources',
 };
 
+export type ToolScopeMode = 'all' | 'all_server_side' | 'all_client_side' | 'restricted' | 'allowed' | 'none';
+
+export const TOOL_SCOPE_LABELS: Record<ToolScopeMode, string> = {
+  all: 'All Tools',
+  all_server_side: 'All Server-Side',
+  all_client_side: 'All Client-Side',
+  restricted: 'All With Restrictions',
+  allowed: 'Allowed Only',
+  none: 'No Tools',
+};
+
 export const CHANNEL_LABELS: Record<AgentChannel, string> = {
   web: 'Web Widget',
   slack: 'Slack',
@@ -18,6 +29,8 @@ export const CHANNEL_LABELS: Record<AgentChannel, string> = {
   email: 'Email',
   api: 'API',
 };
+
+export const CLIENT_SIDE_CHANNELS: AgentChannel[] = ['web', 'api'];
 
 export const TONE_LABELS: Record<AgentTone, string> = {
   professional: 'Professional',
@@ -36,8 +49,9 @@ export interface Agent {
   is_active: boolean;
   tone: AgentTone | '';
   guidance_override: string;
-  tool_allowlist: string[];
-  tool_denylist: string[];
+  tool_scope: ToolScopeMode;
+  tool_restriction_ids: string[];
+  tool_allowance_ids: string[];
   max_response_tokens: number | null;
   include_sources: boolean;
   include_suggested_followups: boolean;
@@ -57,8 +71,9 @@ export interface CreateAgentPayload {
   is_active?: boolean;
   tone?: AgentTone | '';
   guidance_override?: string;
-  tool_allowlist?: string[];
-  tool_denylist?: string[];
+  tool_scope?: ToolScopeMode;
+  tool_restriction_ids?: string[];
+  tool_allowance_ids?: string[];
   max_response_tokens?: number | null;
   include_sources?: boolean;
   include_suggested_followups?: boolean;

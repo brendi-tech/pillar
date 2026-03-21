@@ -24,11 +24,13 @@ export function AgentCard({ agent }: AgentCardProps) {
   const Icon = CHANNEL_ICONS[agent.channel] || Globe;
   const toneLabel = agent.tone ? TONE_LABELS[agent.tone] : null;
   const toolCount =
-    agent.tool_allowlist.length > 0
-      ? agent.tool_allowlist.length
-      : agent.tool_denylist.length > 0
-        ? `All except ${agent.tool_denylist.length}`
-        : "All";
+    agent.tool_scope === "none"
+      ? "None"
+      : agent.tool_scope === "allowed"
+        ? agent.tool_allowance_ids.length
+        : agent.tool_scope === "restricted"
+          ? `All except ${agent.tool_restriction_ids.length}`
+          : "All";
 
   return (
     <Card className="group transition-colors hover:border-foreground/20">

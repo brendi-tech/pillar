@@ -9,7 +9,7 @@ import logging
 from dataclasses import dataclass, field
 
 from apps.products.models import Agent
-from apps.products.models.agent import KnowledgeScope
+from apps.products.models.agent import KnowledgeScope, ToolScope
 
 logger = logging.getLogger(__name__)
 
@@ -42,8 +42,9 @@ class AgentConfig:
     max_response_tokens: int | None
     include_sources: bool
     include_suggested_followups: bool
-    tool_allowlist: list[str]
-    tool_denylist: list[str]
+    tool_scope: str
+    tool_restriction_ids: list[str]
+    tool_allowance_ids: list[str]
     language: str
     channel_config: dict
     knowledge_scope: str = KnowledgeScope.ALL
@@ -124,6 +125,8 @@ async def _resolve_knowledge_source_ids(agent: Agent, product) -> list[str]:
 def _build_agent_config(
     agent: Agent, product, channel: str,
     knowledge_source_ids: list[str] | None = None,
+    tool_restriction_ids: list[str] | None = None,
+    tool_allowance_ids: list[str] | None = None,
 ) -> AgentConfig:
     """Build an AgentConfig from an Agent instance merged with product defaults."""
     guidance_parts = []
@@ -146,8 +149,9 @@ def _build_agent_config(
         max_response_tokens=agent.max_response_tokens,
         include_sources=agent.include_sources,
         include_suggested_followups=agent.include_suggested_followups,
-        tool_allowlist=agent.tool_allowlist or [],
-        tool_denylist=agent.tool_denylist or [],
+        tool_scope=agent.tool_scope or ToolScope.ALL,
+        tool_restriction_ids=tool_restriction_ids or [],
+        tool_allowance_ids=tool_allowance_ids or [],
         language=agent.default_language or getattr(product, 'default_language', 'auto') or 'auto',
         channel_config=agent.channel_config or {},
         knowledge_scope=agent.knowledge_scope or KnowledgeScope.ALL,
@@ -168,17 +172,40 @@ def _build_product_defaults(product, channel: str) -> AgentConfig:
         max_response_tokens=None,
         include_sources=True,
         include_suggested_followups=True,
-        tool_allowlist=[],
-        tool_denylist=[],
+        tool_scope=ToolScope.ALL,
+        tool_restriction_ids=[],
+        tool_allowance_ids=[],
         language=getattr(product, 'default_language', 'auto') or 'auto',
         channel_config={},
     )
 
 
+async def _resolve_tool_scope_ids(agent: Agent) -> tuple[list[str], list[str]]:
+    """Resolve tool restriction/allowance IDs from the agent's M2M fields."""
+    scope = agent.tool_scope or ToolScope.ALL
+    restriction_ids: list[str] = []
+    allowance_ids: list[str] = []
+    if scope == ToolScope.RESTRICTED:
+        restriction_ids = [
+            str(pk) async for pk in
+            agent.tool_restrictions.values_list('id', flat=True)
+        ]
+    elif scope == ToolScope.ALLOWED:
+        allowance_ids = [
+            str(pk) async for pk in
+            agent.tool_allowances.values_list('id', flat=True)
+        ]
+    return restriction_ids, allowance_ids
+
+
 async def resolve_agent_config_from_agent(agent: Agent, product) -> AgentConfig:
     """Build AgentConfig directly from a pre-resolved Agent instance."""
     knowledge_source_ids = await _resolve_knowledge_source_ids(agent, product)
-    return _build_agent_config(agent, product, agent.channel, knowledge_source_ids)
+    tool_restriction_ids, tool_allowance_ids = await _resolve_tool_scope_ids(agent)
+    return _build_agent_config(
+        agent, product, agent.channel, knowledge_source_ids,
+        tool_restriction_ids, tool_allowance_ids,
+    )
 
 
 async def resolve_agent_config(
@@ -215,22 +242,26 @@ async def resolve_agent_config(
         return _build_product_defaults(product, channel)
 
     knowledge_source_ids = await _resolve_knowledge_source_ids(agent, product)
-    return _build_agent_config(agent, product, channel, knowledge_source_ids)
+    tool_restriction_ids, tool_allowance_ids = await _resolve_tool_scope_ids(agent)
+    return _build_agent_config(
+        agent, product, channel, knowledge_source_ids,
+        tool_restriction_ids, tool_allowance_ids,
+    )
 
 
 def filter_tools_for_agent(
     all_tools: list[dict],
     channel: str,
-    allowlist: list[str],
-    denylist: list[str],
+    tool_scope: str = ToolScope.ALL,
+    restriction_ids: list[str] | None = None,
+    allowance_ids: list[str] | None = None,
 ) -> list[dict]:
     """
-    Filter tools based on channel compatibility and agent access control.
+    Filter tools based on channel compatibility and agent tool scope.
 
     Filtering order:
     1. Channel compatibility (from tool.channel_compatibility field)
-    2. Allowlist (if non-empty, only these tools are included)
-    3. Denylist (these tools are always excluded)
+    2. Scope-based filtering (tool_type, restrictions, allowances, or none)
     """
     compatible = [
         t for t in all_tools
@@ -238,10 +269,17 @@ def filter_tools_for_agent(
         or channel in t.get('channel_compatibility', ['web'])
     ]
 
-    if allowlist:
-        compatible = [t for t in compatible if t['name'] in allowlist]
-
-    if denylist:
-        compatible = [t for t in compatible if t['name'] not in denylist]
+    if tool_scope == ToolScope.NONE:
+        return []
+    elif tool_scope == ToolScope.ALL_SERVER_SIDE:
+        compatible = [t for t in compatible if t.get('tool_type') == 'server_side']
+    elif tool_scope == ToolScope.ALL_CLIENT_SIDE:
+        compatible = [t for t in compatible if t.get('tool_type') == 'client_side']
+    elif tool_scope == ToolScope.RESTRICTED and restriction_ids:
+        restricted = set(str(rid) for rid in restriction_ids)
+        compatible = [t for t in compatible if str(t.get('id', '')) not in restricted]
+    elif tool_scope == ToolScope.ALLOWED:
+        allowed = set(str(aid) for aid in (allowance_ids or []))
+        compatible = [t for t in compatible if str(t.get('id', '')) in allowed]
 
     return compatible
