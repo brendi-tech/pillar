@@ -15,8 +15,7 @@ from apps.mcp.services.agent.response_adapter import ResponseAdapter
 from .formatting import (
     build_confirmation_blocks,
     build_sources_block,
-    markdown_to_mrkdwn,
-    split_text_into_blocks,
+    split_markdown_into_blocks,
 )
 from .models import SlackInstallation
 
@@ -188,9 +187,14 @@ class SlackResponseAdapter(ResponseAdapter):
         text: str,
         sources: list[dict],
     ) -> list[dict]:
-        """Build Block Kit blocks for the response."""
-        mrkdwn_text = markdown_to_mrkdwn(text)
-        blocks = split_text_into_blocks(mrkdwn_text)
+        """Build Block Kit blocks for the response.
+
+        Uses native ``markdown`` blocks for the response text so Slack
+        renders tables, syntax-highlighted code, headers, and lists
+        natively.  Interactive elements (sources, confirmations) remain
+        as standard Block Kit blocks.
+        """
+        blocks = split_markdown_into_blocks(text)
 
         if sources:
             source_block = build_sources_block(sources)

@@ -1,9 +1,15 @@
 """
-Slack mrkdwn formatting utilities.
+Slack Block Kit formatting utilities.
 
-Converts standard Markdown (as produced by LLMs) to Slack's mrkdwn format,
-splits long text into Block Kit sections that respect the 3000-char limit,
-and builds source citation blocks and confirmation action blocks.
+Provides two formatting paths:
+- ``split_markdown_into_blocks`` for response text: passes raw Markdown
+  through in native ``markdown`` blocks (tables, code highlighting,
+  headers all render natively in Slack).
+- ``markdown_to_mrkdwn`` + ``split_text_into_blocks`` for confirmation
+  blocks and other interactive UI that requires ``section`` blocks with
+  Slack's legacy mrkdwn format.
+
+Also builds source citation blocks and confirmation action blocks.
 """
 import json
 import logging
@@ -105,6 +111,57 @@ def split_text_into_blocks(mrkdwn_text: str, max_chars: int = 2900) -> list[dict
                 "type": "section",
                 "text": {"type": "mrkdwn", "text": chunk},
             })
+
+    return blocks
+
+
+MARKDOWN_BLOCK_CUMULATIVE_LIMIT = 12000
+
+
+def split_markdown_into_blocks(
+    text: str,
+    max_chars: int = MARKDOWN_BLOCK_CUMULATIVE_LIMIT,
+) -> list[dict]:
+    """
+    Split raw Markdown into Slack ``markdown`` blocks.
+
+    Unlike ``split_text_into_blocks`` (which converts to mrkdwn and wraps
+    in ``section`` blocks), this passes standard Markdown through unchanged
+    so Slack can render tables, syntax-highlighted code, headers, etc.
+    natively.
+
+    The cumulative text limit across all ``markdown`` blocks in a single
+    payload is 12 000 characters.  We split at paragraph boundaries when
+    the text exceeds this limit.
+    """
+    text = text.strip()
+    if not text:
+        return [{"type": "markdown", "text": " "}]
+
+    if len(text) <= max_chars:
+        return [{"type": "markdown", "text": text}]
+
+    blocks: list[dict] = []
+    remaining = text
+
+    while remaining:
+        if len(remaining) <= max_chars:
+            blocks.append({"type": "markdown", "text": remaining})
+            break
+
+        split_at = remaining.rfind('\n\n', 0, max_chars)
+        if split_at == -1 or split_at < max_chars // 2:
+            split_at = remaining.rfind('\n', 0, max_chars)
+        if split_at == -1 or split_at < max_chars // 2:
+            split_at = remaining.rfind(' ', 0, max_chars)
+        if split_at == -1:
+            split_at = max_chars
+
+        chunk = remaining[:split_at].rstrip()
+        remaining = remaining[split_at:].lstrip()
+
+        if chunk:
+            blocks.append({"type": "markdown", "text": chunk})
 
     return blocks
 

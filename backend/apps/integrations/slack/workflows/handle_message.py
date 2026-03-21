@@ -152,6 +152,75 @@ async def handle_slack_message(workflow_input: SlackMessageInput, context: Conte
     }
 
 
+def _format_confirm_success(result: dict) -> str:
+    """Build a Slack mrkdwn status line from a tool_confirm response.
+
+    Understands the structured ``ToolResult`` format (``summary``,
+    ``data``, ``actions``) returned by the customer's handler.
+    Falls back to a raw JSON dump when none of these fields are present.
+    """
+    import json
+
+    raw_result = result.get('result', '')
+    summary = None
+    actions_links: list[str] = []
+
+    if isinstance(raw_result, dict):
+        summary = raw_result.get('summary')
+
+        for action in raw_result.get('actions') or []:
+            if action.get('type') == 'open_url' and action.get('url'):
+                label = action.get('label', 'View')
+                actions_links.append(f"<{action['url']}|{label}>")
+
+    if summary:
+        parts = [f":white_check_mark: *Done* — {summary}"]
+    else:
+        fallback = raw_result if isinstance(raw_result, str) else json.dumps(raw_result, default=str)
+        parts = [f":white_check_mark: *Done* — {fallback}"]
+
+    if actions_links:
+        parts.append(' '.join(actions_links))
+
+    return '  '.join(parts)
+
+
+def _update_confirmation_status(
+    response_url: str,
+    kept_blocks: list[dict],
+    status_text: str,
+) -> bool:
+    """Update the confirmation message via response_url (replace 'Running...').
+
+    Returns True if the message was updated successfully.
+    """
+    if not response_url:
+        logger.warning("[SLACK] _update_confirmation_status called with empty response_url, skipping")
+        return False
+    try:
+        from slack_sdk.webhook import WebhookClient
+
+        blocks = list(kept_blocks)
+        blocks.append({
+            "type": "section",
+            "text": {"type": "mrkdwn", "text": status_text},
+        })
+        logger.info(
+            "[SLACK] Updating confirmation via response_url (%d kept blocks, status=%s)",
+            len(kept_blocks), status_text[:80],
+        )
+        webhook = WebhookClient(response_url)
+        resp = webhook.send(replace_original=True, blocks=blocks, text=status_text)
+        logger.info("[SLACK] response_url update result: status=%s", resp.status_code)
+        return resp.status_code == 200
+    except Exception:
+        logger.warning(
+            "[SLACK] Failed to update confirmation status via response_url",
+            exc_info=True,
+        )
+        return False
+
+
 async def _handle_confirmation(
     workflow_input: SlackMessageInput,
     installation,
@@ -180,6 +249,8 @@ async def _handle_confirmation(
     call_id = confirm.get('call_id', '')
     confirm_payload = confirm.get('confirm_payload', {})
     conversation_id = confirm.get('conversation_id')
+    confirm_response_url = confirm.get('response_url', '')
+    confirm_kept_blocks = confirm.get('kept_blocks', [])
 
     effective_thread_ts = workflow_input.thread_ts or workflow_input.ts
     adapter = SlackResponseAdapter(
@@ -189,8 +260,10 @@ async def _handle_confirmation(
     )
 
     logger.info(
-        "[SLACK] Handling confirmation: tool=%s, call_id=%s, conversation=%s",
+        "[SLACK] Handling confirmation: tool=%s, call_id=%s, conversation=%s, "
+        "has_response_url=%s, kept_blocks_count=%d",
         tool_name, call_id, conversation_id,
+        bool(confirm_response_url), len(confirm_kept_blocks),
     )
 
     endpoint = await get_tool_endpoint(str(product.id))
@@ -223,20 +296,21 @@ async def _handle_confirmation(
     )
 
     if is_success:
-        result_content = result.get('result', '')
-        if not isinstance(result_content, str):
-            import json
-            result_content = json.dumps(result_content, default=str)
-        await adapter._post_message(
-            blocks=[{
-                "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": f":white_check_mark: *Done* — {result_content}",
-                },
-            }],
-            fallback_text=f"Done — {result_content}",
+        status_text = _format_confirm_success(result)
+        updated = _update_confirmation_status(
+            confirm_response_url,
+            confirm_kept_blocks,
+            status_text,
         )
+
+        if not updated:
+            await adapter._post_message(
+                blocks=[{
+                    "type": "section",
+                    "text": {"type": "mrkdwn", "text": status_text},
+                }],
+                fallback_text=status_text,
+            )
         return {'status': 'completed'}
 
     # --- Failure path: resume through the LLM ---
@@ -253,6 +327,12 @@ async def _handle_confirmation(
     logger.info(
         "[SLACK] Confirmation failed for %s: %s — routing to LLM",
         tool_name, error_msg,
+    )
+
+    _update_confirmation_status(
+        confirm_response_url,
+        confirm_kept_blocks,
+        f":x: *Failed* — {error_msg}",
     )
 
     if installation.agent_id and installation.agent:
@@ -281,8 +361,9 @@ async def _handle_confirmation(
 
     error_text = (
         f"The user confirmed the tool '{tool_name}', but it failed with: "
-        f"{error_msg}\n\nHelp the user resolve this. You may retry with "
-        f"different parameters or suggest alternatives."
+        f"{error_msg}\n\n"
+        f"Briefly acknowledge the error to the user, then suggest "
+        f"how to fix it or offer alternatives."
     )
 
     message = AgentMessage(

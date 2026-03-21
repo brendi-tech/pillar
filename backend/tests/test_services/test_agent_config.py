@@ -383,3 +383,15 @@ class TestFilterToolsForAgent:
         ]
         result = filter_tools_for_agent(tools, "web", [], [])
         assert len(result) == 2
+
+    def test_wildcard_compatible_with_all_channels(self):
+        from apps.products.services.agent_resolver import filter_tools_for_agent
+
+        tools = [
+            {"name": "server_tool", "channel_compatibility": ["*"]},
+            {"name": "web_only", "channel_compatibility": ["web"]},
+        ]
+        result = filter_tools_for_agent(tools, "slack", [], [])
+        names = [t["name"] for t in result]
+        assert "server_tool" in names
+        assert "web_only" not in names

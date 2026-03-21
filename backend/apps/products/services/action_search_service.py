@@ -421,7 +421,11 @@ class ActionSearchService:
                     description_embedding__isnull=False
                 )
                 if channel:
-                    actions = actions.filter(channel_compatibility__contains=[channel])
+                    from django.db.models import Q
+                    actions = actions.filter(
+                        Q(channel_compatibility__contains=[channel])
+                        | Q(channel_compatibility__contains=['*'])
+                    )
                 return actions
             else:
                 logger.info(
@@ -436,7 +440,11 @@ class ActionSearchService:
             description_embedding__isnull=False
         )
         if channel:
-            actions = actions.filter(channel_compatibility__contains=[channel])
+            from django.db.models import Q
+            actions = actions.filter(
+                Q(channel_compatibility__contains=[channel])
+                | Q(channel_compatibility__contains=['*'])
+            )
         return actions
 
     async def _rerank_actions(

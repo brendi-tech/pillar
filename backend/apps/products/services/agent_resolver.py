@@ -234,7 +234,8 @@ def filter_tools_for_agent(
     """
     compatible = [
         t for t in all_tools
-        if channel in t.get('channel_compatibility', ['web'])
+        if '*' in t.get('channel_compatibility', ['web'])
+        or channel in t.get('channel_compatibility', ['web'])
     ]
 
     if allowlist:

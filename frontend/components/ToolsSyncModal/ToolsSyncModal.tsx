@@ -310,7 +310,7 @@ function DocumentationLink() {
         </p>
       </div>
       <Button variant="outline" size="sm" asChild>
-        <a href="/help/features/actions" target="_blank" rel="noopener">
+        <a href="/docs/guides/tools" target="_blank" rel="noopener">
           <ExternalLink className="mr-2 h-3 w-3" />
           View Docs
         </a>

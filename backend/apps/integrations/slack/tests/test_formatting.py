@@ -1,10 +1,11 @@
-"""Tests for Slack mrkdwn formatting utilities."""
+"""Tests for Slack Block Kit formatting utilities."""
 import pytest
 
 from apps.integrations.slack.formatting import (
     build_confirmation_blocks,
     build_sources_block,
     markdown_to_mrkdwn,
+    split_markdown_into_blocks,
     split_text_into_blocks,
 )
 
@@ -91,6 +92,90 @@ class TestSplitTextIntoBlocks:
         blocks = split_text_into_blocks("")
         assert len(blocks) == 1
         assert blocks[0]["text"]["text"] == ""
+
+
+class TestSplitMarkdownIntoBlocks:
+    def test_short_text_single_block(self):
+        blocks = split_markdown_into_blocks("Hello world")
+        assert len(blocks) == 1
+        assert blocks[0]["type"] == "markdown"
+        assert blocks[0]["text"] == "Hello world"
+
+    def test_empty_string(self):
+        blocks = split_markdown_into_blocks("")
+        assert len(blocks) == 1
+        assert blocks[0]["type"] == "markdown"
+
+    def test_whitespace_only(self):
+        blocks = split_markdown_into_blocks("   \n\n  ")
+        assert len(blocks) == 1
+        assert blocks[0]["type"] == "markdown"
+
+    def test_raw_markdown_preserved(self):
+        """Bold, headings, and links stay as standard markdown (no mrkdwn conversion)."""
+        text = "**bold** and [link](https://example.com)\n\n## Heading"
+        blocks = split_markdown_into_blocks(text)
+        assert len(blocks) == 1
+        assert "**bold**" in blocks[0]["text"]
+        assert "[link](https://example.com)" in blocks[0]["text"]
+        assert "## Heading" in blocks[0]["text"]
+
+    def test_table_passes_through(self):
+        table = (
+            "| # | Name | Created |\n"
+            "|---|------|--------|\n"
+            "| 1 | Test | May 18 |\n"
+            "| 2 | Demo | Jun 01 |"
+        )
+        text = f"Here are your customers:\n\n{table}\n\nAnything else?"
+        blocks = split_markdown_into_blocks(text)
+        assert len(blocks) == 1
+        assert "| # | Name | Created |" in blocks[0]["text"]
+        assert "|---|------|--------|" in blocks[0]["text"]
+
+    def test_code_block_passes_through(self):
+        text = "Run this:\n\n```python\nprint('hello')\n```\n\nDone."
+        blocks = split_markdown_into_blocks(text)
+        assert len(blocks) == 1
+        assert "```python" in blocks[0]["text"]
+        assert "print('hello')" in blocks[0]["text"]
+
+    def test_long_text_splits(self):
+        text = "A" * 20000
+        blocks = split_markdown_into_blocks(text, max_chars=12000)
+        assert len(blocks) >= 2
+        for block in blocks:
+            assert block["type"] == "markdown"
+            assert len(block["text"]) <= 12000
+
+    def test_splits_at_paragraph_boundary(self):
+        text = ("A" * 6000) + "\n\n" + ("B" * 6000) + "\n\n" + ("C" * 6000)
+        blocks = split_markdown_into_blocks(text, max_chars=12000)
+        assert len(blocks) >= 2
+        for block in blocks:
+            assert block["type"] == "markdown"
+
+    def test_realistic_llm_response(self):
+        """Full LLM response with prose, table, and code renders as markdown blocks."""
+        text = (
+            "You currently have **2 customers**:\n\n"
+            "| # | Customer ID | Name | Created |\n"
+            "|---|------------|------|--------|\n"
+            "| 1 | 123321 | Test | May 18, 2026 |\n"
+            "| 2 | 123 | Test | May 18, 2026 |\n\n"
+            "To query them via the API:\n\n"
+            "```bash\n"
+            "curl https://api.example.com/customers\n"
+            "```\n\n"
+            "Would you like to look into either of them?"
+        )
+        blocks = split_markdown_into_blocks(text)
+        assert len(blocks) == 1
+        full_text = blocks[0]["text"]
+        assert "**2 customers**" in full_text
+        assert "| # | Customer ID |" in full_text
+        assert "```bash" in full_text
+        assert "curl" in full_text
 
 
 class TestBuildSourcesBlock:

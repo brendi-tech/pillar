@@ -697,16 +697,24 @@ class SlackInteractionsView(APIView):
                 if not cache.add(dedup_key, "1", timeout=300):
                     return HttpResponse(status=200)
 
+            original_blocks = payload.get('message', {}).get('blocks', [])
+            kept_blocks = self._filter_action_blocks(original_blocks)
+
             self._replace_via_response_url(
                 payload, response_url, ":hourglass_flowing_sand: Running...",
             )
-            self._dispatch_confirm(payload, value_data, team_id, app_id)
+            self._dispatch_confirm(
+                payload, value_data, team_id, app_id,
+                response_url=response_url,
+                kept_blocks=kept_blocks,
+            )
             return HttpResponse(status=200)
 
         return HttpResponse(status=200)
 
     def _dispatch_confirm(
         self, payload: dict, value_data: dict, team_id: str, app_id: str = '',
+        response_url: str = '', kept_blocks: list[dict] | None = None,
     ) -> None:
         channel_info = payload.get('channel', {})
         message_info = payload.get('message', {})
@@ -714,6 +722,17 @@ class SlackInteractionsView(APIView):
 
         message_ts = message_info.get('ts', '')
         thread_ts = message_info.get('thread_ts', message_ts)
+
+        if response_url:
+            value_data['response_url'] = response_url
+        if kept_blocks:
+            value_data['kept_blocks'] = kept_blocks
+
+        logger.info(
+            "[SLACK] _dispatch_confirm: response_url=%s, kept_blocks=%d, tool_confirm_keys=%s",
+            bool(response_url), len(kept_blocks) if kept_blocks else 0,
+            list(value_data.keys()),
+        )
 
         TaskRouter.execute(
             'slack-handle-message',
@@ -730,6 +749,18 @@ class SlackInteractionsView(APIView):
         )
 
     @staticmethod
+    def _filter_action_blocks(blocks: list[dict]) -> list[dict]:
+        """Return blocks with confirm/cancel action rows and their dividers removed."""
+        return [
+            b for b in blocks
+            if b.get('type') not in ('actions', 'divider')
+            or not any(
+                el.get('action_id', '').startswith(('confirm_tool:', 'cancel_tool:'))
+                for el in b.get('elements', [])
+            )
+        ]
+
+    @staticmethod
     def _replace_via_response_url(
         payload: dict, response_url: str, text: str,
     ) -> None:
@@ -740,15 +771,7 @@ class SlackInteractionsView(APIView):
         way to update the source message is via the response_url webhook.
         """
         original_blocks = payload.get('message', {}).get('blocks', [])
-
-        kept_blocks = [
-            b for b in original_blocks
-            if b.get('type') not in ('actions', 'divider')
-            or not any(
-                el.get('action_id', '').startswith(('confirm_tool:', 'cancel_tool:'))
-                for el in b.get('elements', [])
-            )
-        ]
+        kept_blocks = SlackInteractionsView._filter_action_blocks(original_blocks)
 
         kept_blocks.append({
             "type": "section",

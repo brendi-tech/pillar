@@ -51,16 +51,13 @@ export function ToolsTab({ agent, productId, onChange }: ToolsTabProps) {
   }
 
   const allTools = tools || [];
-  const compatibleTools = allTools.filter(
-    (t) =>
-      !t.channel_compatibility?.length ||
-      t.channel_compatibility.includes(agent.channel)
-  );
-  const incompatibleTools = allTools.filter(
-    (t) =>
-      t.channel_compatibility?.length > 0 &&
-      !t.channel_compatibility.includes(agent.channel)
-  );
+  const isChannelCompatible = (t: ToolItem) =>
+    !t.channel_compatibility?.length ||
+    t.channel_compatibility.includes("*") ||
+    t.channel_compatibility.includes(agent.channel);
+
+  const compatibleTools = allTools.filter(isChannelCompatible);
+  const incompatibleTools = allTools.filter((t) => !isChannelCompatible(t));
 
   const useAllTools =
     agent.tool_allowlist.length === 0 && agent.tool_denylist.length === 0;

@@ -70,15 +70,15 @@ export function ApiKeysPageContent() {
       <div className="space-y-6">
         <SlugDisplay slug={slug} />
 
-        {generatedSecret && (
-          <NewSecretAlert generatedSecret={generatedSecret} />
-        )}
-
         {config?.id && (
           <SecretsTable
             productId={config.id}
             onSecretCreated={handleSecretCreated}
           />
+        )}
+
+        {generatedSecret && (
+          <NewSecretAlert generatedSecret={generatedSecret} />
         )}
 
         {isLocalDev && (
