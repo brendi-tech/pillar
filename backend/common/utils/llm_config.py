@@ -78,6 +78,16 @@ class LLMConfigService:
             'supports_reasoning': True,
             'reasoning_style': 'adaptive',  # Model auto-decides thinking depth
         },
+        'claude-sonnet-4.6': {
+            'provider': 'openrouter',
+            'openrouter_model': 'anthropic/claude-sonnet-4.6',
+            'context_window': 200000,
+            'description': 'Anthropic Claude Sonnet 4.6 via OpenRouter',
+            'cost_tier': 'standard',
+            'supports_vision': True,
+            'supports_reasoning': True,
+            'reasoning_style': 'effort',
+        },
         'claude-sonnet-4.5': {
             'provider': 'openrouter',
             'openrouter_model': 'anthropic/claude-sonnet-4.5',
@@ -210,7 +220,7 @@ class LLMConfigService:
         },
         'anthropic': {
             'flagship': 'claude-opus-4.6',
-            'standard': 'claude-sonnet-4.5',
+            'standard': 'claude-sonnet-4.6',
             'budget': 'claude-haiku-4-5',
         },
         'google': {

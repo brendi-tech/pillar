@@ -100,8 +100,14 @@ def _register_slash_commands(
             )
             resp.raise_for_status()
             return True
+    except httpx.HTTPStatusError as e:
+        logger.warning(
+            "[DISCORD] Failed to register /%s for guild %s: %s %s",
+            command_name, guild_id, e.response.status_code, e.response.text[:200],
+        )
+        return False
     except Exception:
-        logger.warning("[DISCORD] Failed to register slash commands for guild %s", guild_id)
+        logger.exception("[DISCORD] Failed to register /%s for guild %s", command_name, guild_id)
         return False
 
 
@@ -139,11 +145,14 @@ def _deregister_slash_commands(
 
             logger.info("[DISCORD] No /%s command found in guild %s, nothing to delete", command_name, guild_id)
             return True
-    except Exception:
+    except httpx.HTTPStatusError as e:
         logger.warning(
-            "[DISCORD] Failed to deregister slash commands for guild %s",
-            guild_id, exc_info=True,
+            "[DISCORD] Failed to deregister /%s for guild %s: %s %s",
+            command_name, guild_id, e.response.status_code, e.response.text[:200],
         )
+        return False
+    except Exception:
+        logger.exception("[DISCORD] Failed to deregister /%s for guild %s", command_name, guild_id)
         return False
 
 
@@ -514,6 +523,8 @@ class DiscordInteractionsView(APIView):
             message_id='',
             thread_id=confirm_data.get('thread_id', ''),
             tool_confirm=confirm_data,
+            interaction_token=payload.get('token', ''),
+            application_id=payload.get('application_id', ''),
         )
         cache.delete(ref_key)
 
@@ -682,15 +693,13 @@ class DiscordBYOBAdminView(APIView):
         installation.config = config
         installation.save(update_fields=['config'])
 
-        slash_registered = _register_slash_commands(bot_token, application_id, guild_id, command_name=cmd_name)
-
         api_base = get_api_base(request)
 
         return JsonResponse({
             'installation': DiscordInstallationSerializer(installation).data,
             'interactions_url': f'{api_base}/api/integrations/discord/interactions/',
             'invite_url': _build_invite_url(application_id),
-            'slash_commands_registered': slash_registered,
+            'slash_commands_registered': False,
             'message_content_intent': message_content_intent,
         })
 
@@ -813,12 +822,14 @@ class DiscordInstallationAdminView(APIView):
             return JsonResponse({"error": "Invalid command name"}, status=400)
 
         old_name = _get_slash_command_name(installation)
-        if new_name != old_name and installation.bot_token and installation.application_id and installation.guild_id:
-            _deregister_slash_commands(
-                installation.bot_token, installation.application_id, installation.guild_id,
-                command_name=old_name,
-            )
-            _register_slash_commands(
+        registered = False
+        if installation.bot_token and installation.application_id and installation.guild_id:
+            if new_name != old_name:
+                _deregister_slash_commands(
+                    installation.bot_token, installation.application_id, installation.guild_id,
+                    command_name=old_name,
+                )
+            registered = _register_slash_commands(
                 installation.bot_token, installation.application_id, installation.guild_id,
                 command_name=new_name,
             )
@@ -829,7 +840,9 @@ class DiscordInstallationAdminView(APIView):
         installation.save(update_fields=['config'])
 
         from .serializers import DiscordInstallationSerializer
-        return JsonResponse(DiscordInstallationSerializer(installation).data)
+        data = DiscordInstallationSerializer(installation).data
+        data['slash_commands_registered'] = registered
+        return JsonResponse(data)
 
     def delete(self, request, product_id):
         product = get_object_or_404(

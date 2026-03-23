@@ -101,17 +101,31 @@ class DiscordChannelConnector:
         channel_id: str,
         thread_id: str,
     ):
-        """Map Discord channel/thread → ChatConversation, creating if needed."""
+        """Map Discord channel/thread -> ChatConversation, creating if needed.
+
+        Thread IDs uniquely identify a conversation context.  Discord sends
+        channel_id = thread_id for messages inside threads, but the original
+        mapping stores the *parent* channel_id.  When thread_id is set we
+        look up by thread_id alone to avoid the mismatch.
+        """
         from apps.analytics.models import ChatConversation
 
         try:
-            mapping = await DiscordConversationMapping.objects.select_related(
-                'conversation'
-            ).aget(
-                installation=self.installation,
-                channel_id=channel_id,
-                thread_id=thread_id,
-            )
+            if thread_id:
+                mapping = await DiscordConversationMapping.objects.select_related(
+                    'conversation'
+                ).aget(
+                    installation=self.installation,
+                    thread_id=thread_id,
+                )
+            else:
+                mapping = await DiscordConversationMapping.objects.select_related(
+                    'conversation'
+                ).aget(
+                    installation=self.installation,
+                    channel_id=channel_id,
+                    thread_id='',
+                )
             return mapping.conversation
         except DiscordConversationMapping.DoesNotExist:
             conversation = await ChatConversation.objects.acreate(

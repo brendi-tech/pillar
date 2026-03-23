@@ -152,35 +152,47 @@ async def handle_slack_message(workflow_input: SlackMessageInput, context: Conte
     }
 
 
-def _format_confirm_success(result: dict) -> str:
-    """Build a Slack mrkdwn status line from a tool_confirm response.
+def _detect_inner_failure(result: dict) -> str | None:
+    """Check a tool-confirm result for inner failures that HTTP-level checks missed.
 
-    Understands the structured ``ToolResult`` format (``summary``,
-    ``data``, ``actions``) returned by the customer's handler.
-    Falls back to a raw JSON dump when none of these fields are present.
+    Customer endpoints may return HTTP 200 with structured results that
+    contain per-item failures (e.g. ``created: false``).  Returns a
+    human-readable error string when found, ``None`` otherwise.
     """
-    import json
+    content = result.get('result', result)
+    if not isinstance(content, dict):
+        return None
 
-    raw_result = result.get('result', '')
-    summary = None
-    actions_links: list[str] = []
+    if 'error' in content and isinstance(content['error'], str):
+        return content['error']
 
-    if isinstance(raw_result, dict):
-        summary = raw_result.get('summary')
+    for value in content.values():
+        if not isinstance(value, list):
+            continue
+        failures = []
+        for item in value:
+            if not isinstance(item, dict):
+                continue
+            if item.get('created') is False or item.get('success') is False:
+                error = item.get('error', 'unknown error')
+                name = item.get('name') or item.get('id', 'unknown')
+                failures.append(f"{name}: {error}")
+        if failures:
+            return '; '.join(failures)
 
-        for action in raw_result.get('actions') or []:
-            if action.get('type') == 'open_url' and action.get('url'):
-                label = action.get('label', 'View')
-                actions_links.append(f"<{action['url']}|{label}>")
+    return None
 
-    if summary:
-        parts = [f":white_check_mark: *Done* — {summary}"]
-    else:
-        fallback = raw_result if isinstance(raw_result, str) else json.dumps(raw_result, default=str)
-        parts = [f":white_check_mark: *Done* — {fallback}"]
 
-    if actions_links:
-        parts.append(' '.join(actions_links))
+def _format_confirm_success(result: dict) -> str:
+    """Build a Slack mrkdwn status line from a tool_confirm response."""
+    from apps.integrations.common.formatting import extract_confirm_success
+
+    summary, links = extract_confirm_success(result)
+    parts = [f":white_check_mark: *Done* — {summary}"]
+
+    if links:
+        slack_links = [f"<{l['url']}|{l['label']}>" for l in links]
+        parts.append(' '.join(slack_links))
 
     return '  '.join(parts)
 
@@ -295,8 +307,13 @@ async def _handle_confirmation(
         and result.get('success', True)
     )
 
+    inner_failure = _detect_inner_failure(result) if is_success else None
+    if inner_failure:
+        is_success = False
+
     if is_success:
         status_text = _format_confirm_success(result)
+
         updated = _update_confirmation_status(
             confirm_response_url,
             confirm_kept_blocks,
@@ -315,7 +332,9 @@ async def _handle_confirmation(
 
     # --- Failure path: resume through the LLM ---
 
-    if result.get('timed_out'):
+    if inner_failure:
+        error_msg = inner_failure
+    elif result.get('timed_out'):
         error_msg = f"Tool '{tool_name}' timed out."
     elif result.get('connection_error'):
         error_msg = f"Tool '{tool_name}' endpoint is unreachable."
@@ -332,7 +351,8 @@ async def _handle_confirmation(
     _update_confirmation_status(
         confirm_response_url,
         confirm_kept_blocks,
-        f":x: *Failed* — {error_msg}",
+        f":warning: *Failed* — {error_msg}" if inner_failure
+        else f":x: *Failed* — {error_msg}",
     )
 
     if installation.agent_id and installation.agent:

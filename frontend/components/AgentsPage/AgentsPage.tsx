@@ -359,10 +359,14 @@ export function AgentsPage({
   const handleGoToChecklist = async () => {
     if (discordInstallationCreated && discordSlashName) {
       try {
-        await v2Patch(`/products/${productId}/integrations/discord/`, {
-          slash_command_name: discordSlashName,
-        });
+        const result = await v2Patch<{ slash_commands_registered?: boolean }>(
+          `/products/${productId}/integrations/discord/`,
+          { slash_command_name: discordSlashName },
+        );
         queryClient.invalidateQueries({ queryKey: ["discord-installation", productId] });
+        if (result.slash_commands_registered === false) {
+          toast.error("Failed to register slash commands with Discord. You can retry from the checklist.");
+        }
       } catch {
         toast.error("Failed to update slash command name");
       }

@@ -100,6 +100,10 @@ class DiscordResponseAdapter(ResponseAdapter):
         kind = progress_data.get("kind", "")
         status = progress_data.get("status", "")
         if kind in ("tool_call", "search") and status == "active":
+            intermediate = ''.join(self._display_tokens).strip()
+            if intermediate:
+                embed = build_response_embed(intermediate, [])
+                await self._send_message(embeds=[embed])
             self._display_tokens = []
 
     async def on_action_request(
@@ -171,6 +175,24 @@ class DiscordResponseAdapter(ResponseAdapter):
             client = self._get_http()
             await client.delete(
                 f"{DISCORD_API}/channels/{self.channel_id}/messages/{message_id}/reactions/%F0%9F%A4%94/@me",
+            )
+        except Exception:
+            pass
+
+    async def dismiss_deferred_response(
+        self,
+        application_id: str = '',
+        interaction_token: str = '',
+    ) -> None:
+        """Delete the deferred 'is thinking...' interaction response."""
+        app_id = application_id or self.application_id
+        token = interaction_token or self.interaction_token
+        if not token or not app_id:
+            return
+        try:
+            client = self._get_http()
+            await client.delete(
+                f"{DISCORD_API}/webhooks/{app_id}/{token}/messages/@original",
             )
         except Exception:
             pass

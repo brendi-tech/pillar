@@ -76,7 +76,9 @@ class ToolRegistrationView(APIView):
             defaults: dict[str, Any] = {
                 "description": tool_def.get("description", ""),
                 "tool_type": Action.ToolType.SERVER_SIDE,
-                "data_schema": tool_def.get("parameters", {}),
+                "data_schema": tool_def.get("parameters") or tool_def.get("inputSchema") or {},
+                "guidance": tool_def.get("guidance", ""),
+                "output_schema": tool_def.get("outputSchema", {}),
                 "channel_compatibility": tool_def.get(
                     "channel_compatibility",
                     ["web", "slack", "discord", "email", "api"],

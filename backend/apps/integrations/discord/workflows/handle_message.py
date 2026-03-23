@@ -191,6 +191,37 @@ async def handle_discord_message(workflow_input: DiscordMessageInput, context: C
     }
 
 
+def _detect_inner_failure(result: dict) -> str | None:
+    """Check a tool-confirm result for inner failures that HTTP-level checks missed.
+
+    Customer endpoints may return HTTP 200 with structured results that
+    contain per-item failures (e.g. ``created: false``).  Returns a
+    human-readable error string when found, ``None`` otherwise.
+    """
+    content = result.get('result', result)
+    if not isinstance(content, dict):
+        return None
+
+    if 'error' in content and isinstance(content['error'], str):
+        return content['error']
+
+    for value in content.values():
+        if not isinstance(value, list):
+            continue
+        failures = []
+        for item in value:
+            if not isinstance(item, dict):
+                continue
+            if item.get('created') is False or item.get('success') is False:
+                error = item.get('error', 'unknown error')
+                name = item.get('name') or item.get('id', 'unknown')
+                failures.append(f"{name}: {error}")
+        if failures:
+            return '; '.join(failures)
+
+    return None
+
+
 async def _handle_confirmation(
     workflow_input: DiscordMessageInput,
     installation,
@@ -259,22 +290,37 @@ async def _handle_confirmation(
         and result.get('success', True)
     )
 
+    inner_failure = _detect_inner_failure(result) if is_success else None
+    if inner_failure:
+        is_success = False
+
     if is_success:
-        result_content = result.get('result', '')
-        if not isinstance(result_content, str):
-            import json
-            result_content = json.dumps(result_content, default=str)
+        from apps.integrations.common.formatting import extract_confirm_success
+
+        summary, links = extract_confirm_success(result)
+        description = f"✅ **Done** — {summary}"
+        if links:
+            description += "\n" + " ".join(
+                f"[{l['label']}]({l['url']})" for l in links
+            )
+
         embed = {
-            "description": f"✅ **Done** — {result_content}",
+            "description": description,
             "color": 0x57F287,
             "footer": {"text": "Powered by Pillar"},
         }
         await adapter._send_message(embeds=[embed])
+        await adapter.dismiss_deferred_response(
+            application_id=workflow_input.application_id,
+            interaction_token=workflow_input.interaction_token,
+        )
         return {'status': 'completed'}
 
     # --- Failure path: resume through the LLM ---
 
-    if result.get('timed_out'):
+    if inner_failure:
+        error_msg = inner_failure
+    elif result.get('timed_out'):
         error_msg = f"Tool '{tool_name}' timed out."
     elif result.get('connection_error'):
         error_msg = f"Tool '{tool_name}' endpoint is unreachable."
@@ -287,6 +333,15 @@ async def _handle_confirmation(
         "[DISCORD] Confirmation failed for %s: %s — routing to LLM",
         tool_name, error_msg,
     )
+
+    from apps.integrations.discord.formatting import PILLAR_BLURPLE
+
+    status_embed = {
+        "description": f"{error_msg}\n\nWorking on it...",
+        "color": PILLAR_BLURPLE,
+        "footer": {"text": "Powered by Pillar"},
+    }
+    await adapter._send_message(embeds=[status_embed])
 
     agent_config = await resolve_agent_config(
         product=product,
@@ -353,8 +408,12 @@ async def _handle_confirmation(
             await adapter.on_event(event)
 
         await adapter.finalize()
+        await adapter.dismiss_deferred_response(
+            application_id=workflow_input.application_id,
+            interaction_token=workflow_input.interaction_token,
+        )
 
-        response_text = adapter._full_response or ''.join(adapter._tokens)
+        response_text = adapter._full_response or ''.join(adapter._display_tokens)
         await finalize_turn(
             assistant_message_id=assistant_msg_id,
             response_text=response_text,
@@ -365,5 +424,9 @@ async def _handle_confirmation(
     except Exception as e:
         logger.exception("[DISCORD] Error in confirmation recovery: %s", e)
         await adapter.send_error(f"Tool '{tool_name}' failed: {error_msg}")
+        await adapter.dismiss_deferred_response(
+            application_id=workflow_input.application_id,
+            interaction_token=workflow_input.interaction_token,
+        )
 
     return {'status': 'completed'}
