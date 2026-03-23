@@ -55,6 +55,7 @@ def get_all_workflows():
 
     # Import Discord integration workflows
     from apps.integrations.discord.workflows.handle_message import handle_discord_message
+    from apps.integrations.discord.workflows.account_link import handle_account_link as handle_discord_account_link
 
     # Import Email channel workflows
     from apps.integrations.email_channel.workflows.handle_email import handle_inbound_email
@@ -99,6 +100,7 @@ def get_all_workflows():
         handle_account_link,
         # Discord integration workflows
         handle_discord_message,
+        handle_discord_account_link,
         # Email channel workflows
         handle_inbound_email,
         # Agent Score workflows (public scoring tool)

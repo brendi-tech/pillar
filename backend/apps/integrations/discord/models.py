@@ -54,6 +54,32 @@ class DiscordInstallation(TenantAwareModel):
         help_text="Channel restrictions, DM settings, etc.",
     )
 
+    is_byob = models.BooleanField(
+        default=False,
+        help_text="True if customer provided their own Discord bot credentials.",
+    )
+    app_public_key = EncryptedTextField(
+        blank=True,
+        null=True,
+        default='',
+        help_text="Per-installation public key for Ed25519 interaction verification.",
+    )
+    application_id = models.CharField(
+        max_length=50,
+        blank=True,
+        default='',
+        db_index=True,
+        help_text="Discord application snowflake ID. Used to route incoming interactions.",
+    )
+    agent = models.ForeignKey(
+        'products.Agent',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='discord_installations',
+        help_text="Specific agent to route messages to. Null = use product+channel resolver.",
+    )
+
     class Meta:
         verbose_name = "Discord Installation"
         verbose_name_plural = "Discord Installations"

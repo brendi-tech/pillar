@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, useCallback, useEffect, useRef } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import {
   Tabs,
@@ -28,6 +28,7 @@ import { ToolsTab } from "./ToolsTab";
 import { ResponseTab } from "./ResponseTab";
 import { ChannelSettingsTab } from "./ChannelSettingsTab";
 import { KnowledgeTab } from "./KnowledgeTab";
+import { DiscordConfigTab } from "./DiscordConfigTab";
 import {
   updateAgentMutation,
   deleteAgentMutation,
@@ -35,6 +36,8 @@ import {
 } from "@/queries/agent.queries";
 import type { Agent, UpdateAgentPayload } from "@/types/agent";
 import { CHANNEL_LABELS } from "@/types/agent";
+import { Checkbox } from "@/components/ui/checkbox";
+import { v2Delete, v2Fetch } from "@/lib/admin/v2/api-client";
 import { Loader2, Trash2, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -74,10 +77,16 @@ export function AgentEditForm({ agent, productGuidance }: AgentEditFormProps) {
     },
   });
 
+  const removeFromServerRef = useRef(false);
+
   const deleteMutation = useMutation({
     ...deleteAgentMutation(),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: agentKeys.lists() });
+      if (agent.channel === "discord") {
+        const leaveParam = removeFromServerRef.current ? "?leave_guild=true" : "";
+        v2Delete(`/products/${agent.product}/integrations/discord/${leaveParam}`).catch(() => {});
+      }
       toast.success("Agent deleted");
       router.push("/agents");
     },
@@ -95,6 +104,7 @@ export function AgentEditForm({ agent, productGuidance }: AgentEditFormProps) {
       tool_scope: draft.tool_scope,
       tool_restriction_ids: draft.tool_restriction_ids,
       tool_allowance_ids: draft.tool_allowance_ids,
+      tool_context_restrictions: draft.tool_context_restrictions,
       max_response_tokens: draft.max_response_tokens,
       include_sources: draft.include_sources,
       include_suggested_followups: draft.include_suggested_followups,
@@ -108,6 +118,17 @@ export function AgentEditForm({ agent, productGuidance }: AgentEditFormProps) {
     };
     updateMutation.mutate({ id: agent.id, data: payload });
   };
+
+  const [removeFromServer, setRemoveFromServer] = useState(false);
+
+  const { data: discordInstallation } = useQuery({
+    queryKey: ["discord-installation", agent.product],
+    queryFn: () =>
+      v2Fetch<{ guild_name: string; slash_command_name?: string } | null>(
+        `/products/${agent.product}/integrations/discord/`
+      ).catch(() => null),
+    enabled: agent.channel === "discord",
+  });
 
   const handleDiscard = () => {
     setDraft(agent);
@@ -160,7 +181,7 @@ export function AgentEditForm({ agent, productGuidance }: AgentEditFormProps) {
             </>
           )}
 
-          <AlertDialog>
+          <AlertDialog onOpenChange={(open) => { if (!open) setRemoveFromServer(false); }}>
             <AlertDialogTrigger asChild>
               <Button variant="ghost" size="icon" className="text-destructive">
                 <Trash2 className="h-4 w-4" />
@@ -169,16 +190,44 @@ export function AgentEditForm({ agent, productGuidance }: AgentEditFormProps) {
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Delete Agent</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Deleting this agent will reset{" "}
-                  {CHANNEL_LABELS[agent.channel]} to product defaults. Existing
-                  conversations will retain a reference to this agent.
-                </AlertDialogDescription>
+                {agent.channel === "discord" ? (
+                  <AlertDialogDescription asChild>
+                    <div className="space-y-3 text-sm text-muted-foreground">
+                      <p>Deleting this agent will:</p>
+                      <ul className="list-disc pl-5 space-y-1">
+                        <li>Remove slash commands (<span className="font-mono text-xs">/{discordInstallation?.slash_command_name || "pillar"}</span>) from the server</li>
+                        <li>Disconnect the Discord bot from Pillar</li>
+                        <li>Reset Discord to product defaults</li>
+                      </ul>
+                      <p>Existing conversations will retain a reference to this agent.</p>
+                      <div className="flex items-start gap-2 rounded-md border p-3 mt-2">
+                        <Checkbox
+                          id="remove-bot"
+                          checked={removeFromServer}
+                          onCheckedChange={(checked) => setRemoveFromServer(checked === true)}
+                        />
+                        <label htmlFor="remove-bot" className="text-sm leading-tight cursor-pointer">
+                          Also remove bot from{" "}
+                          <span className="font-medium text-foreground">
+                            {discordInstallation?.guild_name || "the server"}
+                          </span>
+                        </label>
+                      </div>
+                    </div>
+                  </AlertDialogDescription>
+                ) : (
+                  <AlertDialogDescription>
+                    {`Deleting this agent will reset ${CHANNEL_LABELS[agent.channel]} to product defaults. Existing conversations will retain a reference to this agent.`}
+                  </AlertDialogDescription>
+                )}
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction
-                  onClick={() => deleteMutation.mutate(agent.id)}
+                  onClick={() => {
+                    removeFromServerRef.current = removeFromServer;
+                    deleteMutation.mutate(agent.id);
+                  }}
                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 >
                   Delete
@@ -196,6 +245,9 @@ export function AgentEditForm({ agent, productGuidance }: AgentEditFormProps) {
           <TabsTrigger value="response">Response</TabsTrigger>
           <TabsTrigger value="channel">Channel Settings</TabsTrigger>
           <TabsTrigger value="knowledge">Knowledge</TabsTrigger>
+          {agent.channel === "discord" && (
+            <TabsTrigger value="discord-config">Configuration</TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="personality" className="mt-6">
@@ -229,6 +281,12 @@ export function AgentEditForm({ agent, productGuidance }: AgentEditFormProps) {
             onChange={handleChange}
           />
         </TabsContent>
+
+        {agent.channel === "discord" && (
+          <TabsContent value="discord-config" className="mt-6">
+            <DiscordConfigTab productId={agent.product} />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );

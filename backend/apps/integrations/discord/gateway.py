@@ -37,9 +37,10 @@ class DiscordGatewayClient:
     6. On disconnect: RESUME or re-IDENTIFY
     """
 
-    def __init__(self, bot_token: str, intents: int) -> None:
+    def __init__(self, bot_token: str, intents: int, installation_id: str = '') -> None:
         self.bot_token = bot_token
         self.intents = intents
+        self.installation_id = installation_id
         self._ws: aiohttp.ClientWebSocketResponse | None = None
         self._session: aiohttp.ClientSession | None = None
         self._heartbeat_interval: float = 41.25
@@ -106,7 +107,19 @@ class DiscordGatewayClient:
             if msg.type == aiohttp.WSMsgType.TEXT:
                 await self._handle_message(json.loads(msg.data))
             elif msg.type in (aiohttp.WSMsgType.CLOSED, aiohttp.WSMsgType.ERROR):
-                logger.warning("[DISCORD-GW] WebSocket closed/error: %s", msg.type)
+                close_code = self._ws.close_code
+                if close_code == 4014:
+                    logger.error(
+                        "[DISCORD-GW] Close 4014: Message Content intent not enabled "
+                        "in Developer Portal. Enable it at "
+                        "https://discord.com/developers/applications"
+                    )
+                    self._running = False
+                else:
+                    logger.warning(
+                        "[DISCORD-GW] WebSocket closed/error: %s (code=%s)",
+                        msg.type, close_code,
+                    )
                 break
 
     async def _handle_message(self, payload: dict[str, Any]) -> None:
@@ -167,7 +180,17 @@ class DiscordGatewayClient:
         elif event_name == "MESSAGE_CREATE":
             await self._on_message_create(data)
 
+        elif event_name == "THREAD_CREATE":
+            await self._on_thread_create(data)
+
+        elif event_name == "GUILD_DELETE":
+            await self._on_guild_delete(data)
+
     async def _on_message_create(self, data: dict) -> None:
+        from asgiref.sync import sync_to_async
+
+        from django.core.cache import cache
+
         author = data.get("author", {})
         if author.get("bot"):
             return
@@ -177,6 +200,10 @@ class DiscordGatewayClient:
         channel_id = data.get("channel_id", "")
         message_id = data.get("id", "")
 
+        if message_id and not cache.add(f"discord_event_seen:{message_id}", "1", timeout=3600):
+            logger.info("[DISCORD-GW] Duplicate message %s, skipping", message_id)
+            return
+
         is_dm = not guild_id
         is_mention = f"<@{self._bot_user_id}>" in content if self._bot_user_id else False
 
@@ -185,7 +212,32 @@ class DiscordGatewayClient:
         if data.get("thread") or (msg_ref and msg_ref.get("channel_id") != channel_id):
             thread_id = channel_id
 
+        if not thread_id and guild_id:
+            if cache.get(f"discord_bot_thread:{channel_id}"):
+                thread_id = channel_id
+            else:
+                from .models import DiscordConversationMapping
+                is_known = await sync_to_async(
+                    DiscordConversationMapping.objects.filter(thread_id=channel_id).exists
+                )()
+                if is_known:
+                    thread_id = channel_id
+                    cache.set(f"discord_bot_thread:{channel_id}", "1", timeout=86400 * 7)
+
         if not is_dm and not is_mention and not thread_id:
+            return
+
+        config = await self._get_installation_config(guild_id) if guild_id else {}
+
+        if is_dm and not config.get("respond_to_dms", True):
+            return
+
+        if is_mention and not is_dm and not config.get("respond_to_mentions", True):
+            redirect_msg = config.get(
+                "mention_redirect_message",
+                "Please DM me directly for account help.",
+            )
+            await self._send_redirect_message(channel_id, redirect_msg)
             return
 
         logger.info(
@@ -205,7 +257,78 @@ class DiscordGatewayClient:
             content=content,
             message_id=message_id,
             thread_id=thread_id,
+            installation_id=self.installation_id,
+            is_dm=is_dm,
         )
+
+    async def _get_installation_config(self, guild_id: str) -> dict:
+        """Load installation config from DB, cached for 5 minutes."""
+        from asgiref.sync import sync_to_async
+
+        from django.core.cache import cache
+
+        cache_key = f"discord_inst_config:{guild_id}"
+        config = cache.get(cache_key)
+        if config is not None:
+            return config
+
+        from .models import DiscordInstallation
+
+        try:
+            inst = await sync_to_async(
+                DiscordInstallation.objects.values('config').get
+            )(guild_id=guild_id, is_active=True)
+            config = inst['config'] or {}
+        except DiscordInstallation.DoesNotExist:
+            config = {}
+
+        cache.set(cache_key, config, timeout=300)
+        return config
+
+    async def _send_redirect_message(self, channel_id: str, message: str) -> None:
+        """Post a brief redirect message via the Discord REST API."""
+        if not self._session or self._session.closed:
+            return
+        try:
+            async with self._session.post(
+                f"https://discord.com/api/v10/channels/{channel_id}/messages",
+                headers={"Authorization": f"Bot {self.bot_token}"},
+                json={"content": message},
+            ) as resp:
+                if resp.status >= 400:
+                    logger.warning("[DISCORD-GW] Failed to send redirect message: %s", resp.status)
+        except Exception:
+            logger.exception("[DISCORD-GW] Error sending redirect message")
+
+    async def _on_thread_create(self, data: dict) -> None:
+        """Warm the thread cache so replies in this thread are recognized."""
+        from django.core.cache import cache
+
+        thread_channel_id = data.get("id", "")
+        if thread_channel_id:
+            cache.set(f"discord_bot_thread:{thread_channel_id}", "1", timeout=86400 * 7)
+
+    async def _on_guild_delete(self, data: dict) -> None:
+        """Deactivate installation when bot is removed from a guild."""
+        from asgiref.sync import sync_to_async
+
+        from .models import DiscordInstallation
+
+        guild_id = data.get("id", "")
+        if not guild_id:
+            return
+
+        unavailable = data.get("unavailable", False)
+        if unavailable:
+            logger.info("[DISCORD-GW] Guild %s temporarily unavailable, ignoring", guild_id)
+            return
+
+        updated = await sync_to_async(
+            DiscordInstallation.objects.filter(guild_id=guild_id, is_active=True).update
+        )(is_active=False)
+
+        if updated:
+            logger.info("[DISCORD-GW] Deactivated installation for removed guild %s", guild_id)
 
     async def _send_identify(self) -> None:
         await self._ws.send_json({

@@ -159,6 +159,15 @@ class LLMConfigService:
             'supports_reasoning': True,
             'reasoning_style': 'effort',  # OpenRouter maps effort to thinkingLevel
         },
+        'gemini-3.1-flash-lite': {
+            'provider': 'openrouter',
+            'openrouter_model': 'google/gemini-3.1-flash-lite-preview',
+            'context_window': 1000000,
+            'description': 'Google Gemini 3.1 Flash Lite Preview (fastest, cheapest)',
+            'cost_tier': 'budget',
+            'supports_vision': True,
+            'supports_reasoning': False,
+        },
         # === xAI Models ===
         'grok-4': {
             'provider': 'openrouter',
@@ -206,7 +215,8 @@ class LLMConfigService:
         },
         'google': {
             'flagship': 'gemini-3-pro',
-            'budget': 'gemini-3-flash-preview',
+            'standard': 'gemini-3-flash-preview',
+            'budget': 'gemini-3.1-flash-lite',
         },
         'xai': {
             'flagship': 'grok-4',

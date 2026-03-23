@@ -10,7 +10,13 @@ import httpx
 
 from apps.mcp.services.agent.response_adapter import ResponseAdapter
 
-from .formatting import build_error_embed, build_response_embed, split_long_response
+from .formatting import (
+    PILLAR_BLURPLE,
+    build_confirmation_embed,
+    build_error_embed,
+    build_response_embed,
+    split_long_response,
+)
 from .models import DiscordInstallation
 
 logger = logging.getLogger(__name__)
@@ -38,6 +44,8 @@ class DiscordResponseAdapter(ResponseAdapter):
         organization_id: str = '',
         product_id: str = '',
         conversation_id: str = '',
+        interaction_token: str = '',
+        application_id: str = '',
     ) -> None:
         super().__init__(
             organization_id=organization_id,
@@ -48,10 +56,14 @@ class DiscordResponseAdapter(ResponseAdapter):
         self.installation = installation
         self.channel_id = channel_id
         self.thread_id = thread_id
+        self.interaction_token = interaction_token
+        self.application_id = application_id
 
         self._display_tokens: list[str] = []
         self._sources: list[dict] = []
+        self._pending_confirmations: list[dict] = []
         self._full_response = ""
+        self._http: httpx.AsyncClient | None = None
 
     @property
     def _headers(self) -> dict[str, str]:
@@ -59,6 +71,18 @@ class DiscordResponseAdapter(ResponseAdapter):
             "Authorization": f"Bot {self.installation.bot_token}",
             "Content-Type": "application/json",
         }
+
+    def _get_http(self) -> httpx.AsyncClient:
+        if self._http is None or self._http.is_closed:
+            self._http = httpx.AsyncClient(
+                headers=self._headers,
+                timeout=httpx.Timeout(10.0),
+            )
+        return self._http
+
+    async def close(self) -> None:
+        if self._http and not self._http.is_closed:
+            await self._http.aclose()
 
     @property
     def _post_channel_id(self) -> str:
@@ -73,12 +97,30 @@ class DiscordResponseAdapter(ResponseAdapter):
         self._sources = sources
 
     async def on_progress(self, progress_data: dict) -> None:
-        pass
+        kind = progress_data.get("kind", "")
+        status = progress_data.get("status", "")
+        if kind in ("tool_call", "search") and status == "active":
+            self._display_tokens = []
 
     async def on_action_request(
         self, action_name: str, parameters: dict, action: dict
     ) -> None:
         pass
+
+    async def on_confirmation_request(
+        self, tool_name: str, call_id: str, title: str, message: str,
+        details: dict | None, confirm_payload: dict,
+        conversation_id: str | None = None,
+    ) -> None:
+        self._pending_confirmations.append({
+            "tool_name": tool_name,
+            "call_id": call_id,
+            "title": title,
+            "message": message,
+            "details": details,
+            "confirm_payload": confirm_payload,
+            "conversation_id": conversation_id,
+        })
 
     async def on_complete(self, event: dict) -> None:
         self._full_response = event.get('message', '') or ''.join(self._display_tokens)
@@ -93,31 +135,43 @@ class DiscordResponseAdapter(ResponseAdapter):
         await self.finalize_persistence()
 
         response_text = self._full_response or ''.join(self._display_tokens)
-        if not response_text:
+        if not response_text and not self._pending_confirmations:
             return
 
-        embed = build_response_embed(response_text, self._sources)
-        await self._send_message(embeds=[embed])
+        if response_text:
+            embed = build_response_embed(response_text, self._sources)
+            await self._send_message(embeds=[embed])
+
+        for conf in self._pending_confirmations:
+            embed, components = build_confirmation_embed(
+                tool_name=conf["tool_name"],
+                call_id=conf["call_id"],
+                title=conf["title"],
+                message=conf["message"],
+                details=conf.get("details"),
+                confirm_payload=conf["confirm_payload"],
+                conversation_id=conf.get("conversation_id"),
+                thread_id=self.thread_id,
+            )
+            await self._send_message(embeds=[embed], components=components)
 
     async def add_thinking_reaction(self, message_id: str) -> None:
         """Add a thinking reaction to the user's message."""
         try:
-            async with httpx.AsyncClient() as client:
-                await client.put(
-                    f"{DISCORD_API}/channels/{self.channel_id}/messages/{message_id}/reactions/%F0%9F%A4%94/@me",
-                    headers=self._headers,
-                )
+            client = self._get_http()
+            await client.put(
+                f"{DISCORD_API}/channels/{self.channel_id}/messages/{message_id}/reactions/%F0%9F%A4%94/@me",
+            )
         except Exception:
             pass
 
     async def remove_thinking_reaction(self, message_id: str) -> None:
         """Remove the thinking reaction from the user's message."""
         try:
-            async with httpx.AsyncClient() as client:
-                await client.delete(
-                    f"{DISCORD_API}/channels/{self.channel_id}/messages/{message_id}/reactions/%F0%9F%A4%94/@me",
-                    headers=self._headers,
-                )
+            client = self._get_http()
+            await client.delete(
+                f"{DISCORD_API}/channels/{self.channel_id}/messages/{message_id}/reactions/%F0%9F%A4%94/@me",
+            )
         except Exception:
             pass
 
@@ -134,24 +188,60 @@ class DiscordResponseAdapter(ResponseAdapter):
     async def create_thread(self, message_id: str, name: str) -> dict | None:
         """Create a thread from a message and return the thread data."""
         try:
-            async with httpx.AsyncClient() as client:
-                resp = await client.post(
-                    f"{DISCORD_API}/channels/{self.channel_id}/messages/{message_id}/threads",
-                    headers=self._headers,
-                    json={"name": name[:100]},
-                )
-                resp.raise_for_status()
-                thread_data = resp.json()
-                self.thread_id = thread_data["id"]
-                return thread_data
+            client = self._get_http()
+            resp = await client.post(
+                f"{DISCORD_API}/channels/{self.channel_id}/messages/{message_id}/threads",
+                json={"name": name[:100]},
+            )
+            resp.raise_for_status()
+            thread_data = resp.json()
+            self.thread_id = thread_data["id"]
+            return thread_data
         except Exception:
             logger.exception("[DISCORD] Failed to create thread")
+            return None
+
+    async def create_thread_from_interaction(
+        self,
+        application_id: str,
+        interaction_token: str,
+        name: str,
+    ) -> dict | None:
+        """Create a thread from a deferred interaction response.
+
+        Fetches the original interaction message to get its ID, creates a
+        thread from it, then edits the original to point users to the thread.
+        """
+        try:
+            client = self._get_http()
+
+            resp = await client.get(
+                f"{DISCORD_API}/webhooks/{application_id}/{interaction_token}/messages/@original",
+            )
+            resp.raise_for_status()
+            msg_id = resp.json()["id"]
+
+            thread_data = await self.create_thread(msg_id, name)
+            if not thread_data:
+                return None
+
+            await client.patch(
+                f"{DISCORD_API}/webhooks/{application_id}/{interaction_token}/messages/@original",
+                json={
+                    "content": "",
+                    "embeds": [{"description": "Answering in thread below \u2193", "color": PILLAR_BLURPLE}],
+                },
+            )
+            return thread_data
+        except Exception:
+            logger.exception("[DISCORD] Failed to create thread from interaction")
             return None
 
     async def _send_message(
         self,
         content: str = "",
         embeds: list[dict] | None = None,
+        components: list[dict] | None = None,
     ) -> dict | None:
         """Post a message to the channel/thread."""
         payload: dict = {}
@@ -160,16 +250,21 @@ class DiscordResponseAdapter(ResponseAdapter):
             payload["content"] = chunks[0]
         if embeds:
             payload["embeds"] = embeds
+        if components:
+            payload["components"] = components
+
+        if self.interaction_token and self.application_id:
+            url = f"{DISCORD_API}/webhooks/{self.application_id}/{self.interaction_token}"
+            extra_headers = {"Content-Type": "application/json"}
+        else:
+            url = f"{DISCORD_API}/channels/{self._post_channel_id}/messages"
+            extra_headers = None
 
         try:
-            async with httpx.AsyncClient() as client:
-                resp = await client.post(
-                    f"{DISCORD_API}/channels/{self._post_channel_id}/messages",
-                    headers=self._headers,
-                    json=payload,
-                )
-                resp.raise_for_status()
-                return resp.json()
+            client = self._get_http()
+            resp = await client.post(url, headers=extra_headers, json=payload)
+            resp.raise_for_status()
+            return resp.json()
         except httpx.HTTPStatusError as e:
             logger.error(
                 "[DISCORD] Failed to send message: %s %s",

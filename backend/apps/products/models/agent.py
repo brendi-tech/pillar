@@ -146,6 +146,15 @@ class Agent(TenantAwareModel):
         related_name='allowed_by_agents',
         help_text="Tools included when scope is 'allowed'.",
     )
+    tool_context_restrictions = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text=(
+            'Map of tool_name -> list of allowed contexts '
+            '(e.g. ["private"], ["public"], ["private", "team"]). '
+            'Tools not listed are available in all contexts.'
+        ),
+    )
 
     # Response format
     max_response_tokens = models.IntegerField(

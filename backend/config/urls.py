@@ -55,7 +55,7 @@ from apps.products.views import ProductViewSet, ActionSyncView, ActionSyncStatus
 
 # Slack admin view
 from apps.integrations.slack.views import SlackInstallationAdminView, SlackInstallAdminView, SlackBYOBAdminView, SlackManifestAdminView
-from apps.integrations.discord.views import DiscordInstallationAdminView, DiscordInstallAdminView
+from apps.integrations.discord.views import DiscordInstallationAdminView, DiscordInstallAdminView, DiscordBYOBAdminView, DiscordVerifyAdminView
 from apps.integrations.email_channel.views import EmailChannelAdminView
 _slack_admin_view = SlackInstallationAdminView.as_view()
 _slack_install_admin_view = SlackInstallAdminView.as_view()
@@ -63,6 +63,8 @@ _slack_byob_admin_view = SlackBYOBAdminView.as_view()
 _slack_manifest_admin_view = SlackManifestAdminView.as_view()
 _discord_admin_view = DiscordInstallationAdminView.as_view()
 _discord_install_admin_view = DiscordInstallAdminView.as_view()
+_discord_byob_admin_view = DiscordBYOBAdminView.as_view()
+_discord_verify_admin_view = DiscordVerifyAdminView.as_view()
 _email_admin_view = EmailChannelAdminView.as_view()
 
 # Import debug log views
@@ -200,6 +202,10 @@ urlpatterns = [
          _slack_admin_view, name='slack-admin'),
     path('api/admin/products/<uuid:product_id>/integrations/discord/install/',
          _discord_install_admin_view, name='discord-install-admin'),
+    path('api/admin/products/<uuid:product_id>/integrations/discord/byob/',
+         _discord_byob_admin_view, name='discord-byob-admin'),
+    path('api/admin/products/<uuid:product_id>/integrations/discord/verify/',
+         _discord_verify_admin_view, name='discord-verify-admin'),
     path('api/admin/products/<uuid:product_id>/integrations/discord/',
          _discord_admin_view, name='discord-admin'),
     path('api/admin/products/<uuid:product_id>/integrations/email/',

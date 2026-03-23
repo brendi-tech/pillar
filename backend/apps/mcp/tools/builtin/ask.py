@@ -404,6 +404,7 @@ class AskTool(Tool):
                 'registered_tools', arguments.get('registered_actions', []),
             )
 
+
         user_profile = None
         if isinstance(context, dict):
             if 'product' in context:

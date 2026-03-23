@@ -146,6 +146,7 @@ function FilterControls({
             <SelectItem value="all">All</SelectItem>
             <SelectItem value="web">Web</SelectItem>
             <SelectItem value="slack">Slack</SelectItem>
+            <SelectItem value="discord">Discord</SelectItem>
             <SelectItem value="email">Email</SelectItem>
             <SelectItem value="api">API</SelectItem>
           </SelectContent>

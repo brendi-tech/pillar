@@ -446,3 +446,125 @@ class TestFilterToolsForAgent:
             names = [t["name"] for t in result]
             assert "server_tool" in names, f"server_tool missing for {channel}"
             assert "client_wildcard" in names, f"client_wildcard should be included for {channel}"
+
+    def test_context_restrictions_private_only(self):
+        from apps.products.services.agent_resolver import filter_tools_for_agent
+
+        tools = [
+            {"id": "1", "name": "create_plan", "tool_type": "server_side", "channel_compatibility": ["discord"]},
+            {"id": "2", "name": "list_plans", "tool_type": "server_side", "channel_compatibility": ["discord"]},
+        ]
+        restrictions = {"create_plan": ["private"]}
+        result = filter_tools_for_agent(
+            tools, "discord",
+            message_context="public", context_restrictions=restrictions,
+        )
+        names = [t["name"] for t in result]
+        assert "create_plan" not in names
+        assert "list_plans" in names
+
+    def test_context_restrictions_public_only(self):
+        from apps.products.services.agent_resolver import filter_tools_for_agent
+
+        tools = [
+            {"id": "1", "name": "create_poll", "tool_type": "server_side", "channel_compatibility": ["discord"]},
+            {"id": "2", "name": "list_plans", "tool_type": "server_side", "channel_compatibility": ["discord"]},
+        ]
+        restrictions = {"create_poll": ["public"]}
+        result = filter_tools_for_agent(
+            tools, "discord",
+            message_context="private", context_restrictions=restrictions,
+        )
+        names = [t["name"] for t in result]
+        assert "create_poll" not in names
+        assert "list_plans" in names
+
+    def test_context_restrictions_allows_matching_context(self):
+        from apps.products.services.agent_resolver import filter_tools_for_agent
+
+        tools = [
+            {"id": "1", "name": "create_plan", "tool_type": "server_side", "channel_compatibility": ["discord"]},
+        ]
+        restrictions = {"create_plan": ["private"]}
+        result = filter_tools_for_agent(
+            tools, "discord",
+            message_context="private", context_restrictions=restrictions,
+        )
+        assert len(result) == 1
+        assert result[0]["name"] == "create_plan"
+
+    def test_context_restrictions_empty_dict_no_filtering(self):
+        from apps.products.services.agent_resolver import filter_tools_for_agent
+
+        tools = [
+            {"id": "1", "name": "a", "tool_type": "server_side", "channel_compatibility": ["web"]},
+            {"id": "2", "name": "b", "tool_type": "server_side", "channel_compatibility": ["web"]},
+        ]
+        result = filter_tools_for_agent(
+            tools, "web",
+            message_context="public", context_restrictions={},
+        )
+        assert len(result) == 2
+
+    def test_context_restrictions_none_no_filtering(self):
+        from apps.products.services.agent_resolver import filter_tools_for_agent
+
+        tools = [
+            {"id": "1", "name": "a", "tool_type": "server_side", "channel_compatibility": ["web"]},
+        ]
+        result = filter_tools_for_agent(
+            tools, "web",
+            message_context="public", context_restrictions=None,
+        )
+        assert len(result) == 1
+
+    def test_context_restrictions_with_scope_allowed(self):
+        """Context restrictions applied after scope-based filtering."""
+        from apps.products.services.agent_resolver import filter_tools_for_agent
+
+        tools = [
+            {"id": "1", "name": "a", "tool_type": "server_side", "channel_compatibility": ["discord"]},
+            {"id": "2", "name": "b", "tool_type": "server_side", "channel_compatibility": ["discord"]},
+            {"id": "3", "name": "c", "tool_type": "server_side", "channel_compatibility": ["discord"]},
+        ]
+        restrictions = {"a": ["private"]}
+        result = filter_tools_for_agent(
+            tools, "discord",
+            tool_scope="allowed", allowance_ids=["1", "2"],
+            message_context="public", context_restrictions=restrictions,
+        )
+        names = [t["name"] for t in result]
+        assert names == ["b"]
+
+    def test_context_restrictions_multi_context_array(self):
+        """Tool allowed in multiple specific contexts."""
+        from apps.products.services.agent_resolver import filter_tools_for_agent
+
+        tools = [
+            {"id": "1", "name": "tool_x", "tool_type": "server_side", "channel_compatibility": ["slack"]},
+        ]
+        restrictions = {"tool_x": ["private", "team"]}
+        result_private = filter_tools_for_agent(
+            tools, "slack",
+            message_context="private", context_restrictions=restrictions,
+        )
+        result_public = filter_tools_for_agent(
+            tools, "slack",
+            message_context="public", context_restrictions=restrictions,
+        )
+        assert len(result_private) == 1
+        assert len(result_public) == 0
+
+    def test_default_message_context_is_private(self):
+        """Default message_context should be 'private'."""
+        from apps.products.services.agent_resolver import filter_tools_for_agent
+
+        tools = [
+            {"id": "1", "name": "a", "tool_type": "server_side", "channel_compatibility": ["web"]},
+        ]
+        restrictions = {"a": ["private"]}
+        result = filter_tools_for_agent(
+            tools, "web",
+            context_restrictions=restrictions,
+        )
+        assert len(result) == 1

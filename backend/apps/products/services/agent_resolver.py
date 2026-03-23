@@ -47,6 +47,7 @@ class AgentConfig:
     tool_allowance_ids: list[str]
     language: str
     channel_config: dict
+    tool_context_restrictions: dict[str, list[str]] = field(default_factory=dict)
     knowledge_scope: str = KnowledgeScope.ALL
     knowledge_source_ids: list[str] = field(default_factory=list)
 
@@ -152,6 +153,7 @@ def _build_agent_config(
         tool_scope=agent.tool_scope or ToolScope.ALL,
         tool_restriction_ids=tool_restriction_ids or [],
         tool_allowance_ids=tool_allowance_ids or [],
+        tool_context_restrictions=agent.tool_context_restrictions or {},
         language=agent.default_language or getattr(product, 'default_language', 'auto') or 'auto',
         channel_config=agent.channel_config or {},
         knowledge_scope=agent.knowledge_scope or KnowledgeScope.ALL,
@@ -258,14 +260,19 @@ def filter_tools_for_agent(
     tool_scope: str = ToolScope.ALL,
     restriction_ids: list[str] | None = None,
     allowance_ids: list[str] | None = None,
+    message_context: str = "private",
+    context_restrictions: dict[str, list[str]] | None = None,
 ) -> list[dict]:
     """
-    Filter tools based on channel compatibility and agent tool scope.
+    Filter tools based on channel compatibility, agent tool scope,
+    and message context (private vs public).
 
     Filtering order:
     1. Channel compatibility (from tool.channel_compatibility field)
     2. Client-side eligibility (only web/api channels can use client-side tools)
     3. Scope-based filtering (tool_type, restrictions, allowances, or none)
+    4. Context restrictions (if tool is in the map, current message_context
+       must be in the tool's allowed contexts list)
     """
     compatible = [
         t for t in all_tools
@@ -288,5 +295,11 @@ def filter_tools_for_agent(
     elif tool_scope == ToolScope.ALLOWED:
         allowed = set(str(aid) for aid in (allowance_ids or []))
         compatible = [t for t in compatible if str(t.get('id', '')) in allowed]
+
+    if context_restrictions:
+        compatible = [
+            t for t in compatible
+            if message_context in context_restrictions.get(t['name'], [message_context])
+        ]
 
     return compatible

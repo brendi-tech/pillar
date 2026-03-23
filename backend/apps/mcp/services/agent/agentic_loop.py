@@ -214,15 +214,23 @@ async def run_agentic_loop(
             seen_names.add(tool["name"])
             server_tools.append(tool)
 
-        # Apply agent-level tool scope filtering
-        if agent_config and agent_config.tool_scope != 'all':
+        # Apply agent-level tool scope filtering and context restrictions
+        if agent_config and (
+            agent_config.tool_scope != 'all'
+            or agent_config.tool_context_restrictions
+        ):
             from apps.products.services.agent_resolver import filter_tools_for_agent
+            message_context = (
+                "private" if message.channel_context.get("is_private", True) else "public"
+            )
             server_tools = filter_tools_for_agent(
                 server_tools,
                 channel=message.channel or 'web',
                 tool_scope=agent_config.tool_scope,
                 restriction_ids=agent_config.tool_restriction_ids,
                 allowance_ids=agent_config.tool_allowance_ids,
+                message_context=message_context,
+                context_restrictions=agent_config.tool_context_restrictions,
             )
 
         if server_tools:

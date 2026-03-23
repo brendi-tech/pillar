@@ -6,9 +6,15 @@ Processes a Discord message event asynchronously:
 2. Build AgentMessage via DiscordChannelConnector
 3. Run the agentic loop
 4. Post response via DiscordResponseAdapter
+
+Also handles confirmation button clicks (tool_confirm) dispatched from
+DiscordInteractionsView. On success the result is posted directly; on
+failure the agentic loop is resumed with full LLM state so it can
+reason about the error and retry.
 """
 import logging
 from datetime import timedelta
+from typing import Optional
 
 from hatchet_sdk import Context
 from pydantic import BaseModel
@@ -24,10 +30,15 @@ class DiscordMessageInput(BaseModel):
     guild_id: str
     channel_id: str
     author_id: str
-    author_username: str
-    content: str
-    message_id: str
+    author_username: str = ''
+    content: str = ''
+    message_id: str = ''
     thread_id: str = ''
+    is_dm: bool = False
+    tool_confirm: Optional[dict] = None
+    interaction_token: str = ''
+    application_id: str = ''
+    installation_id: str = ''
 
 
 @hatchet.task(
@@ -47,14 +58,70 @@ async def handle_discord_message(workflow_input: DiscordMessageInput, context: C
     guild_id = workflow_input.guild_id
 
     try:
-        installation = await DiscordInstallation.objects.select_related(
-            'product', 'organization'
-        ).aget(guild_id=guild_id, is_active=True)
+        if guild_id:
+            installation = await DiscordInstallation.objects.select_related(
+                'product', 'organization', 'agent'
+            ).aget(guild_id=guild_id, is_active=True)
+        elif workflow_input.installation_id:
+            installation = await DiscordInstallation.objects.select_related(
+                'product', 'organization', 'agent'
+            ).aget(id=workflow_input.installation_id, is_active=True)
+        else:
+            logger.error("[DISCORD] No guild_id or installation_id provided")
+            return {'error': 'No guild_id or installation_id provided'}
     except DiscordInstallation.DoesNotExist:
-        logger.error("[DISCORD] No active installation for guild %s", guild_id)
-        return {'error': f'No active installation for guild {guild_id}'}
+        logger.error(
+            "[DISCORD] No active installation for guild=%s installation_id=%s",
+            guild_id, workflow_input.installation_id,
+        )
+        return {'error': 'No active installation found'}
 
     product = installation.product
+
+    if workflow_input.tool_confirm:
+        return await _handle_confirmation(workflow_input, installation, product)
+
+    # Auto-create a thread for new questions in guild channels so each
+    # question gets an isolated conversation (no cross-talk, no history bloat).
+    thread_id = workflow_input.thread_id
+    interaction_token = workflow_input.interaction_token
+    should_thread = workflow_input.guild_id and not workflow_input.thread_id
+
+    if should_thread:
+        thread_adapter = DiscordResponseAdapter(
+            installation=installation,
+            channel_id=workflow_input.channel_id,
+        )
+        try:
+            thread_data = None
+            if workflow_input.message_id:
+                thread_data = await thread_adapter.create_thread(
+                    workflow_input.message_id,
+                    workflow_input.content[:100] or "Pillar",
+                )
+            elif workflow_input.interaction_token:
+                thread_data = await thread_adapter.create_thread_from_interaction(
+                    workflow_input.application_id,
+                    workflow_input.interaction_token,
+                    workflow_input.content[:100] or "Pillar",
+                )
+                # Original interaction message was edited to "See thread";
+                # clear the token so responses post to the thread via REST.
+                interaction_token = ''
+
+            if thread_data:
+                thread_id = thread_data["id"]
+                from django.core.cache import cache
+                cache.set(f"discord_bot_thread:{thread_id}", "1", timeout=86400 * 7)
+                logger.info(
+                    "[DISCORD] Created thread %s for channel %s",
+                    thread_id, workflow_input.channel_id,
+                )
+        except Exception:
+            logger.exception("[DISCORD] Thread creation failed, falling back to channel")
+        finally:
+            await thread_adapter.close()
+
     connector = DiscordChannelConnector(installation)
 
     message = await connector.build_agent_message(
@@ -63,26 +130,34 @@ async def handle_discord_message(workflow_input: DiscordMessageInput, context: C
         author_username=workflow_input.author_username,
         channel_id=workflow_input.channel_id,
         message_id=workflow_input.message_id,
-        thread_id=workflow_input.thread_id,
+        thread_id=thread_id,
+        is_dm=workflow_input.is_dm,
     )
 
     adapter = DiscordResponseAdapter(
         installation=installation,
         channel_id=workflow_input.channel_id,
-        thread_id=workflow_input.thread_id,
+        thread_id=thread_id,
         organization_id=str(installation.organization_id),
         product_id=str(product.id),
         conversation_id=str(message.conversation_id),
+        interaction_token=interaction_token,
+        application_id=workflow_input.application_id,
     )
 
     try:
-        await adapter.add_thinking_reaction(workflow_input.message_id)
+        if workflow_input.message_id:
+            await adapter.add_thinking_reaction(workflow_input.message_id)
 
-        agent_config = await resolve_agent_config(
-            product=product,
-            channel=Channel.DISCORD,
-            channel_context={"discord_channel_id": workflow_input.channel_id},
-        )
+        if installation.agent_id and installation.agent:
+            from apps.products.services.agent_resolver import _build_agent_config
+            agent_config = _build_agent_config(installation.agent, product, Channel.DISCORD)
+        else:
+            agent_config = await resolve_agent_config(
+                product=product,
+                channel=Channel.DISCORD,
+                channel_context={"discord_channel_id": workflow_input.channel_id},
+            )
 
         await adapter.prepare_turn(workflow_input.content)
 
@@ -105,10 +180,190 @@ async def handle_discord_message(workflow_input: DiscordMessageInput, context: C
         await adapter.send_error(str(e))
 
     finally:
-        await adapter.remove_thinking_reaction(workflow_input.message_id)
+        if workflow_input.message_id:
+            await adapter.remove_thinking_reaction(workflow_input.message_id)
+        await adapter.close()
 
     return {
         'guild_id': guild_id,
         'channel_id': workflow_input.channel_id,
         'status': 'completed',
     }
+
+
+async def _handle_confirmation(
+    workflow_input: DiscordMessageInput,
+    installation,
+    product,
+):
+    """
+    Handle a confirmation button click dispatched from DiscordInteractionsView.
+
+    Calls the customer's endpoint with action=tool_confirm. On success,
+    posts the result directly. On failure, resumes the agentic loop with
+    full LLM state so the model can reason about the error.
+    """
+    from apps.integrations.discord.adapter import DiscordResponseAdapter
+    from apps.mcp.services.agent.answer_service import AgentAnswerServiceReActAsync
+    from apps.mcp.services.agent.channels import Channel
+    from apps.mcp.services.agent.models import AgentMessage, CallerContext
+    from apps.mcp.services.session_resumption import (
+        create_turn_messages,
+        finalize_turn,
+        get_latest_session,
+    )
+    from apps.products.services.agent_resolver import resolve_agent_config
+    from apps.tools.services.dispatch import get_tool_endpoint, post_tool_call
+
+    confirm = workflow_input.tool_confirm
+    tool_name = confirm.get('tool_name', '')
+    call_id = confirm.get('call_id', '')
+    confirm_payload = confirm.get('confirm_payload', {})
+    conversation_id = confirm.get('conversation_id')
+
+    adapter = DiscordResponseAdapter(
+        installation=installation,
+        channel_id=workflow_input.channel_id,
+        thread_id=workflow_input.thread_id,
+    )
+
+    logger.info(
+        "[DISCORD] Handling confirmation: tool=%s, call_id=%s, conversation=%s, thread=%s",
+        tool_name, call_id, conversation_id, workflow_input.thread_id,
+    )
+
+    endpoint = await get_tool_endpoint(str(product.id))
+    if not endpoint:
+        await adapter.send_error(f"No tool endpoint registered for {product.name}.")
+        return {'status': 'error', 'error': 'no_endpoint'}
+
+    caller = CallerContext(channel_user_id=workflow_input.author_id)
+
+    result = await post_tool_call(
+        endpoint_url=endpoint.endpoint_url,
+        call_id=call_id,
+        tool_name=tool_name,
+        arguments={},
+        caller=caller,
+        timeout=30.0,
+        conversation_id=conversation_id,
+        product=product,
+        action="tool_confirm",
+        confirm_payload=confirm_payload,
+    )
+
+    is_success = (
+        not result.get('timed_out')
+        and not result.get('connection_error')
+        and not result.get('server_error')
+        and result.get('success', True)
+    )
+
+    if is_success:
+        result_content = result.get('result', '')
+        if not isinstance(result_content, str):
+            import json
+            result_content = json.dumps(result_content, default=str)
+        embed = {
+            "description": f"✅ **Done** — {result_content}",
+            "color": 0x57F287,
+            "footer": {"text": "Powered by Pillar"},
+        }
+        await adapter._send_message(embeds=[embed])
+        return {'status': 'completed'}
+
+    # --- Failure path: resume through the LLM ---
+
+    if result.get('timed_out'):
+        error_msg = f"Tool '{tool_name}' timed out."
+    elif result.get('connection_error'):
+        error_msg = f"Tool '{tool_name}' endpoint is unreachable."
+    elif result.get('server_error'):
+        error_msg = result.get('error', 'Unknown server error')
+    else:
+        error_msg = result.get('error', 'Unknown error')
+
+    logger.info(
+        "[DISCORD] Confirmation failed for %s: %s — routing to LLM",
+        tool_name, error_msg,
+    )
+
+    agent_config = await resolve_agent_config(
+        product=product,
+        channel=Channel.DISCORD,
+        channel_context={"discord_channel_id": workflow_input.channel_id},
+    )
+
+    conversation_history = []
+    registered_tools = []
+
+    if conversation_id:
+        session = await get_latest_session(conversation_id)
+        if session:
+            conversation_history = session.get('llm_messages', [])
+            registered_tools = session.get('registered_tools', [])
+            logger.info(
+                "[DISCORD] Resumed session: %d messages, %d tools",
+                len(conversation_history), len(registered_tools),
+            )
+
+    error_text = (
+        f"The user confirmed the tool '{tool_name}', but it failed with: "
+        f"{error_msg}\n\nHelp the user resolve this. You may retry with "
+        f"different parameters or suggest alternatives."
+    )
+
+    message = AgentMessage(
+        text=error_text,
+        channel=Channel.DISCORD,
+        conversation_id=conversation_id or '',
+        product_id=str(product.id),
+        organization_id=str(installation.organization_id),
+        caller=caller,
+        conversation_history=conversation_history,
+        channel_context={
+            "guild_id": installation.guild_id,
+            "channel_id": workflow_input.channel_id,
+            "thread_id": workflow_input.thread_id,
+            "event_type": "confirmation_failure",
+        },
+    )
+
+    service = AgentAnswerServiceReActAsync(
+        help_center_config=product,
+        organization=installation.organization,
+        conversation_id=conversation_id,
+        registered_tools=registered_tools,
+        agent_config=agent_config,
+    )
+
+    assistant_msg_id = await create_turn_messages(
+        conversation_id=conversation_id or '',
+        organization_id=str(installation.organization_id),
+        product_id=str(product.id),
+        user_text=error_text,
+        channel='discord',
+    )
+
+    try:
+        last_checkpoint = {}
+        async for event in service.ask_stream(agent_message=message):
+            if event.get('type') == 'state_checkpoint':
+                last_checkpoint = event
+            await adapter.on_event(event)
+
+        await adapter.finalize()
+
+        response_text = adapter._full_response or ''.join(adapter._tokens)
+        await finalize_turn(
+            assistant_message_id=assistant_msg_id,
+            response_text=response_text,
+            llm_messages=last_checkpoint.get('llm_messages', []),
+            registered_tools=last_checkpoint.get('registered_tools', []),
+            model_used=last_checkpoint.get('model_used', ''),
+        )
+    except Exception as e:
+        logger.exception("[DISCORD] Error in confirmation recovery: %s", e)
+        await adapter.send_error(f"Tool '{tool_name}' failed: {error_msg}")
+
+    return {'status': 'completed'}

@@ -1,7 +1,8 @@
 """
 Public identity API endpoints.
 
-Authenticated via x-customer-id header (resolved by CustomerIdMiddleware).
+Authenticated via x-customer-id header (resolved by CustomerIdMiddleware)
+or Authorization: Bearer plr_xxx (resolved via SyncSecret lookup).
 Used by Pillar's channel connectors and customer backends for account linking.
 """
 from __future__ import annotations
@@ -34,9 +35,23 @@ logger = logging.getLogger(__name__)
 
 
 def _get_product_context(request):
-    """Extract product and organization from middleware-resolved request."""
+    """Extract product and organization from middleware or Bearer auth.
+
+    Tries middleware-resolved attributes first (x-customer-id header).
+    Falls back to Bearer token auth (same pattern as ToolRegistrationView)
+    so server SDKs can authenticate with their plr_ secret.
+    """
     product = getattr(request, 'product', None)
     organization = getattr(request, 'customer_organization', None) or getattr(request, 'organization', None)
+
+    if not product:
+        from asgiref.sync import async_to_sync
+
+        from apps.tools.services.auth import authenticate_sdk_request
+        product = async_to_sync(authenticate_sdk_request)(request)
+        if product:
+            organization = product.organization
+
     return product, organization
 
 
@@ -54,7 +69,7 @@ class LinkRequestView(APIView):
         product, organization = _get_product_context(request)
         if not product:
             return Response(
-                {'error': 'Product context not available. Provide x-customer-id header.'},
+                {'error': 'Product context not available. Provide x-customer-id header or Authorization: Bearer <secret>.'},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
@@ -95,7 +110,7 @@ class LinkConfirmView(APIView):
         product, organization = _get_product_context(request)
         if not product:
             return Response(
-                {'error': 'Product context not available. Provide x-customer-id header.'},
+                {'error': 'Product context not available. Provide x-customer-id header or Authorization: Bearer <secret>.'},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
@@ -149,7 +164,7 @@ class ResolveView(APIView):
         product, organization = _get_product_context(request)
         if not product:
             return Response(
-                {'error': 'Product context not available. Provide x-customer-id header.'},
+                {'error': 'Product context not available. Provide x-customer-id header or Authorization: Bearer <secret>.'},
                 status=status.HTTP_403_FORBIDDEN,
             )
 

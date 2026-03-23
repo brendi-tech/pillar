@@ -26,12 +26,11 @@ class TestBuildResponseBlocks:
     def setup_method(self):
         self.adapter = _make_adapter()
 
-    def test_simple_text_produces_section_block(self):
+    def test_simple_text_produces_markdown_block(self):
         blocks = self.adapter._build_response_blocks("Hello world", [])
         assert len(blocks) == 1
-        assert blocks[0]["type"] == "section"
-        assert blocks[0]["text"]["type"] == "mrkdwn"
-        assert blocks[0]["text"]["text"] == "Hello world"
+        assert blocks[0]["type"] == "markdown"
+        assert blocks[0]["text"] == "Hello world"
 
     def test_with_sources_adds_divider_and_context(self):
         sources = [{"title": "Doc", "url": "https://example.com/doc"}]
@@ -41,14 +40,14 @@ class TestBuildResponseBlocks:
         assert "context" in types
 
     def test_long_text_splits_into_multiple_blocks(self):
-        long_text = "A" * 6000
+        long_text = "A" * 20000
         blocks = self.adapter._build_response_blocks(long_text, [])
-        section_blocks = [b for b in blocks if b["type"] == "section"]
-        assert len(section_blocks) >= 2
+        markdown_blocks = [b for b in blocks if b["type"] == "markdown"]
+        assert len(markdown_blocks) >= 2
 
-    def test_markdown_converted_to_mrkdwn(self):
+    def test_markdown_passed_through_unchanged(self):
         blocks = self.adapter._build_response_blocks("**bold text**", [])
-        assert blocks[0]["text"]["text"] == "*bold text*"
+        assert blocks[0]["text"] == "**bold text**"
 
     def test_empty_sources_no_divider(self):
         blocks = self.adapter._build_response_blocks("Hello", [])

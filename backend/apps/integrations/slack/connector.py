@@ -73,6 +73,7 @@ class SlackChannelConnector:
                 "thread_ts": effective_thread_ts,
                 "ts": ts,
                 "event_type": event_type,
+                "is_private": event_type == "message",
             },
         )
 

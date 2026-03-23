@@ -38,6 +38,7 @@ class DiscordChannelConnector:
         channel_id: str,
         message_id: str,
         thread_id: str = '',
+        is_dm: bool = False,
     ) -> AgentMessage:
         clean_text = self._strip_bot_mention(content)
 
@@ -69,6 +70,7 @@ class DiscordChannelConnector:
                 "channel_id": channel_id,
                 "thread_id": thread_id,
                 "message_id": message_id,
+                "is_private": is_dm,
             },
         )
 

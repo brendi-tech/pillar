@@ -41,8 +41,9 @@ export function ChannelSettingsTab({ agent, productId, onChange }: ChannelSettin
       {agent.channel === "web" && <WebSettings config={cc} updateConfig={updateConfig} />}
       {agent.channel === "slack" && <SlackSettings config={cc} updateConfig={updateConfig} productId={productId} />}
       {agent.channel === "email" && <EmailSettings config={cc} updateConfig={updateConfig} />}
+      {agent.channel === "discord" && <DiscordSettings config={cc} updateConfig={updateConfig} productId={productId} />}
       {agent.channel === "api" && <ApiSettings config={cc} updateConfig={updateConfig} />}
-      {!["web", "slack", "email", "api"].includes(agent.channel) && (
+      {!["web", "slack", "discord", "email", "api"].includes(agent.channel) && (
         <p className="text-sm text-muted-foreground">
           Channel-specific settings for {agent.channel} are not yet available.
         </p>
@@ -277,6 +278,106 @@ function SlackSettings({
           value={(config.thinking_reaction as string) || "thinking_face"}
           onChange={(e) => updateConfig("thinking_reaction", e.target.value)}
           placeholder="thinking_face"
+        />
+      </div>
+    </>
+  );
+}
+
+function DiscordSettings({
+  config,
+  updateConfig,
+  productId,
+}: {
+  config: Record<string, unknown>;
+  updateConfig: (key: string, value: unknown) => void;
+  productId: string;
+}) {
+  const { data: installation } = useQuery({
+    queryKey: ["discord-installation", productId],
+    queryFn: () =>
+      v2Fetch<{ slash_command_name?: string } | null>(
+        `/products/${productId}/integrations/discord/`
+      ).catch(() => null),
+    enabled: !!productId,
+  });
+  const slashName = installation?.slash_command_name || "pillar";
+
+  const channelIds = (config.discord_channel_ids as string[]) || [];
+  const channelIdsStr = channelIds.join(", ");
+
+  return (
+    <>
+      <div className="rounded-lg border bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
+        <p className="font-medium text-foreground">How interaction modes work</p>
+        <p className="mt-1">
+          <strong>Slash commands</strong> (<code>/{slashName} ask</code>) work immediately
+          with no extra setup.
+        </p>
+        <p className="mt-1">
+          <strong>DMs and @mentions</strong> require the Discord gateway process
+          to be running. Contact your admin if these aren&apos;t working.
+        </p>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <div className="space-y-0.5">
+          <Label>Respond to DMs</Label>
+          <p className="text-xs text-muted-foreground">
+            Respond when users DM the bot directly
+          </p>
+        </div>
+        <Switch
+          checked={config.respond_to_dms !== false}
+          onCheckedChange={(v) => updateConfig("respond_to_dms", v)}
+        />
+      </div>
+
+      <div className="flex items-center justify-between">
+        <div className="space-y-0.5">
+          <Label>Respond to Mentions</Label>
+          <p className="text-xs text-muted-foreground">
+            Respond when users @mention the bot in channels
+          </p>
+        </div>
+        <Switch
+          checked={config.respond_to_mentions !== false}
+          onCheckedChange={(v) => updateConfig("respond_to_mentions", v)}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="discord-channel-ids">Channel Allowlist</Label>
+        <Input
+          id="discord-channel-ids"
+          value={channelIdsStr}
+          onChange={(e) => {
+            const raw = e.target.value;
+            const ids = raw
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean);
+            updateConfig("discord_channel_ids", ids);
+          }}
+          placeholder="Channel IDs, comma-separated (empty = all channels)"
+        />
+        <p className="text-xs text-muted-foreground">
+          Limit which channels this agent responds in. Leave empty for all channels.
+        </p>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <div className="space-y-0.5">
+          <Label>Thinking Reaction</Label>
+          <p className="text-xs text-muted-foreground">
+            Add a reaction emoji while processing
+          </p>
+        </div>
+        <Switch
+          checked={config.add_reaction_while_thinking !== false}
+          onCheckedChange={(v) =>
+            updateConfig("add_reaction_while_thinking", v)
+          }
         />
       </div>
     </>

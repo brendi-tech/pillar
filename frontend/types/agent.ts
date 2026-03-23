@@ -52,6 +52,7 @@ export interface Agent {
   tool_scope: ToolScopeMode;
   tool_restriction_ids: string[];
   tool_allowance_ids: string[];
+  tool_context_restrictions: Record<string, string[]>;
   max_response_tokens: number | null;
   include_sources: boolean;
   include_suggested_followups: boolean;
@@ -74,6 +75,7 @@ export interface CreateAgentPayload {
   tool_scope?: ToolScopeMode;
   tool_restriction_ids?: string[];
   tool_allowance_ids?: string[];
+  tool_context_restrictions?: Record<string, string[]>;
   max_response_tokens?: number | null;
   include_sources?: boolean;
   include_suggested_followups?: boolean;

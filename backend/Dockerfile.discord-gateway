@@ -1,0 +1,35 @@
+# Discord Gateway — Deploy Image
+#
+# Thin image that extends the pre-built backend base (Dockerfile.backend-base).
+# Only copies application code — all heavy dependencies (system packages, uv,
+# Python packages) live in the base image, making deploys fast (~1-2 min).
+#
+# Uses the backend base (not worker base) because the gateway only needs
+# Django + aiohttp for WebSocket connections. No Playwright, Node.js, or
+# Chromium required.
+#
+# Pass --build-arg BASE_REGISTRY=gcr.io/<project> to select the correct
+# base image for each environment (dev vs prod).
+
+ARG BASE_REGISTRY=gcr.io/pillar-production
+FROM ${BASE_REGISTRY}/pillar-backend-base:latest
+
+WORKDIR /app
+
+# Copy project files
+COPY . .
+
+# Sync deps in case pyproject.toml/uv.lock have new packages not yet in the base image
+RUN uv sync --frozen --no-dev
+
+# Create necessary directories (may already exist from base, but ensure)
+RUN mkdir -p /app/static /app/media
+
+# Make health check script executable
+RUN chmod +x /app/discord-gateway-healthcheck.py
+
+# Expose health check port
+EXPOSE 8001
+
+# Run Discord Gateway with health check server
+CMD ["python", "/app/discord-gateway-healthcheck.py"]
