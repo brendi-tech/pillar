@@ -22,6 +22,7 @@ from slack_sdk.oauth import AuthorizeUrlGenerator
 from slack_sdk.signature import SignatureVerifier
 from slack_sdk.webhook import WebhookClient
 
+from apps.integrations.common.urls import get_api_base
 from apps.products.models import Product
 from apps.products.models.agent import Agent
 from common.task_router import TaskRouter
@@ -543,7 +544,7 @@ class SlackManifestAdminView(APIView):
             id=product_id,
             organization__in=request.user.organizations.all(),
         )
-        api_base = (settings.BACKEND_URL or request.build_absolute_uri('/').rstrip('/')).rstrip('/')
+        api_base = get_api_base(request)
         manifest = _build_slack_manifest(product, api_base)
         return JsonResponse({"manifest": manifest})
 
@@ -611,7 +612,7 @@ class SlackBYOBAdminView(APIView):
             },
         )
 
-        api_base = settings.BACKEND_URL or request.build_absolute_uri('/').rstrip('/')
+        api_base = get_api_base(request)
 
         return JsonResponse({
             'installation': SlackInstallationSerializer(installation).data,

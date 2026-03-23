@@ -20,6 +20,7 @@ from django.shortcuts import get_object_or_404, redirect
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 
+from apps.integrations.common.urls import get_api_base
 from apps.products.models import Product
 from common.task_router import TaskRouter
 
@@ -175,7 +176,7 @@ def _build_discord_oauth_url(product, user) -> str:
         timeout=300,
     )
 
-    redirect_uri = f"{settings.BACKEND_URL}/api/integrations/discord/callback/"
+    redirect_uri = f"{get_api_base(request)}/api/integrations/discord/callback/"
     params = {
         "client_id": settings.DISCORD_CLIENT_ID,
         "permissions": str(BOT_PERMISSIONS),
@@ -244,7 +245,7 @@ class DiscordCallbackView(APIView):
         except Product.DoesNotExist:
             return HttpResponseBadRequest("Product not found")
 
-        redirect_uri = f"{settings.BACKEND_URL}/api/integrations/discord/callback/"
+        redirect_uri = f"{get_api_base(request)}/api/integrations/discord/callback/"
 
         try:
             with httpx.Client(timeout=10) as client:
@@ -619,7 +620,7 @@ class DiscordBYOBAdminView(APIView):
                         guild_id = guilds[0]['id']
                     elif not guilds:
                         cache.set(f"discord_pending_key:{application_id}", auto_public_key, timeout=86400)
-                        api_base = settings.BACKEND_URL or request.build_absolute_uri('/').rstrip('/')
+                        api_base = get_api_base(request)
                         return JsonResponse({
                             'status': 'needs_guild',
                             'invite_url': _build_invite_url(application_id),
@@ -630,7 +631,7 @@ class DiscordBYOBAdminView(APIView):
                         })
                     else:
                         cache.set(f"discord_pending_key:{application_id}", auto_public_key, timeout=86400)
-                        api_base = settings.BACKEND_URL or request.build_absolute_uri('/').rstrip('/')
+                        api_base = get_api_base(request)
                         return JsonResponse({
                             'status': 'select_guild',
                             'guilds': [{'id': g['id'], 'name': g['name']} for g in guilds],
@@ -683,7 +684,7 @@ class DiscordBYOBAdminView(APIView):
 
         slash_registered = _register_slash_commands(bot_token, application_id, guild_id, command_name=cmd_name)
 
-        api_base = settings.BACKEND_URL or request.build_absolute_uri('/').rstrip('/')
+        api_base = get_api_base(request)
 
         return JsonResponse({
             'installation': DiscordInstallationSerializer(installation).data,
@@ -791,7 +792,10 @@ class DiscordInstallationAdminView(APIView):
                 product=product, is_active=True,
             )
             from .serializers import DiscordInstallationSerializer
-            return JsonResponse(DiscordInstallationSerializer(installation).data)
+            data = DiscordInstallationSerializer(installation).data
+            api_base = get_api_base(request)
+            data['interactions_url'] = f'{api_base}/api/integrations/discord/interactions/'
+            return JsonResponse(data)
         except DiscordInstallation.DoesNotExist:
             return JsonResponse(None, safe=False, status=200)
 

@@ -20,6 +20,7 @@ interface DiscordInstallation {
   is_byob: boolean;
   config: Record<string, unknown>;
   slash_command_name?: string;
+  interactions_url?: string;
   created_at: string;
   updated_at: string;
 }
@@ -105,7 +106,7 @@ export function DiscordConfigTab({ productId }: DiscordConfigTabProps) {
     );
   }
 
-  const interactionsUrl = `${process.env.NEXT_PUBLIC_PILLAR_API_URL || "http://localhost:8003"}/api/integrations/discord/interactions/`;
+  const interactionsUrl = installation.interactions_url || "";
 
   return (
     <div className="space-y-6">
