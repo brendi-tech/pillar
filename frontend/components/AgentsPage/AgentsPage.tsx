@@ -149,6 +149,7 @@ export function AgentsPage({
   const [discordSelectedGuildId, setDiscordSelectedGuildId] = useState("");
   const [discordSlashRegistered, setDiscordSlashRegistered] = useState(false);
   const [discordInstallationCreated, setDiscordInstallationCreated] = useState(false);
+  const [isRechecking, setIsRechecking] = useState(false);
   const [discordApplicationId, setDiscordApplicationId] = useState("");
   const [discordMessageContentOk, setDiscordMessageContentOk] = useState<boolean | null>(null);
   const [discordSlashName, setDiscordSlashName] = useState(
@@ -344,15 +345,18 @@ export function AgentsPage({
     });
   };
 
-  const handleRecheck = () => {
+  const handleRecheck = async () => {
+    setIsRechecking(true);
     discordVerifyMutation.reset();
-    discordByobMutation.mutate(discordSelectedGuildId || undefined, {
-      onSuccess: (data) => {
-        applyByobResult(data);
-        if (!data.status) {
-          discordVerifyMutation.mutate();
-        }
-      },
+    if (discordInstallationCreated && discordSlashName) {
+      try {
+        await v2Patch(`/products/${productId}/integrations/discord/`, {
+          slash_command_name: discordSlashName,
+        });
+      } catch { /* verify will show actual status */ }
+    }
+    discordVerifyMutation.mutate(undefined, {
+      onSettled: () => setIsRechecking(false),
     });
   };
 
@@ -372,7 +376,7 @@ export function AgentsPage({
       }
     }
     setDiscordStep("checklist");
-    handleRecheck();
+    discordVerifyMutation.mutate();
   };
 
   const resetDiscordWizard = () => {
@@ -411,7 +415,7 @@ export function AgentsPage({
 
   const activeWizard = slackStep ? "slack" : discordStep ? "discord" : null;
 
-  const isChecklistChecking = discordByobMutation.isPending || discordVerifyMutation.isPending;
+  const isChecklistChecking = isRechecking || discordVerifyMutation.isPending;
   const verifyData = discordVerifyMutation.data;
   let checkBotToken: boolean | null = null;
   let checkMessageContent: boolean | null = null;
@@ -1040,7 +1044,15 @@ export function AgentsPage({
                     ) : (
                       <XCircle className="h-4 w-4 text-destructive" />
                     )}
-                    <span>Slash commands registered</span>
+                    <span className="flex-1">Slash commands registered</span>
+                    {checkSlash === false && !isChecklistChecking && (
+                      <button
+                        onClick={handleRecheck}
+                        className="text-xs text-primary hover:underline"
+                      >
+                        Retry
+                      </button>
+                    )}
                   </div>
                 </div>
 

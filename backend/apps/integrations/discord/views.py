@@ -689,9 +689,10 @@ class DiscordBYOBAdminView(APIView):
             },
         )
         config = installation.config or {}
-        config['slash_command_name'] = cmd_name
-        installation.config = config
-        installation.save(update_fields=['config'])
+        if not config.get('slash_command_name'):
+            config['slash_command_name'] = cmd_name
+            installation.config = config
+            installation.save(update_fields=['config'])
 
         api_base = get_api_base(request)
 

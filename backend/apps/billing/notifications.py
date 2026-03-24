@@ -9,7 +9,6 @@ import logging
 from datetime import datetime, timezone as tz
 from decimal import Decimal
 
-from asgiref.sync import sync_to_async
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 
@@ -291,6 +290,8 @@ async def check_and_notify_threshold(org, message_id: str) -> None:
     Called after each completed response. The threshold check is a single
     DB read + comparison, so overhead is negligible.
     """
+    from asgiref.sync import sync_to_async
+
     from apps.analytics.models import ChatMessage
 
     if not org:
