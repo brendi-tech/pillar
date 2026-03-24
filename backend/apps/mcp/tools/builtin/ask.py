@@ -345,6 +345,7 @@ class AskTool(Tool):
         query = arguments.get('query', '')
         images = arguments.get('images', [])
         resume = arguments.get('resume', False)
+        is_hidden = arguments.get('is_hidden', False)
         conversation_id = arguments.get('conversation_id')
         conversation_history: List[Dict[str, Any]] = []
         client_registered_tools: List[Dict[str, Any]] = []
@@ -472,6 +473,7 @@ class AskTool(Tool):
                 user_profile=user_profile,
                 language=language,
                 request=request,
+                is_hidden=is_hidden,
             ):
                 yield event
         else:
@@ -585,6 +587,7 @@ class AskTool(Tool):
                         skip_analytics=skip_analytics,
                         visitor_id=metadata.visitor_id if metadata else '',
                         external_user_id=metadata.external_user_id if metadata else '',
+                        is_hidden=is_hidden,
                     )
                 )
 
@@ -717,6 +720,7 @@ class AskTool(Tool):
         user_profile,
         language,
         request,
+        is_hidden=False,
     ):
         from apps.mcp.services.agent.web_adapter import WebResponseAdapter
 
@@ -743,7 +747,7 @@ class AskTool(Tool):
             assistant_msg_id = str(uuid.uuid4())
             await adapter.prepare_resume(conv_id, assistant_msg_id)
         else:
-            await adapter.prepare_turn(query, images=validated_images)
+            await adapter.prepare_turn(query, images=validated_images, is_hidden=is_hidden)
 
         assistant_msg_id = adapter.assistant_message_id
 

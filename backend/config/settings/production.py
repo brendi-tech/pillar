@@ -84,6 +84,7 @@ CORS_ALLOW_HEADERS = [
     # MCP headers
     'mcp-session-id',
     'x-help-center-id',
+    'x-agent-slug',
     # W3C Trace Context
     'traceparent',
     'tracestate',

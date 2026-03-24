@@ -55,6 +55,7 @@ class WebResponseAdapter(ResponseAdapter):
         self,
         user_text: str,
         images: list[dict] | None = None,
+        is_hidden: bool = False,
     ) -> str:
         """Create conversation + messages via ConversationLoggingService.
 
@@ -102,6 +103,7 @@ class WebResponseAdapter(ResponseAdapter):
             skip_analytics=meta.get('skip_analytics', False),
             visitor_id=meta.get('visitor_id', ''),
             external_user_id=meta.get('external_user_id', ''),
+            is_hidden=is_hidden,
         )
 
         await self._output_queue.put({

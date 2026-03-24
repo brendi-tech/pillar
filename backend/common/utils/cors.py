@@ -21,7 +21,7 @@ CORS_ALLOW_HEADERS = (
     "x-customer-id, x-visitor-id, x-session-id, "
     "x-external-user-id, x-user-profile, x-page-url, "
     "Accept-Language, X-Pillar-Platform, X-Pillar-Action-Version, "
-    "Mcp-Session-Id"
+    "Mcp-Session-Id, X-Agent-Slug"
 )
 
 # Combined set of headers to expose to the browser

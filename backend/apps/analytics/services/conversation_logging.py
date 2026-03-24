@@ -284,6 +284,7 @@ class ConversationLoggingService:
         visitor_id: str = '',
         external_user_id: str = '',
         channel: str = 'web',
+        is_hidden: bool = False,
     ) -> None:
         """
         Create conversation + user message + empty assistant message with pre-generated IDs.
@@ -350,7 +351,7 @@ class ConversationLoggingService:
                 organization_id=organization_id,
                 product_id=product_id,
                 conversation=conversation,
-                role=ChatMessage.Role.USER,
+                role=ChatMessage.Role.TOOL if is_hidden else ChatMessage.Role.USER,
                 content=question,
                 images=images or [],
                 query_type=query_type,
