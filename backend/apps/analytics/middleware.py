@@ -21,6 +21,7 @@ class AnalyticsMiddleware:
     - x-session-id: Session ID from SDK sessionStorage
     - x-external-user-id: Client's authenticated user ID (for cross-device history)
     - x-page-url: Current page URL
+    - x-user-api-token: Optional user API token for OpenAPI tool passthrough
     - User-Agent: Browser user agent
     - Referer: Referrer URL
 
@@ -64,5 +65,6 @@ class AnalyticsMiddleware:
             'page_url': request.headers.get('x-page-url', ''),
             'user_agent': request.headers.get('User-Agent', ''),
             'referer': request.headers.get('Referer', ''),
+            'user_api_token': request.headers.get('x-user-api-token', ''),
         }
         return None

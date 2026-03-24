@@ -9,12 +9,14 @@ watch(
   () => user.value,
   (currentUser) => {
     if (currentUser && pillar.value) {
+      pillar.value.identify(currentUser.id, {
+        name: currentUser.name,
+        email: currentUser.email,
+        apiToken: currentUser.accessToken, // forwarded to API tool sources
+      });
       pillar.value.setContext({
         userRole: currentUser.role,
         userState: currentUser.subscription?.status,
-        custom: {
-          plan: currentUser.subscription?.plan,
-        },
       });
     }
   },

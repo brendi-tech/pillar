@@ -2,13 +2,15 @@ import { Pillar } from '@pillar-ai/sdk';
 
 const pillar = Pillar.getInstance();
 
-function syncUserContext(user: { role: string; subscription?: { status: string; plan: string } }) {
+function syncUserContext(user: { id: string; name: string; email: string; accessToken: string; role: string; subscription?: { status: string } }) {
+  pillar?.identify(user.id, {
+    name: user.name,
+    email: user.email,
+    apiToken: user.accessToken, // forwarded to API tool sources
+  });
   pillar?.setContext({
     userRole: user.role,
     userState: user.subscription?.status,
-    custom: {
-      plan: user.subscription?.plan,
-    },
   });
 }
 

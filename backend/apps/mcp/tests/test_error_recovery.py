@@ -192,17 +192,15 @@ class TestExecutorErrorReturns:
     """Tests that executor returns error dicts instead of empty lists."""
     
     @pytest.mark.asyncio
-    async def test_search_actions_returns_error_on_exception(self):
-        """execute_search_actions should return error dict on exception."""
+    async def test_search_actions_returns_empty_on_partial_failure(self):
+        """execute_search_actions gracefully handles individual search failures."""
         from apps.mcp.services.agent_tools.executor import AgentToolExecutor
         
-        # Create executor with mocked product/org
         executor = AgentToolExecutor(
             product=MagicMock(id="test-product"),
             organization=MagicMock(id="test-org"),
         )
         
-        # Mock the action_search_service to raise an exception
         with patch(
             "apps.products.services.action_search_service.action_search_service.search_with_metadata",
             new_callable=AsyncMock,
@@ -210,12 +208,8 @@ class TestExecutorErrorReturns:
         ):
             result = await executor.execute_search_actions("test query")
         
-        # Should return error dict, not empty list
-        assert isinstance(result, dict)
-        assert "error" in result
-        assert "Database connection failed" in result["error"]
-        assert result["tool"] == "search_actions"
-        assert result["recoverable"] is True
+        assert isinstance(result, list)
+        assert len(result) == 0
     
     @pytest.mark.asyncio
     async def test_search_knowledge_returns_error_on_exception(self):

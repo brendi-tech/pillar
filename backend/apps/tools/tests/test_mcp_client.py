@@ -7,11 +7,10 @@ from unittest.mock import AsyncMock, patch
 import httpx
 import pytest
 
-from apps.products.models import Action
 from apps.tools.services.mcp_client import (
     _build_auth_headers,
-    _sync_discovered_tools,
     discover_tools,
+    embed_source_descriptions,
     execute_mcp_tool,
 )
 
@@ -185,10 +184,10 @@ class TestExecuteMCPTool:
         assert headers["X-Pillar-Caller-Email"] == "a@b.com"
 
 
-@pytest.mark.django_db
-class TestSyncDiscoveredTools:
-    def test_creates_draft_actions(self, mcp_source):
-        tools = [
+@pytest.mark.django_db(transaction=True)
+class TestEmbedSourceDescriptions:
+    async def test_embeds_descriptions_and_saves(self, mcp_source):
+        mcp_source.discovered_tools = [
             {
                 "name": "get_weather",
                 "description": "Get weather",
@@ -200,25 +199,70 @@ class TestSyncDiscoveredTools:
                 "inputSchema": {"type": "object", "properties": {"symbol": {"type": "string"}}},
             },
         ]
+        mcp_source.discovered_resources = []
+        await mcp_source.asave()
 
-        _sync_discovered_tools(mcp_source, tools)
+        fake_embedding = [0.1, 0.2, 0.3]
+        mock_service = AsyncMock()
+        mock_service.embed_query_async = AsyncMock(return_value=fake_embedding)
 
-        mcp_source.refresh_from_db()
-        assert mcp_source.discovery_status == "success"
+        with patch(
+            "common.services.embedding_service.get_embedding_service",
+            return_value=mock_service,
+        ):
+            await embed_source_descriptions(mcp_source)
+
+        await mcp_source.arefresh_from_db()
         assert len(mcp_source.discovered_tools) == 2
 
-        actions = Action.objects.filter(mcp_source=mcp_source)
-        assert actions.count() == 2
+        for tool_def in mcp_source.discovered_tools:
+            assert "_description_embedding" in tool_def
+            assert tool_def["_description_embedding"] == fake_embedding
 
-        for action in actions:
-            assert action.tool_type == Action.ToolType.SERVER_SIDE
-            assert action.source_type == Action.SourceType.MCP
-            assert action.status == Action.Status.DRAFT
+    async def test_skips_embedding_for_empty_description(self, mcp_source):
+        mcp_source.discovered_tools = [
+            {"name": "no_desc_tool", "description": "", "inputSchema": {}},
+        ]
+        mcp_source.discovered_resources = []
+        await mcp_source.asave()
 
-    def test_idempotent_sync(self, mcp_source):
-        tools = [{"name": "my_tool", "description": "Does stuff", "inputSchema": {}}]
+        mock_service = AsyncMock()
+        mock_service.embed_query_async = AsyncMock()
 
-        _sync_discovered_tools(mcp_source, tools)
-        _sync_discovered_tools(mcp_source, tools)
+        with patch(
+            "common.services.embedding_service.get_embedding_service",
+            return_value=mock_service,
+        ):
+            await embed_source_descriptions(mcp_source)
 
-        assert Action.objects.filter(mcp_source=mcp_source).count() == 1
+        await mcp_source.arefresh_from_db()
+        assert len(mcp_source.discovered_tools) == 1
+        assert "_description_embedding" not in mcp_source.discovered_tools[0]
+        mock_service.embed_query_async.assert_not_called()
+
+    async def test_skips_already_embedded(self, mcp_source):
+        """Items with existing embeddings are not re-embedded."""
+        existing_embedding = [0.9, 0.8, 0.7]
+        mcp_source.discovered_tools = [
+            {
+                "name": "already_done",
+                "description": "Already embedded",
+                "inputSchema": {},
+                "_description_embedding": existing_embedding,
+            },
+        ]
+        mcp_source.discovered_resources = []
+        await mcp_source.asave()
+
+        mock_service = AsyncMock()
+        mock_service.embed_query_async = AsyncMock()
+
+        with patch(
+            "common.services.embedding_service.get_embedding_service",
+            return_value=mock_service,
+        ):
+            await embed_source_descriptions(mcp_source)
+
+        mock_service.embed_query_async.assert_not_called()
+        await mcp_source.arefresh_from_db()
+        assert mcp_source.discovered_tools[0]["_description_embedding"] == existing_embedding

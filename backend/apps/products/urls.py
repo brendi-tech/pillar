@@ -4,6 +4,7 @@ URL configuration for the products app.
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
+from apps.mcp_oauth.views import OAuthProviderDiscoverView, OAuthProviderView
 from apps.products.views import (
     ProductViewSet, PlatformViewSet, ActionViewSet,
     ActionExecutionLogViewSet, ActionSyncView, ActionSyncStatusView,
@@ -27,6 +28,9 @@ urlpatterns = [
     path('', include(router.urls)),
     # Nested agent routes: /api/admin/products/{product_pk}/agents/
     path('<uuid:product_pk>/agents/', include(agents_router.urls)),
+    # OAuth provider configuration
+    path('<uuid:product_id>/oauth-provider/', OAuthProviderView.as_view(), name='oauth-provider'),
+    path('<uuid:product_id>/oauth-provider/discover/', OAuthProviderDiscoverView.as_view(), name='oauth-provider-discover'),
     # Legacy action sync endpoints (kept for backwards compat)
     path('<slug:slug>/actions/sync/', ActionSyncView.as_view(), name='action-sync'),
     path('<slug:slug>/actions/sync/<uuid:job_id>/status/', ActionSyncStatusView.as_view(), name='action-sync-status'),

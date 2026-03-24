@@ -1,4 +1,4 @@
-export type AgentChannel = 'web' | 'slack' | 'discord' | 'email' | 'api';
+export type AgentChannel = 'web' | 'slack' | 'discord' | 'email' | 'api' | 'mcp';
 
 export type AgentTone = 'professional' | 'friendly' | 'neutral' | 'concise' | 'formal';
 
@@ -28,6 +28,7 @@ export const CHANNEL_LABELS: Record<AgentChannel, string> = {
   discord: 'Discord',
   email: 'Email',
   api: 'API',
+  mcp: 'MCP Server',
 };
 
 export const CLIENT_SIDE_CHANNELS: AgentChannel[] = ['web', 'api'];
@@ -39,6 +40,22 @@ export const TONE_LABELS: Record<AgentTone, string> = {
   concise: 'Concise',
   formal: 'Formal',
 };
+
+export interface AgentToolOverrideItem {
+  tool_name: string;
+  is_enabled: boolean | null;
+  requires_confirmation: boolean | null;
+}
+
+export interface AgentOpenAPISourceConfig {
+  openapi_source_id: string;
+  operation_overrides: AgentToolOverrideItem[];
+}
+
+export interface AgentMCPSourceConfig {
+  mcp_source_id: string;
+  tool_overrides: AgentToolOverrideItem[];
+}
 
 export interface Agent {
   id: string;
@@ -59,9 +76,14 @@ export interface Agent {
   llm_model: string;
   temperature: number | null;
   channel_config: Record<string, unknown>;
+  mcp_domain: string | null;
   default_language: string;
   knowledge_scope: KnowledgeScopeMode;
   knowledge_source_ids: string[];
+  mcp_source_ids: string[];
+  mcp_sources_config: AgentMCPSourceConfig[];
+  openapi_source_ids: string[];
+  openapi_sources_config: AgentOpenAPISourceConfig[];
   created_at: string;
   updated_at: string;
 }
@@ -82,9 +104,12 @@ export interface CreateAgentPayload {
   llm_model?: string;
   temperature?: number | null;
   channel_config?: Record<string, unknown>;
+  mcp_domain?: string | null;
   default_language?: string;
   knowledge_scope?: KnowledgeScopeMode;
   knowledge_source_ids?: string[];
+  mcp_sources_config?: AgentMCPSourceConfig[];
+  openapi_sources_config?: AgentOpenAPISourceConfig[];
 }
 
 export type UpdateAgentPayload = Partial<Omit<CreateAgentPayload, 'channel'>>;

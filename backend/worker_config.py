@@ -47,11 +47,18 @@ def get_all_workflows():
     from apps.tools.workflows import (
         endpoint_health_check_workflow,
         mcp_discovery_workflow,
+        mcp_embed_descriptions_workflow,
+        mcp_source_refresh_workflow,
+    )
+    from apps.tools.workflows.openapi_discovery import (
+        openapi_embed_descriptions_workflow,
+        openapi_refresh_tokens_workflow,
     )
 
     # Import Slack integration workflows
     from apps.integrations.slack.workflows.handle_message import handle_slack_message
     from apps.integrations.slack.workflows.account_link import handle_account_link
+    from apps.integrations.slack.workflows.tool_oauth import handle_tool_oauth
 
     # Import Discord integration workflows
     from apps.integrations.discord.workflows.handle_message import handle_discord_message
@@ -90,6 +97,11 @@ def get_all_workflows():
         # Tools app workflows (server-side tool infrastructure)
         endpoint_health_check_workflow,
         mcp_discovery_workflow,
+        mcp_embed_descriptions_workflow,
+        mcp_source_refresh_workflow,
+        # OpenAPI tool source workflows
+        openapi_embed_descriptions_workflow,
+        openapi_refresh_tokens_workflow,
         # Billing app workflows (cron jobs)
         early_adopter_bonus_workflow,
         free_tier_early_adopter_bonus_workflow,
@@ -98,6 +110,7 @@ def get_all_workflows():
         # Slack integration workflows
         handle_slack_message,
         handle_account_link,
+        handle_tool_oauth,
         # Discord integration workflows
         handle_discord_message,
         handle_discord_account_link,

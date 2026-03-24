@@ -27,7 +27,7 @@ export function LoginForm() {
   // If already authenticated, redirect to return path
   useEffect(() => {
     if (isAuthenticated) {
-      redirectToReturnPath("/knowledge");
+      redirectToReturnPath("/tools");
     }
   }, [isAuthenticated, redirectToReturnPath]);
 
@@ -47,7 +47,7 @@ export function LoginForm() {
 
     try {
       await login(email, password);
-      redirectToReturnPath("/knowledge");
+      redirectToReturnPath("/tools");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Login failed");
     } finally {
@@ -59,7 +59,7 @@ export function LoginForm() {
     setIsLoading(true);
     try {
       await loginWithTokens(token, refreshToken);
-      redirectToReturnPath("/knowledge");
+      redirectToReturnPath("/tools");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Login failed");
     } finally {

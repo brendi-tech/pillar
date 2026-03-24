@@ -64,6 +64,7 @@ async def resolve_identity(
     # Case 1: Identity already known (web channel, or API with explicit caller)
     if external_user_id:
         return CallerContext(
+            channel=channel,
             channel_user_id=channel_user_id,
             external_user_id=external_user_id,
             email=email,
@@ -81,6 +82,7 @@ async def resolve_identity(
 
         if mapping:
             return CallerContext(
+                channel=channel,
                 channel_user_id=channel_user_id,
                 external_user_id=mapping.external_user_id,
                 email=mapping.email or email,
@@ -97,6 +99,7 @@ async def resolve_identity(
 
         if email_mapping:
             return CallerContext(
+                channel=channel,
                 channel_user_id=channel_user_id,
                 external_user_id=email_mapping.external_user_id,
                 email=email,
@@ -105,6 +108,7 @@ async def resolve_identity(
 
     # Case 4: Unlinked user — pass through whatever we have
     return CallerContext(
+        channel=channel,
         channel_user_id=channel_user_id,
         external_user_id=None,
         email=email,

@@ -50,3 +50,25 @@ def create_web_agent_for_product(sender, instance: Product, created: bool, **kwa
         is_active=True,
     )
     logger.info(f"Auto-created web agent (slug={slug}) for product {instance.id}")
+
+
+@receiver(post_save, sender=Product)
+def create_mcp_agent_for_product(sender, instance: Product, created: bool, **kwargs):
+    """Auto-create an MCP agent when a new product is created."""
+    if not created:
+        return
+
+    from apps.products.models.agent import Agent
+
+    if Agent.objects.filter(product=instance, channel='mcp').exists():
+        return
+
+    Agent.objects.create(
+        organization=instance.organization,
+        product=instance,
+        name=f"{instance.name} MCP",
+        channel='mcp',
+        is_active=True,
+        include_suggested_followups=False,
+    )
+    logger.info(f"Auto-created MCP agent for product {instance.id}")

@@ -89,16 +89,26 @@ def _verify_slack_request(
             installation = SlackInstallation.objects.filter(**lookup).first()
             signing_secret = (installation.signing_secret or '') if installation else ''
 
-    if not signing_secret:
-        signing_secret = settings.SLACK_SIGNING_SECRET
+    secrets_to_try: list[tuple[str, SlackInstallation | None]] = []
+    if signing_secret:
+        secrets_to_try.append((signing_secret, installation))
+    if settings.SLACK_SIGNING_SECRET:
+        secrets_to_try.append((settings.SLACK_SIGNING_SECRET, installation))
 
-    if not signing_secret:
+    if not team_id:
+        for inst in SlackInstallation.objects.filter(is_active=True, is_byob=True).exclude(signing_secret='').order_by('-created_at'):
+            secrets_to_try.append((inst.signing_secret, inst))
+
+    if not secrets_to_try:
         logger.warning("[SLACK] No signing secret configured, skipping verification")
         return True, installation
 
-    verifier = SignatureVerifier(signing_secret=signing_secret)
-    is_valid = verifier.is_valid_request(body=body_str, headers=request.headers)
-    return is_valid, installation if is_valid else None
+    for secret, matched_inst in secrets_to_try:
+        verifier = SignatureVerifier(signing_secret=secret)
+        if verifier.is_valid_request(body=body_str, headers=request.headers):
+            return True, matched_inst
+
+    return False, None
 
 
 # ── OAuth helpers ─────────────────────────────────────────────────────
@@ -336,7 +346,10 @@ class SlackEventsView(APIView):
 
 class SlackCommandView(APIView):
     """
-    Handles /pillar slash commands.
+    Handles slash commands (BYOB /<product-name> or legacy /pillar).
+
+    All commands use subcommands: ask, connect, status, help.
+    A bare command with text (no subcommand) is treated as an ask.
 
     POST /api/integrations/slack/commands/
     """
@@ -355,53 +368,84 @@ class SlackCommandView(APIView):
         app_id = request.data.get('api_app_id', '')
         response_url = request.data.get('response_url', '')
 
-        if command == '/pillar':
-            subcommand = text.split()[0] if text else 'help'
+        # All commands (BYOB /<product-name> or legacy /pillar) use subcommands.
+        # The first word of text is the subcommand; the rest is the argument.
+        parts = text.split(None, 1)
+        subcommand = parts[0].lower() if parts else ''
+        subcommand_args = parts[1].strip() if len(parts) > 1 else ''
 
-            if subcommand == 'connect':
-                TaskRouter.execute(
-                    'slack-account-link',
-                    team_id=team_id,
-                    user_id=user_id,
-                    response_url=response_url,
-                )
-                return JsonResponse({
-                    'response_type': 'ephemeral',
-                    'text': 'Generating your account link... one moment.',
-                })
-
-            if subcommand == 'status':
-                lookup = {'team_id': team_id, 'is_active': True}
-                if app_id:
-                    lookup['app_id'] = app_id
-                try:
-                    inst = SlackInstallation.objects.get(**lookup)
-                    return JsonResponse({
-                        'response_type': 'ephemeral',
-                        'text': (
-                            f'Pillar is connected and active.\n'
-                            f'Workspace: {inst.team_name}\n'
-                            f'Product: {inst.product.name}'
-                        ),
-                    })
-                except SlackInstallation.DoesNotExist:
-                    return JsonResponse({
-                        'response_type': 'ephemeral',
-                        'text': 'Pillar is not connected to this workspace.',
-                    })
-
+        # Bare command with no subcommand → treat as an ask
+        if not subcommand or subcommand == 'ask':
+            question = subcommand_args if subcommand == 'ask' else text
+            if not question:
+                return self._help_response(command)
+            TaskRouter.execute(
+                'slack-handle-message',
+                team_id=team_id,
+                app_id=app_id,
+                channel_id=request.data.get('channel_id', ''),
+                user_id=user_id,
+                text=question,
+                ts='',
+                thread_ts='',
+                event_type='command',
+                event_id='',
+            )
             return JsonResponse({
                 'response_type': 'ephemeral',
-                'text': (
-                    '*Pillar Commands*\n'
-                    '`/pillar connect` — Link your Slack account to your app account\n'
-                    '`/pillar status` — Check connection status\n'
-                    '`/pillar help` — Show this help message\n'
-                    '\nYou can also @mention Pillar in any channel or DM directly.'
-                ),
+                'text': f'On it — looking into that for you.',
             })
 
-        return HttpResponse(status=200)
+        if subcommand == 'connect':
+            TaskRouter.execute(
+                'slack-tool-oauth',
+                team_id=team_id,
+                app_id=app_id,
+                user_id=user_id,
+                response_url=response_url,
+                source_query=subcommand_args,
+            )
+            return JsonResponse({
+                'response_type': 'ephemeral',
+                'text': 'Looking up available connections... one moment.',
+            })
+
+        if subcommand == 'status':
+            lookup = {'team_id': team_id, 'is_active': True}
+            if app_id:
+                lookup['app_id'] = app_id
+            try:
+                inst = SlackInstallation.objects.get(**lookup)
+                return JsonResponse({
+                    'response_type': 'ephemeral',
+                    'text': (
+                        f'Connected and active.\n'
+                        f'Workspace: {inst.team_name}\n'
+                        f'Product: {inst.product.name}'
+                    ),
+                })
+            except SlackInstallation.DoesNotExist:
+                return JsonResponse({
+                    'response_type': 'ephemeral',
+                    'text': 'Not connected to this workspace.',
+                })
+
+        # Unknown subcommand → show help
+        return self._help_response(command)
+
+    @staticmethod
+    def _help_response(command: str) -> JsonResponse:
+        return JsonResponse({
+            'response_type': 'ephemeral',
+            'text': (
+                f'*Commands*\n'
+                f'`{command} <question>` — Ask a question\n'
+                f'`{command} connect` — Connect your account for tools\n'
+                f'`{command} status` — Check connection status\n'
+                f'`{command} help` — Show this message\n'
+                f'\nYou can also @mention me in any channel or DM directly.'
+            ),
+        })
 
 
 # ── Dashboard API ─────────────────────────────────────────────────────
@@ -430,6 +474,38 @@ class SlackInstallationAdminView(APIView):
             return JsonResponse(SlackInstallationSerializer(installation).data)
         except SlackInstallation.DoesNotExist:
             return JsonResponse(None, safe=False, status=200)
+
+    def patch(self, request, product_id):
+        product = get_object_or_404(
+            Product,
+            id=product_id,
+            organization__in=request.user.organizations.all(),
+        )
+        try:
+            installation = SlackInstallation.objects.get(
+                product=product, is_active=True,
+            )
+        except SlackInstallation.DoesNotExist:
+            return JsonResponse(
+                {'error': 'No active Slack installation found.'}, status=404,
+            )
+
+        allowed_fields = {'app_id', 'signing_secret'}
+        updated_fields = []
+        for field in allowed_fields:
+            if field in request.data:
+                setattr(installation, field, request.data[field])
+                updated_fields.append(field)
+
+        if updated_fields:
+            installation.save(update_fields=updated_fields + ['updated_at'])
+            logger.info(
+                "[SLACK] Updated installation %s fields %s for product %s",
+                installation.id, updated_fields, product_id,
+            )
+
+        from .serializers import SlackInstallationSerializer
+        return JsonResponse(SlackInstallationSerializer(installation).data)
 
     def delete(self, request, product_id):
         product = get_object_or_404(
@@ -480,9 +556,20 @@ REQUIRED_BOT_SCOPES = [
 BOT_EVENTS = ["app_mention", "message.im", "app_uninstalled"]
 
 
+def _slugify_command(name: str) -> str:
+    """Turn a product name into a valid Slack slash command.
+
+    Slack commands must be lowercase, alphanumeric + hyphens, max 32 chars.
+    """
+    import re
+    slug = re.sub(r'[^a-z0-9]+', '-', name.lower()).strip('-')[:32]
+    return slug or 'assistant'
+
+
 def _build_slack_manifest(product: Product, api_base: str) -> dict:
     """Build a Slack app manifest dict pre-filled with product name and webhook URLs."""
     name = product.name[:35]
+    cmd = _slugify_command(product.name)
     return {
         "display_information": {
             "name": name,
@@ -500,12 +587,12 @@ def _build_slack_manifest(product: Product, api_base: str) -> dict:
             },
             "slash_commands": [
                 {
-                    "command": "/ask",
+                    "command": f"/{cmd}",
                     "url": f"{api_base}/api/integrations/slack/commands/",
-                    "description": f"Ask {product.name} a question",
-                    "usage_hint": "[your question]",
+                    "description": f"Ask {product.name} a question or connect accounts",
+                    "usage_hint": "[ask <question> | connect [tool name] | help]",
                     "should_escape": False,
-                }
+                },
             ],
         },
         "oauth_config": {
@@ -575,6 +662,7 @@ class SlackBYOBAdminView(APIView):
 
         bot_token = serializer.validated_data['bot_token']
         signing_secret = serializer.validated_data['signing_secret']
+        app_id = serializer.validated_data['app_id']
         agent_id = request.data.get('agent_id')
 
         client = WebClient(token=bot_token)
@@ -594,7 +682,6 @@ class SlackBYOBAdminView(APIView):
         team_id = auth_response['team_id']
         team_name = auth_response.get('team', '')
         bot_user_id = auth_response.get('user_id', '')
-        app_id = auth_response.get('app_id', '')
 
         installation, created = SlackInstallation.objects.update_or_create(
             team_id=team_id,
@@ -686,6 +773,23 @@ class SlackInteractionsView(APIView):
         app_id = payload.get('api_app_id', '')
 
         response_url = payload.get('response_url', '')
+
+        if action_id.startswith('connect_tool:'):
+            user_id = payload.get('user', {}).get('id', '')
+            source_id = value_data.get('source_id', '')
+            if source_id:
+                self._replace_via_response_url(
+                    payload, response_url, "Generating your connection link...",
+                )
+                TaskRouter.execute(
+                    'slack-tool-oauth',
+                    team_id=team_id,
+                    app_id=app_id,
+                    user_id=user_id,
+                    response_url=response_url,
+                    source_id=source_id,
+                )
+            return HttpResponse(status=200)
 
         if action_id.startswith('cancel_tool:'):
             self._replace_via_response_url(payload, response_url, "~Cancelled.~")

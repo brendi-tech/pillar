@@ -31,6 +31,7 @@ import {
   Mail,
   Terminal,
   Hash,
+  Server,
   Bot,
   ExternalLink,
   ArrowLeft,
@@ -49,6 +50,7 @@ const CHANNEL_ICONS: Record<string, React.ElementType> = {
   discord: Hash,
   email: Mail,
   api: Terminal,
+  mcp: Server,
 };
 
 type SlackStep = "name" | "bot-type" | "byob";
@@ -137,6 +139,7 @@ export function AgentsPage({
   const [slackAgentName, setSlackAgentName] = useState("");
   const [botToken, setBotToken] = useState("");
   const [signingSecret, setSigningSecret] = useState("");
+  const [slackAppId, setSlackAppId] = useState("");
 
   // Discord wizard state
   const [discordStep, setDiscordStep] = useState<DiscordStep | null>(null);
@@ -196,6 +199,7 @@ export function AgentsPage({
         {
           bot_token: botToken,
           signing_secret: signingSecret,
+          app_id: slackAppId,
           agent_id: agentId,
         }
       ),
@@ -305,6 +309,7 @@ export function AgentsPage({
     setSlackAgentName("");
     setBotToken("");
     setSigningSecret("");
+    setSlackAppId("");
     byobMutation.reset();
     createAgent.reset();
   };
@@ -710,6 +715,14 @@ export function AgentsPage({
                       <strong>Signing Secret</strong> — go to{" "}
                       <strong>Basic Information → App Credentials</strong>
                     </li>
+                    <li>
+                      <strong>App ID</strong> — found at the top of{" "}
+                      <strong>Basic Information</strong> (e.g.{" "}
+                      <code className="text-xs bg-muted px-1 py-0.5 rounded">
+                        A07...
+                      </code>
+                      )
+                    </li>
                   </ul>
                   <div className="space-y-1.5">
                     <Label htmlFor="byob-bot-token">
@@ -733,6 +746,15 @@ export function AgentsPage({
                       onChange={(e) => setSigningSecret(e.target.value)}
                     />
                   </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="byob-app-id">App ID</Label>
+                    <Input
+                      id="byob-app-id"
+                      placeholder="A07..."
+                      value={slackAppId}
+                      onChange={(e) => setSlackAppId(e.target.value)}
+                    />
+                  </div>
                 </div>
 
                 {(byobMutation.isError || createAgent.isError) && (
@@ -746,7 +768,7 @@ export function AgentsPage({
                 <Button
                   onClick={handleSlackBYOB}
                   disabled={
-                    !botToken || !signingSecret || isSlackSubmitting
+                    !botToken || !signingSecret || !slackAppId || isSlackSubmitting
                   }
                   className="w-full"
                 >

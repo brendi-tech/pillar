@@ -28,7 +28,7 @@ class TestChannel:
 
     def test_all_channels_present(self):
         expected = ["web", "slack", "discord", "email", "api",
-                     "whatsapp", "teams", "telegram", "sms"]
+                     "mcp", "whatsapp", "teams", "telegram", "sms"]
         assert Channel.ALL == expected
 
     def test_channel_choices_format(self):
@@ -49,6 +49,7 @@ class TestChannel:
 class TestCallerContext:
     def test_default_construction(self):
         ctx = CallerContext()
+        assert ctx.channel == "web"
         assert ctx.channel_user_id is None
         assert ctx.external_user_id is None
         assert ctx.email is None

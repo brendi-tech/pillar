@@ -207,10 +207,11 @@ class TestBuildCapabilitiesSummary:
         with patch('apps.mcp.services.prompts.capabilities.cache') as mock_cache:
             mock_cache.get.return_value = None
             
-            with patch('apps.products.models.Action.objects') as mock_actions:
-                # Create an async iterable mock with empty list
-                mock_qs = make_async_iterable([])
-                mock_actions.filter.return_value = mock_qs
+            with patch('apps.products.models.Action.objects') as mock_actions, \
+                 patch('apps.tools.models.RegisteredSkill.objects') as mock_skills:
+                mock_actions.filter.return_value = make_async_iterable([])
+                mock_skill_qs = make_async_iterable([])
+                mock_skills.filter.return_value.values_list.return_value = mock_skill_qs
                 
                 result = await build_capabilities_summary(mock_product)
                 
@@ -248,10 +249,10 @@ class TestBuildCapabilitiesSummary:
         with patch('apps.mcp.services.prompts.capabilities.cache') as mock_cache:
             mock_cache.get.return_value = None
             
-            with patch('apps.products.models.Action.objects') as mock_action_model:
-                # Create an async iterable mock
-                mock_qs = make_async_iterable(mock_actions_data)
-                mock_action_model.filter.return_value = mock_qs
+            with patch('apps.products.models.Action.objects') as mock_action_model, \
+                 patch('apps.tools.models.RegisteredSkill.objects') as mock_skills:
+                mock_action_model.filter.return_value = make_async_iterable(mock_actions_data)
+                mock_skills.filter.return_value.values_list.return_value = make_async_iterable([])
                 
                 result = await build_capabilities_summary(mock_product)
                 
@@ -275,10 +276,10 @@ class TestBuildCapabilitiesSummary:
         with patch('apps.mcp.services.prompts.capabilities.cache') as mock_cache:
             mock_cache.get.return_value = None
             
-            with patch('apps.products.models.Action.objects') as mock_action_model:
-                # Create an async iterable mock
-                mock_qs = make_async_iterable(mock_actions_data)
-                mock_action_model.filter.return_value = mock_qs
+            with patch('apps.products.models.Action.objects') as mock_action_model, \
+                 patch('apps.tools.models.RegisteredSkill.objects') as mock_skills:
+                mock_action_model.filter.return_value = make_async_iterable(mock_actions_data)
+                mock_skills.filter.return_value.values_list.return_value = make_async_iterable([])
                 
                 result = await build_capabilities_summary(mock_product)
                 

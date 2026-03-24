@@ -96,6 +96,44 @@ CONDITIONAL_TOOLS = {
             "required": ["operation", "ref"],
         },
     },
+    "read_mcp_resource": {
+        "name": "read_mcp_resource",
+        "description": (
+            "Read the full content of an MCP resource by its URI. "
+            "Use when search results include MCP resources and you need the full content."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "uri": {
+                    "type": "string",
+                    "description": "The MCP resource URI from search results",
+                },
+                "source_id": {
+                    "type": "string",
+                    "description": "The MCP source ID from search results",
+                },
+            },
+            "required": ["uri", "source_id"],
+        },
+    },
+    "load_skill": {
+        "name": "load_skill",
+        "description": (
+            "Load the full content of a skill by name. "
+            "Use when search results include a relevant skill and you need its full instructions."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "The skill name from search results",
+                },
+            },
+            "required": ["name"],
+        },
+    },
 }
 
 # All tools combined (used for validation - must know about all possible tools)
@@ -105,19 +143,25 @@ AGENT_TOOLS = CORE_TOOLS + list(CONDITIONAL_TOOLS.values())
 def get_tools_for_api(
     include_get_article: bool = False,
     include_interact_with_page: bool = False,
+    include_read_mcp_resource: bool = False,
+    include_load_skill: bool = False,
 ) -> List[Dict[str, Any]]:
     """
     Get tool definitions in OpenAI function-calling format for the API.
-    
+
     Core tools (search) are always included. Conditional tools
     are included based on flags:
     - get_article: after search returns knowledge chunks
     - interact_with_page: when DOM snapshot is present in user_context
-    
+    - read_mcp_resource: after search returns MCP resources
+    - load_skill: after search returns skills
+
     Args:
         include_get_article: Include the get_article tool
         include_interact_with_page: Include the interact_with_page tool
-    
+        include_read_mcp_resource: Include the read_mcp_resource tool
+        include_load_skill: Include the load_skill tool
+
     Returns:
         List of tool definitions ready for the 'tools' API parameter
     """
@@ -126,6 +170,10 @@ def get_tools_for_api(
         tools.append({"type": "function", "function": CONDITIONAL_TOOLS["get_article"]})
     if include_interact_with_page:
         tools.append({"type": "function", "function": CONDITIONAL_TOOLS["interact_with_page"]})
+    if include_read_mcp_resource:
+        tools.append({"type": "function", "function": CONDITIONAL_TOOLS["read_mcp_resource"]})
+    if include_load_skill:
+        tools.append({"type": "function", "function": CONDITIONAL_TOOLS["load_skill"]})
     return tools
 
 

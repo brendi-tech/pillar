@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import type { Agent } from "@/types/agent";
 import { CHANNEL_LABELS, TONE_LABELS } from "@/types/agent";
-import { Globe, MessageSquare, Mail, Terminal, Hash, Pencil } from "lucide-react";
+import { Globe, MessageSquare, Mail, Terminal, Hash, Server, Pencil } from "lucide-react";
 import Link from "next/link";
 
 const CHANNEL_ICONS: Record<string, React.ElementType> = {
@@ -14,6 +14,7 @@ const CHANNEL_ICONS: Record<string, React.ElementType> = {
   discord: Hash,
   email: Mail,
   api: Terminal,
+  mcp: Server,
 };
 
 interface AgentCardProps {

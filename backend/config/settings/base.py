@@ -71,6 +71,10 @@ INSTALLED_APPS = [
     # Server-side tools
     'apps.tools',                       # Server-side tool endpoints, MCP sources
 
+    # OAuth
+    'oauth2_provider',                  # django-oauth-toolkit (DOT)
+    'apps.mcp_oauth',                   # MCP OAuth 2.1 (inbound + outbound)
+
     # Public tools
     'apps.agent_score',                 # Agent Readiness Score (public free tool)
 
@@ -526,6 +530,26 @@ GITHUB_API_TOKEN = os.environ.get('GITHUB_API_TOKEN', '')
 # Google OAuth (for user login)
 GOOGLE_OAUTH_CLIENT_ID = os.environ.get('GOOGLE_WEB_OAUTH_CLIENT_ID', '')
 GOOGLE_OAUTH_SECRET = os.environ.get('GOOGLE_WEB_OAUTH_SECRET_ID', '')
+
+# ==============================================================================
+# OAUTH 2.1 / MCP AUTHENTICATION (django-oauth-toolkit)
+# ==============================================================================
+OAUTH2_PROVIDER_APPLICATION_MODEL = 'mcp_oauth.MCPApplication'
+OAUTH2_PROVIDER_ACCESS_TOKEN_MODEL = 'mcp_oauth.MCPAccessToken'
+OAUTH2_PROVIDER_GRANT_MODEL = 'mcp_oauth.MCPGrant'
+OAUTH2_PROVIDER_REFRESH_TOKEN_MODEL = 'mcp_oauth.MCPRefreshToken'
+OAUTH2_PROVIDER_ID_TOKEN_MODEL = 'mcp_oauth.MCPIDToken'
+OAUTH2_PROVIDER = {
+    'APPLICATION_MODEL': 'mcp_oauth.MCPApplication',
+    'ACCESS_TOKEN_MODEL': 'mcp_oauth.MCPAccessToken',
+    'GRANT_MODEL': 'mcp_oauth.MCPGrant',
+    'REFRESH_TOKEN_MODEL': 'mcp_oauth.MCPRefreshToken',
+    'PKCE_REQUIRED': True,
+    'ACCESS_TOKEN_EXPIRE_SECONDS': 3600,
+    'REFRESH_TOKEN_EXPIRE_SECONDS': 86400 * 30,
+    'ALLOWED_REDIRECT_URI_SCHEMES': ['http', 'https'],
+    'OAUTH2_VALIDATOR_CLASS': 'apps.mcp_oauth.validators.MCPOAuth2Validator',
+}
 
 # Webhook Configuration
 WEBHOOK_BASE_URL = os.environ.get('WEBHOOK_BASE_URL', os.environ.get('API_BASE_URL', 'http://localhost:8003'))

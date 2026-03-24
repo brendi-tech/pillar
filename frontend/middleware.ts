@@ -29,11 +29,12 @@ const MARKETING_EDGE_CACHE_CONTROL =
  * - /login - Sign in
  * - /signup - Sign up
  * - /onboarding - New user setup
- * - /knowledge - Knowledge sources (default page)
+ * - /tools - Tools (default page)
+ * - /knowledge - Knowledge sources
  * - /tasks - Action tasks
  * - /analytics - Analytics
  * - /settings - Help center settings
- * - / - Redirects to /knowledge
+ * - / - Redirects to /tools
  *
  * ROOT DOMAIN - Marketing landing page:
  * - localhost:3001 (local development)
@@ -251,13 +252,13 @@ export function middleware(request: NextRequest) {
   // redirect them to the admin subdomain
   if (!isAdmin && pathname.startsWith("/admin")) {
     const adminUrl = getAdminSubdomainUrl(hostname);
-    return NextResponse.redirect(`${adminUrl}/knowledge`);
+    return NextResponse.redirect(`${adminUrl}/tools`);
   }
 
   // REDIRECT: If someone accesses /admin/... on the admin subdomain,
   // redirect to the equivalent path without /admin prefix
   if (isAdmin && pathname.startsWith("/admin")) {
-    const newPath = pathname.replace(/^\/admin/, "") || "/knowledge";
+    const newPath = pathname.replace(/^\/admin/, "") || "/tools";
     return NextResponse.redirect(`${getAdminSubdomainUrl(hostname)}${newPath}`);
   }
 

@@ -67,15 +67,21 @@ const navigationItems: NavItem[] = [
     category: "overview",
   },
   {
-    title: "Knowledge",
-    href: "/knowledge",
-    icon: BookOpen,
-    category: "data",
-  },
-  {
     title: "Tools",
     href: "/tools",
     icon: Zap,
+    category: "data",
+  },
+  {
+    title: "Agents",
+    href: "/agents",
+    icon: Bot,
+    category: "data",
+  },
+  {
+    title: "Knowledge",
+    href: "/knowledge",
+    icon: BookOpen,
     category: "data",
   },
   {
@@ -95,12 +101,6 @@ const navigationItems: NavItem[] = [
     href: "/users",
     icon: Users,
     category: "insights",
-  },
-  {
-    title: "Agents",
-    href: "/agents",
-    icon: Bot,
-    category: "settings",
   },
   {
     title: "API Keys",
@@ -304,8 +304,8 @@ export function AdminSidebar(props: React.ComponentProps<typeof Sidebar>) {
               <SidebarMenu>{groupedItems.overview.map(renderNavItem)}</SidebarMenu>
             )}
 
-            {/* Knowledge Section (Primary) */}
-            <SidebarSeparatorWithLabel label="KNOWLEDGE" />
+            {/* Product Section (Primary) */}
+            <SidebarSeparatorWithLabel label="PRODUCT" />
             <SidebarMenu>{groupedItems.data.map(renderNavItem)}</SidebarMenu>
 
             {/* Insights Section */}

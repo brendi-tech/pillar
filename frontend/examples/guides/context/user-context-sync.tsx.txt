@@ -4,12 +4,14 @@ function UserContextSync() {
 
   useEffect(() => {
     if (user && pillar) {
+      pillar.identify(user.id, {
+        name: user.name,
+        email: user.email,
+        apiToken: user.accessToken, // forwarded to API tool sources
+      });
       pillar.setContext({
         userRole: user.role,
         userState: user.subscription?.status,
-        custom: {
-          plan: user.subscription?.plan,
-        },
       });
     }
   }, [pillar, user]);

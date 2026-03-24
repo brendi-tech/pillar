@@ -53,6 +53,10 @@ class AgentContext:
     has_page_context: bool = False
     # get_article_unlocked: True after search returns knowledge chunks
     get_article_unlocked: bool = False
+    # read_mcp_resource_unlocked: True after search returns MCP resources
+    read_mcp_resource_unlocked: bool = False
+    # load_skill_unlocked: True after search returns skills
+    load_skill_unlocked: bool = False
     
     def set_initial_messages(self, messages: List[Dict[str, Any]]) -> None:
         """
@@ -333,4 +337,6 @@ class AgentContext:
         return get_tools_for_api(
             include_get_article=self.get_article_unlocked,
             include_interact_with_page=self.has_page_context,
+            include_read_mcp_resource=self.read_mcp_resource_unlocked,
+            include_load_skill=self.load_skill_unlocked,
         )

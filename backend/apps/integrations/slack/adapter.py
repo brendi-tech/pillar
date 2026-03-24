@@ -64,6 +64,7 @@ class SlackResponseAdapter(ResponseAdapter):
         self._sources: list[dict] = []
         self._pending_confirmations: list[dict] = []
         self._full_response = ""
+        self.flush_on_tool_start: bool = False
 
     # ── ResponseAdapter interface ──────────────────────────────────────
 
@@ -77,6 +78,11 @@ class SlackResponseAdapter(ResponseAdapter):
         kind = progress_data.get("kind", "")
         status = progress_data.get("status", "")
         if kind in ("tool_call", "search") and status == "active":
+            if self.flush_on_tool_start:
+                accumulated = ''.join(self._display_tokens).strip()
+                if accumulated:
+                    blocks = self._build_response_blocks(accumulated, [])
+                    await self._post_message(blocks, accumulated)
             self._display_tokens = []
 
     async def on_action_request(

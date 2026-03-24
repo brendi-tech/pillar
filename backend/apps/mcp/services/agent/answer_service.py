@@ -121,6 +121,7 @@ class AgentAnswerServiceReActAsync:
         external_user_id: str = None,
         visitor_id: str = None,
         agent_message: Optional[AgentMessage] = None,
+        user_api_token: str = None,
     ):
         """
         Stream answer using unified ReAct agent for all queries.
@@ -165,16 +166,23 @@ class AgentAnswerServiceReActAsync:
 
             # STEP 2: Use the pre-built AgentMessage or construct one from kwargs
             if agent_message is None:
+                effective_channel = (
+                    self.agent_config.channel
+                    if self.agent_config and self.agent_config.channel
+                    else Channel.WEB
+                )
                 agent_message = AgentMessage(
                     text=question,
-                    channel=Channel.WEB,
+                    channel=effective_channel,
                     conversation_id=self.conversation_id or "",
                     product_id=str(self.help_center_config.id),
                     organization_id=str(self.organization.id) if self.organization else "",
                     caller=CallerContext(
+                        channel=effective_channel,
                         channel_user_id=visitor_id or None,
                         external_user_id=external_user_id or None,
                         user_profile=user_profile or {},
+                        user_api_token=user_api_token or None,
                     ),
                     conversation_history=self.conversation_history or [],
                     registered_tools=self.registered_tools or [],

@@ -37,6 +37,7 @@ async def build_capabilities_summary(
         Formatted capabilities summary block, or empty string if no tools.
     """
     from apps.products.models import Action
+    from apps.tools.models import RegisteredSkill
     
     product_id = str(help_center_config.id)
     cache_key = f"capabilities_summary_{product_id}"
@@ -56,8 +57,15 @@ async def build_capabilities_summary(
             'name', 'description', 'action_type', 'required_context'
         )
         action_list = [action async for action in queryset]
+
+        skill_names = [
+            name async for name in RegisteredSkill.objects.filter(
+                product=help_center_config,
+                is_active=True,
+            ).values_list('name', flat=True)
+        ]
         
-        if not action_list:
+        if not action_list and not skill_names:
             cache.set(cache_key, "", CAPABILITIES_CACHE_TTL)
             return ""
         
@@ -111,13 +119,21 @@ async def build_capabilities_summary(
         restricted_count = sum(1 for a in action_list if a.get('required_context'))
         if restricted_count > 0:
             parts.append(f"<note>{restricted_count} tools require specific user roles/contexts</note>")
+
+        if skill_names:
+            names_str = ", ".join(skill_names[:10])
+            more = f" (+{len(skill_names) - 10} more)" if len(skill_names) > 10 else ""
+            parts.append(f"<available_skills>{names_str}{more}</available_skills>")
         
         parts.append("<</available_capabilities>>")
         
         summary = "\n".join(parts) + "\n"
         cache.set(cache_key, summary, CAPABILITIES_CACHE_TTL)
         
-        logger.info(f"[Capabilities] Built summary for product {product_id}: {total} tools")
+        logger.info(
+            "[Capabilities] Built summary for product %s: %d tools, %d skills",
+            product_id, len(action_list), len(skill_names),
+        )
         return summary
         
     except Exception as e:

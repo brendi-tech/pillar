@@ -1,7 +1,4 @@
 function handleLogout() {
-  pillar?.setContext({
-    userRole: undefined,
-    userState: undefined,
-  });
+  pillar?.logout(); // clears user identity, API token, and context
   // Continue logout...
 }

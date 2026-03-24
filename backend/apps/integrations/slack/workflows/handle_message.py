@@ -52,8 +52,8 @@ async def handle_slack_message(workflow_input: SlackMessageInput, context: Conte
     from apps.mcp.services.agent.answer_service import AgentAnswerServiceReActAsync
     from apps.mcp.services.agent.channels import Channel
     from apps.products.services.agent_resolver import (
-        _build_agent_config,
         resolve_agent_config,
+        resolve_agent_config_from_agent,
     )
 
     team_id = workflow_input.team_id
@@ -112,8 +112,8 @@ async def handle_slack_message(workflow_input: SlackMessageInput, context: Conte
         await adapter.add_thinking_reaction(workflow_input.ts)
 
         if installation.agent_id and installation.agent:
-            agent_config = _build_agent_config(
-                installation.agent, product, Channel.SLACK,
+            agent_config = await resolve_agent_config_from_agent(
+                installation.agent, product, channel=Channel.SLACK,
             )
         else:
             agent_config = await resolve_agent_config(
@@ -251,8 +251,8 @@ async def _handle_confirmation(
     from apps.mcp.services.agent.models import AgentMessage, CallerContext
     from apps.mcp.services.session_resumption import get_latest_session
     from apps.products.services.agent_resolver import (
-        _build_agent_config,
         resolve_agent_config,
+        resolve_agent_config_from_agent,
     )
     from apps.tools.services.dispatch import get_tool_endpoint, post_tool_call
 
@@ -284,6 +284,7 @@ async def _handle_confirmation(
         return {'status': 'error', 'error': 'no_endpoint'}
 
     caller = CallerContext(
+        channel='slack',
         channel_user_id=workflow_input.user_id,
     )
 
@@ -356,8 +357,8 @@ async def _handle_confirmation(
     )
 
     if installation.agent_id and installation.agent:
-        agent_config = _build_agent_config(
-            installation.agent, product, Channel.SLACK,
+        agent_config = await resolve_agent_config_from_agent(
+            installation.agent, product, channel=Channel.SLACK,
         )
     else:
         agent_config = await resolve_agent_config(
@@ -419,6 +420,7 @@ async def _handle_confirmation(
         product_id=str(product.id),
         conversation_id=conversation_id or '',
     )
+    adapter.flush_on_tool_start = True
     await adapter.prepare_turn(error_text)
 
     try:

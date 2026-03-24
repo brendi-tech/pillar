@@ -262,6 +262,38 @@ class ProductViewSet(viewsets.ModelViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @extend_schema(
+        summary="Get MCP connection info",
+        description="Returns computed MCP server URL and domain info for this product.",
+        responses={
+            200: {
+                'type': 'object',
+                'properties': {
+                    'mcp_url': {'type': 'string', 'nullable': True},
+                    'subdomain': {'type': 'string', 'nullable': True},
+                    'help_center_domain': {'type': 'string'},
+                },
+            },
+        },
+    )
+    @action(detail=True, methods=['get'], url_path='mcp-info')
+    def mcp_info(self, request, pk=None):
+        """Return the computed MCP server URL for this product."""
+        from django.conf import settings as django_settings
+
+        product = self.get_object()
+        help_center_domain = getattr(django_settings, 'HELP_CENTER_DOMAIN', 'help.pillar.io')
+        mcp_url = (
+            f"https://{product.subdomain}.{help_center_domain}/mcp/"
+            if product.subdomain
+            else None
+        )
+        return Response({
+            'mcp_url': mcp_url,
+            'subdomain': product.subdomain,
+            'help_center_domain': help_center_domain,
+        })
+
+    @extend_schema(
         summary="Check subdomain availability",
         description=(
             "Check if a subdomain is available for use. "
@@ -719,12 +751,20 @@ class ActionSyncData(BaseModel):
         return v
 
 
+class SkillSyncData(BaseModel):
+    """Schema for a single skill in the sync payload."""
+    name: str
+    description: str
+    content: str
+
+
 class ActionSyncRequest(BaseModel):
     """Schema for the sync request payload."""
     platform: str
     version: str
     git_sha: Optional[str] = None
     actions: list[ActionSyncData]
+    skills: list[SkillSyncData] = []
     agent_guidance: Optional[str] = None
     mode: str = 'additive'
 
@@ -1091,6 +1131,49 @@ class ActionSyncView(APIView):
             f"{created_count} created, {updated_count} updated, {deleted_count} deleted"
         )
 
+        # --- Skill sync ---
+        skills_count = 0
+        if sync_request.skills:
+            from apps.tools.models import RegisteredSkill
+            from common.services.embedding_service import get_embedding_service
+
+            embedding_service = get_embedding_service()
+            incoming_skill_names = set()
+
+            for skill_data in sync_request.skills:
+                incoming_skill_names.add(skill_data.name)
+                embedding = embedding_service.embed_document(skill_data.description)
+
+                RegisteredSkill.objects.update_or_create(
+                    product=product,
+                    name=skill_data.name,
+                    defaults={
+                        'organization': product.organization,
+                        'description': skill_data.description,
+                        'content': skill_data.content,
+                        'source_type': RegisteredSkill.SourceType.CLI_SYNC,
+                        'is_active': True,
+                        'description_embedding': embedding,
+                        'embedding_model': 'text-embedding-3-small',
+                    },
+                )
+                skills_count += 1
+
+            if sync_request.mode == 'replace':
+                RegisteredSkill.objects.filter(
+                    product=product,
+                    source_type=RegisteredSkill.SourceType.CLI_SYNC,
+                    is_active=True,
+                ).exclude(name__in=incoming_skill_names).update(is_active=False)
+
+            from apps.mcp.services.prompts.capabilities import invalidate_capabilities_cache
+            invalidate_capabilities_cache(str(product.id))
+
+            logger.info(
+                "[ActionSync] Synced %d skill(s) for %s",
+                skills_count, product.subdomain,
+            )
+
         if created_count > 0:
             try:
                 slack.notify_actions_synced(
@@ -1110,6 +1193,7 @@ class ActionSyncView(APIView):
             'deployment_id': str(deployment.id),
             'version': sync_request.version,
             'actions_count': len(action_ids),
+            'skills_count': skills_count,
             'created': created_count,
             'updated': updated_count,
             'deleted': deleted_count,

@@ -155,7 +155,7 @@ export default function SetupPage() {
       />
       <InlineOnboardingSteps
         initialStep={initialStep}
-        redirectTo="/knowledge"
+        redirectTo="/tools"
       />
     </div>
   );

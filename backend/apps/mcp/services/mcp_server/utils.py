@@ -26,6 +26,7 @@ class RequestMetadata:
     referer: str
     visitor_id: str = ''
     external_user_id: str = ''
+    user_api_token: str = ''
 
 
 def get_client_ip(request) -> str:
@@ -80,6 +81,7 @@ def extract_request_metadata(
             referer=request.META.get('HTTP_REFERER', ''),
             visitor_id=analytics.get('visitor_id', ''),
             external_user_id=analytics.get('external_user_id', ''),
+            user_api_token=analytics.get('user_api_token', ''),
         )
 
     if scope is not None:

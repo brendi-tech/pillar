@@ -5,7 +5,7 @@ import pytest
 from unittest.mock import patch
 
 from apps.products.models import Action
-from apps.tools.models import ToolEndpoint
+from apps.tools.models import RegisteredSkill, ToolEndpoint
 
 
 REGISTER_URL = "/api/tools/register/"
@@ -137,3 +137,136 @@ class TestToolRegistration:
 
         endpoint = ToolEndpoint.objects.get(product=sync_secret[0].product)
         assert endpoint.endpoint_url == "https://new.example.com/pillar"
+
+    def test_register_tools_with_skills(self, sync_secret):
+        """Skills included in registration payload are persisted."""
+        from rest_framework.test import APIClient
+
+        secret_obj, raw_token = sync_secret
+        client = APIClient()
+        client.credentials(HTTP_AUTHORIZATION=f"Bearer {raw_token}")
+
+        with patch("apps.tools.views.ToolRegistrationView._ping_endpoint", return_value=True), \
+             patch("common.services.embedding_service.get_embedding_service") as mock_emb:
+            mock_emb.return_value.embed_document.return_value = [0.1] * 1536
+
+            resp = client.post(REGISTER_URL, {
+                "endpoint_url": "https://api.customer.test/pillar",
+                "tools": [
+                    {"name": "my_tool", "description": "Does a thing"},
+                ],
+                "skills": [
+                    {
+                        "name": "onboarding-guide",
+                        "description": "How to onboard new users",
+                        "content": "# Onboarding\n\nStep 1: ...",
+                    },
+                    {
+                        "name": "billing-faq",
+                        "description": "Common billing questions",
+                        "content": "# Billing FAQ\n\nQ: How do I upgrade?",
+                    },
+                ],
+                "sdk_version": "pillar-python/0.2.0",
+            }, format="json")
+
+        assert resp.status_code == 200
+        assert set(resp.data["registered_skills"]) == {"onboarding-guide", "billing-faq"}
+
+        skills = RegisteredSkill.objects.filter(
+            product=secret_obj.product, is_active=True,
+        )
+        assert skills.count() == 2
+        assert set(skills.values_list("name", flat=True)) == {
+            "onboarding-guide", "billing-faq",
+        }
+        for s in skills:
+            assert s.source_type == RegisteredSkill.SourceType.BACKEND_SDK
+            assert s.content != ""
+            assert s.description != ""
+
+    def test_register_skills_upserts_on_reregister(self, sync_secret):
+        """Re-registration updates existing skills and deactivates removed ones."""
+        from rest_framework.test import APIClient
+
+        secret_obj, raw_token = sync_secret
+        client = APIClient()
+        client.credentials(HTTP_AUTHORIZATION=f"Bearer {raw_token}")
+
+        with patch("apps.tools.views.ToolRegistrationView._ping_endpoint", return_value=True), \
+             patch("common.services.embedding_service.get_embedding_service") as mock_emb:
+            mock_emb.return_value.embed_document.return_value = [0.1] * 1536
+
+            client.post(REGISTER_URL, {
+                "endpoint_url": "https://api.customer.test/pillar",
+                "tools": [{"name": "t", "description": "d"}],
+                "skills": [
+                    {"name": "skill-a", "description": "Skill A", "content": "Content A"},
+                    {"name": "skill-b", "description": "Skill B", "content": "Content B"},
+                ],
+            }, format="json")
+
+            resp = client.post(REGISTER_URL, {
+                "endpoint_url": "https://api.customer.test/pillar",
+                "tools": [{"name": "t", "description": "d"}],
+                "skills": [
+                    {"name": "skill-b", "description": "Skill B updated", "content": "Content B v2"},
+                ],
+            }, format="json")
+
+        assert resp.status_code == 200
+
+        skill_a = RegisteredSkill.objects.get(product=secret_obj.product, name="skill-a")
+        assert skill_a.is_active is False
+
+        skill_b = RegisteredSkill.objects.get(product=secret_obj.product, name="skill-b")
+        assert skill_b.is_active is True
+        assert skill_b.description == "Skill B updated"
+        assert skill_b.content == "Content B v2"
+
+    def test_register_skills_validation_rejects_incomplete(self, sync_secret):
+        """Skills missing name/description/content are rejected."""
+        from rest_framework.test import APIClient
+
+        _, raw_token = sync_secret
+        client = APIClient()
+        client.credentials(HTTP_AUTHORIZATION=f"Bearer {raw_token}")
+
+        resp = client.post(REGISTER_URL, {
+            "endpoint_url": "https://example.com/pillar",
+            "tools": [],
+            "skills": [{"name": "bad-skill", "description": "Missing content"}],
+        }, format="json")
+        assert resp.status_code == 400
+
+    def test_register_skills_without_tools(self, sync_secret):
+        """Skills can be registered even with no tools."""
+        from rest_framework.test import APIClient
+
+        secret_obj, raw_token = sync_secret
+        client = APIClient()
+        client.credentials(HTTP_AUTHORIZATION=f"Bearer {raw_token}")
+
+        with patch("apps.tools.views.ToolRegistrationView._ping_endpoint", return_value=True), \
+             patch("common.services.embedding_service.get_embedding_service") as mock_emb:
+            mock_emb.return_value.embed_document.return_value = [0.1] * 1536
+
+            resp = client.post(REGISTER_URL, {
+                "endpoint_url": "https://api.customer.test/pillar",
+                "tools": [],
+                "skills": [
+                    {
+                        "name": "standalone-skill",
+                        "description": "A skill with no tools",
+                        "content": "# Standalone\n\nJust a skill.",
+                    },
+                ],
+            }, format="json")
+
+        assert resp.status_code == 200
+        assert resp.data["registered"] == []
+        assert resp.data["registered_skills"] == ["standalone-skill"]
+
+        assert RegisteredSkill.objects.filter(
+            product=secret_obj.product, name="standalone-skill", is_active=True,
+        ).exists()

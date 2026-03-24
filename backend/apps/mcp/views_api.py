@@ -47,11 +47,13 @@ async def _build_headless_context(request):
     language = data.get("language", "en")
 
     caller = CallerContext(
+        channel=caller_data.get("channel", "api"),
         channel_user_id=caller_data.get("channel_user_id"),
         external_user_id=caller_data.get("external_user_id"),
         email=caller_data.get("email"),
         display_name=caller_data.get("display_name"),
         user_profile=caller_data.get("user_profile", {}),
+        user_api_token=caller_data.get("user_api_token"),
     )
 
     from apps.mcp.services.agent.answer_service import AgentAnswerServiceReActAsync

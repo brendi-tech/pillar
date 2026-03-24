@@ -92,6 +92,7 @@ def mcp_source(product):
         auth_type=MCPToolSource.AuthType.NONE,
         auth_credentials="",
         is_active=True,
+        last_ping_success=True,
     )
 
 

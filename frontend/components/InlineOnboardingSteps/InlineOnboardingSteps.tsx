@@ -23,7 +23,7 @@ import {
 
 export function InlineOnboardingSteps({
   initialStep,
-  redirectTo = "/knowledge",
+  redirectTo = "/tools",
 }: InlineOnboardingStepsProps) {
   const router = useRouter();
   const { currentProduct } = useProduct();

@@ -8,7 +8,11 @@ via channel_context (e.g. Slack channel ID).
 import logging
 from dataclasses import dataclass, field
 
-from apps.products.models import Agent
+from apps.products.models import (
+    Agent,
+    AgentOpenAPISource, AgentOpenAPIOperationOverride,
+    AgentMCPSource, AgentMCPToolOverride,
+)
 from apps.products.models.agent import KnowledgeScope, ToolScope
 
 logger = logging.getLogger(__name__)
@@ -50,6 +54,12 @@ class AgentConfig:
     tool_context_restrictions: dict[str, list[str]] = field(default_factory=dict)
     knowledge_scope: str = KnowledgeScope.ALL
     knowledge_source_ids: list[str] = field(default_factory=list)
+    mcp_source_ids: list[str] = field(default_factory=list)
+    mcp_tool_selections: dict[str, list[str]] = field(default_factory=dict)
+    mcp_confirmation_config: dict[str, dict] = field(default_factory=dict)
+    openapi_source_ids: list[str] = field(default_factory=list)
+    openapi_operation_selections: dict[str, list[str]] = field(default_factory=dict)
+    openapi_confirmation_config: dict[str, dict] = field(default_factory=dict)
 
 
 def _get_product_default_model(product) -> str:
@@ -128,6 +138,12 @@ def _build_agent_config(
     knowledge_source_ids: list[str] | None = None,
     tool_restriction_ids: list[str] | None = None,
     tool_allowance_ids: list[str] | None = None,
+    mcp_source_ids: list[str] | None = None,
+    mcp_tool_selections: dict[str, list[str]] | None = None,
+    mcp_confirmation_config: dict[str, dict] | None = None,
+    openapi_source_ids: list[str] | None = None,
+    openapi_operation_selections: dict[str, list[str]] | None = None,
+    openapi_confirmation_config: dict[str, dict] | None = None,
 ) -> AgentConfig:
     """Build an AgentConfig from an Agent instance merged with product defaults."""
     guidance_parts = []
@@ -158,6 +174,12 @@ def _build_agent_config(
         channel_config=agent.channel_config or {},
         knowledge_scope=agent.knowledge_scope or KnowledgeScope.ALL,
         knowledge_source_ids=knowledge_source_ids or [],
+        mcp_source_ids=mcp_source_ids or [],
+        mcp_tool_selections=mcp_tool_selections or {},
+        mcp_confirmation_config=mcp_confirmation_config or {},
+        openapi_source_ids=openapi_source_ids or [],
+        openapi_operation_selections=openapi_operation_selections or {},
+        openapi_confirmation_config=openapi_confirmation_config or {},
     )
 
 
@@ -200,13 +222,173 @@ async def _resolve_tool_scope_ids(agent: Agent) -> tuple[list[str], list[str]]:
     return restriction_ids, allowance_ids
 
 
-async def resolve_agent_config_from_agent(agent: Agent, product) -> AgentConfig:
+async def _resolve_openapi_config(
+    agent: Agent,
+) -> tuple[list[str], dict[str, list[str]], dict[str, dict]]:
+    """Resolve OpenAPI source IDs, operation selections, and confirmation config.
+
+    Queries the relational models:
+    - OpenAPIOperationConfig for source-level defaults
+    - AgentOpenAPIOperationOverride for per-agent overrides
+
+    Builds dicts compatible with the executor:
+    - operation_selections: source_id -> list of allowed tool_names
+      (absent key = all operations allowed)
+    - confirmation_config: source_id -> {source_defaults: {tool_name: bool}, overrides: {tool_name: bool}}
+    """
+    from apps.tools.models import OpenAPIOperationConfig
+
+    source_ids: list[str] = []
+    operation_selections: dict[str, list[str]] = {}
+    confirmation_config: dict[str, dict] = {}
+
+    async for cfg in AgentOpenAPISource.objects.filter(
+        agent=agent,
+    ).select_related('openapi_source').prefetch_related('operation_overrides'):
+        sid = str(cfg.openapi_source_id)
+        source_ids.append(sid)
+
+        agent_overrides: dict[str, dict] = {}
+        disabled_ops: list[str] = []
+        has_any_disabled = False
+
+        async for ov in AgentOpenAPIOperationOverride.objects.filter(
+            agent_openapi_source=cfg,
+        ):
+            if ov.is_enabled is False:
+                disabled_ops.append(ov.tool_name)
+                has_any_disabled = True
+            if ov.requires_confirmation is not None:
+                agent_overrides[ov.tool_name] = ov.requires_confirmation
+
+        source_defaults: dict[str, bool] = {}
+        async for op_cfg in OpenAPIOperationConfig.objects.filter(
+            openapi_source_id=cfg.openapi_source_id,
+        ):
+            source_defaults[op_cfg.tool_name] = op_cfg.requires_confirmation
+            if not op_cfg.is_enabled:
+                has_any_disabled = True
+
+        if has_any_disabled:
+            enabled_source_ops = {
+                op_id for op_id, conf in source_defaults.items()
+                if op_id not in disabled_ops
+            }
+            disabled_at_source = {
+                op_cfg_op_id
+                async for op_cfg_op_id in OpenAPIOperationConfig.objects.filter(
+                    openapi_source_id=cfg.openapi_source_id,
+                    is_enabled=False,
+                ).values_list('tool_name', flat=True)
+            }
+            enabled_source_ops -= disabled_at_source
+
+            re_enabled = {
+                ov.tool_name
+                async for ov in AgentOpenAPIOperationOverride.objects.filter(
+                    agent_openapi_source=cfg,
+                    is_enabled=True,
+                )
+            }
+            enabled_source_ops |= re_enabled
+
+            operation_selections[sid] = list(enabled_source_ops)
+
+        confirmation_config[sid] = {
+            'source_defaults': source_defaults,
+            'overrides': agent_overrides,
+        }
+
+    return source_ids, operation_selections, confirmation_config
+
+
+async def _resolve_mcp_config(
+    agent: Agent,
+) -> tuple[list[str], dict[str, list[str]], dict[str, dict]]:
+    """Resolve MCP source IDs, tool selections, and confirmation config.
+
+    Mirrors _resolve_openapi_config but for MCP sources.
+    """
+    from apps.tools.models import MCPToolConfig
+
+    source_ids: list[str] = []
+    tool_selections: dict[str, list[str]] = {}
+    confirmation_config: dict[str, dict] = {}
+
+    async for cfg in AgentMCPSource.objects.filter(
+        agent=agent,
+    ).select_related('mcp_source').prefetch_related('tool_overrides'):
+        sid = str(cfg.mcp_source_id)
+        source_ids.append(sid)
+
+        agent_overrides: dict[str, bool] = {}
+        disabled_ops: list[str] = []
+        has_any_disabled = False
+
+        async for ov in AgentMCPToolOverride.objects.filter(
+            agent_mcp_source=cfg,
+        ):
+            if ov.is_enabled is False:
+                disabled_ops.append(ov.tool_name)
+                has_any_disabled = True
+            if ov.requires_confirmation is not None:
+                agent_overrides[ov.tool_name] = ov.requires_confirmation
+
+        source_defaults: dict[str, bool] = {}
+        async for tool_cfg in MCPToolConfig.objects.filter(
+            mcp_source_id=cfg.mcp_source_id,
+        ):
+            source_defaults[tool_cfg.tool_name] = tool_cfg.requires_confirmation
+            if not tool_cfg.is_enabled:
+                has_any_disabled = True
+
+        if has_any_disabled:
+            enabled_source_tools = {
+                tn for tn in source_defaults
+                if tn not in disabled_ops
+            }
+            disabled_at_source = {
+                tn async for tn in MCPToolConfig.objects.filter(
+                    mcp_source_id=cfg.mcp_source_id,
+                    is_enabled=False,
+                ).values_list('tool_name', flat=True)
+            }
+            enabled_source_tools -= disabled_at_source
+
+            re_enabled = {
+                ov.tool_name
+                async for ov in AgentMCPToolOverride.objects.filter(
+                    agent_mcp_source=cfg,
+                    is_enabled=True,
+                )
+            }
+            enabled_source_tools |= re_enabled
+
+            tool_selections[sid] = list(enabled_source_tools)
+
+        confirmation_config[sid] = {
+            'source_defaults': source_defaults,
+            'overrides': agent_overrides,
+        }
+
+    return source_ids, tool_selections, confirmation_config
+
+
+async def resolve_agent_config_from_agent(
+    agent: Agent, product, channel: str | None = None,
+) -> AgentConfig:
     """Build AgentConfig directly from a pre-resolved Agent instance."""
     knowledge_source_ids = await _resolve_knowledge_source_ids(agent, product)
     tool_restriction_ids, tool_allowance_ids = await _resolve_tool_scope_ids(agent)
+    mcp_source_ids, mcp_tool_sel, mcp_confirm = await _resolve_mcp_config(agent)
+    openapi_source_ids, openapi_op_selections, openapi_confirm = (
+        await _resolve_openapi_config(agent)
+    )
     return _build_agent_config(
-        agent, product, agent.channel, knowledge_source_ids,
-        tool_restriction_ids, tool_allowance_ids,
+        agent, product, channel or agent.channel, knowledge_source_ids,
+        tool_restriction_ids, tool_allowance_ids, mcp_source_ids,
+        mcp_tool_sel, mcp_confirm,
+        openapi_source_ids, openapi_op_selections, openapi_confirm,
     )
 
 
@@ -245,9 +427,15 @@ async def resolve_agent_config(
 
     knowledge_source_ids = await _resolve_knowledge_source_ids(agent, product)
     tool_restriction_ids, tool_allowance_ids = await _resolve_tool_scope_ids(agent)
+    mcp_source_ids, mcp_tool_sel, mcp_confirm = await _resolve_mcp_config(agent)
+    openapi_source_ids, openapi_op_selections, openapi_confirm = (
+        await _resolve_openapi_config(agent)
+    )
     return _build_agent_config(
         agent, product, channel, knowledge_source_ids,
-        tool_restriction_ids, tool_allowance_ids,
+        tool_restriction_ids, tool_allowance_ids, mcp_source_ids,
+        mcp_tool_sel, mcp_confirm,
+        openapi_source_ids, openapi_op_selections, openapi_confirm,
     )
 
 

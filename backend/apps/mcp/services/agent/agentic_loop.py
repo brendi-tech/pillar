@@ -33,6 +33,10 @@ from apps.mcp.services.agent.tool_handlers import (
     BUILTIN_TOOLS,
     execute_client_action,
     execute_get_article,
+    execute_load_skill,
+    execute_mcp_source_tool,
+    execute_openapi_source_tool,
+    execute_read_mcp_resource,
     execute_search,
     execute_server_tool,
     resolve_execute_action,
@@ -182,65 +186,12 @@ async def run_agentic_loop(
             "count": len(message.registered_tools),
         })
 
-    # Load published server-side tools from the database
+    # Check endpoint health (used by search to decide whether to include
+    # server-side Action tools in results).
     from apps.tools.services.health import is_endpoint_healthy
 
     product_id = str(service.help_center_config.id)
     endpoint_healthy = await is_endpoint_healthy(product_id)
-
-    if endpoint_healthy:
-        from apps.products.models import Action
-
-        server_tools = []
-        seen_names: set[str] = set()
-        async for tool in (
-            Action.objects
-            .filter(
-                product_id=product_id,
-                tool_type=Action.ToolType.SERVER_SIDE,
-                status=Action.Status.PUBLISHED,
-            )
-            .values(
-                "name", "description", "guidance",
-                "data_schema", "tool_type", "channel_compatibility",
-            )
-            .aiterator()
-        ):
-            compat = tool.get("channel_compatibility") or []
-            if message.channel and ("*" not in compat and message.channel not in compat):
-                continue
-            if tool["name"] in seen_names:
-                continue
-            seen_names.add(tool["name"])
-            server_tools.append(tool)
-
-        # Apply agent-level tool scope filtering and context restrictions
-        if agent_config and (
-            agent_config.tool_scope != 'all'
-            or agent_config.tool_context_restrictions
-        ):
-            from apps.products.services.agent_resolver import filter_tools_for_agent
-            message_context = (
-                "private" if message.channel_context.get("is_private", True) else "public"
-            )
-            server_tools = filter_tools_for_agent(
-                server_tools,
-                channel=message.channel or 'web',
-                tool_scope=agent_config.tool_scope,
-                restriction_ids=agent_config.tool_restriction_ids,
-                allowance_ids=agent_config.tool_allowance_ids,
-                message_context=message_context,
-                context_restrictions=agent_config.tool_context_restrictions,
-            )
-
-        if server_tools:
-            agent_context.register_tools(server_tools)
-            logger.info(
-                "[AgenticLoop] Loaded %d server-side tools (channel=%s): %s",
-                len(server_tools),
-                message.channel,
-                [t["name"] for t in server_tools],
-            )
 
     # Initialize token budget tracking
     model_name = getattr(service, 'model_name', None) or 'unknown'
@@ -263,6 +214,20 @@ async def run_agentic_loop(
         channel=message.channel,
         knowledge_source_ids=agent_config.knowledge_source_ids if agent_config else [],
         endpoint_healthy=endpoint_healthy,
+        mcp_source_ids=agent_config.mcp_source_ids if agent_config else [],
+        mcp_tool_selections=(
+            agent_config.mcp_tool_selections if agent_config else {}
+        ),
+        mcp_confirmation_config=(
+            agent_config.mcp_confirmation_config if agent_config else {}
+        ),
+        openapi_source_ids=agent_config.openapi_source_ids if agent_config else [],
+        openapi_operation_selections=(
+            agent_config.openapi_operation_selections if agent_config else {}
+        ),
+        openapi_confirmation_config=(
+            agent_config.openapi_confirmation_config if agent_config else {}
+        ),
     )
 
     from apps.mcp.services.prompts.agentic_prompts import (
@@ -573,6 +538,32 @@ async def run_agentic_loop(
                 ):
                     yield event
 
+            elif tool_name == "read_mcp_resource":
+                async for event in execute_read_mcp_resource(
+                    messages=messages,
+                    display_trace=display_trace,
+                    iteration=iteration,
+                    start_time_ms=start_time_ms,
+                    tracer=_tracer,
+                    tool_call_id=tool_call_id,
+                    arguments=arguments,
+                    caller=message.caller,
+                ):
+                    yield event
+
+            elif tool_name == "load_skill":
+                async for event in execute_load_skill(
+                    messages=messages,
+                    tool_executor=tool_executor,
+                    display_trace=display_trace,
+                    iteration=iteration,
+                    start_time_ms=start_time_ms,
+                    tracer=_tracer,
+                    tool_call_id=tool_call_id,
+                    arguments=arguments,
+                ):
+                    yield event
+
             elif tool_name == "interact_with_page":
                 action = BUILTIN_TOOLS["interact_with_page"]
                 async for event in execute_client_action(
@@ -594,7 +585,34 @@ async def run_agentic_loop(
                     ))
                     continue
 
-                if action.get("tool_type") == "server_side":
+                if action.get("_openapi_source_id"):
+                    async for event in execute_openapi_source_tool(
+                        **_handler_common,
+                        tool_call_id=tool_call_id,
+                        tool_name=tool_name,
+                        openapi_source_id=action["_openapi_source_id"],
+                        openapi_operation=action["_openapi_operation"],
+                        arguments=arguments,
+                        caller=message.caller,
+                    ):
+                        yield event
+                        if event.get("type") == "confirmation_request":
+                            confirmation_pending = True
+                elif action.get("_mcp_source_id"):
+                    async for event in execute_mcp_source_tool(
+                        **_handler_common,
+                        tool_call_id=tool_call_id,
+                        tool_name=tool_name,
+                        mcp_original_name=action["_mcp_original_name"],
+                        mcp_source_id=action["_mcp_source_id"],
+                        arguments=arguments,
+                        caller=message.caller,
+                        requires_confirmation=action.get("_requires_confirmation", False),
+                    ):
+                        yield event
+                        if event.get("type") == "confirmation_request":
+                            confirmation_pending = True
+                elif action.get("tool_type") == "server_side":
                     async for event in execute_server_tool(
                         **_handler_common,
                         tool_call_id=tool_call_id,

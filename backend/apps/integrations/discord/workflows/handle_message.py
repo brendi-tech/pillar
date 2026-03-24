@@ -150,8 +150,10 @@ async def handle_discord_message(workflow_input: DiscordMessageInput, context: C
             await adapter.add_thinking_reaction(workflow_input.message_id)
 
         if installation.agent_id and installation.agent:
-            from apps.products.services.agent_resolver import _build_agent_config
-            agent_config = _build_agent_config(installation.agent, product, Channel.DISCORD)
+            from apps.products.services.agent_resolver import resolve_agent_config_from_agent
+            agent_config = await resolve_agent_config_from_agent(
+                installation.agent, product, channel=Channel.DISCORD,
+            )
         else:
             agent_config = await resolve_agent_config(
                 product=product,
@@ -268,7 +270,7 @@ async def _handle_confirmation(
         await adapter.send_error(f"No tool endpoint registered for {product.name}.")
         return {'status': 'error', 'error': 'no_endpoint'}
 
-    caller = CallerContext(channel_user_id=workflow_input.author_id)
+    caller = CallerContext(channel='discord', channel_user_id=workflow_input.author_id)
 
     result = await post_tool_call(
         endpoint_url=endpoint.endpoint_url,

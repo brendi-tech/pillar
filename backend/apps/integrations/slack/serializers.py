@@ -44,3 +44,7 @@ class SlackBYOBSetupSerializer(serializers.Serializer):
         required=True,
         help_text="Signing secret from your Slack app's Basic Information page",
     )
+    app_id = serializers.CharField(
+        required=True,
+        help_text="App ID from your Slack app's Basic Information page (e.g. A07...)",
+    )

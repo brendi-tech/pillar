@@ -1,9 +1,8 @@
 """
-Parity tests: AskTool._execute_stream_legacy vs _execute_stream_adapter.
+Tests for AskTool._execute_stream_adapter event stream behaviour.
 
-Both paths share the same AgentAnswerServiceReActAsync.ask_stream input;
-these tests assert equivalent client-visible event streams when dependencies
-are mocked.
+Validates that the adapter path produces the expected client-visible
+events when dependencies are mocked.
 """
 from __future__ import annotations
 
@@ -14,7 +13,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from apps.mcp.tools.builtin.ask import AskTool, _USE_WEB_ADAPTER
+from apps.mcp.tools.builtin.ask import AskTool
 from apps.products.models.agent import KnowledgeScope
 from apps.products.services.agent_resolver import AgentConfig
 
@@ -53,6 +52,7 @@ def make_mock_metadata():
         external_user_id="ext-user-1",
         session_id="session-parity-1",
         referer="https://example.com/docs",
+        user_api_token=None,
     )
 
 
@@ -235,12 +235,6 @@ def parity_dependency_patches(ask_stream_fn):
         }
 
 
-async def run_legacy_events(tool: AskTool, ask_stream_fn, **kwargs):
-    with parity_dependency_patches(ask_stream_fn):
-        gen = tool._execute_stream_legacy(**default_stream_kwargs(**kwargs))
-        return await collect_events(gen)
-
-
 async def run_adapter_events(tool: AskTool, ask_stream_fn, **kwargs):
     with parity_dependency_patches(ask_stream_fn):
         gen = tool._execute_stream_adapter(**default_stream_kwargs(**kwargs))
@@ -256,32 +250,17 @@ def token_texts(events):
 
 
 # ---------------------------------------------------------------------------
-# _USE_WEB_ADAPTER: patch toggles module attribute (used by execute_stream)
+# Event sequence tests
 # ---------------------------------------------------------------------------
 
 
-def test_patch_toggles_use_web_adapter():
-    assert isinstance(_USE_WEB_ADAPTER, bool)
-    with patch("apps.mcp.tools.builtin.ask._USE_WEB_ADAPTER", False):
-        import apps.mcp.tools.builtin.ask as ask_mod
-
-        assert ask_mod._USE_WEB_ADAPTER is False
-
-
-# ---------------------------------------------------------------------------
-# Event sequence parity
-# ---------------------------------------------------------------------------
-
-
-class TestEventSequenceParity:
+class TestEventSequence:
     @pytest.mark.asyncio
-    async def test_event_types_match(self):
+    async def test_event_types(self):
         tool = AskTool()
         ask_fn = deterministic_ask_stream()
-        legacy = await run_legacy_events(tool, ask_fn)
-        adapter = await run_adapter_events(tool, ask_fn)
+        events = await run_adapter_events(tool, ask_fn)
 
-        assert event_types(legacy) == event_types(adapter)
         expected = [
             "conversation_started",
             "token",
@@ -289,27 +268,23 @@ class TestEventSequenceParity:
             "sources",
             "complete",
         ]
-        assert event_types(legacy) == expected
+        assert event_types(events) == expected
 
     @pytest.mark.asyncio
     async def test_conversation_started_is_first_event(self):
         tool = AskTool()
         ask_fn = deterministic_ask_stream()
-        legacy = await run_legacy_events(tool, ask_fn)
-        adapter = await run_adapter_events(tool, ask_fn)
+        events = await run_adapter_events(tool, ask_fn)
 
-        assert legacy[0]["type"] == "conversation_started"
-        assert adapter[0]["type"] == "conversation_started"
+        assert events[0]["type"] == "conversation_started"
 
     @pytest.mark.asyncio
-    async def test_token_events_carry_same_text(self):
+    async def test_token_events_carry_correct_text(self):
         tool = AskTool()
         ask_fn = deterministic_ask_stream()
-        legacy = await run_legacy_events(tool, ask_fn)
-        adapter = await run_adapter_events(tool, ask_fn)
+        events = await run_adapter_events(tool, ask_fn)
 
-        assert token_texts(legacy) == token_texts(adapter)
-        assert token_texts(legacy) == ["Hello", " world"]
+        assert token_texts(events) == ["Hello", " world"]
 
 
 # ---------------------------------------------------------------------------
@@ -325,17 +300,12 @@ class TestCancelBehavior:
         cancel.set()
         ask_fn = many_token_ask_stream(50)
 
-        legacy = await run_legacy_events(tool, ask_fn, cancel_event=cancel)
-        adapter = await run_adapter_events(tool, ask_fn, cancel_event=cancel)
+        events = await run_adapter_events(tool, ask_fn, cancel_event=cancel)
 
-        # Pre-cancel: first ask_stream event is consumed but not forwarded; only handshake.
-        assert event_types(legacy) == ["conversation_started"]
-        assert event_types(adapter) == ["conversation_started"]
+        assert event_types(events) == ["conversation_started"]
 
-        tok_legacy = [e for e in legacy if e.get("type") == "token"]
-        tok_adapter = [e for e in adapter if e.get("type") == "token"]
-        assert len(tok_legacy) == 0
-        assert len(tok_adapter) == 0
+        tok_events = [e for e in events if e.get("type") == "token"]
+        assert len(tok_events) == 0
 
     @pytest.mark.asyncio
     async def test_cancel_marks_disconnected_not_completed(self):

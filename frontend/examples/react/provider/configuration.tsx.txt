@@ -1,6 +1,9 @@
 <PillarProvider
   agentSlug="your-agent-slug"
   config={{
+    // Forward user's auth token to API tool sources (optional)
+    // userApiToken: accessToken,
+
     // Panel settings
     panel: {
       position: 'right',

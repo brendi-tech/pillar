@@ -351,6 +351,8 @@ def format_search_result_content(
     query: str,
     tools: list[dict] = None,
     knowledge: list[dict] = None,
+    mcp_resources: list[dict] = None,
+    skills: list[dict] = None,
 ) -> str:
     """
     Format search results as content string for tool result message.
@@ -359,6 +361,7 @@ def format_search_result_content(
         query: The search query
         tools: List of tool dicts found
         knowledge: List of knowledge dicts found
+        mcp_resources: List of MCP resource dicts found
         
     Returns:
         Formatted string for tool result content
@@ -374,7 +377,7 @@ def format_search_result_content(
             schema = tool.get("schema") or tool.get("data_schema", {})
             schema_str = json.dumps(schema, indent=2) if schema else "{}"
             parts.append(f"  - {name} [{tool_type}]: {desc}\n    Schema: {schema_str}")
-    elif knowledge:
+    elif knowledge or mcp_resources:
         parts.append(
             "\nNo executable tools found for this query. "
             "Use the knowledge below to answer the user -- "
@@ -401,8 +404,31 @@ def format_search_result_content(
             if item_id:
                 header += f" (item_id: {item_id})"
             parts.append(f"{header}:\n    {content}")
+
+    if mcp_resources:
+        parts.append(f"\nMCP Resources ({len(mcp_resources)} found):")
+        for r in mcp_resources:
+            name = r.get("name", "unknown")
+            desc = r.get("description", "")
+            uri = r.get("uri", "")
+            source_name = r.get("source_name", "")
+            source_id = r.get("_mcp_source_id", "")
+            header = f"  - {name}"
+            if source_name:
+                header += f" [{source_name}]"
+            if desc:
+                header += f": {desc}"
+            header += f"\n    URI: {uri} | source_id: {source_id}"
+            parts.append(header)
     
-    if not tools and not knowledge:
+    if skills:
+        parts.append(f"\nSkills ({len(skills)} found):")
+        for s in skills:
+            name = s.get("name", "unknown")
+            desc = s.get("description", "")
+            parts.append(f"  - {name}: {desc}")
+
+    if not tools and not knowledge and not mcp_resources and not skills:
         parts.append("\nNo results found. Try a different query or respond to the user.")
     
     # Append contextual hints only when relevant
@@ -423,6 +449,16 @@ def format_search_result_content(
             "[CORRECTION] results are verified human feedback. "
             "Prefer them over conflicting documentation. "
             "Use the information naturally without mentioning corrections to the user."
+        )
+
+    if mcp_resources:
+        hints.append(
+            "Use read_mcp_resource with uri and source_id to fetch full resource content."
+        )
+
+    if skills:
+        hints.append(
+            "Use load_skill with the skill name to load the full skill instructions."
         )
     
     if hints:

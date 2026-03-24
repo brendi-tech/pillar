@@ -18,9 +18,6 @@ from apps.mcp.services.mcp_server.utils import extract_request_metadata
 
 logger = logging.getLogger(__name__)
 
-_USE_WEB_ADAPTER = True
-
-
 def _is_valid_gcs_signed_url(url: str) -> bool:
     """Validate signed GCS URL from our bucket."""
     bucket_name = getattr(settings, 'GS_BUCKET_NAME', 'pillar-storage')
@@ -453,252 +450,30 @@ class AskTool(Tool):
             )
             page_url = request.headers.get('X-Page-Url', '')
 
-        if _USE_WEB_ADAPTER:
-            async for event in self._execute_stream_adapter(
-                organization=organization,
-                help_center_config=help_center_config,
-                conversation_id=conversation_id,
-                query=query,
-                validated_images=validated_images,
-                conversation_history=conversation_history,
-                client_registered_tools=client_registered_tools,
-                metadata=metadata,
-                page_url=page_url,
-                skip_analytics=skip_analytics,
-                resume=resume,
-                cancel_event=cancel_event,
-                top_k=top_k,
-                user_context=user_context,
-                context=context,
-                user_profile=user_profile,
-                language=language,
-                request=request,
-                is_hidden=is_hidden,
-            ):
-                yield event
-        else:
-            async for event in self._execute_stream_legacy(
-                organization=organization,
-                help_center_config=help_center_config,
-                conversation_id=conversation_id,
-                query=query,
-                validated_images=validated_images,
-                conversation_history=conversation_history,
-                client_registered_tools=client_registered_tools,
-                metadata=metadata,
-                page_url=page_url,
-                skip_analytics=skip_analytics,
-                resume=resume,
-                cancel_event=cancel_event,
-                top_k=top_k,
-                user_context=user_context,
-                context=context,
-                user_profile=user_profile,
-                language=language,
-                request=request,
-            ):
-                yield event
+        async for event in self._execute_stream_adapter(
+            organization=organization,
+            help_center_config=help_center_config,
+            conversation_id=conversation_id,
+            query=query,
+            validated_images=validated_images,
+            conversation_history=conversation_history,
+            client_registered_tools=client_registered_tools,
+            metadata=metadata,
+            page_url=page_url,
+            skip_analytics=skip_analytics,
+            resume=resume,
+            cancel_event=cancel_event,
+            top_k=top_k,
+            user_context=user_context,
+            context=context,
+            user_profile=user_profile,
+            language=language,
+            request=request,
+            is_hidden=is_hidden,
+        ):
+            yield event
 
-    # ── Legacy path (verbatim from original execute_stream) ────────────
-
-    async def _execute_stream_legacy(
-        self,
-        organization,
-        help_center_config,
-        conversation_id,
-        query,
-        validated_images,
-        conversation_history,
-        client_registered_tools,
-        metadata,
-        page_url,
-        skip_analytics,
-        resume,
-        cancel_event,
-        top_k,
-        user_context,
-        context,
-        user_profile,
-        language,
-        request,
-    ):
-        import time
-        start_time = time.time()
-
-        conv_id = conversation_id if conversation_id else str(uuid.uuid4())
-        user_msg_id = str(uuid.uuid4())
-        assistant_msg_id = str(uuid.uuid4())
-
-        yield {
-            'type': 'conversation_started',
-            'conversation_id': conv_id,
-            'assistant_message_id': assistant_msg_id,
-        }
-
-        response_tokens: List[str] = []
-        sources_retrieved: List[dict] = []
-        display_trace: List[dict] = []
-        model_used = ''
-        db_task: Optional[asyncio.Task] = None
-
-        try:
-            from apps.mcp.services.image_summary_service import get_cached_summary
-            enriched_images = None
-            if validated_images:
-                enriched_images = []
-                for img in validated_images:
-                    enriched = {**img}
-                    summary = get_cached_summary(img.get('url', ''))
-                    if summary:
-                        enriched['summary'] = summary
-                    enriched_images.append(enriched)
-
-            from apps.analytics.services import ConversationLoggingService
-
-            if resume:
-                from apps.analytics.models import ChatMessage as ChatMessageModel
-                db_task = asyncio.create_task(
-                    ChatMessageModel.objects.acreate(
-                        id=assistant_msg_id,
-                        organization_id=str(organization.id),
-                        product_id=str(help_center_config.id),
-                        conversation_id=conv_id,
-                        role=ChatMessageModel.Role.ASSISTANT,
-                        content='',
-                        streaming_status=ChatMessageModel.StreamingStatus.STREAMING,
-                    )
-                )
-            else:
-                db_task = asyncio.create_task(
-                    ConversationLoggingService().create_conversation_and_user_message(
-                        conversation_id=conv_id,
-                        user_message_id=user_msg_id,
-                        assistant_message_id=assistant_msg_id,
-                        organization_id=str(organization.id),
-                        product_id=str(help_center_config.id),
-                        question=query,
-                        images=enriched_images,
-                        query_type='ask',
-                        page_url=page_url,
-                        user_agent=metadata.user_agent if metadata else '',
-                        ip_address=metadata.ip_address if metadata else None,
-                        referer=metadata.referer if metadata else '',
-                        external_session_id=metadata.session_id if metadata else '',
-                        skip_analytics=skip_analytics,
-                        visitor_id=metadata.visitor_id if metadata else '',
-                        external_user_id=metadata.external_user_id if metadata else '',
-                        is_hidden=is_hidden,
-                    )
-                )
-
-            if not resume:
-                conversation_history = await self._load_conversation_history(conversation_id)
-
-            platform, version = self._get_platform_version(request)
-
-            from apps.mcp.services.agent import AgentAnswerServiceReActAsync
-            from apps.products.services.agent_resolver import (
-                resolve_agent_config, resolve_agent_config_from_agent,
-            )
-
-            pre_resolved_agent = getattr(request, 'agent', None) if request else None
-            if pre_resolved_agent:
-                agent_config = await resolve_agent_config_from_agent(
-                    pre_resolved_agent, help_center_config,
-                )
-            else:
-                agent_config = await resolve_agent_config(
-                    product=help_center_config, channel='web',
-                )
-
-            agent_service = AgentAnswerServiceReActAsync(
-                help_center_config=help_center_config,
-                organization=organization,
-                conversation_history=conversation_history,
-                registered_tools=client_registered_tools,
-                conversation_id=conv_id,
-                assistant_message_id=assistant_msg_id,
-                agent_config=agent_config,
-            )
-
-            session_id = metadata.session_id if metadata else None
-            async for event in agent_service.ask_stream(
-                question=query,
-                top_k=top_k,
-                cancel_event=cancel_event,
-                platform=platform,
-                version=version,
-                user_context=user_context,
-                images=validated_images,
-                context=context,
-                user_profile=user_profile,
-                page_url=page_url,
-                session_id=session_id,
-                language=language,
-                external_user_id=metadata.external_user_id if metadata else None,
-                visitor_id=metadata.visitor_id if metadata else None,
-            ):
-                if cancel_event and cancel_event.is_set():
-                    break
-
-                event_type = event.get('type', '')
-
-                if event_type == 'token':
-                    response_tokens.append(event.get('text', ''))
-                    yield event
-                elif event_type == 'sources':
-                    sources_retrieved = event.get('sources', [])
-                    yield event
-                elif event_type == 'actions':
-                    from apps.mcp.services.agent.action_enrichment import (
-                        extract_action_data, generate_followup_question,
-                    )
-                    actions = event.get('actions', [])
-                    if actions:
-                        actions = await extract_action_data(
-                            query, actions, help_center_config,
-                        )
-                        top_action = actions[0] if actions else None
-                        if top_action and top_action.get('data_incomplete'):
-                            missing_descs = top_action.get('missing_field_descriptions', [])
-                            action_name = top_action.get('name', '').replace('_', ' ')
-                            follow_up = generate_followup_question(
-                                action_name, missing_descs,
-                            )
-                            yield {'type': 'token', 'text': f"\n\n{follow_up}"}
-                            response_tokens.append(f"\n\n{follow_up}")
-                            yield {'type': 'awaiting_data', 'action_name': top_action.get('name')}
-                        else:
-                            complete_actions = [
-                                a for a in actions if not a.get('data_incomplete')
-                            ]
-                            if complete_actions:
-                                yield {'type': 'actions', 'actions': complete_actions}
-                elif event_type == 'plan.created':
-                    yield event
-                elif event_type == 'display_trace':
-                    display_trace = event.get('trace', [])
-                elif event_type == 'error':
-                    yield event
-                    return
-                elif event_type == 'complete':
-                    if db_task:
-                        try:
-                            await db_task
-                        except Exception as e:
-                            logger.error("[AskTool] Failed to create conversation: %s", e)
-                    complete_event = dict(event)
-                    complete_event['conversation_id'] = conv_id
-                    complete_event['assistant_message_id'] = assistant_msg_id
-                    yield complete_event
-                else:
-                    yield event
-
-        except Exception as e:
-            logger.error("Error executing ask tool stream: %s", e, exc_info=True)
-            yield {'type': 'error', 'message': f'Error: {str(e)}'}
-
-    # ── Adapter path (new) ─────────────────────────────────────────────
+    # ── Adapter path ─────────────────────────────────────────────────────
 
     async def _execute_stream_adapter(
         self,
@@ -722,26 +497,45 @@ class AskTool(Tool):
         request,
         is_hidden=False,
     ):
-        from apps.mcp.services.agent.web_adapter import WebResponseAdapter
+        from apps.mcp.services.agent.orchestrator import run_agent_with_adapter
+        from apps.products.services.agent_resolver import (
+            resolve_agent_config, resolve_agent_config_from_agent,
+        )
 
         conv_id = conversation_id if conversation_id else str(uuid.uuid4())
 
-        adapter = WebResponseAdapter(
-            organization_id=str(organization.id),
-            product_id=str(help_center_config.id),
-            conversation_id=conv_id,
-            channel='web',
-            request_metadata={
-                'ip_address': metadata.ip_address if metadata else None,
-                'user_agent': metadata.user_agent if metadata else '',
-                'visitor_id': metadata.visitor_id if metadata else '',
-                'external_user_id': metadata.external_user_id if metadata else '',
-                'page_url': page_url,
-                'skip_analytics': skip_analytics,
-                'external_session_id': metadata.session_id if metadata else '',
-                'referer': metadata.referer if metadata else '',
-            },
+        pre_resolved_agent = getattr(request, 'agent', None) if request else None
+        channel = (
+            getattr(pre_resolved_agent, 'channel', 'web')
+            if pre_resolved_agent else 'web'
         )
+
+        if channel == 'mcp':
+            from apps.mcp.services.agent.adapters.mcp_adapter import MCPResponseAdapter
+            adapter = MCPResponseAdapter(
+                organization_id=str(organization.id),
+                product_id=str(help_center_config.id),
+                conversation_id=conv_id,
+                streaming=True,
+            )
+        else:
+            from apps.mcp.services.agent.web_adapter import WebResponseAdapter
+            adapter = WebResponseAdapter(
+                organization_id=str(organization.id),
+                product_id=str(help_center_config.id),
+                conversation_id=conv_id,
+                channel=channel,
+                request_metadata={
+                    'ip_address': metadata.ip_address if metadata else None,
+                    'user_agent': metadata.user_agent if metadata else '',
+                    'visitor_id': metadata.visitor_id if metadata else '',
+                    'external_user_id': metadata.external_user_id if metadata else '',
+                    'page_url': page_url,
+                    'skip_analytics': skip_analytics,
+                    'external_session_id': metadata.session_id if metadata else '',
+                    'referer': metadata.referer if metadata else '',
+                },
+            )
 
         if resume:
             assistant_msg_id = str(uuid.uuid4())
@@ -754,59 +548,53 @@ class AskTool(Tool):
         if not resume:
             conversation_history = await self._load_conversation_history(conversation_id)
 
-        platform, version = self._get_platform_version(request)
-
-        from apps.mcp.services.agent import AgentAnswerServiceReActAsync
-        from apps.products.services.agent_resolver import (
-            resolve_agent_config, resolve_agent_config_from_agent,
-        )
-
-        pre_resolved_agent = getattr(request, 'agent', None) if request else None
         if pre_resolved_agent:
             agent_config = await resolve_agent_config_from_agent(
                 pre_resolved_agent, help_center_config,
             )
         else:
             agent_config = await resolve_agent_config(
-                product=help_center_config, channel='web',
+                product=help_center_config, channel=channel,
             )
 
-        agent_service = AgentAnswerServiceReActAsync(
-            help_center_config=help_center_config,
-            organization=organization,
-            conversation_history=conversation_history,
-            registered_tools=client_registered_tools,
-            conversation_id=conv_id,
-            assistant_message_id=assistant_msg_id,
-            agent_config=agent_config,
-        )
-
+        platform, version = self._get_platform_version(request)
         session_id = metadata.session_id if metadata else None
         cancelled = False
 
         async def _run():
             nonlocal cancelled
             try:
-                async for event in agent_service.ask_stream(
-                    question=query,
-                    top_k=top_k,
+                await run_agent_with_adapter(
+                    adapter=adapter,
+                    product=help_center_config,
+                    organization=organization,
+                    query=query,
+                    conversation_id=conv_id,
+                    agent_config=agent_config,
+                    conversation_history=conversation_history,
+                    registered_tools=client_registered_tools,
+                    assistant_message_id=assistant_msg_id,
+                    images=validated_images,
                     cancel_event=cancel_event,
+                    language=language,
                     platform=platform,
                     version=version,
                     user_context=user_context,
-                    images=validated_images,
                     context=context,
                     user_profile=user_profile,
                     page_url=page_url,
                     session_id=session_id,
-                    language=language,
-                    external_user_id=metadata.external_user_id if metadata else None,
+                    external_user_id=(
+                        metadata.external_user_id if metadata else None
+                    ),
                     visitor_id=metadata.visitor_id if metadata else None,
-                ):
-                    if cancel_event and cancel_event.is_set():
-                        cancelled = True
-                        break
-                    await adapter.on_event(event)
+                    top_k=top_k,
+                    user_api_token=(
+                        metadata.user_api_token if metadata else None
+                    ),
+                )
+            except asyncio.CancelledError:
+                cancelled = True
             except Exception as e:
                 logger.error("Error in adapter stream: %s", e, exc_info=True)
                 await adapter.on_error(f'Error: {str(e)}')

@@ -12,6 +12,8 @@ from .action_execution_log import ActionExecutionLog, ToolExecutionLog
 from .action_sync_job import ActionSyncJob, ActionSyncJobStatus, ToolSyncJob, ToolSyncJobStatus
 from .sync_secret import SyncSecret, validate_secret_name
 from .agent import Agent, CHANNEL_CHOICES, TONE_CHOICES
+from .agent_openapi_source import AgentOpenAPISource, AgentOpenAPIOperationOverride
+from .agent_mcp_source import AgentMCPSource, AgentMCPToolOverride
 
 __all__ = [
     'Product',
@@ -34,6 +36,10 @@ __all__ = [
     'SyncSecret',
     'validate_secret_name',
     'Agent',
+    'AgentOpenAPISource',
+    'AgentOpenAPIOperationOverride',
+    'AgentMCPSource',
+    'AgentMCPToolOverride',
     'CHANNEL_CHOICES',
     'TONE_CHOICES',
 ]

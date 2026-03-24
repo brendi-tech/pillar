@@ -4,9 +4,13 @@ Serializers for the products app.
 import re
 from rest_framework import serializers
 from apps.products.models import (
-    Product, Platform, Action, ActionExecutionLog, ActionDeployment, SyncSecret, Agent
+    Product, Platform, Action, ActionExecutionLog, ActionDeployment, SyncSecret,
+    Agent,
+    AgentOpenAPISource, AgentOpenAPIOperationOverride,
+    AgentMCPSource, AgentMCPToolOverride,
 )
 from apps.knowledge.models import KnowledgeSource
+from apps.tools.models import MCPToolSource, OpenAPIToolSource
 
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -172,6 +176,134 @@ ToolExecutionLogSerializer = ActionExecutionLogSerializer
 ToolDeploymentSerializer = ActionDeploymentSerializer
 
 
+class AgentOpenAPIOperationOverrideSerializer(serializers.Serializer):
+    """Nested serializer for per-operation overrides."""
+
+    tool_name = serializers.CharField()
+    is_enabled = serializers.BooleanField(required=False, default=None, allow_null=True)
+    requires_confirmation = serializers.BooleanField(required=False, default=None, allow_null=True)
+
+
+class AgentOpenAPISourceConfigSerializer(serializers.Serializer):
+    """Read/write serializer for AgentOpenAPISource through-table entries."""
+
+    openapi_source_id = serializers.UUIDField()
+    operation_overrides = AgentOpenAPIOperationOverrideSerializer(
+        many=True, required=False, default=list,
+    )
+
+
+def _sync_openapi_sources_config(agent: Agent, configs: list[dict]) -> None:
+    """Replace all AgentOpenAPISource rows for an agent with the given config."""
+    AgentOpenAPISource.objects.filter(agent=agent).delete()
+    if not configs:
+        return
+
+    source_ids = [c['openapi_source_id'] for c in configs]
+    valid_ids = set(
+        OpenAPIToolSource.objects.filter(id__in=source_ids).values_list('id', flat=True)
+    )
+
+    through_objs = []
+    for c in configs:
+        sid = c['openapi_source_id']
+        if sid not in valid_ids:
+            continue
+        through_objs.append(AgentOpenAPISource(
+            agent=agent,
+            openapi_source_id=sid,
+        ))
+
+    if not through_objs:
+        return
+
+    created = AgentOpenAPISource.objects.bulk_create(through_objs)
+    source_id_to_through = {str(obj.openapi_source_id): obj for obj in created}
+
+    override_objs = []
+    for c in configs:
+        sid = str(c['openapi_source_id'])
+        through = source_id_to_through.get(sid)
+        if not through:
+            continue
+        for ov in c.get('operation_overrides', []):
+            if ov.get('is_enabled') is None and ov.get('requires_confirmation') is None:
+                continue
+            override_objs.append(AgentOpenAPIOperationOverride(
+                agent_openapi_source=through,
+                tool_name=ov['tool_name'],
+                is_enabled=ov.get('is_enabled'),
+                requires_confirmation=ov.get('requires_confirmation'),
+            ))
+
+    if override_objs:
+        AgentOpenAPIOperationOverride.objects.bulk_create(override_objs)
+
+
+class AgentMCPToolOverrideSerializer(serializers.Serializer):
+    """Nested serializer for per-tool MCP overrides."""
+
+    tool_name = serializers.CharField()
+    is_enabled = serializers.BooleanField(required=False, default=None, allow_null=True)
+    requires_confirmation = serializers.BooleanField(required=False, default=None, allow_null=True)
+
+
+class AgentMCPSourceConfigSerializer(serializers.Serializer):
+    """Read/write serializer for AgentMCPSource through-table entries."""
+
+    mcp_source_id = serializers.UUIDField()
+    tool_overrides = AgentMCPToolOverrideSerializer(
+        many=True, required=False, default=list,
+    )
+
+
+def _sync_mcp_sources_config(agent: Agent, configs: list[dict]) -> None:
+    """Replace all AgentMCPSource rows for an agent with the given config."""
+    AgentMCPSource.objects.filter(agent=agent).delete()
+    if not configs:
+        return
+
+    source_ids = [c['mcp_source_id'] for c in configs]
+    valid_ids = set(
+        MCPToolSource.objects.filter(id__in=source_ids).values_list('id', flat=True)
+    )
+
+    through_objs = []
+    for c in configs:
+        sid = c['mcp_source_id']
+        if sid not in valid_ids:
+            continue
+        through_objs.append(AgentMCPSource(
+            agent=agent,
+            mcp_source_id=sid,
+        ))
+
+    if not through_objs:
+        return
+
+    created = AgentMCPSource.objects.bulk_create(through_objs)
+    source_id_to_through = {str(obj.mcp_source_id): obj for obj in created}
+
+    override_objs = []
+    for c in configs:
+        sid = str(c['mcp_source_id'])
+        through = source_id_to_through.get(sid)
+        if not through:
+            continue
+        for ov in c.get('tool_overrides', []):
+            if ov.get('is_enabled') is None and ov.get('requires_confirmation') is None:
+                continue
+            override_objs.append(AgentMCPToolOverride(
+                agent_mcp_source=through,
+                tool_name=ov['tool_name'],
+                is_enabled=ov.get('is_enabled'),
+                requires_confirmation=ov.get('requires_confirmation'),
+            ))
+
+    if override_objs:
+        AgentMCPToolOverride.objects.bulk_create(override_objs)
+
+
 class AgentSerializer(serializers.ModelSerializer):
     """Serializer for Agent CRUD operations."""
 
@@ -193,6 +325,15 @@ class AgentSerializer(serializers.ModelSerializer):
         queryset=Action.objects.all(),
         required=False,
     )
+    mcp_source_ids = serializers.SerializerMethodField()
+    mcp_sources_config = AgentMCPSourceConfigSerializer(
+        many=True, required=False,
+    )
+
+    openapi_source_ids = serializers.SerializerMethodField()
+    openapi_sources_config = AgentOpenAPISourceConfigSerializer(
+        many=True, required=False,
+    )
 
     class Meta:
         model = Agent
@@ -201,13 +342,78 @@ class AgentSerializer(serializers.ModelSerializer):
             'tone', 'guidance_override',
             'tool_scope', 'tool_restriction_ids', 'tool_allowance_ids',
             'tool_context_restrictions',
+            'mcp_source_ids', 'mcp_sources_config',
+            'openapi_source_ids', 'openapi_sources_config',
             'max_response_tokens', 'include_sources', 'include_suggested_followups',
             'llm_model', 'temperature',
-            'channel_config', 'default_language',
+            'channel_config', 'mcp_domain', 'default_language',
             'knowledge_scope', 'knowledge_source_ids',
             'created_at', 'updated_at',
         ]
         read_only_fields = ['id', 'organization', 'created_at', 'updated_at']
+
+    def get_mcp_source_ids(self, obj) -> list[str]:
+        return [
+            str(pk) for pk in
+            obj.mcp_sources.values_list('id', flat=True)
+        ]
+
+    def get_openapi_source_ids(self, obj) -> list[str]:
+        return [
+            str(pk) for pk in
+            obj.openapi_sources.values_list('id', flat=True)
+        ]
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+
+        openapi_configs = AgentOpenAPISource.objects.filter(
+            agent=instance,
+        ).prefetch_related('operation_overrides')
+        data['openapi_sources_config'] = [
+            {
+                'openapi_source_id': str(c.openapi_source_id),
+                'operation_overrides': [
+                    {
+                        'tool_name': ov.tool_name,
+                        'is_enabled': ov.is_enabled,
+                        'requires_confirmation': ov.requires_confirmation,
+                    }
+                    for ov in c.operation_overrides.all()
+                ],
+            }
+            for c in openapi_configs
+        ]
+
+        mcp_configs = AgentMCPSource.objects.filter(
+            agent=instance,
+        ).prefetch_related('tool_overrides')
+        data['mcp_sources_config'] = [
+            {
+                'mcp_source_id': str(c.mcp_source_id),
+                'tool_overrides': [
+                    {
+                        'tool_name': ov.tool_name,
+                        'is_enabled': ov.is_enabled,
+                        'requires_confirmation': ov.requires_confirmation,
+                    }
+                    for ov in c.tool_overrides.all()
+                ],
+            }
+            for c in mcp_configs
+        ]
+
+        return data
+
+    def update(self, instance, validated_data):
+        openapi_config = validated_data.pop('openapi_sources_config', None)
+        mcp_config = validated_data.pop('mcp_sources_config', None)
+        instance = super().update(instance, validated_data)
+        if openapi_config is not None:
+            _sync_openapi_sources_config(instance, openapi_config)
+        if mcp_config is not None:
+            _sync_mcp_sources_config(instance, mcp_config)
+        return instance
 
 
 class AgentCreateSerializer(serializers.ModelSerializer):
@@ -231,6 +437,12 @@ class AgentCreateSerializer(serializers.ModelSerializer):
         queryset=Action.objects.all(),
         required=False,
     )
+    mcp_sources_config = AgentMCPSourceConfigSerializer(
+        many=True, required=False,
+    )
+    openapi_sources_config = AgentOpenAPISourceConfigSerializer(
+        many=True, required=False,
+    )
 
     class Meta:
         model = Agent
@@ -239,8 +451,19 @@ class AgentCreateSerializer(serializers.ModelSerializer):
             'tone', 'guidance_override',
             'tool_scope', 'tool_restriction_ids', 'tool_allowance_ids',
             'tool_context_restrictions',
+            'mcp_sources_config', 'openapi_sources_config',
             'max_response_tokens', 'include_sources', 'include_suggested_followups',
             'llm_model', 'temperature',
-            'channel_config', 'default_language',
+            'channel_config', 'mcp_domain', 'default_language',
             'knowledge_scope', 'knowledge_source_ids',
         ]
+
+    def create(self, validated_data):
+        openapi_config = validated_data.pop('openapi_sources_config', None)
+        mcp_config = validated_data.pop('mcp_sources_config', None)
+        instance = super().create(validated_data)
+        if openapi_config:
+            _sync_openapi_sources_config(instance, openapi_config)
+        if mcp_config:
+            _sync_mcp_sources_config(instance, mcp_config)
+        return instance

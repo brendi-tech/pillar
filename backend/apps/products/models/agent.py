@@ -16,6 +16,7 @@ CHANNEL_CHOICES = [
     ("discord", "Discord"),
     ("email", "Email"),
     ("api", "API"),
+    ("mcp", "MCP Server"),
 ]
 
 TONE_CHOICES = [
@@ -191,12 +192,41 @@ class Agent(TenantAwareModel):
         help_text="Channel-specific configuration (web embed settings, Slack formatting, etc.)",
     )
 
+    # MCP custom domain
+    mcp_domain = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        unique=True,
+        db_index=True,
+        help_text="Custom domain for MCP server access (e.g., 'mcp.acme.com'). "
+                  "Client CNAMEs this to ai.trypillar.com.",
+    )
+
     # Language override
     default_language = models.CharField(
         max_length=10,
         blank=True,
         default='',
         help_text="Language override for this agent. Empty = use product default.",
+    )
+
+    # External MCP sources (through table carries per-tool config)
+    mcp_sources = models.ManyToManyField(
+        'tools.MCPToolSource',
+        through='products.AgentMCPSource',
+        blank=True,
+        related_name='agents',
+        help_text="External MCP servers whose tools this agent can use.",
+    )
+
+    # OpenAPI tool sources (through table carries per-operation config)
+    openapi_sources = models.ManyToManyField(
+        'tools.OpenAPIToolSource',
+        through='products.AgentOpenAPISource',
+        blank=True,
+        related_name='agents',
+        help_text="OpenAPI specs whose operations this agent can call directly.",
     )
 
     # Knowledge scoping

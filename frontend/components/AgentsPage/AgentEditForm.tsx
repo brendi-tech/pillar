@@ -111,10 +111,13 @@ export function AgentEditForm({ agent, productGuidance }: AgentEditFormProps) {
       llm_model: draft.llm_model === "_default" ? "" : draft.llm_model,
       temperature: draft.temperature,
       channel_config: draft.channel_config,
+      mcp_domain: draft.mcp_domain,
       default_language:
         draft.default_language === "_empty" ? "" : draft.default_language,
       knowledge_scope: draft.knowledge_scope,
       knowledge_source_ids: draft.knowledge_source_ids,
+      mcp_sources_config: draft.mcp_sources_config,
+      openapi_sources_config: draft.openapi_sources_config,
     };
     updateMutation.mutate({ id: agent.id, data: payload });
   };

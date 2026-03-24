@@ -426,7 +426,25 @@ async def stream_event_generator(mcp_server: MCPServer, request_data: dict, sess
             event_type = event.get('type')
             logger.debug(f"[SSE DEBUG] Event {event_count}: type={event_type}, keys={list(event.keys())}")
 
-            if event_type == 'state_checkpoint':
+            if event_type == '_mcp_passthrough':
+                yield f"data: {json.dumps(event['payload'])}\n\n"
+                await asyncio.sleep(0)
+                continue
+
+            elif event_type == '_mcp_complete':
+                final_response = {
+                    'jsonrpc': '2.0',
+                    'id': request_id,
+                    'result': event['result'],
+                }
+                yield f"data: {json.dumps(final_response)}\n\n"
+                stream_completed = True
+                if agnost_interaction:
+                    text = event['result'].get('content', [{}])[0].get('text', '')
+                    agnost_interaction.end(output=text)
+                return
+
+            elif event_type == 'state_checkpoint':
                 pass
 
             elif event_type == 'token':
@@ -884,7 +902,8 @@ async def streamable_http(request):
                 help_center_config=product,
                 organization=organization,
                 request=request,
-                language=effective_language
+                language=effective_language,
+                agent=getattr(request, 'agent', None),
             )
 
             # Capture the span context so the async generator can create child spans
@@ -920,7 +939,8 @@ async def streamable_http(request):
             help_center_config=product,
             organization=organization,
             request=request,
-            language=effective_language
+            language=effective_language,
+            agent=getattr(request, 'agent', None),
         )
 
         # Initialize JSON-RPC handler

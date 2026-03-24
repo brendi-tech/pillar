@@ -14,11 +14,12 @@ class Channel:
     DISCORD = "discord"
     EMAIL = "email"
     API = "api"
+    MCP = "mcp"
     WHATSAPP = "whatsapp"
     TEAMS = "teams"
     TELEGRAM = "telegram"
     SMS = "sms"
 
-    ALL = [WEB, SLACK, DISCORD, EMAIL, API, WHATSAPP, TEAMS, TELEGRAM, SMS]
+    ALL = [WEB, SLACK, DISCORD, EMAIL, API, MCP, WHATSAPP, TEAMS, TELEGRAM, SMS]
 
     CHANNEL_CHOICES = [(c, c.title()) for c in ALL]

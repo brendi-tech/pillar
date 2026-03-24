@@ -20,7 +20,7 @@ class MCPServer:
     - Protocol initialization and capabilities
     - Tools (ask for Q&A, search variants)
     - Resources (articles, categories)
-    - Prompts (placeholder for future)
+    - Prompts (pass-through from external MCP sources)
     """
 
     # Use constants from centralized service
@@ -31,7 +31,7 @@ class MCPServer:
     TOOL_CATEGORIES = server_info_service.TOOL_CATEGORIES
     TOOL_TAGS = server_info_service.TOOL_TAGS
 
-    def __init__(self, help_center_config=None, organization=None, request=None, language: str = 'en'):
+    def __init__(self, help_center_config=None, organization=None, request=None, language: str = 'en', agent=None):
         """
         Initialize MCP server for a specific help center context.
 
@@ -40,11 +40,13 @@ class MCPServer:
             organization: Organization model instance
             request: HTTP request object (for conversation tracking)
             language: Language code for AI responses (e.g., 'en', 'es', 'fr')
+            agent: Agent model instance (resolved by middleware)
         """
         self.help_center_config = help_center_config
         self.organization = organization
         self.request = request
         self.language = language
+        self.agent = agent
 
     # Core Protocol Methods
 
@@ -163,11 +165,16 @@ class MCPServer:
         """
         List available tools.
 
+        Supports cursor-based pagination per the MCP spec.
+
         Returns:
-            List of tool definitions with input schemas
+            List of tool definitions with input schemas and optional nextCursor
         """
         from .tools_registry import build_tools_list
-        return await build_tools_list(self.help_center_config)
+        return await build_tools_list(
+            self.help_center_config, agent=self.agent,
+            cursor=params.get('cursor'),
+        )
 
     async def tools_call(self, params: Dict[str, Any], context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
@@ -186,7 +193,8 @@ class MCPServer:
             self.organization,
             self.request,
             params,
-            language=self.language
+            language=self.language,
+            agent=self.agent,
         )
 
     async def tools_call_stream(self, params: Dict[str, Any], cancel_event=None):
@@ -209,7 +217,8 @@ class MCPServer:
             self.request,
             params,
             cancel_event=cancel_event,
-            language=self.language
+            language=self.language,
+            agent=self.agent,
         ):
             yield event
 
@@ -217,17 +226,22 @@ class MCPServer:
 
     async def resources_list(self, params: Dict[str, Any], context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
-        List available resources (articles, categories).
+        List available resources (articles, categories, external MCP resources).
+
+        Supports cursor-based pagination per the MCP spec.
 
         Returns:
-            List of resource descriptors with rich metadata
+            List of resource descriptors and optional nextCursor
         """
         from .resources_registry import build_resources_list
-        return await build_resources_list(self.help_center_config, self.organization)
+        return await build_resources_list(
+            self.help_center_config, self.organization, agent=self.agent,
+            cursor=params.get('cursor'),
+        )
 
     async def resources_read(self, params: Dict[str, Any], context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
-        Read a specific resource (article).
+        Read a specific resource (article or external MCP resource).
 
         Params:
             uri: Resource URI
@@ -236,25 +250,43 @@ class MCPServer:
             Resource content
         """
         from .resources_dispatcher import dispatch_resource_read
-        return await dispatch_resource_read(self.help_center_config, self.organization, params)
+        return await dispatch_resource_read(
+            self.help_center_config, self.organization, params,
+            agent=self.agent, request=self.request,
+        )
 
     # Prompts Methods
 
     async def prompts_list(self, params: Dict[str, Any], context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
-        List available prompts.
+        List available prompts from external MCP sources.
+
+        Supports cursor-based pagination per the MCP spec.
 
         Returns:
-            List of prompt definitions (currently empty)
+            List of prompt definitions and optional nextCursor
         """
         from .prompts_registry import list_prompts
-        return await list_prompts(params, context)
+        return await list_prompts(
+            self.help_center_config,
+            agent=self.agent,
+            cursor=params.get('cursor'),
+        )
 
     async def prompts_get(self, params: Dict[str, Any], context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
-        Get a specific prompt.
+        Get a specific prompt by proxying to the external MCP source.
 
-        Not implemented yet.
+        Params:
+            name: Namespaced prompt name (e.g. 'acme__code_review')
+            arguments: Optional prompt arguments
+
+        Returns:
+            Prompt content with description and messages
         """
         from .prompts_registry import get_prompt
-        return await get_prompt(params, context)
+        return await get_prompt(
+            params,
+            agent=self.agent,
+            help_center_config=self.help_center_config,
+        )

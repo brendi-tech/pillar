@@ -183,6 +183,9 @@ urlpatterns = [
     # Server-side tools
     path('api/tools/', include('apps.tools.urls')),
 
+    # MCP OAuth (admin-facing outbound OAuth flows)
+    path('api/admin/oauth/', include('apps.mcp_oauth.urls')),
+
     # Pillar SDK webhook endpoint (backend tools)
     path('api/pillar-tools/', _pillar_tools_view),
 

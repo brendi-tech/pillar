@@ -1,6 +1,5 @@
 "use client";
 
-import { ToolsSyncModal } from "@/components/ToolsSyncModal";
 import { Button } from "@/components/ui/button";
 import {
   Collapsible,
@@ -18,31 +17,53 @@ import {
   actionKeys,
   actionListInfiniteOptions,
 } from "@/queries/actions.queries";
-import type { ActionListResponse, ActionType } from "@/types/actions";
-import { ACTION_TYPE_LABELS } from "@/types/actions";
-import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
+import { mcpSourceListQuery } from "@/queries/mcpSource.queries";
+import { openAPISourceListQuery } from "@/queries/openAPISource.queries";
+import type { ActionListResponse } from "@/types/actions";
+import type { MCPToolSource } from "@/types/mcpSource";
+import type { OpenAPIToolSource } from "@/types/openAPISource";
 import {
+  useInfiniteQuery,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
+import {
+  BookOpen,
   ChevronRight,
-  Code2,
+  FileText,
+  Globe,
+  Monitor,
+  Plus,
   RefreshCw,
-  Rocket,
   Search,
-  Settings,
+  Server,
+  Unplug,
+  Wrench,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { EmptyState } from "./EmptyState";
 import { ToolListItem } from "./ToolListItem";
 import {
-  groupToolsByType,
+  groupToolsBySource,
+  parseMcpItemFromSearchParams,
+  parseMcpSourceIdFromPathname,
+  parseOpenAPISourceIdFromPathname,
+  parseToolGroupFromPathname,
   parseToolIdFromPathname,
-  TOOL_TYPE_ICONS,
+  TOOL_SOURCE_LABELS,
+  type ToolSourceGroup,
 } from "./ToolsSidebar.helpers";
 import type { ToolsSidebarProps } from "./ToolsSidebar.types";
 import { ToolsSkeleton } from "./ToolsSkeleton";
+
+const SOURCE_ICONS: Record<ToolSourceGroup, typeof Monitor> = {
+  client_side: Monitor,
+  server_side: Server,
+};
 
 export function ToolsSidebar({
   onNavigate,
@@ -53,6 +74,7 @@ export function ToolsSidebar({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const debouncedSearch = useDebounce(searchTerm, 300);
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   const queryClient = useQueryClient();
 
@@ -74,6 +96,16 @@ export function ToolsSidebar({
       },
       50
     ),
+    enabled: !!currentProduct?.id,
+  });
+
+  const { data: mcpSources, isPending: isMcpPending } = useQuery({
+    ...mcpSourceListQuery(currentProduct?.id ?? ""),
+    enabled: !!currentProduct?.id,
+  });
+
+  const { data: openAPISources, isPending: isOpenAPIPending } = useQuery({
+    ...openAPISourceListQuery(currentProduct?.id ?? ""),
     enabled: !!currentProduct?.id,
   });
 
@@ -100,6 +132,23 @@ export function ToolsSidebar({
   const totalCount = data?.pages[0]?.count ?? 0;
 
   const currentToolId = parseToolIdFromPathname(pathname);
+  const currentMcpSourceId = parseMcpSourceIdFromPathname(pathname);
+  const currentOpenAPISourceId = parseOpenAPISourceIdFromPathname(pathname);
+  const currentToolGroup = parseToolGroupFromPathname(pathname);
+  const activeMcpItem = useMemo(
+    () => parseMcpItemFromSearchParams(searchParams),
+    [searchParams]
+  );
+
+  const mcpToolCount = useMemo(
+    () => mcpSources?.reduce((sum, s) => sum + (s.tool_count ?? 0), 0) ?? 0,
+    [mcpSources]
+  );
+
+  const openAPIOpCount = useMemo(
+    () => openAPISources?.reduce((sum, s) => sum + (s.operation_count ?? 0), 0) ?? 0,
+    [openAPISources]
+  );
 
   const sentinelRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -119,23 +168,52 @@ export function ToolsSidebar({
     return () => observer.disconnect();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  const groupedTools = useMemo(() => groupToolsByType(tools), [tools]);
+  const groupedTools = useMemo(() => groupToolsBySource(tools), [tools]);
 
-  const [expandedGroups, setExpandedGroups] = useState<Set<ActionType>>(
-    new Set(Object.keys(ACTION_TYPE_LABELS) as ActionType[])
+  const allGroupIds = useMemo(() => {
+    const ids = Object.entries(groupedTools)
+      .filter(([, t]) => t.length > 0)
+      .map(([key]) => key);
+    if (mcpSources) {
+      for (const s of mcpSources) ids.push(s.id);
+    }
+    if (openAPISources) {
+      for (const s of openAPISources) ids.push(`openapi-${s.id}`);
+    }
+    return ids;
+  }, [groupedTools, mcpSources, openAPISources]);
+
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
+    () => new Set(allGroupIds)
   );
 
-  const toggleGroup = (type: ActionType) => {
+  const toggleGroup = useCallback((groupId: string) => {
     setExpandedGroups((prev) => {
       const next = new Set(prev);
-      if (next.has(type)) {
-        next.delete(type);
+      if (next.has(groupId)) {
+        next.delete(groupId);
       } else {
-        next.add(type);
+        next.add(groupId);
       }
       return next;
     });
-  };
+  }, []);
+
+  useEffect(() => {
+    if (currentMcpSourceId) {
+      setExpandedGroups(new Set([currentMcpSourceId]));
+    } else if (currentToolId) {
+      const tool = tools.find((t) => t.id === currentToolId);
+      if (tool) {
+        const group = tool.tool_type === "client_side" ? "client_side" : "server_side";
+        setExpandedGroups(new Set([group]));
+      }
+    } else if (currentToolGroup) {
+      setExpandedGroups(new Set([currentToolGroup]));
+    } else {
+      setExpandedGroups(new Set(allGroupIds));
+    }
+  }, [currentMcpSourceId, currentToolId, currentToolGroup, tools, allGroupIds]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -150,7 +228,7 @@ export function ToolsSidebar({
     <div className="flex h-full w-80 flex-col overflow-hidden border-r bg-background">
       {!hideHeader && (
         <SidebarHeader
-          totalCount={totalCount}
+          totalCount={totalCount + mcpToolCount + openAPIOpCount}
           isRefreshing={isRefreshing}
           onRefresh={handleRefresh}
         />
@@ -172,41 +250,63 @@ export function ToolsSidebar({
         <div className="p-2 space-y-1 overflow-hidden">
           {isLoading ? (
             <ToolsSkeleton />
-          ) : tools.length === 0 ? (
+          ) : tools.length === 0 && (!mcpSources || mcpSources.length === 0) && (!openAPISources || openAPISources.length === 0) ? (
             <EmptyState
               searchTerm={isSearchActive ? debouncedSearch : ""}
               hasAnyTools={totalCount > 0}
             />
           ) : (
             <>
-              {Object.entries(groupedTools).map(([type, typeTools]) => {
-                if (typeTools.length === 0) return null;
+              {(
+                Object.entries(groupedTools) as [ToolSourceGroup, typeof tools][]
+              ).map(([source, sourceTools]) => {
+                if (sourceTools.length === 0) return null;
 
-                const toolType = type as ActionType;
-                const Icon = TOOL_TYPE_ICONS[toolType];
-                const isExpanded = expandedGroups.has(toolType);
+                const Icon = SOURCE_ICONS[source];
+                const isExpanded = expandedGroups.has(source);
 
                 return (
                   <Collapsible
-                    key={type}
+                    key={source}
                     open={isExpanded}
-                    onOpenChange={() => toggleGroup(toolType)}
+                    onOpenChange={() => toggleGroup(source)}
                   >
-                    <CollapsibleTrigger className="flex w-full items-center gap-2 rounded-md px-3 py-3 sm:px-2 sm:py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground">
-                      <ChevronRight
+                    <div className="flex items-center">
+                      <CollapsibleTrigger asChild>
+                        <button
+                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md"
+                          aria-label={isExpanded ? "Collapse" : "Expand"}
+                        >
+                          <ChevronRight
+                            className={cn(
+                              "h-4 w-4 text-muted-foreground transition-transform duration-200",
+                              isExpanded && "rotate-90"
+                            )}
+                          />
+                        </button>
+                      </CollapsibleTrigger>
+                      <Link
+                        href={`/tools/${source === "client_side" ? "client" : "server"}`}
+                        onClick={onNavigate}
                         className={cn(
-                          "h-4 w-4 shrink-0 transition-transform",
-                          isExpanded && "rotate-90"
+                          "flex flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium transition-colors hover:bg-muted hover:text-foreground",
+                          currentToolGroup === source
+                            ? "bg-muted text-foreground"
+                            : "text-muted-foreground"
                         )}
-                      />
-                      <Icon className="h-4 w-4 shrink-0" />
-                      <span className="truncate">
-                        {ACTION_TYPE_LABELS[toolType]}
-                      </span>
-                    </CollapsibleTrigger>
+                      >
+                        <Icon className="h-4 w-4 shrink-0" />
+                        <span className="truncate">
+                          {TOOL_SOURCE_LABELS[source]}
+                        </span>
+                        <span className="ml-auto text-xs text-muted-foreground/60">
+                          {sourceTools.length}
+                        </span>
+                      </Link>
+                    </div>
                     <CollapsibleContent>
                       <div className="ml-4 space-y-0.5 py-1">
-                        {typeTools.map((tool) => (
+                        {sourceTools.map((tool) => (
                           <ToolListItem
                             key={tool.id}
                             action={tool}
@@ -219,6 +319,54 @@ export function ToolsSidebar({
                   </Collapsible>
                 );
               })}
+
+              {!isMcpPending && mcpSources && mcpSources.length > 0 && (
+                <>
+                  <div className="flex items-center gap-2 px-3 pt-3 pb-1">
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/50">
+                      MCP Servers
+                    </span>
+                    <div className="h-px flex-1 bg-border" />
+                  </div>
+                  {mcpSources.map((source) => (
+                    <MCPSourceItem
+                      key={source.id}
+                      source={source}
+                      isSelected={source.id === currentMcpSourceId}
+                      isExpanded={expandedGroups.has(source.id)}
+                      onToggleExpand={() => toggleGroup(source.id)}
+                      onNavigate={onNavigate}
+                      activeItemName={
+                        source.id === currentMcpSourceId
+                          ? activeMcpItem?.name ?? null
+                          : null
+                      }
+                    />
+                  ))}
+                </>
+              )}
+
+              {!isOpenAPIPending && openAPISources && openAPISources.length > 0 && (
+                <>
+                  <div className="flex items-center gap-2 px-3 pt-3 pb-1">
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/50">
+                      API Sources
+                    </span>
+                    <div className="h-px flex-1 bg-border" />
+                  </div>
+                  {openAPISources.map((source) => (
+                    <OpenAPISourceItem
+                      key={source.id}
+                      source={source}
+                      isSelected={source.id === currentOpenAPISourceId}
+                      isExpanded={expandedGroups.has(`openapi-${source.id}`)}
+                      onToggleExpand={() => toggleGroup(`openapi-${source.id}`)}
+                      onNavigate={onNavigate}
+                    />
+                  ))}
+                </>
+              )}
+
               <div ref={sentinelRef} className="h-1" />
               {isFetchingNextPage && (
                 <div className="flex w-full items-center justify-center py-2">
@@ -229,13 +377,6 @@ export function ToolsSidebar({
           )}
         </div>
       </ScrollArea>
-
-      <div className="shrink-0 border-t p-3">
-        <div className="flex items-start gap-2 rounded-md bg-muted/50 p-2 text-xs text-muted-foreground">
-          <Code2 className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-          <span>Tools are defined in code and synced via CI/CD.</span>
-        </div>
-      </div>
     </div>
   );
 }
@@ -271,23 +412,11 @@ function SidebarHeader({
               className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
             />
           </Button>
-          <Button asChild variant="ghost" size="icon" className="h-8 w-8">
-            <Link href="/tools/deployments" title="View deployments">
-              <Rocket className="h-4 w-4" />
+          <Button asChild size="icon" className="h-8 w-8">
+            <Link href="/tools/new" title="Add tools">
+              <Plus className="h-4 w-4" />
             </Link>
           </Button>
-          <ToolsSyncModal
-            trigger={
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                title="Configure sync"
-              >
-                <Settings className="h-4 w-4" />
-              </Button>
-            }
-          />
         </div>
       </div>
     </div>
@@ -336,30 +465,297 @@ function SearchBar({
                 className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
               />
             </Button>
-            <Button asChild variant="ghost" size="icon" className="h-9 w-9">
+            <Button asChild size="icon" className="h-9 w-9 shrink-0">
               <Link
-                href="/tools/deployments"
+                href="/tools/new"
                 onClick={onNavigate}
-                title="View deployments"
+                title="Add tools"
               >
-                <Rocket className="h-4 w-4" />
+                <Plus className="h-4 w-4" />
               </Link>
             </Button>
-            <ToolsSyncModal
-              trigger={
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-9 w-9"
-                  title="Configure sync"
-                >
-                  <Settings className="h-4 w-4" />
-                </Button>
-              }
-            />
           </div>
         )}
       </div>
     </div>
+  );
+}
+
+function MCPSourceItem({
+  source,
+  isSelected,
+  isExpanded,
+  onToggleExpand,
+  onNavigate,
+  activeItemName,
+}: {
+  source: MCPToolSource;
+  isSelected: boolean;
+  isExpanded: boolean;
+  onToggleExpand: () => void;
+  onNavigate?: () => void;
+  activeItemName: string | null;
+}) {
+  const isError =
+    source.discovery_status === "error" || source.consecutive_failures > 0;
+  const isHealthy = source.discovery_status === "success" && !isError;
+
+  const totalCount =
+    (source.tool_count ?? 0) +
+    (source.resource_count ?? 0) +
+    (source.prompt_count ?? 0);
+
+  return (
+    <Collapsible open={isExpanded} onOpenChange={onToggleExpand}>
+      <div className="flex items-center">
+        <CollapsibleTrigger asChild>
+          <button
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md"
+            aria-label={isExpanded ? "Collapse" : "Expand"}
+          >
+            <ChevronRight
+              className={cn(
+                "h-4 w-4 text-muted-foreground transition-transform duration-200",
+                isExpanded && "rotate-90"
+              )}
+            />
+          </button>
+        </CollapsibleTrigger>
+        <Link
+          href={`/tools/mcp/${source.id}`}
+          onClick={onNavigate}
+          className={cn(
+            "flex flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors",
+            "hover:bg-muted",
+            isSelected && "bg-muted font-medium"
+          )}
+        >
+          <Unplug className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <div className="flex-1 min-w-0">
+            <div className="truncate">{source.name}</div>
+          </div>
+          <span className="text-xs text-muted-foreground/60 shrink-0">
+            {totalCount}
+          </span>
+          <span
+            className={cn(
+              "h-2 w-2 shrink-0 rounded-full",
+              isHealthy && "bg-green-500",
+              isError && "bg-red-500",
+              !isHealthy && !isError && "bg-yellow-500"
+            )}
+            title={
+              isHealthy
+                ? "Healthy"
+                : isError
+                  ? source.discovery_error || "Connection error"
+                  : "Pending"
+            }
+          />
+        </Link>
+      </div>
+      <CollapsibleContent>
+        <div className="ml-4 border-l pl-2 py-1 space-y-0.5">
+          {totalCount === 0 ? (
+            <p className="text-xs text-muted-foreground py-2 px-2">
+              Nothing discovered yet
+            </p>
+          ) : (
+            <>
+              <MCPSubSection
+                icon={Wrench}
+                label="Tools"
+                items={source.discovered_tools}
+                getItemName={(t) => t.name}
+                getItemHref={(t) =>
+                  `/tools/mcp/${source.id}?tool=${encodeURIComponent(t.name)}`
+                }
+                activeItemName={activeItemName}
+                onNavigate={onNavigate}
+              />
+              <MCPSubSection
+                icon={FileText}
+                label="Resources"
+                items={source.discovered_resources}
+                getItemName={(r) => r.name}
+                getItemHref={(r) =>
+                  `/tools/mcp/${source.id}?resource=${encodeURIComponent(r.name)}`
+                }
+                activeItemName={activeItemName}
+                onNavigate={onNavigate}
+              />
+              <MCPSubSection
+                icon={BookOpen}
+                label="Prompts"
+                items={source.discovered_prompts ?? []}
+                getItemName={(p) => p.name}
+                getItemHref={(p) =>
+                  `/tools/mcp/${source.id}?prompt=${encodeURIComponent(p.name)}`
+                }
+                activeItemName={activeItemName}
+                onNavigate={onNavigate}
+              />
+            </>
+          )}
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
+function OpenAPISourceItem({
+  source,
+  isSelected,
+  isExpanded,
+  onToggleExpand,
+  onNavigate,
+}: {
+  source: OpenAPIToolSource;
+  isSelected: boolean;
+  isExpanded: boolean;
+  onToggleExpand: () => void;
+  onNavigate?: () => void;
+}) {
+  const isError = source.discovery_status === "error";
+  const isHealthy = source.discovery_status === "success" && !isError;
+
+  return (
+    <Collapsible open={isExpanded} onOpenChange={onToggleExpand}>
+      <div className="flex items-center">
+        <CollapsibleTrigger asChild>
+          <button
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md"
+            aria-label={isExpanded ? "Collapse" : "Expand"}
+          >
+            <ChevronRight
+              className={cn(
+                "h-4 w-4 text-muted-foreground transition-transform duration-200",
+                isExpanded && "rotate-90"
+              )}
+            />
+          </button>
+        </CollapsibleTrigger>
+        <Link
+          href={`/tools/openapi/${source.id}`}
+          onClick={onNavigate}
+          className={cn(
+            "flex flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors",
+            "hover:bg-muted",
+            isSelected && "bg-muted font-medium"
+          )}
+        >
+          <Globe className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <div className="flex-1 min-w-0">
+            <div className="truncate">{source.name}</div>
+          </div>
+          <span className="text-xs text-muted-foreground/60 shrink-0">
+            {source.operation_count}
+          </span>
+          <span
+            className={cn(
+              "h-2 w-2 shrink-0 rounded-full",
+              isHealthy && "bg-green-500",
+              isError && "bg-red-500",
+              !isHealthy && !isError && "bg-yellow-500"
+            )}
+            title={
+              isHealthy
+                ? "Healthy"
+                : isError
+                  ? source.discovery_error || "Error"
+                  : "Pending"
+            }
+          />
+        </Link>
+      </div>
+      <CollapsibleContent>
+        <div className="ml-4 border-l pl-2 py-1 space-y-0.5">
+          {source.discovered_operations.length === 0 ? (
+            <p className="text-xs text-muted-foreground py-2 px-2">
+              No operations discovered yet
+            </p>
+          ) : (
+            source.discovered_operations.map((op) => (
+              <Link
+                key={op.operation_id}
+                href={`/tools/openapi/${source.id}?op=${encodeURIComponent(op.operation_id)}`}
+                onClick={onNavigate}
+                className="flex items-center gap-2 rounded-md px-2 py-1 text-sm transition-colors hover:bg-muted text-muted-foreground"
+              >
+                <span className="text-[10px] font-mono font-semibold uppercase shrink-0">
+                  {op.method}
+                </span>
+                <span className="truncate flex-1 font-mono text-xs">
+                  {op.path}
+                </span>
+              </Link>
+            ))
+          )}
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
+function MCPSubSection<T>({
+  icon: Icon,
+  label,
+  items,
+  getItemName,
+  getItemHref,
+  activeItemName,
+  onNavigate,
+}: {
+  icon: typeof Wrench;
+  label: string;
+  items: T[];
+  getItemName: (item: T) => string;
+  getItemHref: (item: T) => string;
+  activeItemName: string | null;
+  onNavigate?: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+
+  if (items.length === 0) return null;
+
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <CollapsibleTrigger className="flex w-full items-center gap-2 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground">
+        <ChevronRight
+          className={cn(
+            "h-3 w-3 shrink-0 transition-transform",
+            open && "rotate-90"
+          )}
+        />
+        <Icon className="h-3.5 w-3.5 shrink-0" />
+        <span className="truncate">{label}</span>
+        <span className="ml-auto text-[10px] text-muted-foreground/60">
+          {items.length}
+        </span>
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <div className="ml-5 space-y-0.5 py-0.5">
+          {items.map((item) => {
+            const name = getItemName(item);
+            const isActive = activeItemName === name;
+            return (
+              <Link
+                key={name}
+                href={getItemHref(item)}
+                onClick={onNavigate}
+                className={cn(
+                  "flex items-center gap-2 rounded-md px-2 py-1 text-sm transition-colors hover:bg-muted",
+                  isActive
+                    ? "bg-muted font-medium text-foreground"
+                    : "text-muted-foreground"
+                )}
+              >
+                <span className="truncate flex-1">{name}</span>
+              </Link>
+            );
+          })}
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
   );
 }

@@ -43,8 +43,65 @@ class ProductResolverMiddleware:
 
     async def __call__(self, request):
         await self.process_request(request)
+
+        if (
+            request.path.startswith('/mcp/')
+            and not getattr(request, 'product', None)
+            and not getattr(request, 'mcp_oauth_identity', None)
+        ):
+            host = request.get_host().split(':')[0].lower()
+            oauth_configured = await self._has_oauth_provider(host)
+            if oauth_configured:
+                from django.http import JsonResponse
+                scheme = 'https' if request.is_secure() else 'http'
+                base_url = f"{scheme}://{request.get_host()}"
+                response = JsonResponse(
+                    {'error': 'unauthorized', 'message': 'OAuth authentication required'},
+                    status=401,
+                )
+                response['WWW-Authenticate'] = (
+                    f'Bearer resource_metadata="{base_url}/.well-known/oauth-protected-resource"'
+                )
+                return response
+
         response = await self.get_response(request)
         return response
+
+    async def _has_oauth_provider(self, host: str) -> bool:
+        """Check if an active OAuthProvider exists for the host's product."""
+        try:
+            from apps.mcp_oauth.models import OAuthProvider
+            from apps.products.models.agent import Agent as AgentModel
+            from apps.products.models import Product
+
+            help_center_domain = getattr(settings, 'HELP_CENTER_DOMAIN', 'help.pillar.io')
+
+            product = None
+            if host.endswith(f'.{help_center_domain}'):
+                subdomain = host.replace(f'.{help_center_domain}', '')
+                product = await (
+                    Product.objects.filter(subdomain=subdomain).afirst()
+                )
+            else:
+                agent = await (
+                    AgentModel.objects
+                    .select_related('product')
+                    .filter(mcp_domain=host, is_active=True)
+                    .afirst()
+                )
+                if agent:
+                    product = agent.product
+
+            if not product:
+                return False
+
+            return await (
+                OAuthProvider.objects
+                .filter(product=product, is_active=True)
+                .aexists()
+            )
+        except Exception:
+            return False
 
     async def process_request(self, request):
         from apps.products.models import Product
@@ -58,8 +115,44 @@ class ProductResolverMiddleware:
 
         product = None
 
+        # Strategy 0: Custom MCP domain resolution (agent-level)
+        if not host.endswith(f'.{help_center_domain}'):
+            from common.cache_keys import CacheKeys
+            cache_key = CacheKeys.mcp_host_resolution(host)
+            cached = cache.get(cache_key)
+            if cached:
+                product_id, agent_id = cached.split(':', 1)
+                product = await (
+                    Product.objects.select_related('organization')
+                    .filter(id=product_id)
+                    .afirst()
+                )
+                if product and agent_id:
+                    from apps.products.models.agent import Agent as AgentModel
+                    agent = await AgentModel.objects.filter(id=agent_id, is_active=True).afirst()
+                    if agent:
+                        request.agent = agent
+            else:
+                from apps.products.models.agent import Agent as AgentModel
+                agent = await (
+                    AgentModel.objects
+                    .select_related('product__organization')
+                    .filter(mcp_domain=host, is_active=True)
+                    .afirst()
+                )
+                if agent:
+                    product = agent.product
+                    request.agent = agent
+                    cache.set(
+                        cache_key,
+                        f"{product.id}:{agent.id}",
+                        self.CACHE_TTL,
+                    )
+            if product:
+                logger.debug(f"[MCP] Resolved custom domain '{host}' -> {product.name}")
+
         # Strategy 1: Subdomain resolution with caching
-        if host.endswith(f'.{help_center_domain}'):
+        if not product and host.endswith(f'.{help_center_domain}'):
             subdomain = host.replace(f'.{help_center_domain}', '')
             cache_key = f'mcp:hc:{subdomain}'
 
@@ -141,6 +234,63 @@ class ProductResolverMiddleware:
                     )
                     if product:
                         logger.debug(f"[MCP] Resolved via x-customer-id subdomain '{customer_id}' -> {product.name}")
+
+        # Strategy 4.5: Bearer token auth (OAuth token or API key)
+        if not product:
+            auth_header = request.META.get("HTTP_AUTHORIZATION", "")
+            if auth_header.startswith("Bearer "):
+                token_value = auth_header[7:].strip()
+
+                if not token_value.startswith("sk_live_"):
+                    try:
+                        from apps.mcp_oauth.auth import validate_mcp_oauth_token
+                        oauth_result = await validate_mcp_oauth_token(token_value)
+                        if oauth_result:
+                            product = oauth_result.product
+                            request.mcp_oauth_identity = oauth_result
+                            logger.debug(
+                                "[MCP] Resolved via OAuth token -> %s (user=%s)",
+                                product.name,
+                                oauth_result.external_user_id,
+                            )
+                    except Exception:
+                        logger.debug("[MCP] OAuth token validation failed", exc_info=True)
+
+                if not product:
+                    from apps.tools.services.auth import authenticate_sdk_request
+                    product = await authenticate_sdk_request(request)
+                    if product:
+                        logger.debug(f"[MCP] Resolved via Bearer token -> {product.name}")
+
+        # Strategy 5: x-agent-slug header (convenience fallback)
+        if not product:
+            agent_slug = request.headers.get('x-agent-slug')
+            if agent_slug:
+                from apps.products.models.agent import Agent as AgentModel
+                agent = await (
+                    AgentModel.objects
+                    .select_related('product__organization')
+                    .filter(slug=agent_slug, is_active=True)
+                    .afirst()
+                )
+                if agent:
+                    product = agent.product
+                    request.agent = agent
+                    logger.debug(f"[MCP] Resolved via x-agent-slug '{agent_slug}' -> {product.name}")
+
+        # Strategy 1.5: Default MCP agent for product
+        # When product is resolved but no specific agent has been set,
+        # find the product's default MCP agent (earliest created).
+        if product and not getattr(request, 'agent', None):
+            from apps.products.models.agent import Agent as AgentModel
+            mcp_agent = await (
+                AgentModel.objects
+                .filter(product=product, channel='mcp', is_active=True)
+                .order_by('created_at')
+                .afirst()
+            )
+            if mcp_agent:
+                request.agent = mcp_agent
 
         # Set attributes on request
         if product:

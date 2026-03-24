@@ -1,5 +1,8 @@
 Pillar.init({
   agentSlug: 'your-agent-slug',
+
+  // Forward user's auth token to API tool sources (optional)
+  // userApiToken: accessToken,
   
   panel: {
     position: 'right',

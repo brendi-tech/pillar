@@ -15,11 +15,13 @@ from typing import Any
 class CallerContext:
     """Identity of the person asking, regardless of channel."""
 
+    channel: str = "web"
     channel_user_id: str | None = None
     external_user_id: str | None = None
     email: str | None = None
     display_name: str | None = None
     user_profile: dict[str, Any] = field(default_factory=dict)
+    user_api_token: str | None = None
 
     @property
     def is_identified(self) -> bool:
