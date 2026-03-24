@@ -132,15 +132,19 @@ class JSONResponseAdapter(ResponseAdapter):
         self, tool_name: str, call_id: str, title: str, message: str,
         details: dict | None, confirm_payload: dict,
         conversation_id: str | None = None,
+        source_meta: dict | None = None,
     ) -> None:
-        self._confirmations.append({
+        entry: dict = {
             "tool_name": tool_name,
             "call_id": call_id,
             "title": title,
             "message": message,
             "details": details,
             "confirm_payload": confirm_payload,
-        })
+        }
+        if source_meta:
+            entry["source_meta"] = source_meta
+        self._confirmations.append(entry)
 
     async def on_token_usage(self, event: dict) -> None:
         self._token_usage = {
@@ -216,15 +220,19 @@ class SSEResponseAdapter(ResponseAdapter):
         self, tool_name: str, call_id: str, title: str, message: str,
         details: dict | None, confirm_payload: dict,
         conversation_id: str | None = None,
+        source_meta: dict | None = None,
     ) -> None:
-        self._send("confirmation_request", {
+        data: dict = {
             "tool_name": tool_name,
             "call_id": call_id,
             "title": title,
             "message": message,
             "details": details,
             "confirm_payload": confirm_payload,
-        })
+        }
+        if source_meta:
+            data["source_meta"] = source_meta
+        self._send("confirmation_request", data)
 
     async def on_token_usage(self, event: dict) -> None:
         self._send("usage", {

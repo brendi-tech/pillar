@@ -946,6 +946,7 @@ async def execute_server_tool(
                 "details": confirm_details,
                 "confirm_payload": confirm_payload,
                 "conversation_id": conversation_id,
+                "source_type": "server",
             }
             return
 
@@ -1039,6 +1040,9 @@ async def execute_mcp_source_tool(
             "details": {"tool": mcp_original_name, "arguments": arguments},
             "confirm_payload": arguments,
             "conversation_id": conversation_id,
+            "source_type": "mcp",
+            "mcp_source_id": mcp_source_id,
+            "mcp_original_name": mcp_original_name,
         }
         return
 
@@ -1100,10 +1104,14 @@ async def execute_mcp_source_tool(
     if result.get("timed_out"):
         _span.set_status(StatusCode.ERROR, "Timeout")
         _span.end()
+        logger.warning(
+            "[AgenticLoop] mcp_tool %s (source=%s) TIMEOUT (%dms)",
+            tool_name, mcp_source.name, call_duration_ms,
+        )
 
         messages.append(format_tool_result_message_native(
             tool_call_id=tool_call_id,
-            result_content=f"MCP tool '{tool_name}' timed out.",
+            result_content=f"MCP tool '{tool_name}' timed out after {call_duration_ms}ms connecting to {mcp_source.url}.",
         ))
         display_trace.append({
             "step_type": "tool_result",
@@ -1124,16 +1132,64 @@ async def execute_mcp_source_tool(
             arguments=arguments,
         )
 
+    elif result.get("auth_error"):
+        _span.set_status(StatusCode.ERROR, "Auth error")
+        _span.end()
+
+        dashboard_link = _build_mcp_dashboard_link(mcp_source)
+        error_detail = result.get("error", "Authentication failed.")
+
+        if mcp_source.auth_type == "oauth":
+            auth_msg = (
+                f"Authentication for '{mcp_source.name}' has expired. "
+                f"An admin needs to re-authorize this connection from the dashboard: {dashboard_link}\n"
+                f"You MUST include this link in your response to the user."
+            )
+        else:
+            auth_msg = (
+                f"The API credentials for '{mcp_source.name}' are invalid or expired. "
+                f"An admin needs to update them in the dashboard: {dashboard_link}\n"
+                f"You MUST include this link in your response to the user."
+            )
+
+        messages.append(format_tool_result_message_native(
+            tool_call_id=tool_call_id,
+            result_content=auth_msg,
+        ))
+        display_trace.append({
+            "step_type": "tool_result",
+            "iteration": iteration,
+            "timestamp_ms": int(time.time() * 1000) - start_time_ms,
+            "tool": tool_name,
+            "kind": "tool_call",
+            "label": f"Failed {display_name}",
+            "text": error_detail,
+            "arguments": arguments,
+            "success": False,
+            "error": "auth_error",
+        })
+
+        yield emit_tool_call_complete(
+            tool_id, tool_name, success=False,
+            result_summary=error_detail,
+            arguments=arguments,
+        )
+
     elif result.get("connection_error"):
         _span.set_status(StatusCode.ERROR, "MCP server unreachable")
         _span.end()
+        error_detail = result.get("error", "")
+        logger.warning(
+            "[AgenticLoop] mcp_tool %s (source=%s) CONNECT_ERROR (%dms): %s",
+            tool_name, mcp_source.name, call_duration_ms, error_detail,
+        )
 
         _trigger_mcp_rediscovery(mcp_source)
 
         messages.append(format_tool_result_message_native(
             tool_call_id=tool_call_id,
             result_content=(
-                f"MCP tool '{tool_name}' server is unreachable. "
+                f"MCP tool '{tool_name}' server at {mcp_source.url} is unreachable. "
                 f"The server may be offline."
             ),
         ))
@@ -1260,6 +1316,9 @@ async def execute_openapi_source_tool(
             "details": {"method": method, "path": path, "arguments": arguments},
             "confirm_payload": arguments,
             "conversation_id": conversation_id,
+            "source_type": "openapi",
+            "openapi_source_id": openapi_source_id,
+            "openapi_operation": openapi_operation,
         }
         return
 
@@ -1416,42 +1475,54 @@ async def execute_openapi_source_tool(
 
     display_name = format_tool_name_for_display(tool_name)
 
+    error_detail = result.get("error", "")
+
     if result.get("timed_out"):
         _span.set_status(StatusCode.ERROR, "Timeout")
         _span.end()
+        logger.warning(
+            "[AgenticLoop] openapi_tool %s TIMEOUT (%dms): %s",
+            tool_name, call_duration_ms, error_detail,
+        )
+        result_msg = error_detail or f"API call '{tool_name}' timed out."
         messages.append(format_tool_result_message_native(
             tool_call_id=tool_call_id,
-            result_content=f"API call '{tool_name}' timed out.",
+            result_content=result_msg,
         ))
         display_trace.append({
             "step_type": "tool_result", "iteration": iteration,
             "timestamp_ms": int(time.time() * 1000) - start_time_ms,
             "tool": tool_name, "kind": "tool_call",
-            "label": f"Failed {display_name}", "text": "Timed out",
+            "label": f"Failed {display_name}", "text": result_msg,
             "arguments": arguments, "success": False, "error": "Timeout",
         })
         yield emit_tool_call_complete(
             tool_id, tool_name, success=False,
-            result_summary="Timeout", arguments=arguments,
+            result_summary=result_msg, arguments=arguments,
         )
 
     elif result.get("connection_error"):
         _span.set_status(StatusCode.ERROR, "API unreachable")
         _span.end()
+        logger.warning(
+            "[AgenticLoop] openapi_tool %s CONNECT_ERROR (%dms): %s",
+            tool_name, call_duration_ms, error_detail,
+        )
+        result_msg = error_detail or f"API for '{tool_name}' is unreachable."
         messages.append(format_tool_result_message_native(
             tool_call_id=tool_call_id,
-            result_content=f"API for '{tool_name}' is unreachable.",
+            result_content=result_msg,
         ))
         display_trace.append({
             "step_type": "tool_result", "iteration": iteration,
             "timestamp_ms": int(time.time() * 1000) - start_time_ms,
             "tool": tool_name, "kind": "tool_call",
-            "label": f"Failed {display_name}", "text": "API unreachable",
+            "label": f"Failed {display_name}", "text": result_msg,
             "arguments": arguments, "success": False, "error": "API unreachable",
         })
         yield emit_tool_call_complete(
             tool_id, tool_name, success=False,
-            result_summary="API unreachable", arguments=arguments,
+            result_summary=result_msg, arguments=arguments,
         )
 
     elif result.get("auth_required"):
@@ -1586,6 +1657,185 @@ async def _generate_oauth_link(
     return f"{base_url}/api/tools/oauth/authorize/{token}/"
 
 
+async def execute_reconnect_account(
+    *,
+    messages: list[dict],
+    service: Any,
+    session_id: str,
+    display_trace: list[dict],
+    iteration: int,
+    start_time_ms: int,
+    cancel_event: Any,
+    conversation_id: str | None,
+    tracer: Any,
+    tool_call_id: str,
+    arguments: dict,
+    caller: Any,
+) -> AsyncGenerator[dict, None]:
+    """Invalidate a user's connection to a tool integration and generate a reconnection link."""
+    from apps.tools.models import MCPToolSource, OpenAPIToolSource, UserToolCredential
+
+    tool_name = "reconnect_account"
+    tool_event = emit_tool_call_start(tool_name, arguments)
+    tool_id = tool_event["data"]["id"]
+    yield tool_event
+
+    integration_name = (arguments.get("integration_name") or "").strip()
+    if not integration_name:
+        error_msg = "integration_name is required."
+        messages.append(format_tool_result_message_native(
+            tool_call_id=tool_call_id, result_content=error_msg,
+        ))
+        yield emit_tool_call_complete(
+            tool_id, tool_name, success=False,
+            result_summary=error_msg, arguments=arguments,
+        )
+        return
+
+    product = service.help_center_config
+    organization = service.organization
+    search_term = integration_name.lower()
+
+    openapi_sources = [
+        s async for s in OpenAPIToolSource.objects.filter(
+            product=product, is_active=True,
+        ).select_related('product')
+    ]
+    mcp_sources = [
+        s async for s in MCPToolSource.objects.filter(
+            product=product, is_active=True,
+        )
+    ]
+
+    matched_openapi = None
+    matched_mcp = None
+    for s in openapi_sources:
+        if search_term in s.name.lower():
+            matched_openapi = s
+            break
+    if not matched_openapi:
+        for s in mcp_sources:
+            if search_term in s.name.lower():
+                matched_mcp = s
+                break
+
+    if not matched_openapi and not matched_mcp:
+        available = [s.name for s in openapi_sources] + [s.name for s in mcp_sources]
+        if available:
+            error_msg = (
+                f"No integration matching '{integration_name}' found. "
+                f"Available integrations: {', '.join(available)}"
+            )
+        else:
+            error_msg = f"No integrations are configured for this product."
+        messages.append(format_tool_result_message_native(
+            tool_call_id=tool_call_id, result_content=error_msg,
+        ))
+        display_trace.append({
+            "step_type": "tool_result",
+            "iteration": iteration,
+            "timestamp_ms": int(time.time() * 1000) - start_time_ms,
+            "tool": tool_name,
+            "kind": "tool_call",
+            "label": "Failed reconnect_account",
+            "text": error_msg,
+            "arguments": arguments,
+            "success": False,
+            "error": error_msg,
+        })
+        yield emit_tool_call_complete(
+            tool_id, tool_name, success=False,
+            result_summary=error_msg, arguments=arguments,
+        )
+        return
+
+    if matched_openapi:
+        source = matched_openapi
+        if source.auth_type != "oauth2_authorization_code":
+            dashboard_link = _build_openapi_dashboard_link(source)
+            result_msg = (
+                f"'{source.name}' uses {source.get_auth_type_display()} authentication. "
+                f"An admin needs to update the credentials in the dashboard: {dashboard_link}\n"
+                f"You MUST include this link in your response to the user."
+            )
+        else:
+            channel = getattr(caller, "channel", "web")
+            channel_user_id = getattr(caller, "channel_user_id", "") or ""
+
+            if channel_user_id:
+                await UserToolCredential.objects.filter(
+                    openapi_source=source,
+                    channel=channel,
+                    channel_user_id=channel_user_id,
+                    is_active=True,
+                ).aupdate(is_active=False)
+
+            environments = source.oauth_environments or []
+            if environments:
+                links = []
+                for env in environments:
+                    link = await _generate_oauth_link(
+                        source=source,
+                        channel=channel,
+                        channel_user_id=channel_user_id,
+                        product=product,
+                        oauth_environment=env["name"].lower(),
+                    )
+                    links.append(f"Connect {env['name']}: {link}")
+                result_msg = (
+                    f"Previous connection to '{source.name}' has been invalidated.\n"
+                    + "\n".join(links)
+                    + "\nYou MUST include ALL of the above URLs in your response to the user."
+                )
+            else:
+                oauth_link = await _generate_oauth_link(
+                    source=source,
+                    channel=channel,
+                    channel_user_id=channel_user_id,
+                    product=product,
+                )
+                result_msg = (
+                    f"Previous connection to '{source.name}' has been invalidated. "
+                    f"Please reconnect your account: {oauth_link}\n"
+                    f"You MUST include this exact URL in your response to the user."
+                )
+    else:
+        source = matched_mcp
+        dashboard_link = _build_mcp_dashboard_link(source)
+        if source.auth_type == "oauth":
+            result_msg = (
+                f"'{source.name}' uses OAuth authentication. "
+                f"An admin needs to re-authorize this connection from the dashboard: {dashboard_link}\n"
+                f"You MUST include this link in your response to the user."
+            )
+        else:
+            auth_label = source.get_auth_type_display() if source.auth_type != "none" else "no"
+            result_msg = (
+                f"'{source.name}' uses {auth_label} authentication. "
+                f"An admin needs to update the connection in the dashboard: {dashboard_link}\n"
+                f"You MUST include this link in your response to the user."
+            )
+
+    messages.append(format_tool_result_message_native(
+        tool_call_id=tool_call_id, result_content=result_msg,
+    ))
+    display_trace.append({
+        "step_type": "tool_result",
+        "iteration": iteration,
+        "timestamp_ms": int(time.time() * 1000) - start_time_ms,
+        "tool": tool_name,
+        "kind": "tool_call",
+        "label": "Completed reconnect_account",
+        "text": result_msg[:500],
+        "arguments": arguments,
+        "success": True,
+    })
+    yield emit_tool_call_complete(
+        tool_id, tool_name, success=True,
+        result_summary=result_msg[:500], arguments=arguments,
+    )
+
+
 def _trigger_mcp_rediscovery(mcp_source) -> None:
     """Fire-and-forget rediscovery for a failed MCP source."""
     try:
@@ -1600,6 +1850,28 @@ def _trigger_mcp_rediscovery(mcp_source) -> None:
             "[AgenticLoop] Failed to trigger rediscovery for %s: %s",
             mcp_source.name, exc,
         )
+
+
+def _build_admin_base_url() -> str:
+    """Build the admin dashboard base URL."""
+    from django.conf import settings as django_settings
+
+    admin_url = getattr(django_settings, 'HELP_CENTER_URL', 'http://localhost:3001')
+    if 'localhost' in admin_url:
+        admin_url = admin_url.replace('localhost', 'admin.localhost')
+    elif not admin_url.startswith('https://admin.'):
+        admin_url = admin_url.replace('https://', 'https://admin.')
+    return admin_url
+
+
+def _build_mcp_dashboard_link(mcp_source) -> str:
+    """Build a dashboard URL pointing to the MCP source settings page."""
+    return f"{_build_admin_base_url()}/tools/mcp/{mcp_source.id}"
+
+
+def _build_openapi_dashboard_link(openapi_source) -> str:
+    """Build a dashboard URL pointing to the OpenAPI source settings page."""
+    return f"{_build_admin_base_url()}/tools/api/{openapi_source.id}"
 
 
 def resolve_execute_action(

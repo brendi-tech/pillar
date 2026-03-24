@@ -134,6 +134,25 @@ CONDITIONAL_TOOLS = {
             "required": ["name"],
         },
     },
+    "reconnect_account": {
+        "name": "reconnect_account",
+        "description": (
+            "Invalidate the user's current connection to a tool integration "
+            "and generate a fresh link for them to reconnect. Use when a user "
+            "explicitly asks to reconnect, reset, or re-authorize their connection "
+            "to an integration, or when a tool call fails due to expired authentication."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "integration_name": {
+                    "type": "string",
+                    "description": "Name of the integration to reconnect (from error messages or user request)",
+                },
+            },
+            "required": ["integration_name"],
+        },
+    },
 }
 
 # All tools combined (used for validation - must know about all possible tools)
@@ -145,6 +164,7 @@ def get_tools_for_api(
     include_interact_with_page: bool = False,
     include_read_mcp_resource: bool = False,
     include_load_skill: bool = False,
+    include_reconnect_account: bool = False,
 ) -> List[Dict[str, Any]]:
     """
     Get tool definitions in OpenAI function-calling format for the API.
@@ -155,12 +175,14 @@ def get_tools_for_api(
     - interact_with_page: when DOM snapshot is present in user_context
     - read_mcp_resource: after search returns MCP resources
     - load_skill: after search returns skills
+    - reconnect_account: when product has OAuth-based tool sources
 
     Args:
         include_get_article: Include the get_article tool
         include_interact_with_page: Include the interact_with_page tool
         include_read_mcp_resource: Include the read_mcp_resource tool
         include_load_skill: Include the load_skill tool
+        include_reconnect_account: Include the reconnect_account tool
 
     Returns:
         List of tool definitions ready for the 'tools' API parameter
@@ -174,6 +196,8 @@ def get_tools_for_api(
         tools.append({"type": "function", "function": CONDITIONAL_TOOLS["read_mcp_resource"]})
     if include_load_skill:
         tools.append({"type": "function", "function": CONDITIONAL_TOOLS["load_skill"]})
+    if include_reconnect_account:
+        tools.append({"type": "function", "function": CONDITIONAL_TOOLS["reconnect_account"]})
     return tools
 
 

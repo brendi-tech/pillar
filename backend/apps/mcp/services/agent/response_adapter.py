@@ -245,6 +245,13 @@ class ResponseAdapter(ABC):
         elif event_type == "token_usage":
             await self.on_token_usage(event)
         elif event_type == "confirmation_request":
+            source_meta = {}
+            for _key in (
+                "source_type", "openapi_source_id", "openapi_operation",
+                "mcp_source_id", "mcp_original_name",
+            ):
+                if _key in event:
+                    source_meta[_key] = event[_key]
             await self.on_confirmation_request(
                 event.get("tool_name", ""),
                 event.get("call_id", ""),
@@ -253,6 +260,7 @@ class ResponseAdapter(ABC):
                 event.get("details"),
                 event.get("confirm_payload", {}),
                 event.get("conversation_id"),
+                source_meta=source_meta or None,
             )
         elif event_type == "plan.created":
             await self.on_plan(event)
@@ -271,6 +279,7 @@ class ResponseAdapter(ABC):
         details: dict | None,
         confirm_payload: dict,
         conversation_id: str | None = None,
+        source_meta: dict | None = None,
     ) -> None:
         """Handle a tool requesting user confirmation before executing."""
         pass

@@ -95,6 +95,7 @@ class SlackResponseAdapter(ResponseAdapter):
         self, tool_name: str, call_id: str, title: str, message: str,
         details: dict | None, confirm_payload: dict,
         conversation_id: str | None = None,
+        source_meta: dict | None = None,
     ) -> None:
         self._pending_confirmations.append({
             "tool_name": tool_name,
@@ -104,6 +105,7 @@ class SlackResponseAdapter(ResponseAdapter):
             "details": details,
             "confirm_payload": confirm_payload,
             "conversation_id": conversation_id,
+            "source_meta": source_meta,
         })
 
     async def on_complete(self, event: dict) -> None:
@@ -133,6 +135,7 @@ class SlackResponseAdapter(ResponseAdapter):
                 details=conf.get("details"),
                 confirm_payload=conf["confirm_payload"],
                 conversation_id=conf.get("conversation_id"),
+                source_meta=conf.get("source_meta"),
             ))
 
         fallback = response_text or "Please confirm the action below."

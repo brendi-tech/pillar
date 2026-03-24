@@ -112,10 +112,14 @@ async def execute_openapi_call(
     }
     headers.update(header_params)
 
+    has_auth = False
     if user_credential and user_credential.is_active and not user_credential.is_expired:
         headers["Authorization"] = f"{user_credential.token_type} {user_credential.access_token}"
+        has_auth = True
     elif source.auth_type in ("bearer", "api_key", "oauth2_client_credentials"):
-        headers.update(_build_org_auth_headers(source))
+        org_headers = _build_org_auth_headers(source)
+        headers.update(org_headers)
+        has_auth = bool(org_headers)
 
     request_kwargs: dict[str, Any] = {
         "method": method,
@@ -126,6 +130,14 @@ async def execute_openapi_call(
 
     if method in ("POST", "PUT", "PATCH") and body_params:
         request_kwargs["json"] = body_params
+
+    auth_label = "user_credential" if (user_credential and has_auth) else (
+        source.auth_type if has_auth else "none"
+    )
+    logger.info(
+        "[OpenAPI] %s %s (source=%s, auth=%s, timeout=%ss)",
+        method, url, source.name, auth_label, timeout_seconds,
+    )
 
     try:
         async with httpx.AsyncClient(timeout=timeout_seconds) as client:
@@ -146,6 +158,11 @@ async def execute_openapi_call(
                         "status_code": 401,
                         "error": "Authentication expired. Please re-connect your account.",
                     }
+
+            logger.info(
+                "[OpenAPI] Response %s %s -> HTTP %d (%dB)",
+                method, url, response.status_code, len(response.content),
+            )
 
             if response.status_code == 401 and not user_credential:
                 return {
@@ -175,11 +192,19 @@ async def execute_openapi_call(
                 }
 
     except httpx.TimeoutException:
-        return {"success": False, "timed_out": True, "error": f"Request timed out after {timeout_seconds}s"}
-    except httpx.ConnectError:
-        return {"success": False, "connection_error": True, "error": "Could not connect to API"}
+        logger.warning(
+            "[OpenAPI] TIMEOUT %s %s after %ss (source=%s, auth=%s)",
+            method, url, timeout_seconds, source.name, auth_label,
+        )
+        return {"success": False, "timed_out": True, "error": f"Request to {method} {url} timed out after {timeout_seconds}s"}
+    except httpx.ConnectError as exc:
+        logger.warning(
+            "[OpenAPI] CONNECT_ERROR %s %s (source=%s): %s",
+            method, url, source.name, exc,
+        )
+        return {"success": False, "connection_error": True, "error": f"Could not connect to {url}: {exc}"}
     except Exception as exc:
-        logger.exception("OpenAPI tool call to %s failed", url)
+        logger.exception("[OpenAPI] ERROR %s %s (source=%s)", method, url, source.name)
         return {"success": False, "connection_error": True, "error": str(exc)}
 
 

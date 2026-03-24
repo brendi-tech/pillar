@@ -37,6 +37,7 @@ from apps.mcp.services.agent.tool_handlers import (
     execute_mcp_source_tool,
     execute_openapi_source_tool,
     execute_read_mcp_resource,
+    execute_reconnect_account,
     execute_search,
     execute_server_tool,
     resolve_execute_action,
@@ -173,6 +174,21 @@ async def run_agentic_loop(
             agent_context.has_page_context = True
             logger.info("[AgenticLoop] DOM snapshot detected, interact_with_page tool enabled")
     
+    # Check if product has OAuth-based tool sources for reconnect_account
+    from apps.tools.models import MCPToolSource, OpenAPIToolSource
+
+    has_oauth_sources = await OpenAPIToolSource.objects.filter(
+        product=service.help_center_config,
+        is_active=True,
+        auth_type="oauth2_authorization_code",
+    ).aexists() or await MCPToolSource.objects.filter(
+        product=service.help_center_config,
+        is_active=True,
+        auth_type="oauth",
+    ).aexists()
+    if has_oauth_sources:
+        agent_context.reconnect_account_enabled = True
+
     # Restore tools from previous conversation turns
     if message.registered_tools:
         agent_context.register_tools(message.registered_tools)
@@ -573,6 +589,15 @@ async def run_agentic_loop(
                     parameters=arguments,
                     action=action,
                     thinking_text=thinking_text,
+                ):
+                    yield event
+
+            elif tool_name == "reconnect_account":
+                async for event in execute_reconnect_account(
+                    **_handler_common,
+                    tool_call_id=tool_call_id,
+                    arguments=arguments,
+                    caller=message.caller,
                 ):
                     yield event
 

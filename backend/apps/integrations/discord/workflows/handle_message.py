@@ -232,7 +232,8 @@ async def _handle_confirmation(
     """
     Handle a confirmation button click dispatched from DiscordInteractionsView.
 
-    Calls the customer's endpoint with action=tool_confirm. On success,
+    Routes to the correct executor (OpenAPI, MCP, or server-side endpoint)
+    based on ``source_meta`` embedded in the confirm payload. On success,
     posts the result directly. On failure, resumes the agentic loop with
     full LLM state so the model can reason about the error.
     """
@@ -246,13 +247,16 @@ async def _handle_confirmation(
         get_latest_session,
     )
     from apps.products.services.agent_resolver import resolve_agent_config
-    from apps.tools.services.dispatch import get_tool_endpoint, post_tool_call
+    from apps.tools.services.confirm_executor import execute_confirmed_tool
 
     confirm = workflow_input.tool_confirm
     tool_name = confirm.get('tool_name', '')
     call_id = confirm.get('call_id', '')
     confirm_payload = confirm.get('confirm_payload', {})
     conversation_id = confirm.get('conversation_id')
+
+    source_meta = confirm.get('source_meta') or {}
+    source_type = source_meta.get('source_type', 'server')
 
     adapter = DiscordResponseAdapter(
         installation=installation,
@@ -261,28 +265,25 @@ async def _handle_confirmation(
     )
 
     logger.info(
-        "[DISCORD] Handling confirmation: tool=%s, call_id=%s, conversation=%s, thread=%s",
-        tool_name, call_id, conversation_id, workflow_input.thread_id,
+        "[DISCORD] Handling confirmation: tool=%s, call_id=%s, conversation=%s, "
+        "source_type=%s, thread=%s",
+        tool_name, call_id, conversation_id, source_type, workflow_input.thread_id,
     )
-
-    endpoint = await get_tool_endpoint(str(product.id))
-    if not endpoint:
-        await adapter.send_error(f"No tool endpoint registered for {product.name}.")
-        return {'status': 'error', 'error': 'no_endpoint'}
 
     caller = CallerContext(channel='discord', channel_user_id=workflow_input.author_id)
 
-    result = await post_tool_call(
-        endpoint_url=endpoint.endpoint_url,
-        call_id=call_id,
+    result = await execute_confirmed_tool(
         tool_name=tool_name,
-        arguments={},
-        caller=caller,
-        timeout=30.0,
-        conversation_id=conversation_id,
-        product=product,
-        action="tool_confirm",
         confirm_payload=confirm_payload,
+        source_type=source_type,
+        product=product,
+        caller=caller,
+        conversation_id=conversation_id,
+        call_id=call_id,
+        openapi_source_id=source_meta.get('openapi_source_id'),
+        openapi_operation=source_meta.get('openapi_operation'),
+        mcp_source_id=source_meta.get('mcp_source_id'),
+        mcp_original_name=source_meta.get('mcp_original_name'),
     )
 
     is_success = (

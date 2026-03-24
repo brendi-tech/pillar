@@ -183,8 +183,9 @@ class WebResponseAdapter(ResponseAdapter):
         details: dict | None,
         confirm_payload: dict,
         conversation_id: str | None = None,
+        source_meta: dict | None = None,
     ) -> None:
-        await self._output_queue.put({
+        event = {
             'type': 'confirmation_request',
             'tool_name': tool_name,
             'call_id': call_id,
@@ -193,7 +194,10 @@ class WebResponseAdapter(ResponseAdapter):
             'details': details,
             'confirm_payload': confirm_payload,
             'conversation_id': conversation_id or self.conversation_id,
-        })
+        }
+        if source_meta:
+            event['source_meta'] = source_meta
+        await self._output_queue.put(event)
 
     async def on_plan(self, event: dict) -> None:
         await self._output_queue.put(event)

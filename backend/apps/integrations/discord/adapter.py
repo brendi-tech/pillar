@@ -115,6 +115,7 @@ class DiscordResponseAdapter(ResponseAdapter):
         self, tool_name: str, call_id: str, title: str, message: str,
         details: dict | None, confirm_payload: dict,
         conversation_id: str | None = None,
+        source_meta: dict | None = None,
     ) -> None:
         self._pending_confirmations.append({
             "tool_name": tool_name,
@@ -124,6 +125,7 @@ class DiscordResponseAdapter(ResponseAdapter):
             "details": details,
             "confirm_payload": confirm_payload,
             "conversation_id": conversation_id,
+            "source_meta": source_meta,
         })
 
     async def on_complete(self, event: dict) -> None:
@@ -156,6 +158,7 @@ class DiscordResponseAdapter(ResponseAdapter):
                 confirm_payload=conf["confirm_payload"],
                 conversation_id=conf.get("conversation_id"),
                 thread_id=self.thread_id,
+                source_meta=conf.get("source_meta"),
             )
             await self._send_message(embeds=[embed], components=components)
 

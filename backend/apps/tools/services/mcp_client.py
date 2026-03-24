@@ -425,8 +425,14 @@ async def execute_mcp_tool(
         },
     }
 
+    timeout_s = timeout_ms / 1000
+    logger.info(
+        "[MCP] tools/call %s on %s (source=%s, auth=%s, timeout=%ss)",
+        tool_name, mcp_source.url, mcp_source.name, mcp_source.auth_type, timeout_s,
+    )
+
     try:
-        async with httpx.AsyncClient(timeout=timeout_ms / 1000) as client:
+        async with httpx.AsyncClient(timeout=timeout_s) as client:
             try:
                 session_id = await _initialize_session(client, mcp_source.url, headers)
             except httpx.HTTPStatusError as exc:
@@ -436,7 +442,25 @@ async def execute_mcp_tool(
                         headers = _build_auth_headers(mcp_source)
                         session_id = await _initialize_session(client, mcp_source.url, headers)
                     else:
-                        return {"success": False, "error": "OAuth token expired"}
+                        logger.warning(
+                            "[MCP] AUTH_ERROR %s on %s: OAuth token expired, refresh failed",
+                            tool_name, mcp_source.url,
+                        )
+                        return {
+                            "success": False,
+                            "auth_error": True,
+                            "error": "OAuth token expired. Re-authorization is required.",
+                        }
+                elif exc.response.status_code == 401:
+                    logger.warning(
+                        "[MCP] AUTH_ERROR %s on %s: HTTP 401 (auth_type=%s)",
+                        tool_name, mcp_source.url, mcp_source.auth_type,
+                    )
+                    return {
+                        "success": False,
+                        "auth_error": True,
+                        "error": "Authentication credentials are invalid or expired.",
+                    }
                 else:
                     raise
 
@@ -449,20 +473,44 @@ async def execute_mcp_tool(
             call_headers["X-Pillar-Caller-Display-Name"] = getattr(caller, "display_name", "") or ""
 
             response = await client.post(mcp_source.url, json=payload, headers=call_headers)
-            response.raise_for_status()
+            try:
+                response.raise_for_status()
+            except httpx.HTTPStatusError as exc:
+                if exc.response.status_code == 401:
+                    logger.warning(
+                        "[MCP] AUTH_ERROR %s on %s: HTTP 401 on tools/call",
+                        tool_name, mcp_source.url,
+                    )
+                    return {
+                        "success": False,
+                        "auth_error": True,
+                        "error": "Authentication credentials are invalid or expired.",
+                    }
+                raise
             result = _parse_jsonrpc_response(response)
 
         if "error" in result:
-            return {"success": False, "error": result["error"].get("message", str(result["error"]))}
+            error_msg = result["error"].get("message", str(result["error"]))
+            logger.warning("[MCP] RPC_ERROR %s on %s: %s", tool_name, mcp_source.url, error_msg)
+            return {"success": False, "error": error_msg}
 
         content = result.get("result", {}).get("content", [])
+        logger.info("[MCP] OK %s on %s (%d content blocks)", tool_name, mcp_source.url, len(content))
         return {"success": True, "result": content}
     except httpx.TimeoutException:
+        logger.warning(
+            "[MCP] TIMEOUT %s on %s after %ss (source=%s)",
+            tool_name, mcp_source.url, timeout_s, mcp_source.name,
+        )
         return {"timed_out": True}
-    except httpx.ConnectError:
+    except httpx.ConnectError as exc:
+        logger.warning(
+            "[MCP] CONNECT_ERROR %s on %s (source=%s): %s",
+            tool_name, mcp_source.url, mcp_source.name, exc,
+        )
         return {"connection_error": True}
     except Exception as exc:
-        logger.exception("MCP tool call to %s failed: %s", mcp_source.url, exc)
+        logger.exception("[MCP] ERROR %s on %s (source=%s)", tool_name, mcp_source.url, mcp_source.name)
         return {"connection_error": True, "error": str(exc)}
 
 

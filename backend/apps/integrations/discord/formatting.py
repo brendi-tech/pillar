@@ -93,6 +93,7 @@ def build_confirmation_embed(
     confirm_payload: dict,
     conversation_id: str | None = None,
     thread_id: str = '',
+    source_meta: dict | None = None,
 ) -> tuple[dict, list[dict]]:
     """
     Build a Discord embed + Action Row for tool confirmation.
@@ -110,6 +111,8 @@ def build_confirmation_embed(
         value_data["conversation_id"] = conversation_id
     if thread_id:
         value_data["thread_id"] = thread_id
+    if source_meta:
+        value_data["source_meta"] = source_meta
 
     ref_key = f"discord_confirm:{_uuid.uuid4().hex[:16]}"
     cache.set(ref_key, value_data, timeout=CONFIRM_PAYLOAD_REDIS_TTL)
@@ -124,10 +127,23 @@ def build_confirmation_embed(
     }
 
     if details and isinstance(details, dict):
-        fields = [
-            {"name": str(k), "value": str(v)[:1024], "inline": True}
-            for k, v in list(details.items())[:EMBED_FIELDS_LIMIT]
-        ]
+        if 'method' in details and 'path' in details:
+            method = str(details.get('method', '')).upper()
+            path = str(details.get('path', ''))
+            fields = [{"name": "Endpoint", "value": f"`{method} {path}`", "inline": False}]
+            args = details.get('arguments')
+            if args and isinstance(args, dict):
+                arg_lines = [f"**{k}:** {v}" for k, v in args.items()]
+                fields.append({
+                    "name": "Arguments",
+                    "value": '\n'.join(arg_lines)[:1024],
+                    "inline": False,
+                })
+        else:
+            fields = [
+                {"name": str(k), "value": str(v)[:1024], "inline": True}
+                for k, v in list(details.items())[:EMBED_FIELDS_LIMIT]
+            ]
         embed["fields"] = fields
 
     components = [{

@@ -196,6 +196,62 @@ def build_sources_block(sources: list[dict]) -> dict:
     }
 
 
+def _format_details_blocks(details: dict) -> list[dict]:
+    """Format confirmation detail fields as Block Kit sections.
+
+    Detects OpenAPI-style details (with ``method`` + ``path`` keys) and
+    renders them compactly: ``POST /v1/plans.create`` on one line, with
+    arguments as readable key-value pairs.  Falls back to generic
+    key-value rendering for other detail shapes.
+    """
+    is_openapi = 'method' in details and 'path' in details
+    if is_openapi:
+        blocks: list[dict] = []
+        method = str(details.get('method', '')).upper()
+        path = str(details.get('path', ''))
+        blocks.append({
+            "type": "section",
+            "text": {"type": "mrkdwn", "text": f"`{method} {path}`"},
+        })
+        args = details.get('arguments')
+        if args and isinstance(args, dict):
+            arg_lines = [
+                f"• *{k}:* {_format_arg_value(v)}" for k, v in args.items()
+            ]
+            blocks.append({
+                "type": "section",
+                "text": {"type": "mrkdwn", "text": '\n'.join(arg_lines)},
+            })
+        return blocks
+
+    fields = [
+        {"type": "mrkdwn", "text": f"*{k}*\n{markdown_to_mrkdwn(str(v))}"}
+        for k, v in details.items()
+    ]
+    blocks = []
+    for i in range(0, len(fields), 10):
+        blocks.append({
+            "type": "section",
+            "fields": fields[i:i + 10],
+        })
+    return blocks
+
+
+def _format_arg_value(value: object) -> str:
+    """Render an argument value for Slack display."""
+    if isinstance(value, dict):
+        return ', '.join(f'{k}={v}' for k, v in value.items())
+    if isinstance(value, list):
+        items = []
+        for item in value:
+            if isinstance(item, dict):
+                items.append('{' + ', '.join(f'{k}={v}' for k, v in item.items()) + '}')
+            else:
+                items.append(str(item))
+        return '[' + ', '.join(items) + ']'
+    return str(value)
+
+
 def build_confirmation_blocks(
     tool_name: str,
     call_id: str,
@@ -204,6 +260,7 @@ def build_confirmation_blocks(
     details: dict | None,
     confirm_payload: dict,
     conversation_id: str | None = None,
+    source_meta: dict | None = None,
 ) -> list[dict]:
     """
     Build Block Kit blocks with Confirm/Cancel action buttons.
@@ -219,6 +276,8 @@ def build_confirmation_blocks(
     }
     if conversation_id:
         value_data["conversation_id"] = conversation_id
+    if source_meta:
+        value_data["source_meta"] = source_meta
     serialized = json.dumps(value_data, separators=(",", ":"), default=str)
 
     if len(serialized) > SLACK_BUTTON_VALUE_LIMIT:
@@ -243,15 +302,7 @@ def build_confirmation_blocks(
     })
 
     if details and isinstance(details, dict):
-        fields = [
-            {"type": "mrkdwn", "text": f"*{k}*\n{markdown_to_mrkdwn(str(v))}"}
-            for k, v in details.items()
-        ]
-        for i in range(0, len(fields), 10):
-            blocks.append({
-                "type": "section",
-                "fields": fields[i:i + 10],
-            })
+        blocks.extend(_format_details_blocks(details))
 
     blocks.append({
         "type": "actions",
