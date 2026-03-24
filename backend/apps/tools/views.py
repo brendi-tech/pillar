@@ -236,9 +236,10 @@ class MCPSourceViewSet(AsyncModelViewSet):
         write_serializer.is_valid(raise_exception=True)
         await self.aperform_create(write_serializer)
         read_serializer = MCPToolSourceSerializer(write_serializer.instance)
-        headers = self.get_success_headers(read_serializer.data)
+        data = await sync_to_async(lambda: read_serializer.data)()
+        headers = self.get_success_headers(data)
         return Response(
-            read_serializer.data,
+            data,
             status=status.HTTP_201_CREATED,
             headers=headers,
         )
@@ -492,9 +493,10 @@ class OpenAPISourceViewSet(AsyncModelViewSet):
         write_serializer.is_valid(raise_exception=True)
         await self._perform_create(write_serializer)
         read_serializer = OpenAPIToolSourceSerializer(write_serializer.instance)
-        headers = self.get_success_headers(read_serializer.data)
+        data = await sync_to_async(lambda: read_serializer.data)()
+        headers = self.get_success_headers(data)
         return Response(
-            read_serializer.data,
+            data,
             status=status.HTTP_201_CREATED,
             headers=headers,
         )
@@ -530,7 +532,7 @@ class OpenAPISourceViewSet(AsyncModelViewSet):
             await self._trigger_discovery(updated)
 
         read_serializer = OpenAPIToolSourceSerializer(updated)
-        return Response(read_serializer.data)
+        return Response(await sync_to_async(lambda: read_serializer.data)())
 
     async def update(self, request: Request, *args, **kwargs) -> Response:
         instance = await sync_to_async(self.get_object)()
@@ -539,7 +541,7 @@ class OpenAPISourceViewSet(AsyncModelViewSet):
         updated = await sync_to_async(write_serializer.save)()
         await self._trigger_discovery(updated)
         read_serializer = OpenAPIToolSourceSerializer(updated)
-        return Response(read_serializer.data)
+        return Response(await sync_to_async(lambda: read_serializer.data)())
 
     @action(detail=True, methods=["post"], url_path="refresh")
     async def refresh(self, request: Request, pk=None) -> Response:

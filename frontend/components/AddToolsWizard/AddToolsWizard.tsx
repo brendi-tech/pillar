@@ -722,7 +722,7 @@ function OpenAPISourceStep({ onBack }: { onBack: () => void }) {
   const [createdSource, setCreatedSource] = useState<OpenAPIToolSource | null>(null);
 
   const apiBaseUrl =
-    process.env.NEXT_PUBLIC_API_URL || "https://your-pillar-instance.com";
+    process.env.NEXT_PUBLIC_PILLAR_API_URL || "http://localhost:8003";
   const oauthRedirectUri = `${apiBaseUrl}/api/tools/oauth/callback/`;
 
   const createMutation = useMutation({
