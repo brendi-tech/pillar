@@ -83,7 +83,8 @@ class SnippetCreateSerializer(serializers.Serializer):
         from apps.products.models import Product
 
         request = self.context.get('request')
-        organization = request.user.primary_organization
+        from common.utils.organization import resolve_organization_from_request
+        organization = resolve_organization_from_request(request)
 
         # Get product from request (required for proper gating)
         import uuid as _uuid

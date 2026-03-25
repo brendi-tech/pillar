@@ -213,11 +213,8 @@ class KnowledgeSourceCreateSerializer(serializers.ModelSerializer):
         logger = logging.getLogger(__name__)
         
         request = self.context.get('request')
-        organization = request.user.primary_organization
-
-        if not organization:
-            # Fallback to first organization if no primary set
-            organization = request.user.organizations.first()
+        from common.utils.organization import resolve_organization_from_request
+        organization = resolve_organization_from_request(request)
 
         if not organization:
             raise serializers.ValidationError({

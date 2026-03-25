@@ -91,8 +91,9 @@ def start_oauth(request):
 
     try:
         from apps.products.models import Product
+        from common.utils.organization import resolve_organization_from_request
 
-        organization = request.user.primary_organization
+        organization = resolve_organization_from_request(request)
 
         # Get product from request (required for proper gating)
         product_id = request.query_params.get('product') or request.data.get('product')

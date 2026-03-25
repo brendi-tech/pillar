@@ -17,6 +17,7 @@ from apps.billing import services as billing_service
 from apps.billing.constants import get_effective_limit, get_plan_limits, get_weighted_usage
 from apps.analytics.models import ChatMessage
 from apps.users.permissions import IsAuthenticatedAdmin
+from common.utils.organization import resolve_organization_from_request
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +28,7 @@ class SubscriptionView(APIView):
     permission_classes = [IsAuthenticatedAdmin]
 
     def get(self, request):
-        org = request.user.primary_organization
+        org = resolve_organization_from_request(request)
         if not org:
             return Response(
                 {"error": "No organization found"},
@@ -78,7 +79,7 @@ class CheckoutView(APIView):
         return None
 
     def post(self, request):
-        org = request.user.primary_organization
+        org = resolve_organization_from_request(request)
         if not org:
             return Response(
                 {"error": "No organization found"},
@@ -155,7 +156,7 @@ class PortalView(APIView):
     permission_classes = [IsAuthenticatedAdmin]
 
     def post(self, request):
-        org = request.user.primary_organization
+        org = resolve_organization_from_request(request)
         if not org:
             return Response(
                 {"error": "No organization found"},
@@ -184,7 +185,7 @@ class VerifySessionView(APIView):
     permission_classes = [IsAuthenticatedAdmin]
 
     def post(self, request):
-        org = request.user.primary_organization
+        org = resolve_organization_from_request(request)
         if not org:
             return Response(
                 {"error": "No organization found"},
@@ -255,7 +256,7 @@ class CancelDowngradeView(APIView):
     permission_classes = [IsAuthenticatedAdmin]
 
     def post(self, request):
-        org = request.user.primary_organization
+        org = resolve_organization_from_request(request)
         if not org:
             return Response(
                 {"error": "No organization found"},
@@ -280,7 +281,7 @@ class CancelSubscriptionView(APIView):
     permission_classes = [IsAuthenticatedAdmin]
 
     def post(self, request):
-        org = request.user.primary_organization
+        org = resolve_organization_from_request(request)
         if not org:
             return Response(
                 {"error": "No organization found"},
@@ -311,7 +312,7 @@ class UsageView(APIView):
     permission_classes = [IsAuthenticatedAdmin]
 
     def get(self, request):
-        org = request.user.primary_organization
+        org = resolve_organization_from_request(request)
         if not org:
             return Response(
                 {"error": "No organization found"},

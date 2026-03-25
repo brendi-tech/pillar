@@ -87,9 +87,8 @@ class PendingUploadViewSet(viewsets.ModelViewSet):
             )
         
         # Get organization
-        organization = request.user.primary_organization
-        if not organization:
-            organization = request.user.organizations.first()
+        from common.utils.organization import resolve_organization_from_request
+        organization = resolve_organization_from_request(request)
         
         if not organization:
             return Response(
