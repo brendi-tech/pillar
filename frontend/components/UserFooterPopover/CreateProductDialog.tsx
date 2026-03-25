@@ -25,12 +25,14 @@ interface CreateProductDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   switchProduct: (id: string, product?: AdminProduct) => void;
+  organizationId?: string;
 }
 
 export function CreateProductDialog({
   open,
   onOpenChange,
   switchProduct,
+  organizationId,
 }: CreateProductDialogProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -67,7 +69,11 @@ export function CreateProductDialog({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (productName.trim()) {
-      createProduct.mutate({ name: productName.trim() });
+      const payload: Record<string, string> = { name: productName.trim() };
+      if (organizationId) {
+        payload.organization = organizationId;
+      }
+      createProduct.mutate(payload as { name: string });
     }
   };
 

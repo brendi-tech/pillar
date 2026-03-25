@@ -57,6 +57,13 @@ export const organizationInvitationsQuery = (id: string) =>
 // =============================================================================
 
 /**
+ * Mutation to create a new organization. Caller becomes admin.
+ */
+export const createOrganizationMutation = () => ({
+  mutationFn: (data: { name: string }) => organizationAPI.create(data),
+});
+
+/**
  * Mutation to update organization fields (e.g. billing_email).
  */
 export const updateOrganizationMutation = () => ({

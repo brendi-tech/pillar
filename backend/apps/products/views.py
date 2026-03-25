@@ -34,6 +34,19 @@ from common.services.subdomain_generator import SubdomainGeneratorService
 from django.core.exceptions import ValidationError
 
 logger = logging.getLogger(__name__)
+
+
+def resolve_organization_from_request(request):
+    """Resolve org from request body/query params, falling back to primary_organization."""
+    user_orgs = request.user.organizations.all()
+    org_id = request.data.get('organization') or request.query_params.get('organization')
+    if org_id:
+        org = user_orgs.filter(id=org_id).first()
+        if org:
+            return org
+    return request.user.primary_organization
+
+
 from apps.products.serializers import (
     ProductSerializer, ProductCreateSerializer,
     PlatformSerializer, ActionSerializer,
@@ -69,7 +82,7 @@ class ProductViewSet(viewsets.ModelViewSet):
         return ProductSerializer
     
     def perform_create(self, serializer):
-        organization = self.request.user.primary_organization
+        organization = resolve_organization_from_request(self.request)
         
         # Auto-generate subdomain if not provided
         subdomain = serializer.validated_data.get('subdomain')
@@ -636,7 +649,7 @@ class PlatformViewSet(viewsets.ModelViewSet):
         ).order_by('-created_at')
     
     def perform_create(self, serializer):
-        serializer.save(organization=self.request.user.primary_organization)
+        serializer.save(organization=resolve_organization_from_request(self.request))
 
 
 class ActionViewSet(viewsets.ModelViewSet):
@@ -656,7 +669,7 @@ class ActionViewSet(viewsets.ModelViewSet):
         )
     
     def perform_create(self, serializer):
-        serializer.save(organization=self.request.user.primary_organization)
+        serializer.save(organization=resolve_organization_from_request(self.request))
     
     @action(detail=True, methods=['post'])
     def execute(self, request, pk=None):

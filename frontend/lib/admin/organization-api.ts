@@ -13,6 +13,14 @@ import { apiClient } from "./api-client";
 
 export const organizationAPI = {
   /**
+   * Create a new organization. The calling user becomes an admin.
+   */
+  create: async (data: { name: string }): Promise<{ id: string; name: string }> => {
+    const response = await apiClient.post(`/api/users/organizations/`, data);
+    return response.data;
+  },
+
+  /**
    * Partially update an organization (e.g. billing_email).
    */
   update: async (
