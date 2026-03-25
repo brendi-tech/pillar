@@ -102,6 +102,7 @@ MIDDLEWARE = [
     # CORS must be first to handle preflight OPTIONS requests before other middleware
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'apps.mcp.middleware.allowed_hosts.DynamicAllowedHostsMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',  # Serve static files in production
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
