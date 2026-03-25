@@ -70,7 +70,7 @@ async def handle_account_link(workflow_input: SlackAccountLinkInput, context: Co
     await sync_to_async(webhook.send)(
         text=(
             f"Click to link your account: <{link_url}|Connect Account>\n\n"
-            f"This link expires in 10 minutes."
+            f"This link expires in 5 minutes."
         ),
         response_type="ephemeral",
     )

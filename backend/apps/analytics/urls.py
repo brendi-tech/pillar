@@ -7,7 +7,7 @@ from rest_framework.routers import DefaultRouter
 from apps.analytics.viewsets import (
     SearchViewSet,
     WidgetSessionViewSet, ChatConversationViewSet, ChatMessageViewSet,
-    VisitorViewSet,
+    VisitorViewSet, UnifiedUserViewSet,
 )
 from apps.analytics.views import (
     OverviewStatsView, PageViewsView, ArticlePerformanceView,
@@ -21,6 +21,7 @@ router.register(r'widget-sessions', WidgetSessionViewSet, basename='widget-sessi
 router.register(r'conversations', ChatConversationViewSet, basename='chat-conversation')
 router.register(r'messages', ChatMessageViewSet, basename='chat-message')
 router.register(r'visitors', VisitorViewSet, basename='visitor')
+router.register(r'users/unified', UnifiedUserViewSet, basename='unified-user')
 
 app_name = 'analytics'
 

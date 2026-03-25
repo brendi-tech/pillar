@@ -52,10 +52,21 @@ export const docsNavigation: NavSection[] = [
     title: "Core Concepts",
     slug: "core-concepts",
     items: [
-      { title: "Agents", href: "/docs/core-concepts/agents" },
       { title: "Tools", href: "/docs/core-concepts/tools" },
       { title: "Knowledge Base", href: "/docs/core-concepts/knowledge-base" },
       { title: "Human Escalation", href: "/docs/core-concepts/human-escalation" },
+    ],
+  },
+  {
+    title: "Agents",
+    slug: "agents",
+    items: [
+      { title: "Overview", href: "/docs/agents/overview" },
+      { title: "Web Widget", href: "/docs/agents/web-widget" },
+      { title: "Slack", href: "/docs/agents/slack" },
+      { title: "Discord", href: "/docs/agents/discord" },
+      { title: "API", href: "/docs/agents/api" },
+      { title: "MCP Server", href: "/docs/agents/mcp-server" },
     ],
   },
   {
@@ -105,6 +116,7 @@ export const docsNavigation: NavSection[] = [
       { title: "Defining Tools", href: "/docs/server-sdks/defining-tools" },
       { title: "Framework Integration", href: "/docs/server-sdks/frameworks" },
       { title: "Confirmation Flows", href: "/docs/server-sdks/confirmations" },
+      { title: "Identity Linking", href: "/docs/server-sdks/identity-linking" },
       { title: "Webhook Security", href: "/docs/server-sdks/webhook-security" },
       { title: "Testing", href: "/docs/server-sdks/testing" },
     ],

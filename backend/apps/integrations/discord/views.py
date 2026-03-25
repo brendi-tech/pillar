@@ -350,8 +350,8 @@ def _verify_discord_signature(request) -> tuple[bool, 'DiscordInstallation | Non
         public_key = getattr(settings, 'DISCORD_PUBLIC_KEY', '')
 
     if not public_key:
-        logger.warning("[DISCORD] No public key found for application_id=%s, skipping verification", application_id)
-        return True, installation
+        logger.warning("[DISCORD] No public key found for application_id=%s, rejecting request", application_id)
+        return False, None
 
     from nacl.signing import VerifyKey
     from nacl.exceptions import BadSignatureError

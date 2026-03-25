@@ -5,8 +5,8 @@ import { Search } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 import { Input } from "@/components/ui/input";
-import type { Visitor } from "@/lib/admin/visitors-api";
-import { visitorsListInfiniteQuery } from "@/queries/visitors.queries";
+import type { UnifiedUser } from "@/lib/admin/visitors-api";
+import { unifiedUsersInfiniteQuery } from "@/queries/visitors.queries";
 
 import { PageHeader } from "../shared";
 import { UserDetailModal } from "../UserDetailModal";
@@ -29,7 +29,7 @@ function useDebounce<T>(value: T, delay: number): T {
 }
 
 export function UsersPageContent() {
-  const [selectedVisitor, setSelectedVisitor] = useState<Visitor | null>(null);
+  const [selectedUser, setSelectedUser] = useState<UnifiedUser | null>(null);
   const [searchInput, setSearchInput] = useState("");
   const debouncedSearch = useDebounce(searchInput, 300);
 
@@ -41,20 +41,20 @@ export function UsersPageContent() {
     isFetchingNextPage,
     fetchNextPage,
   } = useInfiniteQuery(
-    visitorsListInfiniteQuery({
+    unifiedUsersInfiniteQuery({
       page_size: 20,
       search: debouncedSearch || undefined,
     })
   );
 
-  const visitors = data?.pages.flatMap((page) => page.results) ?? [];
+  const users = data?.pages.flatMap((page) => page.results) ?? [];
 
-  const handleRowClick = (visitor: Visitor) => {
-    setSelectedVisitor(visitor);
+  const handleRowClick = (user: UnifiedUser) => {
+    setSelectedUser(user);
   };
 
   const handleModalClose = () => {
-    setSelectedVisitor(null);
+    setSelectedUser(null);
   };
 
   const handleLoadMore = useCallback(() => {
@@ -65,7 +65,7 @@ export function UsersPageContent() {
     <div className="p-page flex h-full max-w-page mx-auto overflow-hidden flex-col gap-6 max-md:gap-4">
       <PageHeader
         title="Users"
-        description="View end-users who have been identified via the SDK"
+        description="All identified users across web, Discord, Slack, and other channels"
       />
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -79,7 +79,7 @@ export function UsersPageContent() {
 
       <div className="flex-1 overflow-hidden">
         <UsersTable
-          visitors={visitors}
+          users={users}
           isLoading={isPending}
           isError={isError}
           onRowClick={handleRowClick}
@@ -90,8 +90,8 @@ export function UsersPageContent() {
       </div>
 
       <UserDetailModal
-        visitor={selectedVisitor}
-        open={selectedVisitor !== null}
+        user={selectedUser}
+        open={selectedUser !== null}
         onOpenChange={(open: boolean) => {
           if (!open) handleModalClose();
         }}

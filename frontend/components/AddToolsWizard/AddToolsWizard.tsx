@@ -60,6 +60,7 @@ import {
   Upload,
   X,
 } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useRef, useState } from "react";
 
@@ -1852,7 +1853,7 @@ function OpenAPIReviewScreen({
         </div>
       </ScrollArea>
 
-      <div className="flex gap-2">
+      <div className="flex items-center gap-2">
         <Button variant="outline" onClick={onDone}>
           Skip
         </Button>
@@ -1860,6 +1861,14 @@ function OpenAPIReviewScreen({
           {isSaving && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
           Save & Continue
         </Button>
+        {source.auth_type === "oauth2_authorization_code" && (
+          <Link
+            href={`/tools/openapi/${source.id}`}
+            className="ml-auto text-xs text-muted-foreground hover:text-foreground underline underline-offset-2"
+          >
+            Manage authentication settings
+          </Link>
+        )}
       </div>
     </div>
   );

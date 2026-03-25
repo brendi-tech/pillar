@@ -32,7 +32,8 @@ class ProductSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'organization_id', 'name', 'subdomain', 'website_url', 'config',
             'is_default', 'auto_theme_generated', 'show_article_owner',
-            'default_language', 'agent_guidance', 'sync_secret_configured', 'sync_secrets_count',
+            'default_language', 'agent_guidance', 'identity_link_url',
+            'sync_secret_configured', 'sync_secrets_count',
             'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'organization_id', 'sync_secret_configured', 'sync_secrets_count', 'created_at', 'updated_at']

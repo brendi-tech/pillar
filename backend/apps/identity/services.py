@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import logging
 import secrets
-import string
 from datetime import timedelta
 from typing import TYPE_CHECKING
 
@@ -25,9 +24,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-LINK_CODE_LENGTH = 6
-LINK_CODE_EXPIRY_MINUTES = 10
-LINK_CODE_ALPHABET = string.ascii_uppercase + string.digits
+LINK_CODE_EXPIRY_MINUTES = 5
 
 
 class CodeExpiredError(Exception):
@@ -116,9 +113,9 @@ async def resolve_identity(
     )
 
 
-def _generate_code(length: int = LINK_CODE_LENGTH) -> str:
-    """Generate a cryptographically random alphanumeric code."""
-    return ''.join(secrets.choice(LINK_CODE_ALPHABET) for _ in range(length))
+def _generate_code() -> str:
+    """Generate a cryptographically random URL-safe code (128-bit entropy)."""
+    return secrets.token_urlsafe(16)
 
 
 async def generate_link_code(
@@ -202,15 +199,24 @@ def generate_link_code_sync(
 
 
 @transaction.atomic
-def confirm_link(code_str: str, external_user_id: str) -> IdentityMapping:
+def confirm_link(
+    code_str: str,
+    external_user_id: str,
+    product: Product | None = None,
+) -> IdentityMapping:
     """
     Validate a link code and create an IdentityMapping.
 
     Uses select_for_update to prevent race conditions on double-redemption.
+    When product is provided, the code must belong to that product (prevents
+    cross-product code theft via a stolen sync secret).
     Raises CodeNotFoundError, CodeExpiredError, or CodeAlreadyUsedError.
     """
     try:
-        code = LinkCode.objects.select_for_update().get(code=code_str)
+        lookup = {'code': code_str}
+        if product is not None:
+            lookup['product'] = product
+        code = LinkCode.objects.select_for_update().get(**lookup)
     except LinkCode.DoesNotExist:
         raise CodeNotFoundError("Link code not found.")
 

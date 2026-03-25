@@ -4,50 +4,48 @@ import {
   DataTable,
   type DataTableColumn,
 } from "@/components/DataTable";
-import type { Visitor } from "@/lib/admin/visitors-api";
+import { Badge } from "@/components/ui/badge";
+import type { UnifiedUser } from "@/lib/admin/visitors-api";
+import { CHANNEL_BADGE_STYLES } from "@/types/agent";
 import { formatDistanceToNow } from "date-fns";
-import { MessageSquare, Users } from "lucide-react";
+import { Users } from "lucide-react";
 import { UserCardList } from "./UserCardList";
 
 interface UsersTableProps {
-  visitors: Visitor[];
+  users: UnifiedUser[];
   isLoading: boolean;
   isError: boolean;
-  onRowClick: (visitor: Visitor) => void;
+  onRowClick: (user: UnifiedUser) => void;
   hasNextPage: boolean | undefined;
   isFetchingNextPage: boolean;
   onLoadMore: () => void;
 }
 
-function truncateId(id: string, maxLength = 8): string {
-  if (id.length <= maxLength) return id;
-  return `${id.slice(0, maxLength)}...`;
+function ChannelBadges({ channels }: { channels: string[] }) {
+  return (
+    <div className="flex flex-wrap gap-1">
+      {channels.map((ch) => (
+        <Badge
+          key={ch}
+          variant="secondary"
+          className={`text-[10px] px-1.5 py-0 font-medium capitalize ${CHANNEL_BADGE_STYLES[ch] ?? ""}`}
+        >
+          {ch}
+        </Badge>
+      ))}
+    </div>
+  );
 }
 
-const columns: DataTableColumn<Visitor>[] = [
-  {
-    id: "visitor-id",
-    header: "Visitor ID",
-    width: "w-[120px]",
-    skeletonWidth: "w-20",
-    cell: (row) => (
-      <span className="font-mono text-xs text-muted-foreground">
-        {truncateId(row.visitor_id)}
-      </span>
-    ),
-  },
+const columns: DataTableColumn<UnifiedUser>[] = [
   {
     id: "user-id",
     header: "User ID",
-    width: "w-[140px]",
-    skeletonWidth: "w-20",
+    width: "w-[180px]",
+    skeletonWidth: "w-24",
     cell: (row) => (
-      <span className="font-mono text-xs text-muted-foreground">
-        {row.external_user_id ? (
-          truncateId(row.external_user_id)
-        ) : (
-          <span className="italic">-</span>
-        )}
+      <span className="font-mono text-xs text-muted-foreground truncate block max-w-[160px]" title={row.external_user_id}>
+        {row.external_user_id}
       </span>
     ),
   },
@@ -57,48 +55,52 @@ const columns: DataTableColumn<Visitor>[] = [
     skeletonWidth: "w-32",
     cell: (row) =>
       row.name || (
-        <span className="text-muted-foreground italic">No name</span>
+        <span className="text-muted-foreground italic">-</span>
       ),
   },
   {
-    id: "email",
-    header: "Email",
-    skeletonWidth: "w-40",
-    cell: (row) =>
-      row.email || (
-        <span className="text-muted-foreground italic">No email</span>
-      ),
+    id: "channels",
+    header: "Channels",
+    width: "w-[200px]",
+    skeletonWidth: "w-28",
+    cell: (row) => <ChannelBadges channels={row.channels} />,
   },
   {
-    id: "conversations",
-    header: "Conversations",
-    width: "w-[100px]",
-    centered: true,
-    skeletonWidth: "w-8",
-    cell: (row) => (
-      <span className="inline-flex items-center gap-1 text-muted-foreground">
-        <MessageSquare className="h-3 w-3" />
-        {row.conversation_count}
-      </span>
-    ),
-  },
-  {
-    id: "last-seen",
-    header: "Last Seen",
+    id: "first-seen",
+    header: "First Seen",
     width: "w-[140px]",
     skeletonWidth: "w-24",
-    cell: (row) => (
-      <span className="text-muted-foreground">
-        {formatDistanceToNow(new Date(row.last_seen_at), {
-          addSuffix: true,
-        })}
-      </span>
-    ),
+    cell: (row) =>
+      row.first_seen_at ? (
+        <span className="text-muted-foreground">
+          {formatDistanceToNow(new Date(row.first_seen_at), {
+            addSuffix: true,
+          })}
+        </span>
+      ) : (
+        <span className="text-muted-foreground italic">-</span>
+      ),
+  },
+  {
+    id: "last-active",
+    header: "Last Active",
+    width: "w-[140px]",
+    skeletonWidth: "w-24",
+    cell: (row) =>
+      row.last_seen_at ? (
+        <span className="text-muted-foreground">
+          {formatDistanceToNow(new Date(row.last_seen_at), {
+            addSuffix: true,
+          })}
+        </span>
+      ) : (
+        <span className="text-muted-foreground italic">-</span>
+      ),
   },
 ];
 
 export function UsersTable({
-  visitors,
+  users,
   isLoading,
   isError,
   onRowClick,
@@ -108,10 +110,9 @@ export function UsersTable({
 }: UsersTableProps) {
   return (
     <>
-      {/* Mobile: Card list */}
       <div className="md:hidden">
         <UserCardList
-          visitors={visitors}
+          users={users}
           isLoading={isLoading}
           isError={isError}
           onRowClick={onRowClick}
@@ -121,12 +122,11 @@ export function UsersTable({
         />
       </div>
 
-      {/* Desktop: Data table */}
       <div className="hidden md:block">
         <DataTable
           columns={columns}
-          data={visitors}
-          keyExtractor={(row) => row.id}
+          data={users}
+          keyExtractor={(row) => row.external_user_id}
           isLoading={isLoading}
           isError={isError}
           onRowClick={onRowClick}
@@ -135,7 +135,7 @@ export function UsersTable({
             icon: <Users className="h-8 w-8" />,
             title: "No users found",
             description:
-              "Users will appear here when they are identified via the SDK",
+              "Users will appear here when they interact via the SDK or linked channels",
           }}
           infiniteScroll={{
             hasNextPage,

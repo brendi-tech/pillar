@@ -73,7 +73,7 @@ async def handle_account_link(workflow_input: DiscordAccountLinkInput, context: 
             resp = await client.post(webhook_url, json={
                 "content": (
                     f"Click to link your account: [{link_url}]({link_url})\n\n"
-                    f"This link expires in 10 minutes."
+                    f"This link expires in 5 minutes."
                 ),
                 "flags": 64,
             })

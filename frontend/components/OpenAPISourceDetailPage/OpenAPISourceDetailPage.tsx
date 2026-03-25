@@ -146,7 +146,9 @@ export function OpenAPISourceDetailPage({
   const deleteMutation = useMutation({
     ...deleteOpenAPISourceMutation(),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: openAPISourceKeys.all });
+      queryClient.removeQueries({ queryKey: openAPISourceKeys.detail(sourceId) });
+      queryClient.removeQueries({ queryKey: openAPISourceKeys.versions(sourceId) });
+      queryClient.invalidateQueries({ queryKey: openAPISourceKeys.lists() });
       toast.success("API source deleted");
       router.push("/tools");
     },

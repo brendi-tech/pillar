@@ -149,9 +149,9 @@ class TestAgentToolsSchema:
 
     def test_all_tools_combined(self):
         """AGENT_TOOLS should contain all core + conditional tools for validation."""
-        assert len(AGENT_TOOLS) == 5
+        assert len(AGENT_TOOLS) == 6
         tool_names = [tool["name"] for tool in AGENT_TOOLS]
-        assert set(tool_names) == {"search", "get_article", "interact_with_page", "read_mcp_resource", "load_skill"}
+        assert set(tool_names) == {"search", "get_article", "interact_with_page", "read_mcp_resource", "load_skill", "reconnect_account"}
 
     def test_all_tools_have_required_fields(self):
         """All tools should have name, description, and parameters."""

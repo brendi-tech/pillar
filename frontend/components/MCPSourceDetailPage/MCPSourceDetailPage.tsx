@@ -126,7 +126,8 @@ export function MCPSourceDetailPage({ sourceId }: MCPSourceDetailPageProps) {
   const deleteMutation = useMutation({
     ...deleteMcpSourceMutation(),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: mcpSourceKeys.all });
+      queryClient.removeQueries({ queryKey: mcpSourceKeys.detail(sourceId) });
+      queryClient.invalidateQueries({ queryKey: mcpSourceKeys.lists() });
       toast.success("MCP source deleted");
       router.push("/tools");
     },

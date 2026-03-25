@@ -16,15 +16,15 @@ class TestVerifyDiscordSignature:
 
     @override_settings(DISCORD_PUBLIC_KEY="")
     @patch("apps.integrations.discord.views.DiscordInstallation.objects")
-    def test_no_key_anywhere_passes_with_warning(self, mock_qs):
-        """When no public key exists (env or DB), verification passes (dev mode)."""
+    def test_no_key_anywhere_rejects_request(self, mock_qs):
+        """When no public key exists (env or DB), verification rejects the request."""
         from apps.integrations.discord.models import DiscordInstallation
         mock_qs.get.side_effect = DiscordInstallation.DoesNotExist
 
         request = MagicMock()
         request.body = b'{"type": 1, "application_id": "unknown-app"}'
         verified, installation = _verify_discord_signature(request)
-        assert verified is True
+        assert verified is False
         assert installation is None
 
     @override_settings(DISCORD_PUBLIC_KEY="aabbccdd")
@@ -71,7 +71,7 @@ class TestVerifyDiscordSignature:
     @override_settings(DISCORD_PUBLIC_KEY="")
     @patch("apps.integrations.discord.views.DiscordInstallation.objects")
     def test_installation_not_found_falls_through(self, mock_qs):
-        """When no installation matches application_id, falls through to global key."""
+        """When no installation matches application_id and no global key, rejects request."""
         from apps.integrations.discord.models import DiscordInstallation
         mock_qs.get.side_effect = DiscordInstallation.DoesNotExist
 
@@ -79,7 +79,7 @@ class TestVerifyDiscordSignature:
         request.body = b'{"type": 1, "application_id": "unknown"}'
 
         verified, installation = _verify_discord_signature(request)
-        assert verified is True  # no key anywhere -> passes in dev mode
+        assert verified is False
         assert installation is None
 
 

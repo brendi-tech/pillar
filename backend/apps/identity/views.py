@@ -16,6 +16,7 @@ from rest_framework import status
 from rest_framework.parsers import JSONParser
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from apps.identity.serializers import (
@@ -64,6 +65,8 @@ class LinkRequestView(APIView):
     """
     permission_classes = [AllowAny]
     authentication_classes = []
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'link_code'
 
     def post(self, request):
         product, organization = _get_product_context(request)
@@ -105,6 +108,8 @@ class LinkConfirmView(APIView):
     """
     permission_classes = [AllowAny]
     authentication_classes = []
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'link_code'
 
     def post(self, request):
         product, organization = _get_product_context(request)
@@ -122,18 +127,31 @@ class LinkConfirmView(APIView):
             mapping = confirm_link(
                 code_str=data['code'],
                 external_user_id=data['external_user_id'],
+                product=product,
             )
         except CodeNotFoundError:
+            logger.warning(
+                "link-confirm failed: code_not_found ip=%s product=%s",
+                request.META.get('REMOTE_ADDR'), product.id,
+            )
             return Response(
                 {'error': 'code_not_found', 'message': 'Link code not found.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         except CodeExpiredError:
+            logger.warning(
+                "link-confirm failed: code_expired ip=%s product=%s",
+                request.META.get('REMOTE_ADDR'), product.id,
+            )
             return Response(
                 {'error': 'code_expired', 'message': 'This linking code has expired. Please run /pillar connect again.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         except CodeAlreadyUsedError:
+            logger.warning(
+                "link-confirm failed: code_already_used ip=%s product=%s",
+                request.META.get('REMOTE_ADDR'), product.id,
+            )
             return Response(
                 {'error': 'code_already_used', 'message': 'This linking code has already been used.'},
                 status=status.HTTP_400_BAD_REQUEST,

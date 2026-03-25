@@ -1,7 +1,7 @@
 "use client";
 
 import { format, formatDistanceToNow } from "date-fns";
-import { Copy, Mail, MessageSquare, User } from "lucide-react";
+import { Copy, Mail, Unlink, User } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -15,37 +15,31 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Spinner } from "@/components/ui/spinner";
-import type { Visitor } from "@/lib/admin/visitors-api";
-import { visitorDetailQuery } from "@/queries/visitors.queries";
-import type { VisitorSummary } from "@/types/admin";
-import { useQuery } from "@tanstack/react-query";
+import type { UnifiedUser, Visitor } from "@/lib/admin/visitors-api";
+import { visitorsAPI } from "@/lib/admin/visitors-api";
+import { v2Fetch } from "@/lib/admin/v2/api-client";
+import { CHANNEL_BADGE_STYLES } from "@/types/agent";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { unifiedUsersKeys } from "@/queries/visitors.queries";
+
+interface IdentityMappingRecord {
+  id: string;
+  channel: string;
+  channel_user_id: string;
+  external_user_id: string;
+  linked_at: string;
+  linked_via: string;
+  is_active: boolean;
+}
 
 export interface UserDetailModalProps {
-  /** Full visitor data - if provided, no fetch is needed */
+  user?: UnifiedUser | null;
+  /** @deprecated Use `user` instead */
   visitor?: Visitor | null;
-  /** Visitor summary - triggers a fetch for full data */
-  visitorSummary?: VisitorSummary | null;
-  /** Visitor ID - triggers a fetch for full data */
+  /** Opens modal and fetches the visitor by ID (for ConversationsPage compat) */
   visitorId?: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-}
-
-function getStatusBadgeVariant(
-  status: string
-): "default" | "secondary" | "destructive" | "outline" {
-  switch (status) {
-    case "resolved":
-      return "default";
-    case "escalated":
-      return "destructive";
-    case "active":
-      return "secondary";
-    case "abandoned":
-      return "outline";
-    default:
-      return "secondary";
-  }
 }
 
 interface DetailRowProps {
@@ -92,32 +86,57 @@ function DetailRow({ label, value, copyable, mono }: DetailRowProps) {
 }
 
 export function UserDetailModal({
-  visitor: visitorProp,
-  visitorSummary,
+  user,
+  visitor,
   visitorId,
   open,
   onOpenChange,
 }: UserDetailModalProps) {
-  const idToFetch = visitorId || visitorSummary?.id;
-  const needsFetch = !visitorProp && !!idToFetch;
+  const queryClient = useQueryClient();
 
-  const {
-    data: fetchedVisitor,
-    isPending,
-    isError,
-  } = useQuery({
-    ...visitorDetailQuery(idToFetch || ""),
-    enabled: needsFetch && open,
+  const { data: fetchedVisitor } = useQuery({
+    queryKey: ["visitor-detail", visitorId],
+    queryFn: () => visitorsAPI.getVisitor(visitorId!),
+    enabled: open && !!visitorId && !user && !visitor,
   });
 
-  const visitor = visitorProp || fetchedVisitor;
-  const displayName = visitor?.name || visitorSummary?.name || "Unknown User";
-  const displayEmail = visitor?.email || visitorSummary?.email;
+  const resolvedVisitor = visitor || fetchedVisitor;
+  const displayName = user?.name || resolvedVisitor?.name || "Unknown User";
+  const displayEmail = user?.email || resolvedVisitor?.email;
+  const externalUserId = user?.external_user_id || resolvedVisitor?.external_user_id;
+
+  const {
+    data: mappings,
+    isPending: mappingsLoading,
+  } = useQuery({
+    queryKey: ["identity-mappings", externalUserId],
+    queryFn: async () => {
+      const res = await v2Fetch<{ results: IdentityMappingRecord[] }>(
+        "/identity/mappings/",
+        { params: { external_user_id: externalUserId!, is_active: true } }
+      );
+      return res.results;
+    },
+    enabled: open && !!externalUserId,
+  });
+
+  const revokeMutation = useMutation({
+    mutationFn: async (mappingId: string) => {
+      await v2Fetch(`/identity/mappings/${mappingId}/`, { method: "DELETE" });
+    },
+    onSuccess: () => {
+      toast.success("Channel link revoked");
+      queryClient.invalidateQueries({ queryKey: ["identity-mappings", externalUserId] });
+      queryClient.invalidateQueries({ queryKey: unifiedUsersKeys.all });
+    },
+    onError: () => {
+      toast.error("Failed to revoke link");
+    },
+  });
 
   if (!open) return null;
 
-  const hasMetadata =
-    visitor?.metadata && Object.keys(visitor.metadata).length > 0;
+  const hasUser = !!user || !!resolvedVisitor;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -143,19 +162,7 @@ export function UserDetailModal({
           </div>
         </DialogHeader>
 
-        {needsFetch && isPending && (
-          <div className="flex items-center justify-center py-12">
-            <Spinner size="lg" />
-          </div>
-        )}
-
-        {needsFetch && isError && (
-          <div className="flex flex-col items-center justify-center gap-2 py-12 text-muted-foreground">
-            <p>Failed to load user details</p>
-          </div>
-        )}
-
-        {visitor && (
+        {hasUser && (
           <ScrollArea
             className="max-h-[65vh] w-full overflow-hidden"
             viewportClassName="w-full overflow-hidden [&>div]:w-full [&>div]:overflow-hidden [&>div]:!block"
@@ -165,108 +172,113 @@ export function UserDetailModal({
                 <h4 className="text-sm font-medium mb-2">Identification</h4>
                 <div className="rounded-md border p-3 space-y-1">
                   <DetailRow
-                    label="Visitor ID"
-                    value={visitor.visitor_id}
+                    label="User ID"
+                    value={externalUserId}
                     copyable
                     mono
                   />
-                  <DetailRow
-                    label="External User ID"
-                    value={visitor.external_user_id}
-                    copyable
-                    mono
-                  />
+                  {user && (
+                    <div className="flex items-start justify-between gap-4 py-2">
+                      <span className="text-sm text-muted-foreground shrink-0">
+                        Channels
+                      </span>
+                      <div className="flex flex-wrap gap-1 justify-end">
+                        {user.channels.map((ch) => (
+                          <Badge
+                            key={ch}
+                            variant="secondary"
+                            className={`text-[10px] px-1.5 py-0 font-medium capitalize ${CHANNEL_BADGE_STYLES[ch] ?? ""}`}
+                          >
+                            {ch}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
               <div>
                 <h4 className="text-sm font-medium mb-2">Activity</h4>
                 <div className="rounded-md border p-3 space-y-1">
-                  <DetailRow
-                    label="First Seen"
-                    value={format(
-                      new Date(visitor.first_seen_at),
-                      "MMM d, yyyy 'at' h:mm a"
-                    )}
-                  />
-                  <DetailRow
-                    label="Last Seen"
-                    value={format(
-                      new Date(visitor.last_seen_at),
-                      "MMM d, yyyy 'at' h:mm a"
-                    )}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-sm font-medium">Metadata</h4>
-                  {hasMetadata && (
-                    <Badge variant="secondary" className="text-xs">
-                      {Object.keys(visitor.metadata).length} field
-                      {Object.keys(visitor.metadata).length !== 1 ? "s" : ""}
-                    </Badge>
+                  {(user?.first_seen_at || resolvedVisitor?.first_seen_at) && (
+                    <DetailRow
+                      label="First Seen"
+                      value={format(
+                        new Date(
+                          (user?.first_seen_at || resolvedVisitor?.first_seen_at)!
+                        ),
+                        "MMM d, yyyy 'at' h:mm a"
+                      )}
+                    />
                   )}
-                </div>
-                <div className="rounded-md border p-3">
-                  {hasMetadata ? (
-                    <pre className="text-xs font-mono whitespace-pre-wrap break-all">
-                      {JSON.stringify(visitor.metadata, null, 2)}
-                    </pre>
-                  ) : (
-                    <p className="text-sm text-muted-foreground italic">
-                      No additional metadata
-                    </p>
+                  {(user?.last_seen_at || resolvedVisitor?.last_seen_at) && (
+                    <DetailRow
+                      label="Last Active"
+                      value={formatDistanceToNow(
+                        new Date(
+                          (user?.last_seen_at || resolvedVisitor?.last_seen_at)!
+                        ),
+                        { addSuffix: true }
+                      )}
+                    />
                   )}
                 </div>
               </div>
 
               <div>
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-sm font-medium">Recent Conversations</h4>
-                </div>
+                <h4 className="text-sm font-medium mb-2">
+                  Linked Channel Accounts
+                </h4>
                 <div className="rounded-md border">
-                  {visitor.recent_conversations.length > 0 ? (
+                  {mappingsLoading ? (
+                    <div className="flex items-center justify-center py-6">
+                      <Spinner size="sm" />
+                    </div>
+                  ) : mappings && mappings.length > 0 ? (
                     <div className="divide-y">
-                      {visitor.recent_conversations.map((conversation) => (
-                        <div key={conversation.id} className="p-3 space-y-1">
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm font-medium truncate max-w-[calc(100%-80px)]">
-                              {conversation.first_user_message ||
-                                conversation.title ||
-                                "Untitled conversation"}
+                      {mappings.map((m) => (
+                        <div
+                          key={m.id}
+                          className="flex items-center justify-between gap-3 px-3 py-2.5"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <Badge
+                                variant="secondary"
+                                className={`text-[10px] px-1.5 py-0 font-medium capitalize shrink-0 ${CHANNEL_BADGE_STYLES[m.channel] ?? ""}`}
+                              >
+                                {m.channel}
+                              </Badge>
+                              <span className="text-sm font-mono truncate">
+                                {m.channel_user_id}
+                              </span>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              Linked{" "}
+                              {formatDistanceToNow(new Date(m.linked_at), {
+                                addSuffix: true,
+                              })}{" "}
+                              via {m.linked_via}
                             </p>
-                            <Badge
-                              variant={getStatusBadgeVariant(
-                                conversation.status
-                              )}
-                              className="text-xs shrink-0"
-                            >
-                              {conversation.status}
-                            </Badge>
                           </div>
-                          <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                            <span className="flex items-center gap-1">
-                              <MessageSquare className="h-3 w-3" />
-                              {conversation.message_count} messages
-                            </span>
-                            <span>
-                              {formatDistanceToNow(
-                                new Date(conversation.started_at),
-                                {
-                                  addSuffix: true,
-                                }
-                              )}
-                            </span>
-                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
+                            onClick={() => revokeMutation.mutate(m.id)}
+                            disabled={revokeMutation.isPending}
+                            title="Revoke link"
+                          >
+                            <Unlink className="h-3.5 w-3.5" />
+                          </Button>
                         </div>
                       ))}
                     </div>
                   ) : (
                     <div className="p-3">
                       <p className="text-sm text-muted-foreground italic">
-                        No conversations yet
+                        No linked channel accounts
                       </p>
                     </div>
                   )}

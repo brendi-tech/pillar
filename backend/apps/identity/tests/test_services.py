@@ -187,7 +187,7 @@ class TestGenerateLinkCode:
             channel_display_name='Sarah Chen',
             channel_email='sarah@acme.com',
         )
-        assert len(code.code) == 6
+        assert len(code.code) >= 16
         assert code.channel == 'slack'
         assert code.channel_user_id == 'U04ABCD1234'
         assert code.is_valid is True
@@ -232,8 +232,8 @@ class TestConfirmLink:
             expires_at=timezone.now() + timedelta(minutes=10),
         )
 
-    def test_creates_mapping(self, active_code):
-        mapping = confirm_link('TESTAB', '7842')
+    def test_creates_mapping(self, active_code, product):
+        mapping = confirm_link('TESTAB', '7842', product=product)
         assert mapping.channel == 'slack'
         assert mapping.channel_user_id == 'U04ABCD1234'
         assert mapping.external_user_id == '7842'
@@ -241,8 +241,8 @@ class TestConfirmLink:
         assert mapping.linked_via == 'slash_command'
         assert mapping.is_active is True
 
-    def test_marks_code_used(self, active_code):
-        confirm_link('TESTAB', '7842')
+    def test_marks_code_used(self, active_code, product):
+        confirm_link('TESTAB', '7842', product=product)
         active_code.refresh_from_db()
         assert active_code.is_used is True
         assert active_code.used_at is not None
@@ -256,7 +256,7 @@ class TestConfirmLink:
             channel_user_id='U04ABCD1234',
             external_user_id='OLD_USER',
         )
-        new_mapping = confirm_link('TESTAB', '7842')
+        new_mapping = confirm_link('TESTAB', '7842', product=product)
         old_mapping.refresh_from_db()
         assert old_mapping.is_active is False
         assert old_mapping.revoked_at is not None
@@ -272,7 +272,7 @@ class TestConfirmLink:
             expires_at=timezone.now() - timedelta(minutes=1),
         )
         with pytest.raises(CodeExpiredError):
-            confirm_link('EXPIRD', '7842')
+            confirm_link('EXPIRD', '7842', product=product)
 
     def test_used_code_raises(self, product, organization):
         LinkCode.objects.create(
@@ -286,11 +286,16 @@ class TestConfirmLink:
             used_at=timezone.now(),
         )
         with pytest.raises(CodeAlreadyUsedError):
-            confirm_link('USEDCD', '7842')
+            confirm_link('USEDCD', '7842', product=product)
 
     def test_nonexistent_code_raises(self):
         with pytest.raises(CodeNotFoundError):
             confirm_link('NOCODE', '7842')
+
+    def test_cross_product_code_rejected(self, active_code, other_product):
+        """Code from product A cannot be confirmed with product B."""
+        with pytest.raises(CodeNotFoundError):
+            confirm_link('TESTAB', '7842', product=other_product)
 
 
 @pytest.mark.django_db(transaction=True)

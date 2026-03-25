@@ -1,5 +1,5 @@
 /**
- * API client for Visitors (SDK identified users).
+ * API client for Visitors (SDK identified users) and unified users.
  */
 import { v2Fetch } from './v2/api-client';
 
@@ -44,14 +44,33 @@ export interface VisitorsListResponse {
   results: Visitor[];
 }
 
+export interface UnifiedUser {
+  external_user_id: string;
+  name: string;
+  email: string;
+  channels: string[];
+  first_seen_at: string | null;
+  last_seen_at: string | null;
+}
+
+export interface UnifiedUsersFilters {
+  search?: string;
+  page?: number;
+  page_size?: number;
+}
+
+export interface UnifiedUsersListResponse {
+  count: number;
+  next: number | null;
+  previous: number | null;
+  results: UnifiedUser[];
+}
+
 // =============================================================================
 // Visitors API
 // =============================================================================
 
 export const visitorsAPI = {
-  /**
-   * List visitors with pagination and filtering
-   */
   listVisitors: async (filters: VisitorFilters = {}): Promise<VisitorsListResponse> => {
     const params: Record<string, string | number> = {};
     
@@ -65,10 +84,18 @@ export const visitorsAPI = {
     });
   },
 
-  /**
-   * Get a single visitor by ID
-   */
   getVisitor: async (visitorId: string): Promise<Visitor> => {
     return await v2Fetch<Visitor>(`/analytics/visitors/${visitorId}/`);
+  },
+
+  listUnifiedUsers: async (filters: UnifiedUsersFilters = {}): Promise<UnifiedUsersListResponse> => {
+    const params: Record<string, string | number> = {};
+    if (filters.search) params.search = filters.search;
+    if (filters.page) params.page = filters.page;
+    if (filters.page_size) params.page_size = filters.page_size;
+
+    return await v2Fetch<UnifiedUsersListResponse>('/analytics/users/unified/', {
+      params,
+    });
   },
 };

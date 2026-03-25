@@ -1,27 +1,29 @@
 "use client";
 
+import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Visitor } from "@/lib/admin/visitors-api";
+import type { UnifiedUser } from "@/lib/admin/visitors-api";
+import { CHANNEL_BADGE_STYLES } from "@/types/agent";
 import { formatDistanceToNow } from "date-fns";
-import { ChevronRight, MessageSquare, Users } from "lucide-react";
+import { ChevronRight, Users } from "lucide-react";
 import { useEffect, useRef } from "react";
 
 export interface UserCardListProps {
-  visitors: Visitor[];
+  users: UnifiedUser[];
   isLoading: boolean;
   isError: boolean;
-  onRowClick: (visitor: Visitor) => void;
+  onRowClick: (user: UnifiedUser) => void;
   hasNextPage: boolean | undefined;
   isFetchingNextPage: boolean;
   onLoadMore: () => void;
 }
 
 function UserCard({
-  visitor,
+  user,
   onClick,
 }: {
-  visitor: Visitor;
+  user: UnifiedUser;
   onClick: () => void;
 }) {
   return (
@@ -32,26 +34,33 @@ function UserCard({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1 space-y-1">
           <p className="truncate font-medium">
-            {visitor.name || (
+            {user.name || (
               <span className="italic text-muted-foreground">No name</span>
             )}
           </p>
-          <p className="truncate text-sm text-muted-foreground">
-            {visitor.email || <span className="italic">No email</span>}
+          <p className="truncate text-sm font-mono text-muted-foreground">
+            {user.external_user_id}
           </p>
         </div>
         <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-muted-foreground" />
       </div>
-      <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
-        <span className="inline-flex items-center gap-1">
-          <MessageSquare className="h-3 w-3" />
-          {visitor.conversation_count} conversations
-        </span>
-        <span>
-          {formatDistanceToNow(new Date(visitor.last_seen_at), {
-            addSuffix: true,
-          })}
-        </span>
+      <div className="mt-3 flex items-center gap-2 flex-wrap">
+        {user.channels.map((ch) => (
+          <Badge
+            key={ch}
+            variant="secondary"
+            className={`text-[10px] px-1.5 py-0 font-medium capitalize ${CHANNEL_BADGE_STYLES[ch] ?? ""}`}
+          >
+            {ch}
+          </Badge>
+        ))}
+        {user.first_seen_at && (
+          <span className="text-xs text-muted-foreground ml-auto">
+            {formatDistanceToNow(new Date(user.first_seen_at), {
+              addSuffix: true,
+            })}
+          </span>
+        )}
       </div>
     </button>
   );
@@ -66,16 +75,17 @@ function UserCardSkeleton() {
           <Skeleton className="h-4 w-48" />
         </div>
       </div>
-      <div className="mt-3 flex items-center gap-4">
-        <Skeleton className="h-3 w-24" />
-        <Skeleton className="h-3 w-20" />
+      <div className="mt-3 flex items-center gap-2">
+        <Skeleton className="h-4 w-12 rounded-full" />
+        <Skeleton className="h-4 w-14 rounded-full" />
+        <Skeleton className="h-3 w-20 ml-auto" />
       </div>
     </div>
   );
 }
 
 export function UserCardList({
-  visitors,
+  users,
   isLoading,
   isError,
   onRowClick,
@@ -131,13 +141,14 @@ export function UserCardList({
     );
   }
 
-  if (visitors.length === 0) {
+  if (users.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
         <Users className="mb-3 h-8 w-8 text-muted-foreground" />
         <p className="font-medium">No users found</p>
         <p className="mt-1 text-sm text-muted-foreground">
-          Users will appear here when they are identified via the SDK
+          Users will appear here when they interact via the SDK or linked
+          channels
         </p>
       </div>
     );
@@ -146,11 +157,11 @@ export function UserCardList({
   return (
     <ScrollArea ref={scrollAreaRef} className="h-[calc(100vh-12rem)]">
       <div className="space-y-3 p-1">
-        {visitors.map((visitor) => (
+        {users.map((user) => (
           <UserCard
-            key={visitor.id}
-            visitor={visitor}
-            onClick={() => onRowClick(visitor)}
+            key={user.external_user_id}
+            user={user}
+            onClick={() => onRowClick(user)}
           />
         ))}
         {hasNextPage && (

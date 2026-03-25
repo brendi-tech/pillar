@@ -32,6 +32,7 @@ import {
   ChevronRight,
   FileText,
   Globe,
+
   Monitor,
   Plus,
   RefreshCw,
@@ -42,7 +43,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { EmptyState } from "./EmptyState";
@@ -170,6 +171,42 @@ export function ToolsSidebar({
 
   const groupedTools = useMemo(() => groupToolsBySource(tools), [tools]);
 
+  const HEADER_H = 32;
+  const stickyOffsets = useMemo(() => {
+    const map = new Map<string, { top: number; zIndex: number }>();
+    let top = 0;
+    let z = 50;
+
+    for (const [source, sourceTools] of Object.entries(groupedTools) as [string, typeof tools][]) {
+      if (sourceTools.length > 0) {
+        map.set(source, { top, zIndex: z });
+        top += HEADER_H;
+        z -= 2;
+      }
+    }
+    if (mcpSources?.length) {
+      map.set("mcp-label", { top, zIndex: z });
+      top += HEADER_H;
+      z -= 2;
+      for (const s of mcpSources) {
+        map.set(s.id, { top, zIndex: z });
+        top += HEADER_H;
+        z -= 2;
+      }
+    }
+    if (openAPISources?.length) {
+      map.set("api-label", { top, zIndex: z });
+      top += HEADER_H;
+      z -= 2;
+      for (const s of openAPISources) {
+        map.set(`openapi-${s.id}`, { top, zIndex: z });
+        top += HEADER_H;
+        z -= 2;
+      }
+    }
+    return map;
+  }, [groupedTools, mcpSources, openAPISources]);
+
   const allGroupIds = useMemo(() => {
     const ids = Object.entries(groupedTools)
       .filter(([, t]) => t.length > 0)
@@ -187,6 +224,20 @@ export function ToolsSidebar({
     () => new Set(allGroupIds)
   );
 
+  useEffect(() => {
+    setExpandedGroups((prev) => {
+      let changed = false;
+      const next = new Set(prev);
+      for (const id of allGroupIds) {
+        if (!next.has(id)) {
+          next.add(id);
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [allGroupIds]);
+
   const toggleGroup = useCallback((groupId: string) => {
     setExpandedGroups((prev) => {
       const next = new Set(prev);
@@ -199,21 +250,31 @@ export function ToolsSidebar({
     });
   }, []);
 
+  const prevNavRef = useRef({ currentMcpSourceId, currentToolId, currentToolGroup });
+
   useEffect(() => {
+    const prev = prevNavRef.current;
+    const navChanged =
+      prev.currentMcpSourceId !== currentMcpSourceId ||
+      prev.currentToolId !== currentToolId ||
+      prev.currentToolGroup !== currentToolGroup;
+
+    prevNavRef.current = { currentMcpSourceId, currentToolId, currentToolGroup };
+
+    if (!navChanged) return;
+
     if (currentMcpSourceId) {
-      setExpandedGroups(new Set([currentMcpSourceId]));
+      setExpandedGroups((g) => new Set([...g, currentMcpSourceId]));
     } else if (currentToolId) {
       const tool = tools.find((t) => t.id === currentToolId);
       if (tool) {
         const group = tool.tool_type === "client_side" ? "client_side" : "server_side";
-        setExpandedGroups(new Set([group]));
+        setExpandedGroups((g) => new Set([...g, group]));
       }
     } else if (currentToolGroup) {
-      setExpandedGroups(new Set([currentToolGroup]));
-    } else {
-      setExpandedGroups(new Set(allGroupIds));
+      setExpandedGroups((g) => new Set([...g, currentToolGroup]));
     }
-  }, [currentMcpSourceId, currentToolId, currentToolGroup, tools, allGroupIds]);
+  }, [currentMcpSourceId, currentToolId, currentToolGroup, tools]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -245,9 +306,9 @@ export function ToolsSidebar({
 
       <ScrollArea
         className="flex-1 w-full overflow-hidden"
-        viewportClassName="[&>div]:!w-full [&>div]:overflow-hidden [&>div]:!block"
+        viewportClassName="[&>div]:!w-full [&>div]:!block"
       >
-        <div className="p-2 space-y-1 overflow-hidden">
+        <div className="p-2 space-y-1">
           {isLoading ? (
             <ToolsSkeleton />
           ) : tools.length === 0 && (!mcpSources || mcpSources.length === 0) && (!openAPISources || openAPISources.length === 0) ? (
@@ -264,27 +325,26 @@ export function ToolsSidebar({
 
                 const Icon = SOURCE_ICONS[source];
                 const isExpanded = expandedGroups.has(source);
+                const offset = stickyOffsets.get(source);
 
                 return (
-                  <Collapsible
-                    key={source}
-                    open={isExpanded}
-                    onOpenChange={() => toggleGroup(source)}
-                  >
-                    <div className="flex items-center">
-                      <CollapsibleTrigger asChild>
-                        <button
-                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md"
-                          aria-label={isExpanded ? "Collapse" : "Expand"}
-                        >
-                          <ChevronRight
-                            className={cn(
-                              "h-4 w-4 text-muted-foreground transition-transform duration-200",
-                              isExpanded && "rotate-90"
-                            )}
-                          />
-                        </button>
-                      </CollapsibleTrigger>
+                  <Fragment key={source}>
+                    <div
+                      className="bg-background flex items-center"
+                      style={{ position: "sticky", top: offset?.top ?? 0, zIndex: offset?.zIndex ?? 10 }}
+                    >
+                      <button
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md"
+                        aria-label={isExpanded ? "Collapse" : "Expand"}
+                        onClick={() => toggleGroup(source)}
+                      >
+                        <ChevronRight
+                          className={cn(
+                            "h-4 w-4 text-muted-foreground transition-transform duration-200",
+                            isExpanded && "rotate-90"
+                          )}
+                        />
+                      </button>
                       <Link
                         href={`/tools/${source === "client_side" ? "client" : "server"}`}
                         onClick={onNavigate}
@@ -304,25 +364,34 @@ export function ToolsSidebar({
                         </span>
                       </Link>
                     </div>
-                    <CollapsibleContent>
-                      <div className="ml-4 space-y-0.5 py-1">
-                        {sourceTools.map((tool) => (
-                          <ToolListItem
-                            key={tool.id}
-                            action={tool}
-                            isSelected={tool.id === currentToolId}
-                            onNavigate={onNavigate}
-                          />
-                        ))}
-                      </div>
-                    </CollapsibleContent>
-                  </Collapsible>
+                    <Collapsible open={isExpanded}>
+                      <CollapsibleContent>
+                        <div className="ml-4 space-y-0.5 py-1">
+                          {sourceTools.map((tool) => (
+                            <ToolListItem
+                              key={tool.id}
+                              action={tool}
+                              isSelected={tool.id === currentToolId}
+                              onNavigate={onNavigate}
+                            />
+                          ))}
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  </Fragment>
                 );
               })}
 
               {!isMcpPending && mcpSources && mcpSources.length > 0 && (
                 <>
-                  <div className="flex items-center gap-2 px-3 pt-3 pb-1">
+                  <div
+                    className="-mx-2 bg-background flex items-center gap-2 pl-5 pr-4 pt-3 pb-1"
+                    style={{
+                      position: "sticky",
+                      top: stickyOffsets.get("mcp-label")?.top ?? 0,
+                      zIndex: stickyOffsets.get("mcp-label")?.zIndex ?? 20,
+                    }}
+                  >
                     <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/50">
                       MCP Servers
                     </span>
@@ -341,6 +410,8 @@ export function ToolsSidebar({
                           ? activeMcpItem?.name ?? null
                           : null
                       }
+                      stickyTop={stickyOffsets.get(source.id)?.top ?? 0}
+                      stickyZIndex={stickyOffsets.get(source.id)?.zIndex ?? 10}
                     />
                   ))}
                 </>
@@ -348,7 +419,14 @@ export function ToolsSidebar({
 
               {!isOpenAPIPending && openAPISources && openAPISources.length > 0 && (
                 <>
-                  <div className="flex items-center gap-2 px-3 pt-3 pb-1">
+                  <div
+                    className="-mx-2 bg-background flex items-center gap-2 pl-5 pr-4 pt-3 pb-1"
+                    style={{
+                      position: "sticky",
+                      top: stickyOffsets.get("api-label")?.top ?? 0,
+                      zIndex: stickyOffsets.get("api-label")?.zIndex ?? 20,
+                    }}
+                  >
                     <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/50">
                       API Sources
                     </span>
@@ -362,12 +440,15 @@ export function ToolsSidebar({
                       isExpanded={expandedGroups.has(`openapi-${source.id}`)}
                       onToggleExpand={() => toggleGroup(`openapi-${source.id}`)}
                       onNavigate={onNavigate}
+                      stickyTop={stickyOffsets.get(`openapi-${source.id}`)?.top ?? 0}
+                      stickyZIndex={stickyOffsets.get(`openapi-${source.id}`)?.zIndex ?? 10}
                     />
                   ))}
                 </>
               )}
 
               <div ref={sentinelRef} className="h-1" />
+
               {isFetchingNextPage && (
                 <div className="flex w-full items-center justify-center py-2">
                   <Spinner size="xs" />
@@ -488,6 +569,8 @@ function MCPSourceItem({
   onToggleExpand,
   onNavigate,
   activeItemName,
+  stickyTop,
+  stickyZIndex,
 }: {
   source: MCPToolSource;
   isSelected: boolean;
@@ -495,6 +578,8 @@ function MCPSourceItem({
   onToggleExpand: () => void;
   onNavigate?: () => void;
   activeItemName: string | null;
+  stickyTop: number;
+  stickyZIndex: number;
 }) {
   const isError =
     source.discovery_status === "error" || source.consecutive_failures > 0;
@@ -506,21 +591,23 @@ function MCPSourceItem({
     (source.prompt_count ?? 0);
 
   return (
-    <Collapsible open={isExpanded} onOpenChange={onToggleExpand}>
-      <div className="flex items-center">
-        <CollapsibleTrigger asChild>
-          <button
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md"
-            aria-label={isExpanded ? "Collapse" : "Expand"}
-          >
-            <ChevronRight
-              className={cn(
-                "h-4 w-4 text-muted-foreground transition-transform duration-200",
-                isExpanded && "rotate-90"
-              )}
-            />
-          </button>
-        </CollapsibleTrigger>
+    <>
+      <div
+        className="bg-background flex items-center"
+        style={{ position: "sticky", top: stickyTop, zIndex: stickyZIndex }}
+      >
+        <button
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md"
+          aria-label={isExpanded ? "Collapse" : "Expand"}
+          onClick={onToggleExpand}
+        >
+          <ChevronRight
+            className={cn(
+              "h-4 w-4 text-muted-foreground transition-transform duration-200",
+              isExpanded && "rotate-90"
+            )}
+          />
+        </button>
         <Link
           href={`/tools/mcp/${source.id}`}
           onClick={onNavigate}
@@ -554,52 +641,54 @@ function MCPSourceItem({
           />
         </Link>
       </div>
-      <CollapsibleContent>
-        <div className="ml-4 border-l pl-2 py-1 space-y-0.5">
-          {totalCount === 0 ? (
-            <p className="text-xs text-muted-foreground py-2 px-2">
-              Nothing discovered yet
-            </p>
-          ) : (
-            <>
-              <MCPSubSection
-                icon={Wrench}
-                label="Tools"
-                items={source.discovered_tools}
-                getItemName={(t) => t.name}
-                getItemHref={(t) =>
-                  `/tools/mcp/${source.id}?tool=${encodeURIComponent(t.name)}`
-                }
-                activeItemName={activeItemName}
-                onNavigate={onNavigate}
-              />
-              <MCPSubSection
-                icon={FileText}
-                label="Resources"
-                items={source.discovered_resources}
-                getItemName={(r) => r.name}
-                getItemHref={(r) =>
-                  `/tools/mcp/${source.id}?resource=${encodeURIComponent(r.name)}`
-                }
-                activeItemName={activeItemName}
-                onNavigate={onNavigate}
-              />
-              <MCPSubSection
-                icon={BookOpen}
-                label="Prompts"
-                items={source.discovered_prompts ?? []}
-                getItemName={(p) => p.name}
-                getItemHref={(p) =>
-                  `/tools/mcp/${source.id}?prompt=${encodeURIComponent(p.name)}`
-                }
-                activeItemName={activeItemName}
-                onNavigate={onNavigate}
-              />
-            </>
-          )}
-        </div>
-      </CollapsibleContent>
-    </Collapsible>
+      <Collapsible open={isExpanded}>
+        <CollapsibleContent>
+          <div className="ml-4 border-l pl-2 py-1 space-y-0.5">
+            {totalCount === 0 ? (
+              <p className="text-xs text-muted-foreground py-2 px-2">
+                Nothing discovered yet
+              </p>
+            ) : (
+              <>
+                <MCPSubSection
+                  icon={Wrench}
+                  label="Tools"
+                  items={source.discovered_tools}
+                  getItemName={(t) => t.name}
+                  getItemHref={(t) =>
+                    `/tools/mcp/${source.id}?tool=${encodeURIComponent(t.name)}`
+                  }
+                  activeItemName={activeItemName}
+                  onNavigate={onNavigate}
+                />
+                <MCPSubSection
+                  icon={FileText}
+                  label="Resources"
+                  items={source.discovered_resources}
+                  getItemName={(r) => r.name}
+                  getItemHref={(r) =>
+                    `/tools/mcp/${source.id}?resource=${encodeURIComponent(r.name)}`
+                  }
+                  activeItemName={activeItemName}
+                  onNavigate={onNavigate}
+                />
+                <MCPSubSection
+                  icon={BookOpen}
+                  label="Prompts"
+                  items={source.discovered_prompts ?? []}
+                  getItemName={(p) => p.name}
+                  getItemHref={(p) =>
+                    `/tools/mcp/${source.id}?prompt=${encodeURIComponent(p.name)}`
+                  }
+                  activeItemName={activeItemName}
+                  onNavigate={onNavigate}
+                />
+              </>
+            )}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+    </>
   );
 }
 
@@ -609,32 +698,38 @@ function OpenAPISourceItem({
   isExpanded,
   onToggleExpand,
   onNavigate,
+  stickyTop,
+  stickyZIndex,
 }: {
   source: OpenAPIToolSource;
   isSelected: boolean;
   isExpanded: boolean;
   onToggleExpand: () => void;
   onNavigate?: () => void;
+  stickyTop: number;
+  stickyZIndex: number;
 }) {
   const isError = source.discovery_status === "error";
   const isHealthy = source.discovery_status === "success" && !isError;
 
   return (
-    <Collapsible open={isExpanded} onOpenChange={onToggleExpand}>
-      <div className="flex items-center">
-        <CollapsibleTrigger asChild>
-          <button
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md"
-            aria-label={isExpanded ? "Collapse" : "Expand"}
-          >
-            <ChevronRight
-              className={cn(
-                "h-4 w-4 text-muted-foreground transition-transform duration-200",
-                isExpanded && "rotate-90"
-              )}
-            />
-          </button>
-        </CollapsibleTrigger>
+    <>
+      <div
+        className="bg-background flex items-center"
+        style={{ position: "sticky", top: stickyTop, zIndex: stickyZIndex }}
+      >
+        <button
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md"
+          aria-label={isExpanded ? "Collapse" : "Expand"}
+          onClick={onToggleExpand}
+        >
+          <ChevronRight
+            className={cn(
+              "h-4 w-4 text-muted-foreground transition-transform duration-200",
+              isExpanded && "rotate-90"
+            )}
+          />
+        </button>
         <Link
           href={`/tools/openapi/${source.id}`}
           onClick={onNavigate}
@@ -668,32 +763,34 @@ function OpenAPISourceItem({
           />
         </Link>
       </div>
-      <CollapsibleContent>
-        <div className="ml-4 border-l pl-2 py-1 space-y-0.5">
-          {source.discovered_operations.length === 0 ? (
-            <p className="text-xs text-muted-foreground py-2 px-2">
-              No operations discovered yet
-            </p>
-          ) : (
-            source.discovered_operations.map((op) => (
-              <Link
-                key={op.operation_id}
-                href={`/tools/openapi/${source.id}?op=${encodeURIComponent(op.operation_id)}`}
-                onClick={onNavigate}
-                className="flex items-center gap-2 rounded-md px-2 py-1 text-sm transition-colors hover:bg-muted text-muted-foreground"
-              >
-                <span className="text-[10px] font-mono font-semibold uppercase shrink-0">
-                  {op.method}
-                </span>
-                <span className="truncate flex-1 font-mono text-xs">
-                  {op.path}
-                </span>
-              </Link>
-            ))
-          )}
-        </div>
-      </CollapsibleContent>
-    </Collapsible>
+      <Collapsible open={isExpanded}>
+        <CollapsibleContent>
+          <div className="ml-4 border-l pl-2 py-1 space-y-0.5">
+            {source.discovered_operations.length === 0 ? (
+              <p className="text-xs text-muted-foreground py-2 px-2">
+                No operations discovered yet
+              </p>
+            ) : (
+              source.discovered_operations.map((op) => (
+                <Link
+                  key={op.operation_id}
+                  href={`/tools/openapi/${source.id}?op=${encodeURIComponent(op.operation_id)}`}
+                  onClick={onNavigate}
+                  className="flex items-center gap-2 rounded-md px-2 py-1 text-sm transition-colors hover:bg-muted text-muted-foreground"
+                >
+                  <span className="text-[10px] font-mono font-semibold uppercase shrink-0">
+                    {op.method}
+                  </span>
+                  <span className="truncate flex-1 font-mono text-xs">
+                    {op.path}
+                  </span>
+                </Link>
+              ))
+            )}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+    </>
   );
 }
 

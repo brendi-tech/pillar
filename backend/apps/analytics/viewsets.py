@@ -220,3 +220,95 @@ class VisitorViewSet(viewsets.ReadOnlyModelViewSet):
         ).annotate(
             conversation_count=Count('conversations')
         ).order_by('-last_seen_at')
+
+
+class UnifiedUserViewSet(viewsets.ViewSet):
+    """
+    Merges Visitor (web SDK) and IdentityMapping (channel linking) records
+    into a single user list keyed by external_user_id.
+    """
+
+    permission_classes = [IsAuthenticatedAdmin]
+
+    def list(self, request):
+        from apps.identity.models import IdentityMapping
+        from collections import defaultdict
+
+        org_ids = list(request.user.organizations.values_list("id", flat=True))
+        search = request.query_params.get("search", "").strip()
+        page = int(request.query_params.get("page", 1))
+        page_size = min(int(request.query_params.get("page_size", 20)), 100)
+
+        visitors_qs = Visitor.objects.filter(
+            organization_id__in=org_ids,
+            external_user_id__isnull=False,
+        ).exclude(external_user_id="")
+
+        mappings_qs = IdentityMapping.objects.filter(
+            organization_id__in=org_ids,
+            is_active=True,
+        )
+
+        if search:
+            visitors_qs = visitors_qs.filter(
+                Q(external_user_id__icontains=search)
+                | Q(name__icontains=search)
+                | Q(email__icontains=search)
+            )
+            mappings_qs = mappings_qs.filter(
+                Q(external_user_id__icontains=search)
+                | Q(channel_user_id__icontains=search)
+                | Q(email__icontains=search)
+            )
+
+        visitor_map: dict[str, Visitor] = {}
+        for v in visitors_qs.iterator():
+            visitor_map[v.external_user_id] = v
+
+        channel_map: dict[str, list[str]] = defaultdict(list)
+        earliest_mapping: dict[str, datetime] = {}
+        for m in mappings_qs.iterator():
+            if m.channel not in channel_map[m.external_user_id]:
+                channel_map[m.external_user_id].append(m.channel)
+            ts = m.created_at
+            if m.external_user_id not in earliest_mapping or ts < earliest_mapping[m.external_user_id]:
+                earliest_mapping[m.external_user_id] = ts
+
+        all_ext_ids = set(visitor_map.keys()) | set(channel_map.keys())
+
+        users = []
+        for ext_id in all_ext_ids:
+            visitor = visitor_map.get(ext_id)
+            channels = list(channel_map.get(ext_id, []))
+            if visitor:
+                channels = ["web"] + [c for c in channels if c != "web"]
+
+            first_seen = None
+            if visitor and ext_id in earliest_mapping:
+                first_seen = min(visitor.first_seen_at, earliest_mapping[ext_id])
+            elif visitor:
+                first_seen = visitor.first_seen_at
+            elif ext_id in earliest_mapping:
+                first_seen = earliest_mapping[ext_id]
+
+            users.append({
+                "external_user_id": ext_id,
+                "name": visitor.name if visitor else "",
+                "email": visitor.email if visitor else "",
+                "channels": channels,
+                "first_seen_at": first_seen.isoformat() if first_seen else None,
+                "last_seen_at": visitor.last_seen_at.isoformat() if visitor else None,
+            })
+
+        users.sort(key=lambda u: u["first_seen_at"] or "", reverse=True)
+
+        total = len(users)
+        start = (page - 1) * page_size
+        page_results = users[start : start + page_size]
+
+        return Response({
+            "count": total,
+            "next": page + 1 if start + page_size < total else None,
+            "previous": page - 1 if page > 1 else None,
+            "results": page_results,
+        })

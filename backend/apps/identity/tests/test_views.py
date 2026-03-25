@@ -51,7 +51,7 @@ class TestLinkRequest:
         }, format='json')
         assert resp.status_code == 200
         assert 'code' in resp.data
-        assert len(resp.data['code']) == 6
+        assert len(resp.data['code']) >= 16
         assert 'app.acme.com/connect?code=' in resp.data['link_url']
         assert 'expires_at' in resp.data
 

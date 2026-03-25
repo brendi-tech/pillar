@@ -1,10 +1,14 @@
 /**
- * TanStack Query configurations for Visitors API.
- *
- * Visitors are SDK end-users identified via the identify() function.
+ * TanStack Query configurations for Visitors API and Unified Users.
  */
 
-import { visitorsAPI, type VisitorFilters, type VisitorsListResponse } from "@/lib/admin/visitors-api";
+import {
+  visitorsAPI,
+  type VisitorFilters,
+  type VisitorsListResponse,
+  type UnifiedUsersFilters,
+  type UnifiedUsersListResponse,
+} from "@/lib/admin/visitors-api";
 import { infiniteQueryOptions, queryOptions } from "@tanstack/react-query";
 
 // =============================================================================
@@ -22,22 +26,23 @@ export const visitorsKeys = {
   detail: (id: string) => [...visitorsKeys.details(), id] as const,
 };
 
+export const unifiedUsersKeys = {
+  all: ["unified-users"] as const,
+  lists: () => [...unifiedUsersKeys.all, "list"] as const,
+  list: (filters: UnifiedUsersFilters) =>
+    [...unifiedUsersKeys.lists(), filters] as const,
+};
+
 // =============================================================================
 // Query Options
 // =============================================================================
 
-/**
- * List visitors with pagination and filtering
- */
 export const visitorsListQuery = (filters: VisitorFilters = {}) =>
   queryOptions({
     queryKey: visitorsKeys.list(filters),
     queryFn: () => visitorsAPI.listVisitors(filters),
   });
 
-/**
- * Infinite query for visitors list with scroll pagination
- */
 export const visitorsListInfiniteQuery = (
   filters: Omit<VisitorFilters, "page"> = {}
 ) =>
@@ -50,12 +55,21 @@ export const visitorsListInfiniteQuery = (
       lastPage.next ? allPages.length + 1 : undefined,
   });
 
-/**
- * Get a single visitor by ID
- */
 export const visitorDetailQuery = (visitorId: string) =>
   queryOptions({
     queryKey: visitorsKeys.detail(visitorId),
     queryFn: () => visitorsAPI.getVisitor(visitorId),
     enabled: !!visitorId,
+  });
+
+export const unifiedUsersInfiniteQuery = (
+  filters: Omit<UnifiedUsersFilters, "page"> = {}
+) =>
+  infiniteQueryOptions({
+    queryKey: [...unifiedUsersKeys.list(filters), "infinite"] as const,
+    queryFn: ({ pageParam }) =>
+      visitorsAPI.listUnifiedUsers({ ...filters, page: pageParam }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage: UnifiedUsersListResponse, allPages) =>
+      lastPage.next ? allPages.length + 1 : undefined,
   });

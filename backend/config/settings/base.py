@@ -254,6 +254,7 @@ REST_FRAMEWORK = {
         'agent_score_scan': '10/minute',
         'agent_score_signup': '10/hour',
         'headless_chat': '200/minute',
+        'link_code': '10/minute',
     },
 }
 
