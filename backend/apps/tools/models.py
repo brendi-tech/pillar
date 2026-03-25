@@ -248,6 +248,21 @@ class MCPToolSource(TenantAwareModel):
         help_text="When the current access token expires",
     )
 
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            from django.utils.text import slugify
+            base = slugify(self.name)[:40] or 'mcp-source'
+            candidate = base
+            counter = 2
+            while MCPToolSource.objects.filter(
+                product_id=self.product_id, slug=candidate,
+            ).exclude(pk=self.pk).exists():
+                suffix = f'-{counter}'
+                candidate = base[:40 - len(suffix)] + suffix
+                counter += 1
+            self.slug = candidate
+        super().save(*args, **kwargs)
+
     class Meta:
         verbose_name = 'MCP Tool Source'
         verbose_name_plural = 'MCP Tool Sources'

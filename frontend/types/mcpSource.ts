@@ -68,6 +68,7 @@ export interface MCPToolSource {
 
 export interface CreateMCPToolSourcePayload {
   name: string;
+  slug?: string;
   url: string;
   auth_type: MCPAuthType;
   auth_credentials?: Record<string, string>;

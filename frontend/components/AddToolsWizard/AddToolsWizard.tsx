@@ -210,6 +210,8 @@ function MCPSourceStep({ onBack }: { onBack: () => void }) {
   const { currentProduct } = useProduct();
 
   const [name, setName] = useState("");
+  const [slug, setSlug] = useState("");
+  const [slugTouched, setSlugTouched] = useState(false);
   const [url, setUrl] = useState("");
 
   // Probe state
@@ -279,6 +281,7 @@ function MCPSourceStep({ onBack }: { onBack: () => void }) {
 
     createMutation.mutate({
       name,
+      slug: slug || undefined,
       url: url.trim(),
       auth_type: authType,
       ...(Object.keys(authCredentials).length > 0 && {
@@ -415,8 +418,45 @@ function MCPSourceStep({ onBack }: { onBack: () => void }) {
             id="mcp-name"
             placeholder="e.g. Datadog"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => {
+              setName(e.target.value);
+              if (!slugTouched) {
+                setSlug(
+                  e.target.value
+                    .toLowerCase()
+                    .trim()
+                    .replace(/[^a-z0-9\s-]/g, "")
+                    .replace(/[\s]+/g, "-")
+                    .replace(/-+/g, "-")
+                    .slice(0, 40)
+                );
+              }
+            }}
           />
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="mcp-slug" className="text-xs">
+            Slug
+          </Label>
+          <Input
+            id="mcp-slug"
+            placeholder="e.g. datadog"
+            value={slug}
+            onChange={(e) => {
+              setSlugTouched(true);
+              setSlug(
+                e.target.value
+                  .toLowerCase()
+                  .replace(/[^a-z0-9-]/g, "")
+                  .slice(0, 40)
+              );
+            }}
+            className="font-mono text-xs h-8"
+          />
+          <p className="text-[11px] text-muted-foreground">
+            Tool names will be prefixed with this slug
+          </p>
         </div>
 
         <div className="space-y-2">

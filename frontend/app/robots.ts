@@ -1,8 +1,8 @@
 import type { MetadataRoute } from "next";
 
 const isProduction =
-  process.env.NEXT_PUBLIC_API_URL?.includes("trypillar.com") ||
-  process.env.VERCEL_ENV === "production";
+  process.env.NEXT_PUBLIC_ENV === "production" ||
+  process.env.NEXT_PUBLIC_PILLAR_API_URL?.includes("trypillar.com");
 
 export default function robots(): MetadataRoute.Robots {
   if (!isProduction) {

@@ -5,6 +5,9 @@ export const metadata: Metadata = {
   description:
     "Machine-readable information about Pillar, the open-source AI copilot SDK for SaaS applications. Structured for LLM consumption.",
   robots: "index, follow",
+  alternates: {
+    canonical: "/for-llms",
+  },
 };
 
 /**
