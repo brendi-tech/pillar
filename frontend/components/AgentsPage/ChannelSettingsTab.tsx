@@ -540,9 +540,7 @@ function ApiSettings({
 }
 
 interface MCPInfoResponse {
-  mcp_url: string | null;
-  subdomain: string | null;
-  help_center_domain: string;
+  mcp_url: string;
 }
 
 interface SyncSecretItem {
@@ -651,7 +649,7 @@ function MCPSettings({
     {
       mcpServers: {
         [productSlug]: {
-          url: mcpUrl || `https://<subdomain>.${mcpInfo?.help_center_domain || "help.pillar.io"}/mcp/`,
+          url: mcpUrl || "<your-mcp-url>",
           headers: {
             Authorization: `Bearer ${keyPlaceholder}`,
           },
@@ -666,7 +664,7 @@ function MCPSettings({
     {
       mcpServers: {
         [productSlug]: {
-          url: mcpUrl || `https://<subdomain>.${mcpInfo?.help_center_domain || "help.pillar.io"}/mcp/`,
+          url: mcpUrl || "<your-mcp-url>",
           headers: {
             Authorization: `Bearer ${keyPlaceholder}`,
           },
@@ -689,20 +687,14 @@ function MCPSettings({
             Use this URL to connect MCP clients to your agent
           </p>
         </div>
-        {mcpUrl ? (
-          <div className="flex items-center gap-2">
-            <Input
-              value={mcpUrl}
-              readOnly
-              className="font-mono text-sm bg-muted"
-            />
-            <InlineCopyButton value={mcpUrl} />
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            Set up a subdomain for your product to get an MCP server URL.
-          </p>
-        )}
+        <div className="flex items-center gap-2">
+          <Input
+            value={mcpUrl}
+            readOnly
+            className="font-mono text-sm bg-muted"
+          />
+          <InlineCopyButton value={mcpUrl} />
+        </div>
         {customDomainUrl && (
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">Custom Domain URL</Label>
@@ -736,11 +728,13 @@ function MCPSettings({
           placeholder="mcp.yourdomain.com"
           className="font-mono text-sm"
         />
-        <div className="rounded-lg border bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
-          Point a CNAME record for your domain to{" "}
-          <code className="font-mono text-foreground">{mcpInfo?.help_center_domain || "help.pillar.io"}</code>.
-          Changes may take up to 24 hours to propagate.
-        </div>
+        {mcpUrl && (
+          <div className="rounded-lg border bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
+            Point a CNAME record for your domain to{" "}
+            <code className="font-mono text-foreground">{new URL(mcpUrl).host}</code>.
+            Changes may take up to 24 hours to propagate.
+          </div>
+        )}
       </div>
 
       {/* API Key */}

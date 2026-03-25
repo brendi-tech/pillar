@@ -577,6 +577,11 @@ DEMO_ORGANIZATION_ID = os.environ.get('DEMO_ORGANIZATION_ID', '10000000-0000-000
 # Help center domain suffix for subdomain resolution (e.g., {subdomain}.help.pillar.io)
 HELP_CENTER_DOMAIN = os.environ.get('HELP_CENTER_DOMAIN', 'help.pillar.io')
 
+# MCP server base URL — used for displaying the MCP endpoint to users.
+# Built from MCP_PILLAR_SERVER_DOMAIN (set by deploy scripts) or falls back to API_BASE_URL.
+_mcp_domain = os.environ.get('MCP_PILLAR_SERVER_DOMAIN')
+MCP_BASE_URL = f"https://{_mcp_domain}" if _mcp_domain else API_BASE_URL
+
 # ==============================================================================
 # FRONTEND URLs
 # ==============================================================================

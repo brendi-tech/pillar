@@ -111,7 +111,7 @@ class ProductResolverMiddleware:
             return None
 
         host = request.get_host().split(':')[0].lower()
-        help_center_domain = getattr(settings, 'HELP_CENTER_DOMAIN', 'help.pillar.bot')
+        help_center_domain = getattr(settings, 'HELP_CENTER_DOMAIN', 'help.pillar.io')
 
         product = None
 

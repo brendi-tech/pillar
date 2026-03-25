@@ -32,7 +32,10 @@ class ServerInfoService:
     TOOL_TAGS = ["rag", "ai", "help-center", "qa", "semantic-search", "articles"]
 
     # Error messages
-    NO_CONTEXT_ERROR = "Help center context required. Please provide a valid help_center_id or use a help-center-specific subdomain."
+    NO_CONTEXT_ERROR = (
+        "Product context required. Authenticate with a Bearer token "
+        "(API key) in the Authorization header."
+    )
 
     @classmethod
     def get_server_info(cls, help_center_config=None, include_platform: bool = True) -> Dict[str, Any]:
@@ -87,13 +90,13 @@ class ServerInfoService:
         """
         if not help_center_config:
             return {
-                'error': 'No Help Center Context',
+                'error': 'No Product Context',
                 'message': cls.NO_CONTEXT_ERROR,
-                'details': 'MCP servers are help-center-specific. Please access via a help-center-specific subdomain or include a valid help_center_id parameter.',
+                'details': 'MCP servers are product-specific. Authenticate with a Bearer token to resolve your product.',
                 'usage': {
-                    'subdomain': 'Access via {subdomain}.help.pillar.bot',
-                    'query_param': 'Add ?help_center_id={id} to your request',
-                    'header': 'Include X-Help-Center-Id header'
+                    'bearer_token': 'Include "Authorization: Bearer <your-api-key>" header',
+                    'header': 'Or include X-Help-Center-Id header with your product ID',
+                    'query_param': 'Or add ?help_center_id={id} to your request (development only)',
                 },
                 'platform': {
                     'name': cls.PLATFORM_NAME,
@@ -102,11 +105,8 @@ class ServerInfoService:
                 }
             }
 
-        service_name = f"{help_center_config.name} Help Center MCP Server"
-        message = f"You're talking to {help_center_config.name} Help Center"
-
-        # Build domain from subdomain
-        domain = f"{help_center_config.subdomain}.help.pillar.bot"
+        service_name = f"{help_center_config.name} MCP Server"
+        message = f"You're talking to {help_center_config.name}"
 
         response_data = {
             'service': service_name,
@@ -120,10 +120,9 @@ class ServerInfoService:
                 'readiness': '/health/ready'
             },
             'capabilities': cls._get_capabilities(help_center_config=help_center_config),
-            'help_center': {
+            'product': {
                 'name': help_center_config.name,
                 'subdomain': help_center_config.subdomain,
-                'domain': domain
             },
             'documentation': {
                 'mcp_protocol': 'https://modelcontextprotocol.io',

@@ -633,12 +633,26 @@ export function AgentsPage({
                 </DialogDescription>
               </DialogHeader>
 
-              <div className="space-y-5">
+              <div className="space-y-5 min-w-0 overflow-hidden">
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <StepNumber n={1} />
-                    <p className="text-sm font-medium">Copy this manifest</p>
+                    <p className="text-sm font-medium">Create your Slack app</p>
                   </div>
+                  <p className="text-sm text-muted-foreground">
+                    Go to{" "}
+                    <a
+                      href="https://api.slack.com/apps?new_app=1"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline"
+                    >
+                      api.slack.com/apps
+                    </a>
+                    , select the <strong>workspace</strong> you want to add the
+                    bot to, choose <strong>From a manifest</strong>, select the
+                    JSON tab, and paste the manifest below.
+                  </p>
                   {isManifestPending ? (
                     <Skeleton className="h-32 w-full" />
                   ) : (
@@ -655,85 +669,24 @@ export function AgentsPage({
 
                 <Separator />
 
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <StepNumber n={2} />
-                    <p className="text-sm font-medium">Create your Slack app</p>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Go to{" "}
-                    <a
-                      href="https://api.slack.com/apps?new_app=1"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="underline"
-                    >
-                      api.slack.com/apps
-                    </a>
-                    , select the <strong>workspace</strong> you want to add the
-                    bot to, choose <strong>From a manifest</strong>, select the
-                    JSON tab, and paste the manifest above.
-                  </p>
-                </div>
-
-                <Separator />
-
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <StepNumber n={3} />
-                    <p className="text-sm font-medium">
-                      Install the app to your workspace
-                    </p>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    In your Slack app settings, click{" "}
-                    <strong>Install App</strong> in the left sidebar, then{" "}
-                    <strong>Install to Workspace</strong>. This generates the bot
-                    token you&apos;ll need in the next step.
-                  </p>
-                </div>
-
-                <Separator />
-
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
-                    <StepNumber n={4} />
+                    <StepNumber n={2} />
                     <p className="text-sm font-medium">
-                      Paste your credentials
+                      Paste your App ID and Signing Secret
                     </p>
                   </div>
-                  <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
-                    <li>
-                      <strong>Bot User OAuth Token</strong> — go to{" "}
-                      <strong>OAuth &amp; Permissions</strong>, copy the token
-                      starting with{" "}
-                      <code className="text-xs bg-muted px-1 py-0.5 rounded">
-                        xoxb-
-                      </code>
-                    </li>
-                    <li>
-                      <strong>Signing Secret</strong> — go to{" "}
-                      <strong>Basic Information → App Credentials</strong>
-                    </li>
-                    <li>
-                      <strong>App ID</strong> — found at the top of{" "}
-                      <strong>Basic Information</strong> (e.g.{" "}
-                      <code className="text-xs bg-muted px-1 py-0.5 rounded">
-                        A07...
-                      </code>
-                      )
-                    </li>
-                  </ul>
+                  <p className="text-sm text-muted-foreground">
+                    In your new app&apos;s settings, go to{" "}
+                    <strong>Basic Information</strong> to find these values.
+                  </p>
                   <div className="space-y-1.5">
-                    <Label htmlFor="byob-bot-token">
-                      Bot User OAuth Token
-                    </Label>
+                    <Label htmlFor="byob-app-id">App ID</Label>
                     <Input
-                      id="byob-bot-token"
-                      type="password"
-                      placeholder="xoxb-..."
-                      value={botToken}
-                      onChange={(e) => setBotToken(e.target.value)}
+                      id="byob-app-id"
+                      placeholder="A07..."
+                      value={slackAppId}
+                      onChange={(e) => setSlackAppId(e.target.value)}
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -746,13 +699,51 @@ export function AgentsPage({
                       onChange={(e) => setSigningSecret(e.target.value)}
                     />
                   </div>
+                </div>
+
+                <Separator />
+
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <StepNumber n={3} />
+                    <p className="text-sm font-medium">
+                      Install the app to your workspace
+                    </p>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Go to <strong>OAuth &amp; Permissions</strong> in the left
+                    sidebar, then click{" "}
+                    <strong>Install to Workspace</strong>.
+                  </p>
+                </div>
+
+                <Separator />
+
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <StepNumber n={4} />
+                    <p className="text-sm font-medium">
+                      Paste your Bot User OAuth Token
+                    </p>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    After installing, copy the{" "}
+                    <strong>Bot User OAuth Token</strong> starting with{" "}
+                    <code className="text-xs bg-muted px-1 py-0.5 rounded">
+                      xoxb-
+                    </code>{" "}
+                    from the <strong>OAuth &amp; Permissions</strong> page.
+                  </p>
                   <div className="space-y-1.5">
-                    <Label htmlFor="byob-app-id">App ID</Label>
+                    <Label htmlFor="byob-bot-token">
+                      Bot User OAuth Token
+                    </Label>
                     <Input
-                      id="byob-app-id"
-                      placeholder="A07..."
-                      value={slackAppId}
-                      onChange={(e) => setSlackAppId(e.target.value)}
+                      id="byob-bot-token"
+                      type="password"
+                      placeholder="xoxb-..."
+                      value={botToken}
+                      onChange={(e) => setBotToken(e.target.value)}
                     />
                   </div>
                 </div>

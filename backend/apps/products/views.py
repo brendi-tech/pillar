@@ -270,9 +270,7 @@ class ProductViewSet(viewsets.ModelViewSet):
             200: {
                 'type': 'object',
                 'properties': {
-                    'mcp_url': {'type': 'string', 'nullable': True},
-                    'subdomain': {'type': 'string', 'nullable': True},
-                    'help_center_domain': {'type': 'string'},
+                    'mcp_url': {'type': 'string'},
                 },
             },
         },
@@ -282,17 +280,11 @@ class ProductViewSet(viewsets.ModelViewSet):
         """Return the computed MCP server URL for this product."""
         from django.conf import settings as django_settings
 
-        product = self.get_object()
-        help_center_domain = getattr(django_settings, 'HELP_CENTER_DOMAIN', 'help.pillar.io')
-        mcp_url = (
-            f"https://{product.subdomain}.{help_center_domain}/mcp/"
-            if product.subdomain
-            else None
-        )
+        mcp_base_url = getattr(django_settings, 'MCP_BASE_URL', 'http://localhost:8003')
+        mcp_url = f"{mcp_base_url}/mcp/"
+
         return Response({
             'mcp_url': mcp_url,
-            'subdomain': product.subdomain,
-            'help_center_domain': help_center_domain,
         })
 
     @extend_schema(
