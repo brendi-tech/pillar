@@ -67,12 +67,15 @@ async def handle_client_log(params: dict, context: dict = None):
     timestamp = params.get('timestamp', '')
     session_id = context.get('session_id') if context else None
     
-    # Build log message for console
+    product = context.get('help_center_config') if context else None
+    org = context.get('organization') if context else None
+    product_tag = f"[{org}:{product}]" if product else "[unknown-product]"
+
     session_prefix = f"[{session_id[:8]}...]" if session_id else "[no-session]"
     ts_prefix = f"[{timestamp}]" if timestamp else ""
     data_suffix = f" | data: {json.dumps(data, default=str)[:200]}" if data else ""
     
-    full_message = f"[CLIENT {level.upper()}] {session_prefix} {ts_prefix} {message}{data_suffix}"
+    full_message = f"[CLIENT {level.upper()}] {product_tag} {session_prefix} {ts_prefix} {message}{data_suffix}"
     
     # Log to Django console
     if level == 'error':
