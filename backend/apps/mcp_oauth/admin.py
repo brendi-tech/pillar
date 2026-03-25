@@ -1,6 +1,17 @@
 from django.contrib import admin
 
-from apps.mcp_oauth.models import OAuthProvider
+from apps.mcp_oauth.models import MCPApplication, OAuthProvider
+
+admin.site.unregister(MCPApplication)
+
+
+@admin.register(MCPApplication)
+class MCPApplicationAdmin(admin.ModelAdmin):
+    list_display = ('name', 'product', 'client_id', 'client_type', 'authorization_grant_type')
+    list_filter = ('client_type', 'authorization_grant_type')
+    search_fields = ('name', 'client_id', 'product__name')
+    raw_id_fields = ('product', 'user')
+    readonly_fields = ('created', 'updated')
 
 
 @admin.register(OAuthProvider)
