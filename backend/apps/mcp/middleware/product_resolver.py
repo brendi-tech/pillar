@@ -19,13 +19,14 @@ logger = logging.getLogger(__name__)
 
 class ProductResolverMiddleware:
     """
-    Resolves Product from subdomain.
+    Resolves Product and Agent from request context.
 
     Routes:
-    - {subdomain}.{HELP_CENTER_DOMAIN} -> Product
-    - ?help_center_id={id} -> Direct lookup (development/testing)
+    - {agent-slug}.{HELP_CENTER_DOMAIN} -> Agent -> Product
+    - Agent.mcp_domain (custom domain) -> Agent -> Product
+    - Bearer token / headers / query params -> Product -> default Agent
 
-    Sets request.product and request.organization on success.
+    Sets request.product, request.organization, and request.agent on success.
 
     This middleware is fully async-native to avoid serializing ASGI
     requests through Django's single-thread sync_to_async executor.
@@ -74,14 +75,19 @@ class ProductResolverMiddleware:
             from apps.products.models.agent import Agent as AgentModel
             from apps.products.models import Product
 
-            help_center_domain = getattr(settings, 'HELP_CENTER_DOMAIN', 'help.pillar.io')
+            help_center_domain = getattr(settings, 'HELP_CENTER_DOMAIN', 'trypillar.com')
 
             product = None
             if host.endswith(f'.{help_center_domain}'):
                 subdomain = host.replace(f'.{help_center_domain}', '')
-                product = await (
-                    Product.objects.filter(subdomain=subdomain).afirst()
+                agent = await (
+                    AgentModel.objects
+                    .select_related('product')
+                    .filter(slug=subdomain, channel='mcp', is_active=True)
+                    .afirst()
                 )
+                if agent:
+                    product = agent.product
             else:
                 agent = await (
                     AgentModel.objects
@@ -111,7 +117,7 @@ class ProductResolverMiddleware:
             return None
 
         host = request.get_host().split(':')[0].lower()
-        help_center_domain = getattr(settings, 'HELP_CENTER_DOMAIN', 'help.pillar.io')
+        help_center_domain = getattr(settings, 'HELP_CENTER_DOMAIN', 'trypillar.com')
 
         product = None
 
@@ -151,31 +157,43 @@ class ProductResolverMiddleware:
             if product:
                 logger.debug(f"[MCP] Resolved custom domain '{host}' -> {product.name}")
 
-        # Strategy 1: Subdomain resolution with caching
+        # Strategy 1: Agent slug resolution from subdomain
+        # {slug}.{HELP_CENTER_DOMAIN} -> Agent (by slug) -> Product
         if not product and host.endswith(f'.{help_center_domain}'):
+            from apps.products.models.agent import Agent as AgentModel
             subdomain = host.replace(f'.{help_center_domain}', '')
-            cache_key = f'mcp:hc:{subdomain}'
+            cache_key = f'mcp:agent:{subdomain}'
 
-            # Try cache first
-            config_id = cache.get(cache_key)
-            if config_id:
+            cached = cache.get(cache_key)
+            if cached:
+                product_id, agent_id = cached.split(':', 1)
                 product = await (
                     Product.objects.select_related('organization')
-                    .filter(id=config_id)
+                    .filter(id=product_id)
                     .afirst()
                 )
+                if product and agent_id:
+                    agent = await AgentModel.objects.filter(id=agent_id, is_active=True).afirst()
+                    if agent:
+                        request.agent = agent
             else:
-                # Cache miss - query database
-                product = await (
-                    Product.objects.select_related('organization')
-                    .filter(subdomain=subdomain)
+                agent = await (
+                    AgentModel.objects
+                    .select_related('product__organization')
+                    .filter(slug=subdomain, channel='mcp', is_active=True)
                     .afirst()
                 )
-                if product:
-                    cache.set(cache_key, str(product.id), self.CACHE_TTL)
+                if agent:
+                    product = agent.product
+                    request.agent = agent
+                    cache.set(
+                        cache_key,
+                        f"{product.id}:{agent.id}",
+                        self.CACHE_TTL,
+                    )
 
             if product:
-                logger.debug(f"[MCP] Resolved subdomain '{subdomain}' -> {product.name}")
+                logger.debug(f"[MCP] Resolved agent slug '{subdomain}' -> {product.name}")
 
         # Strategy 2: Query parameter (development/testing)
         if not product:

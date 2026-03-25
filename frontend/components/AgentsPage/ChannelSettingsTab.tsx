@@ -19,7 +19,6 @@ import {
 } from "@/components/ui/select";
 import { v2Fetch, v2Patch } from "@/lib/admin/v2/api-client";
 import { adminFetch } from "@/lib/admin/api-client";
-import { useProduct } from "@/providers/ProductProvider";
 import { Check, Copy, AlertTriangle, Plus, Loader2 } from "lucide-react";
 import type { Agent } from "@/types/agent";
 
@@ -540,7 +539,13 @@ function ApiSettings({
 }
 
 interface MCPInfoResponse {
-  mcp_url: string;
+  help_center_domain: string;
+  mcp_agents: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    mcp_url: string;
+  }>;
 }
 
 interface SyncSecretItem {
@@ -589,7 +594,6 @@ function MCPSettings({
   productId: string;
   onChange: (updates: Partial<Agent>) => void;
 }) {
-  const { currentProduct } = useProduct();
   const queryClient = useQueryClient();
   const [generatedSecret, setGeneratedSecret] = useState<{ secret: string; name: string } | null>(null);
   const [newSecretName, setNewSecretName] = useState("");
@@ -639,16 +643,16 @@ function MCPSettings({
     createSecretMutation.mutate(name);
   };
 
-  const mcpUrl = mcpInfo?.mcp_url || "";
-  const productName = currentProduct?.name || "my-product";
-  const productSlug = (currentProduct?.subdomain || productName).toLowerCase().replace(/\s+/g, "-");
+  const agentMcpInfo = mcpInfo?.mcp_agents?.find((a) => a.id === agent.id);
+  const mcpUrl = agentMcpInfo?.mcp_url || "";
+  const agentSlug = agent.slug || agent.name?.toLowerCase().replace(/\s+/g, "-") || "my-agent";
 
   const keyPlaceholder = generatedSecret?.secret || "<your-api-key>";
 
   const cursorConfig = JSON.stringify(
     {
       mcpServers: {
-        [productSlug]: {
+        [agentSlug]: {
           url: mcpUrl || "<your-mcp-url>",
           headers: {
             Authorization: `Bearer ${keyPlaceholder}`,
@@ -663,7 +667,7 @@ function MCPSettings({
   const claudeConfig = JSON.stringify(
     {
       mcpServers: {
-        [productSlug]: {
+        [agentSlug]: {
           url: mcpUrl || "<your-mcp-url>",
           headers: {
             Authorization: `Bearer ${keyPlaceholder}`,
@@ -675,8 +679,6 @@ function MCPSettings({
     2
   );
 
-  const customDomainUrl = agent.mcp_domain ? `https://${agent.mcp_domain}/mcp/` : null;
-
   return (
     <div className="space-y-8">
       {/* Server URL */}
@@ -687,53 +689,19 @@ function MCPSettings({
             Use this URL to connect MCP clients to your agent
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Input
-            value={mcpUrl}
-            readOnly
-            className="font-mono text-sm bg-muted"
-          />
-          <InlineCopyButton value={mcpUrl} />
-        </div>
-        {customDomainUrl && (
-          <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground">Custom Domain URL</Label>
-            <div className="flex items-center gap-2">
-              <Input
-                value={customDomainUrl}
-                readOnly
-                className="font-mono text-sm bg-muted"
-              />
-              <InlineCopyButton value={customDomainUrl} />
-            </div>
+        {mcpUrl ? (
+          <div className="flex items-center gap-2">
+            <Input
+              value={mcpUrl}
+              readOnly
+              className="font-mono text-sm bg-muted"
+            />
+            <InlineCopyButton value={mcpUrl} />
           </div>
-        )}
-      </div>
-
-      {/* Custom Domain */}
-      <div className="space-y-3">
-        <div>
-          <Label htmlFor="mcp-domain" className="text-sm font-medium">Custom Domain</Label>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Optionally serve your MCP endpoint from your own domain
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Set a slug for this agent to get an MCP server URL.
           </p>
-        </div>
-        <Input
-          id="mcp-domain"
-          value={agent.mcp_domain || ""}
-          onChange={(e) => {
-            const val = e.target.value.trim().replace(/^https?:\/\//, "").replace(/\/+$/, "");
-            onChange({ mcp_domain: val || null });
-          }}
-          placeholder="mcp.yourdomain.com"
-          className="font-mono text-sm"
-        />
-        {mcpUrl && (
-          <div className="rounded-lg border bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
-            Point a CNAME record for your domain to{" "}
-            <code className="font-mono text-foreground">{new URL(mcpUrl).host}</code>.
-            Changes may take up to 24 hours to propagate.
-          </div>
         )}
       </div>
 

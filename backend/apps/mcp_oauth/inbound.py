@@ -541,7 +541,7 @@ async def _resolve_product_from_host(request):
     from apps.products.models import Product
 
     host = request.get_host().split(':')[0].lower()
-    help_center_domain = getattr(settings, 'HELP_CENTER_DOMAIN', 'help.pillar.io')
+    help_center_domain = getattr(settings, 'HELP_CENTER_DOMAIN', 'trypillar.com')
 
     if host.endswith(f'.{help_center_domain}'):
         subdomain = host.replace(f'.{help_center_domain}', '')

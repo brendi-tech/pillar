@@ -265,26 +265,56 @@ class ProductViewSet(viewsets.ModelViewSet):
 
     @extend_schema(
         summary="Get MCP connection info",
-        description="Returns computed MCP server URL and domain info for this product.",
+        description="Returns MCP server URLs for this product's agents.",
         responses={
             200: {
                 'type': 'object',
                 'properties': {
-                    'mcp_url': {'type': 'string'},
+                    'help_center_domain': {'type': 'string'},
+                    'mcp_agents': {
+                        'type': 'array',
+                        'items': {
+                            'type': 'object',
+                            'properties': {
+                                'id': {'type': 'string'},
+                                'name': {'type': 'string'},
+                                'slug': {'type': 'string'},
+                                'mcp_url': {'type': 'string'},
+                            },
+                        },
+                    },
                 },
             },
         },
     )
     @action(detail=True, methods=['get'], url_path='mcp-info')
     def mcp_info(self, request, pk=None):
-        """Return the computed MCP server URL for this product."""
+        """Return the MCP server URLs for this product's agents."""
         from django.conf import settings as django_settings
+        from apps.products.models.agent import Agent as AgentModel
 
-        mcp_base_url = getattr(django_settings, 'MCP_BASE_URL', 'http://localhost:8003')
-        mcp_url = f"{mcp_base_url}/mcp/"
+        product = self.get_object()
+        help_center_domain = getattr(
+            django_settings, 'HELP_CENTER_DOMAIN', 'trypillar.com'
+        )
+
+        mcp_agents = list(
+            AgentModel.objects.filter(
+                product=product, channel='mcp', is_active=True, slug__isnull=False
+            ).exclude(slug='').values('id', 'name', 'slug').order_by('created_at')
+        )
 
         return Response({
-            'mcp_url': mcp_url,
+            'help_center_domain': help_center_domain,
+            'mcp_agents': [
+                {
+                    'id': str(a['id']),
+                    'name': a['name'],
+                    'slug': a['slug'],
+                    'mcp_url': f"https://{a['slug']}.{help_center_domain}/mcp/",
+                }
+                for a in mcp_agents
+            ],
         })
 
     @extend_schema(

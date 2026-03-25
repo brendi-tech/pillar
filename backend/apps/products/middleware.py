@@ -12,8 +12,8 @@ logger = logging.getLogger(__name__)
 # Default demo organization ID for development
 DEMO_ORGANIZATION_ID = getattr(settings, 'DEMO_ORGANIZATION_ID', '10000000-0000-0000-0000-000000000001')
 
-# Help center domain suffix (e.g., "help.pillar.io")
-HELP_CENTER_DOMAIN = getattr(settings, 'HELP_CENTER_DOMAIN', 'help.pillar.io')
+# Domain suffix for subdomain resolution (e.g., "trypillar.com")
+HELP_CENTER_DOMAIN = getattr(settings, 'HELP_CENTER_DOMAIN', 'trypillar.com')
 
 
 class CustomerIdMiddleware:
@@ -25,7 +25,7 @@ class CustomerIdMiddleware:
 
     Customer ID can come from:
     1. x-customer-id header (Pillar organization ID or "demo")
-    2. Pillar subdomain (e.g., {subdomain}.help.pillar.io)
+    2. Pillar subdomain (e.g., {slug}.trypillar.com)
     3. Custom domain (resolved via Host header) - TODO
 
     This middleware is fully async-native to avoid serializing ASGI
@@ -167,7 +167,7 @@ class CustomerIdMiddleware:
         """
         Resolve organization from subdomain.
 
-        Supports format: {subdomain}.help.pillar.io
+        Supports format: {slug}.trypillar.com
 
         Returns tuple of (customer_id, organization, product) or None.
         """

@@ -129,7 +129,7 @@ class Product(TenantAwareModel):
         blank=True,
         db_index=True,
         validators=[validate_subdomain],
-        help_text="Unique subdomain for this product (e.g., 'acme' for acme.help.pillar.io)"
+        help_text="Unique subdomain for this product (e.g., 'acme' for acme.trypillar.com)"
     )
 
     # Product website URL (used for prefilling sources, brand analysis, etc.)
