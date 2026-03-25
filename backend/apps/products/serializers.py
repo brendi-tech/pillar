@@ -1,8 +1,12 @@
 """
 Serializers for the products app.
 """
+import logging
 import re
+
 from rest_framework import serializers
+
+logger = logging.getLogger(__name__)
 from apps.products.models import (
     Product, Platform, Action, ActionExecutionLog, ActionDeployment, SyncSecret,
     Agent,
@@ -346,11 +350,11 @@ class AgentSerializer(serializers.ModelSerializer):
             'openapi_source_ids', 'openapi_sources_config',
             'max_response_tokens', 'include_sources', 'include_suggested_followups',
             'llm_model', 'temperature',
-            'channel_config', 'mcp_domain', 'default_language',
+            'channel_config', 'mcp_domain', 'cf_custom_hostname_id', 'default_language',
             'knowledge_scope', 'knowledge_source_ids',
             'created_at', 'updated_at',
         ]
-        read_only_fields = ['id', 'organization', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'organization', 'cf_custom_hostname_id', 'created_at', 'updated_at']
 
     def get_mcp_source_ids(self, obj) -> list[str]:
         return [
@@ -405,15 +409,108 @@ class AgentSerializer(serializers.ModelSerializer):
 
         return data
 
+    def validate_mcp_domain(self, value):
+        if not value:
+            return value
+        value = value.strip().lower()
+        _validate_mcp_domain_format(value)
+        return value
+
     def update(self, instance, validated_data):
         openapi_config = validated_data.pop('openapi_sources_config', None)
         mcp_config = validated_data.pop('mcp_sources_config', None)
+
+        old_mcp_domain = instance.mcp_domain
+        new_mcp_domain = validated_data.get('mcp_domain', old_mcp_domain)
+        if new_mcp_domain == '':
+            new_mcp_domain = None
+            validated_data['mcp_domain'] = None
+
+        domain_changed = (
+            'mcp_domain' in validated_data
+            and old_mcp_domain != new_mcp_domain
+        )
+
+        if domain_changed:
+            _handle_mcp_domain_change(instance, old_mcp_domain, new_mcp_domain)
+            if new_mcp_domain is None:
+                validated_data['cf_custom_hostname_id'] = None
+
         instance = super().update(instance, validated_data)
         if openapi_config is not None:
             _sync_openapi_sources_config(instance, openapi_config)
         if mcp_config is not None:
             _sync_mcp_sources_config(instance, mcp_config)
         return instance
+
+
+def _validate_mcp_domain_format(domain: str):
+    """Reject IPs, reserved domains, and *.trypillar.com subdomains."""
+    import ipaddress
+    try:
+        ipaddress.ip_address(domain)
+        raise serializers.ValidationError("IP addresses are not allowed as custom domains.")
+    except ValueError:
+        pass
+
+    reserved_suffixes = ['trypillar.com', 'pillar.io', 'pillar.bot']
+    for suffix in reserved_suffixes:
+        if domain == suffix or domain.endswith(f'.{suffix}'):
+            raise serializers.ValidationError(
+                f"Domains under *.{suffix} are reserved and cannot be used as custom domains."
+            )
+
+    if not re.match(r'^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$', domain):
+        raise serializers.ValidationError(
+            "Invalid domain format. Use a valid hostname like 'mcp.example.com'."
+        )
+
+
+def _handle_mcp_domain_change(agent, old_domain: str | None, new_domain: str | None):
+    """Create/delete Cloudflare custom hostnames when mcp_domain changes."""
+    from django.conf import settings as django_settings
+
+    if not getattr(django_settings, 'CLOUDFLARE_ZONE_ID', ''):
+        logger.warning("Cloudflare not configured, skipping custom hostname management")
+        return
+
+    from apps.integrations.cloudflare.service import (
+        CloudflareCustomHostnameService,
+        CloudflareAPIError,
+    )
+
+    try:
+        cf = CloudflareCustomHostnameService()
+    except ValueError:
+        logger.warning("Cloudflare credentials missing, skipping custom hostname management")
+        return
+
+    if old_domain and agent.cf_custom_hostname_id:
+        try:
+            cf.delete_hostname(agent.cf_custom_hostname_id)
+            logger.info("Deleted CF custom hostname %s for domain %s",
+                        agent.cf_custom_hostname_id, old_domain)
+        except Exception:
+            logger.exception("Failed to delete CF custom hostname %s",
+                             agent.cf_custom_hostname_id)
+
+    if new_domain:
+        try:
+            result = cf.create_hostname(new_domain)
+            agent.cf_custom_hostname_id = result['id']
+            agent.save(update_fields=['cf_custom_hostname_id'])
+            logger.info("Created CF custom hostname %s for domain %s",
+                        result['id'], new_domain)
+        except CloudflareAPIError as e:
+            raise serializers.ValidationError(
+                {"mcp_domain": f"Failed to register custom domain with Cloudflare: {e}"}
+            )
+        except Exception:
+            logger.exception("Unexpected error creating CF custom hostname for %s",
+                             new_domain)
+            raise serializers.ValidationError(
+                {"mcp_domain": "Failed to register custom domain. Please try again."}
+            )
 
 
 class AgentCreateSerializer(serializers.ModelSerializer):

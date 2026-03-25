@@ -540,12 +540,27 @@ function ApiSettings({
 
 interface MCPInfoResponse {
   help_center_domain: string;
+  cname_target: string;
   mcp_agents: Array<{
     id: string;
     name: string;
     slug: string;
     mcp_url: string;
+    custom_domain_url: string | null;
   }>;
+}
+
+interface MCPDomainStatusResponse {
+  hostname: string;
+  status: string;
+  ssl_status: string;
+  cname_target: string;
+  ownership_verification?: {
+    type: string;
+    name: string;
+    value: string;
+  } | null;
+  error?: string;
 }
 
 interface SyncSecretItem {
@@ -823,8 +838,159 @@ function MCPSettings({
         </Tabs>
       </div>
 
+      {/* Custom Domain */}
+      <CustomDomainSection
+        agent={agent}
+        productId={productId}
+        onChange={onChange}
+        cnameTarget={mcpInfo?.cname_target || "mcp-proxy.trypillar.com"}
+        customDomainUrl={agentMcpInfo?.custom_domain_url || null}
+      />
+
       {/* OAuth Configuration */}
       <OAuthProviderSection productId={productId} />
+    </div>
+  );
+}
+
+function CustomDomainSection({
+  agent,
+  productId,
+  onChange,
+  cnameTarget,
+  customDomainUrl,
+}: {
+  agent: Agent;
+  productId: string;
+  onChange: (updates: Partial<Agent>) => void;
+  cnameTarget: string;
+  customDomainUrl: string | null;
+}) {
+  const [domainInput, setDomainInput] = useState(agent.mcp_domain || "");
+  const hasDomain = !!agent.mcp_domain;
+  const hasCfHostname = !!agent.cf_custom_hostname_id;
+
+  const { data: domainStatus } = useQuery({
+    queryKey: ["mcp-domain-status", productId, agent.id],
+    queryFn: () =>
+      adminFetch<MCPDomainStatusResponse>(
+        `/products/${productId}/agents/${agent.id}/mcp-domain-status/`
+      ),
+    enabled: hasDomain && hasCfHostname,
+    refetchInterval: (query) => {
+      const status = query.state.data?.status;
+      if (status === "active") return false;
+      return 10_000;
+    },
+  });
+
+  const isActive = domainStatus?.status === "active";
+  const isPending = hasDomain && hasCfHostname && !isActive;
+
+  const handleSetDomain = () => {
+    const cleaned = domainInput.trim().toLowerCase();
+    if (cleaned && cleaned !== agent.mcp_domain) {
+      onChange({ mcp_domain: cleaned });
+    }
+  };
+
+  const handleClearDomain = () => {
+    setDomainInput("");
+    onChange({ mcp_domain: null });
+  };
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <Label className="text-sm font-medium">Custom Domain</Label>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          Serve your MCP server from your own domain (e.g., mcp.yourdomain.com)
+        </p>
+      </div>
+
+      {hasDomain ? (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Input
+              value={agent.mcp_domain || ""}
+              readOnly
+              className="font-mono text-sm bg-muted"
+            />
+            <Badge
+              variant={isActive ? "default" : "secondary"}
+              className={isActive ? "bg-green-600 hover:bg-green-600" : ""}
+            >
+              {isActive ? "Active" : isPending ? "Pending" : "Not Verified"}
+            </Badge>
+            <Button variant="ghost" size="sm" onClick={handleClearDomain}>
+              Remove
+            </Button>
+          </div>
+
+          {isPending && (
+            <Alert>
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>DNS Configuration Required</AlertTitle>
+              <AlertDescription className="space-y-2">
+                <p>
+                  Add a CNAME record in your DNS provider to activate your custom domain:
+                </p>
+                <div className="rounded-md bg-muted p-3 font-mono text-xs space-y-1">
+                  <div className="grid grid-cols-[60px_1fr] gap-2">
+                    <span className="text-muted-foreground">Type:</span>
+                    <span>CNAME</span>
+                  </div>
+                  <div className="grid grid-cols-[60px_1fr] gap-2">
+                    <span className="text-muted-foreground">Name:</span>
+                    <span>{agent.mcp_domain}</span>
+                  </div>
+                  <div className="grid grid-cols-[60px_1fr] gap-2">
+                    <span className="text-muted-foreground">Target:</span>
+                    <div className="flex items-center gap-1.5">
+                      <span>{cnameTarget}</span>
+                      <InlineCopyButton value={cnameTarget} />
+                    </div>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  SSL will be provisioned automatically once the CNAME is verified. This usually takes a few minutes.
+                </p>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {isActive && customDomainUrl && (
+            <div className="flex items-center gap-2">
+              <Input
+                value={customDomainUrl}
+                readOnly
+                className="font-mono text-sm bg-muted"
+              />
+              <InlineCopyButton value={customDomainUrl} />
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="flex gap-2">
+          <Input
+            placeholder="mcp.yourdomain.com"
+            value={domainInput}
+            onChange={(e) => setDomainInput(e.target.value.toLowerCase().replace(/[^a-z0-9.-]/g, ""))}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleSetDomain();
+            }}
+            className="font-mono text-sm"
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleSetDomain}
+            disabled={!domainInput.trim()}
+          >
+            Set Domain
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

@@ -200,7 +200,14 @@ class Agent(TenantAwareModel):
         unique=True,
         db_index=True,
         help_text="Custom domain for MCP server access (e.g., 'mcp.acme.com'). "
-                  "Client CNAMEs this to ai.trypillar.com.",
+                  "Client CNAMEs this to mcp-proxy.trypillar.com.",
+    )
+    cf_custom_hostname_id = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="Cloudflare Custom Hostname ID for mcp_domain",
     )
 
     # Language override

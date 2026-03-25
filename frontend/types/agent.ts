@@ -62,6 +62,7 @@ export interface Agent {
   organization: string;
   product: string;
   name: string;
+  slug: string;
   channel: AgentChannel;
   is_active: boolean;
   tone: AgentTone | '';
@@ -77,6 +78,7 @@ export interface Agent {
   temperature: number | null;
   channel_config: Record<string, unknown>;
   mcp_domain: string | null;
+  cf_custom_hostname_id: string | null;
   default_language: string;
   knowledge_scope: KnowledgeScopeMode;
   knowledge_source_ids: string[];

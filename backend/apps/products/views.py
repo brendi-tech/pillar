@@ -271,6 +271,7 @@ class ProductViewSet(viewsets.ModelViewSet):
                 'type': 'object',
                 'properties': {
                     'help_center_domain': {'type': 'string'},
+                    'cname_target': {'type': 'string'},
                     'mcp_agents': {
                         'type': 'array',
                         'items': {
@@ -280,6 +281,7 @@ class ProductViewSet(viewsets.ModelViewSet):
                                 'name': {'type': 'string'},
                                 'slug': {'type': 'string'},
                                 'mcp_url': {'type': 'string'},
+                                'custom_domain_url': {'type': 'string', 'nullable': True},
                             },
                         },
                     },
@@ -292,6 +294,7 @@ class ProductViewSet(viewsets.ModelViewSet):
         """Return the MCP server URLs for this product's agents."""
         from django.conf import settings as django_settings
         from apps.products.models.agent import Agent as AgentModel
+        from apps.integrations.cloudflare.service import get_cname_target
 
         product = self.get_object()
         help_center_domain = getattr(
@@ -301,17 +304,25 @@ class ProductViewSet(viewsets.ModelViewSet):
         mcp_agents = list(
             AgentModel.objects.filter(
                 product=product, channel='mcp', is_active=True, slug__isnull=False
-            ).exclude(slug='').values('id', 'name', 'slug').order_by('created_at')
+            ).exclude(slug='').values(
+                'id', 'name', 'slug', 'mcp_domain',
+            ).order_by('created_at')
         )
 
         return Response({
             'help_center_domain': help_center_domain,
+            'cname_target': get_cname_target(),
             'mcp_agents': [
                 {
                     'id': str(a['id']),
                     'name': a['name'],
                     'slug': a['slug'],
                     'mcp_url': f"https://{a['slug']}.{help_center_domain}/mcp/",
+                    'custom_domain_url': (
+                        f"https://{a['mcp_domain']}/mcp/"
+                        if a.get('mcp_domain')
+                        else None
+                    ),
                 }
                 for a in mcp_agents
             ],
@@ -644,6 +655,64 @@ class AgentViewSet(viewsets.ModelViewSet):
             status=status.HTTP_201_CREATED,
             headers=headers,
         )
+
+    @action(detail=True, methods=['get'], url_path='mcp-domain-status')
+    def mcp_domain_status(self, request, product_pk=None, pk=None):
+        """Check the Cloudflare custom hostname status for this agent's mcp_domain."""
+        from apps.integrations.cloudflare.service import (
+            CloudflareCustomHostnameService,
+            get_cname_target,
+        )
+
+        agent = self.get_object()
+        if not agent.mcp_domain:
+            return Response(
+                {'error': 'No custom domain configured'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if not agent.cf_custom_hostname_id:
+            return Response({
+                'hostname': agent.mcp_domain,
+                'status': 'not_registered',
+                'ssl_status': 'not_registered',
+                'cname_target': get_cname_target(),
+            })
+
+        try:
+            cf = CloudflareCustomHostnameService()
+            result = cf.get_hostname(agent.cf_custom_hostname_id)
+        except Exception:
+            return Response({
+                'hostname': agent.mcp_domain,
+                'status': 'error',
+                'ssl_status': 'error',
+                'cname_target': get_cname_target(),
+                'error': 'Failed to check status with Cloudflare',
+            })
+
+        if not result:
+            return Response({
+                'hostname': agent.mcp_domain,
+                'status': 'not_found',
+                'ssl_status': 'not_found',
+                'cname_target': get_cname_target(),
+            })
+
+        ssl_info = result.get('ssl', {})
+        ownership = result.get('ownership_verification', {})
+
+        return Response({
+            'hostname': result.get('hostname', agent.mcp_domain),
+            'status': result.get('status', 'unknown'),
+            'ssl_status': ssl_info.get('status', 'unknown'),
+            'cname_target': get_cname_target(),
+            'ownership_verification': {
+                'type': ownership.get('type'),
+                'name': ownership.get('name'),
+                'value': ownership.get('value'),
+            } if ownership else None,
+        })
 
 
 class PlatformViewSet(viewsets.ModelViewSet):

@@ -25,6 +25,7 @@ from common.auth_views import (
     CustomTokenRefreshView,
     LogoutView,
 )
+from apps.mcp_oauth import inbound as mcp_oauth_inbound
 from apps.users.views import (
     get_authorization_url,
     oauth_callback,
@@ -128,6 +129,22 @@ urlpatterns = [
 
     # MCP Server - Public MCP endpoints
     path('mcp/', include('apps.mcp.urls')),
+
+    # MCP OAuth 2.1 inbound endpoints (for custom domain and subdomain MCP servers)
+    path('.well-known/oauth-protected-resource',
+         mcp_oauth_inbound.protected_resource_metadata,
+         name='mcp_oauth_protected_resource'),
+    path('.well-known/oauth-authorization-server',
+         mcp_oauth_inbound.authorization_server_metadata,
+         name='mcp_oauth_auth_server_metadata'),
+    path('register', mcp_oauth_inbound.register_client,
+         name='mcp_oauth_register'),
+    path('authorize', mcp_oauth_inbound.authorize,
+         name='mcp_oauth_authorize'),
+    path('oauth/callback', mcp_oauth_inbound.idp_callback,
+         name='mcp_oauth_idp_callback'),
+    path('token', mcp_oauth_inbound.token,
+         name='mcp_oauth_token'),
 
     # Knowledge API (Product Assistant knowledge sources)
     path('api/admin/knowledge/', include('apps.knowledge.admin.urls')),

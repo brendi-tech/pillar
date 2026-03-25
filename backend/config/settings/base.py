@@ -577,6 +577,10 @@ DEMO_ORGANIZATION_ID = os.environ.get('DEMO_ORGANIZATION_ID', '10000000-0000-000
 # Domain suffix for subdomain resolution (e.g., {agent-slug}.trypillar.com)
 HELP_CENTER_DOMAIN = os.environ.get('HELP_CENTER_DOMAIN', 'trypillar.com')
 
+# Cloudflare for SaaS (custom domain SSL provisioning)
+CLOUDFLARE_ZONE_ID = os.environ.get('CLOUDFLARE_ZONE_ID', '')
+CLOUDFLARE_API_TOKEN = os.environ.get('CLOUDFLARE_API_TOKEN', '')
+
 # ==============================================================================
 # FRONTEND URLs
 # ==============================================================================
