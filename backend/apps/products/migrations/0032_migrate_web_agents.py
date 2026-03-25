@@ -13,6 +13,8 @@ def forwards(apps, schema_editor):
             continue
 
         config = product.config or {}
+        if not isinstance(config, dict):
+            config = {}
         ai = config.get('ai', {})
         embed = config.get('embed', {})
 

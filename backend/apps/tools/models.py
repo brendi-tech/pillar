@@ -4,7 +4,7 @@ Server-side tool infrastructure models.
 ToolEndpoint — registered webhook endpoint for backend SDK tool calls.
 MCPToolSource — customer's MCP server for zero-code tool integration.
 OpenAPIToolSource — customer's OpenAPI spec for direct HTTP tool integration.
-UserToolCredential — per-user OAuth token storage for OpenAPI tools.
+UserToolCredential — per-user OAuth token storage for OpenAPI and MCP tools.
 OAuthLinkToken — short-lived tokens for the OAuth linking flow.
 RegisteredSkill — SDK-registered skill (instructional prompt content).
 """
@@ -215,6 +215,17 @@ class MCPToolSource(TenantAwareModel):
         blank=True,
         default='',
         help_text="Space-separated OAuth scopes requested",
+    )
+
+    class OAuthMode(models.TextChoices):
+        ORG = 'org', 'Organization (admin authenticates once)'
+        CLIENT = 'client', 'Per-user (each end-user authenticates)'
+
+    oauth_mode = models.CharField(
+        max_length=10,
+        choices=OAuthMode.choices,
+        default=OAuthMode.ORG,
+        help_text="Whether OAuth tokens are shared org-wide or per end-user",
     )
 
     class OAuthStatus(models.TextChoices):
@@ -535,13 +546,24 @@ class OpenAPIToolSourceVersion(TenantAwareModel):
 
 
 class UserToolCredential(TenantAwareModel):
-    """Per-user OAuth token for calling OpenAPI tools on behalf of a specific user."""
+    """Per-user OAuth token for calling OpenAPI or MCP tools on behalf of a specific user."""
 
     openapi_source = models.ForeignKey(
         OpenAPIToolSource,
         on_delete=models.CASCADE,
         related_name='user_credentials',
+        null=True,
+        blank=True,
         help_text="Which OpenAPI source these credentials are for",
+    )
+
+    mcp_source = models.ForeignKey(
+        MCPToolSource,
+        on_delete=models.CASCADE,
+        related_name='user_credentials',
+        null=True,
+        blank=True,
+        help_text="Which MCP source these credentials are for (client-auth mode)",
     )
 
     product = models.ForeignKey(
@@ -616,18 +638,40 @@ class UserToolCredential(TenantAwareModel):
         constraints = [
             models.UniqueConstraint(
                 fields=['openapi_source', 'channel', 'channel_user_id'],
-                name='usertoolcred_source_chan_user_uniq',
+                name='usertoolcred_openapi_chan_user_uniq',
+                condition=models.Q(openapi_source__isnull=False),
+            ),
+            models.UniqueConstraint(
+                fields=['mcp_source', 'channel', 'channel_user_id'],
+                name='usertoolcred_mcp_chan_user_uniq',
+                condition=models.Q(mcp_source__isnull=False),
+            ),
+            models.CheckConstraint(
+                check=(
+                    models.Q(openapi_source__isnull=False, mcp_source__isnull=True)
+                    | models.Q(openapi_source__isnull=True, mcp_source__isnull=False)
+                ),
+                name='usertoolcred_exactly_one_source',
             ),
         ]
         indexes = [
             models.Index(
                 fields=['openapi_source', 'is_active'],
-                name='usertoolcred_source_active_idx',
+                name='utcred_openapi_active_idx',
+            ),
+            models.Index(
+                fields=['mcp_source', 'is_active'],
+                name='utcred_mcp_active_idx',
             ),
         ]
 
     def __str__(self) -> str:
-        return f"{self.channel}:{self.channel_user_id} → {self.openapi_source.name}"
+        source_name = (
+            self.openapi_source.name if self.openapi_source_id
+            else self.mcp_source.name if self.mcp_source_id
+            else "unknown"
+        )
+        return f"{self.channel}:{self.channel_user_id} → {source_name}"
 
     @property
     def is_expired(self) -> bool:
@@ -644,6 +688,16 @@ class OAuthLinkToken(TenantAwareModel):
         OpenAPIToolSource,
         on_delete=models.CASCADE,
         related_name='link_tokens',
+        null=True,
+        blank=True,
+    )
+
+    mcp_source = models.ForeignKey(
+        MCPToolSource,
+        on_delete=models.CASCADE,
+        related_name='link_tokens',
+        null=True,
+        blank=True,
     )
 
     product = models.ForeignKey(
@@ -689,14 +743,33 @@ class OAuthLinkToken(TenantAwareModel):
     class Meta:
         verbose_name = 'OAuth Link Token'
         verbose_name_plural = 'OAuth Link Tokens'
+        constraints = [
+            models.CheckConstraint(
+                check=(
+                    models.Q(openapi_source__isnull=False, mcp_source__isnull=True)
+                    | models.Q(openapi_source__isnull=True, mcp_source__isnull=False)
+                ),
+                name='oauthlinktoken_exactly_one_source',
+            ),
+        ]
 
     def __str__(self) -> str:
-        return f"Link {self.channel}:{self.channel_user_id} → {self.openapi_source.name}"
+        source_name = (
+            self.openapi_source.name if self.openapi_source_id
+            else self.mcp_source.name if self.mcp_source_id
+            else "unknown"
+        )
+        return f"Link {self.channel}:{self.channel_user_id} → {source_name}"
 
     @property
     def is_expired(self) -> bool:
         from django.utils import timezone
         return self.expires_at < timezone.now()
+
+    @property
+    def source(self):
+        """Return whichever source FK is set."""
+        return self.openapi_source or self.mcp_source
 
 
 class RegisteredSkill(TenantAwareModel):

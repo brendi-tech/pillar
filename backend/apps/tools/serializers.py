@@ -89,7 +89,7 @@ class MCPToolSourceSerializer(serializers.ModelSerializer):
     class Meta:
         model = MCPToolSource
         fields = [
-            'id', 'name', 'slug', 'url', 'auth_type',
+            'id', 'name', 'slug', 'url', 'auth_type', 'oauth_mode',
             'discovered_tools', 'tool_count', 'tool_configs',
             'discovered_resources', 'resource_count',
             'discovered_prompts', 'prompt_count',
@@ -150,7 +150,7 @@ class MCPToolSourceCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MCPToolSource
-        fields = ['name', 'slug', 'url', 'auth_type', 'auth_credentials']
+        fields = ['name', 'slug', 'url', 'auth_type', 'auth_credentials', 'oauth_mode']
 
 
 class OpenAPIToolSourceVersionSerializer(serializers.ModelSerializer):

@@ -1,10 +1,13 @@
 """
-OAuth linking views for OpenAPI tool sources.
+OAuth linking views for OpenAPI and MCP tool sources.
 
 Handles the per-user OAuth consent flow:
 1. Agent generates a link token and returns an authorize URL to the user
 2. User clicks the link → GET /authorize/<token>/ → redirect to OAuth provider
 3. Provider redirects back → GET /callback/?code=...&state=... → exchange and store tokens
+
+Works for both OpenAPI sources (customer-configured OAuth apps) and
+MCP sources in client-auth mode (DCR-provisioned OAuth via MCP server).
 """
 from __future__ import annotations
 
@@ -25,7 +28,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.tools.models import OAuthLinkToken, OpenAPIToolSource, UserToolCredential
+from apps.tools.models import OAuthLinkToken, UserToolCredential
 
 logger = logging.getLogger(__name__)
 
@@ -37,19 +40,17 @@ class OAuthAuthorizeView(APIView):
     GET /api/tools/oauth/authorize/<link_token>/
 
     Validates the link token and redirects to the OAuth provider's
-    authorization endpoint.
+    authorization endpoint. Works for both OpenAPI and MCP sources.
     """
 
     authentication_classes = []
     permission_classes = [AllowAny]
 
     def get(self, request: Request, link_token: str) -> Response:
-        now = timezone.now()
-
         try:
-            token_obj = OAuthLinkToken.objects.select_related("openapi_source").get(
-                token=link_token,
-            )
+            token_obj = OAuthLinkToken.objects.select_related(
+                "openapi_source", "mcp_source",
+            ).get(token=link_token)
         except OAuthLinkToken.DoesNotExist:
             return Response(
                 {"error": "Invalid or expired link."},
@@ -68,10 +69,10 @@ class OAuthAuthorizeView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        source = token_obj.openapi_source
-        if not source.oauth_authorization_endpoint:
+        source = token_obj.source
+        if not source or not source.oauth_authorization_endpoint:
             return Response(
-                {"error": "OAuth is not configured for this API source."},
+                {"error": "OAuth is not configured for this source."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -98,10 +99,14 @@ class OAuthAuthorizeView(APIView):
 
         base_scopes = source.oauth_scopes or ""
         env_scope = ""
-        for env in (source.oauth_environments or []):
-            if env.get("name", "").lower() == token_obj.oauth_environment.lower() and token_obj.oauth_environment:
-                env_scope = env.get("extra_scope", "")
-                break
+        if hasattr(source, "oauth_environments"):
+            for env in (source.oauth_environments or []):
+                if (
+                    env.get("name", "").lower() == token_obj.oauth_environment.lower()
+                    and token_obj.oauth_environment
+                ):
+                    env_scope = env.get("extra_scope", "")
+                    break
         if env_scope:
             base_scopes = f"{base_scopes} {env_scope}".strip()
         if base_scopes:
@@ -116,7 +121,7 @@ class OAuthCallbackView(APIView):
     GET /api/tools/oauth/callback/?code=...&state=...
 
     Exchanges the authorization code for tokens, creates a UserToolCredential,
-    and redirects to a success page.
+    and redirects to a success page. Works for both OpenAPI and MCP sources.
     """
 
     authentication_classes = []
@@ -149,7 +154,7 @@ class OAuthCallbackView(APIView):
 
         try:
             token_obj = OAuthLinkToken.objects.select_related(
-                "openapi_source", "product",
+                "openapi_source", "mcp_source", "product",
             ).get(token=state)
         except OAuthLinkToken.DoesNotExist:
             return self._redirect_or_json(success=False, error_msg="Invalid state token.")
@@ -160,7 +165,8 @@ class OAuthCallbackView(APIView):
         if token_obj.is_expired:
             return self._redirect_or_json(success=False, error_msg="This authorization link has expired.")
 
-        source = token_obj.openapi_source
+        source = token_obj.source
+        is_mcp = token_obj.mcp_source_id is not None
         callback_url = f"{settings.API_BASE_URL}{OAUTH_CALLBACK_PATH}"
 
         token_data = {
@@ -171,7 +177,7 @@ class OAuthCallbackView(APIView):
         }
         if token_obj.code_verifier:
             token_data["code_verifier"] = token_obj.code_verifier
-        if source.oauth_client_secret:
+        if hasattr(source, "oauth_client_secret") and source.oauth_client_secret:
             token_data["client_secret"] = source.oauth_client_secret
 
         try:
@@ -180,7 +186,7 @@ class OAuthCallbackView(APIView):
                 data=token_data,
                 timeout=15,
             )
-        except Exception as exc:
+        except Exception:
             logger.exception("Token exchange failed for %s", source.name)
             return self._redirect_or_json(success=False, error_msg="Failed to exchange authorization code.")
 
@@ -193,7 +199,8 @@ class OAuthCallbackView(APIView):
 
         token_resp = resp.json()
 
-        if source.oauth_token_exchange_url:
+        # OpenAPI-specific: optional token exchange URL
+        if not is_mcp and hasattr(source, "oauth_token_exchange_url") and source.oauth_token_exchange_url:
             exchange_url = source.oauth_token_exchange_url
             if not exchange_url.startswith("http"):
                 exchange_url = f"{source.base_url.rstrip('/')}/{exchange_url.lstrip('/')}"
@@ -239,8 +246,14 @@ class OAuthCallbackView(APIView):
         if token_resp.get("expires_in"):
             expires_at = now + timedelta(seconds=token_resp["expires_in"])
 
+        source_lookup: dict = {}
+        if is_mcp:
+            source_lookup["mcp_source"] = source
+        else:
+            source_lookup["openapi_source"] = source
+
         UserToolCredential.objects.update_or_create(
-            openapi_source=source,
+            **source_lookup,
             channel=token_obj.channel,
             channel_user_id=token_obj.channel_user_id,
             oauth_environment=token_obj.oauth_environment,

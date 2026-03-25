@@ -1089,12 +1089,77 @@ async def execute_mcp_source_tool(
         )
         return
 
+    # Per-user OAuth check for client-auth MCP sources
+    user_access_token: str | None = None
+    if (
+        mcp_source.auth_type == MCPToolSource.AuthType.OAUTH
+        and mcp_source.oauth_mode == MCPToolSource.OAuthMode.CLIENT
+    ):
+        from apps.tools.models import UserToolCredential
+
+        channel = getattr(caller, "channel", "web")
+        channel_user_id = getattr(caller, "channel_user_id", None)
+        external_user_id = getattr(caller, "external_user_id", None)
+
+        user_credential = None
+        if channel_user_id:
+            user_credential = await UserToolCredential.objects.filter(
+                mcp_source=mcp_source,
+                channel=channel,
+                channel_user_id=channel_user_id,
+                is_active=True,
+            ).afirst()
+
+        if not user_credential and external_user_id:
+            user_credential = await UserToolCredential.objects.filter(
+                mcp_source=mcp_source,
+                external_user_id=external_user_id,
+                is_active=True,
+            ).afirst()
+
+        if not user_credential:
+            _span.end()
+            oauth_link = await _generate_oauth_link(
+                source=mcp_source,
+                channel=channel,
+                channel_user_id=channel_user_id or "",
+                product=mcp_source.product,
+            )
+            auth_msg = (
+                f"This action requires authentication. "
+                f"Please connect your account: {oauth_link}"
+            )
+            messages.append(format_tool_result_message_native(
+                tool_call_id=tool_call_id, result_content=auth_msg,
+            ))
+            display_trace.append({
+                "step_type": "tool_result",
+                "iteration": iteration,
+                "timestamp_ms": int(time.time() * 1000) - start_time_ms,
+                "tool": tool_name,
+                "kind": "tool_call",
+                "label": f"Auth required for {format_tool_name_for_display(tool_name)}",
+                "text": "User needs to authenticate",
+                "arguments": arguments,
+                "success": False,
+                "error": "auth_required",
+            })
+            yield emit_tool_call_complete(
+                tool_id, tool_name, success=False,
+                result_summary="Authentication required",
+                arguments=arguments,
+            )
+            return
+
+        user_access_token = user_credential.access_token
+
     call_start = time.time()
     result = await execute_mcp_tool(
         tool_name=mcp_original_name,
         arguments=arguments,
         mcp_source=mcp_source,
         caller=caller,
+        user_access_token=user_access_token,
     )
     call_duration_ms = int((time.time() - call_start) * 1000)
     _span.set_attribute("mcp_tool.duration_ms", call_duration_ms)
@@ -1139,7 +1204,20 @@ async def execute_mcp_source_tool(
         dashboard_link = _build_mcp_dashboard_link(mcp_source)
         error_detail = result.get("error", "Authentication failed.")
 
-        if mcp_source.auth_type == "oauth":
+        if mcp_source.auth_type == "oauth" and mcp_source.oauth_mode == "client":
+            channel = getattr(caller, "channel", "web")
+            channel_user_id = getattr(caller, "channel_user_id", None)
+            oauth_link = await _generate_oauth_link(
+                source=mcp_source,
+                channel=channel,
+                channel_user_id=channel_user_id or "",
+                product=mcp_source.product,
+            )
+            auth_msg = (
+                f"Your authentication for '{mcp_source.name}' has expired. "
+                f"Please reconnect your account: {oauth_link}"
+            )
+        elif mcp_source.auth_type == "oauth":
             auth_msg = (
                 f"Authentication for '{mcp_source.name}' has expired. "
                 f"An admin needs to re-authorize this connection from the dashboard: {dashboard_link}\n"
@@ -1623,12 +1701,20 @@ async def _generate_oauth_link(
 
     from django.conf import settings
 
-    from apps.tools.models import OAuthLinkToken
+    from apps.tools.models import MCPToolSource, OAuthLinkToken, OpenAPIToolSource
+
+    source_kwargs: dict = {}
+    if isinstance(source, OpenAPIToolSource):
+        source_kwargs["openapi_source"] = source
+    elif isinstance(source, MCPToolSource):
+        source_kwargs["mcp_source"] = source
+    else:
+        raise ValueError(f"Unsupported source type: {type(source)}")
 
     now = timezone.now()
 
     invalidation_filter = {
-        "openapi_source": source,
+        **source_kwargs,
         "channel": channel,
         "channel_user_id": channel_user_id,
         "is_used": False,
@@ -1643,7 +1729,7 @@ async def _generate_oauth_link(
     token = secrets.token_urlsafe(32)
     await OAuthLinkToken.objects.acreate(
         organization_id=source.organization_id,
-        openapi_source=source,
+        **source_kwargs,
         product=product,
         token=token,
         channel=channel,
@@ -1801,14 +1887,38 @@ async def execute_reconnect_account(
                 )
     else:
         source = matched_mcp
-        dashboard_link = _build_mcp_dashboard_link(source)
-        if source.auth_type == "oauth":
+        if source.auth_type == "oauth" and source.oauth_mode == "client":
+            channel = getattr(caller, "channel", "web")
+            channel_user_id = getattr(caller, "channel_user_id", "") or ""
+
+            if channel_user_id:
+                await UserToolCredential.objects.filter(
+                    mcp_source=source,
+                    channel=channel,
+                    channel_user_id=channel_user_id,
+                    is_active=True,
+                ).aupdate(is_active=False)
+
+            oauth_link = await _generate_oauth_link(
+                source=source,
+                channel=channel,
+                channel_user_id=channel_user_id,
+                product=product,
+            )
+            result_msg = (
+                f"Previous connection to '{source.name}' has been invalidated. "
+                f"Please reconnect your account: {oauth_link}\n"
+                f"You MUST include this exact URL in your response to the user."
+            )
+        elif source.auth_type == "oauth":
+            dashboard_link = _build_mcp_dashboard_link(source)
             result_msg = (
                 f"'{source.name}' uses OAuth authentication. "
                 f"An admin needs to re-authorize this connection from the dashboard: {dashboard_link}\n"
                 f"You MUST include this link in your response to the user."
             )
         else:
+            dashboard_link = _build_mcp_dashboard_link(source)
             auth_label = source.get_auth_type_display() if source.auth_type != "none" else "no"
             result_msg = (
                 f"'{source.name}' uses {auth_label} authentication. "

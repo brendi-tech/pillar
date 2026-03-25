@@ -55,6 +55,7 @@ import {
   Server,
   ShieldCheck,
   Unplug,
+  Users,
   Zap,
   Upload,
   X,
@@ -221,6 +222,9 @@ function MCPSourceStep({ onBack }: { onBack: () => void }) {
   const [manualHeaderName, setManualHeaderName] = useState("");
   const [manualHeaderValue, setManualHeaderValue] = useState("");
 
+  // OAuth mode (org vs per-user)
+  const [oauthMode, setOauthMode] = useState<"org" | "client">("org");
+
   // Created source
   const [createdSource, setCreatedSource] = useState<MCPToolSource | null>(null);
 
@@ -280,6 +284,7 @@ function MCPSourceStep({ onBack }: { onBack: () => void }) {
       ...(Object.keys(authCredentials).length > 0 && {
         auth_credentials: authCredentials,
       }),
+      ...(authType === "oauth" && { oauth_mode: oauthMode }),
       product_id: currentProduct.id,
     });
   };
@@ -301,6 +306,7 @@ function MCPSourceStep({ onBack }: { onBack: () => void }) {
   if (createdSource) {
     const isOAuthRequired =
       createdSource.oauth_status === "authorization_required";
+    const isClientAuth = createdSource.oauth_mode === "client";
 
     return (
       <div className="space-y-4">
@@ -327,6 +333,16 @@ function MCPSourceStep({ onBack }: { onBack: () => void }) {
             <p className="text-sm text-amber-700 dark:text-amber-300">
               A new window will open for you to authorize Pillar&apos;s access
               to this MCP server.
+            </p>
+          </div>
+        )}
+
+        {isClientAuth && !isOAuthRequired && (
+          <div className="rounded-md border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/30 p-3">
+            <p className="text-sm text-blue-700 dark:text-blue-300">
+              Per-user authentication is enabled. Each end-user will be
+              prompted to connect their own account when they first use a
+              tool from this source.
             </p>
           </div>
         )}
@@ -447,6 +463,59 @@ function MCPSourceStep({ onBack }: { onBack: () => void }) {
           status={probeStatus}
           result={probeResult}
         />
+
+        {/* OAuth mode selection (shown when probe detects OAuth) */}
+        {probeStatus === "done" && probeResult?.detected_type === "oauth" && (
+          <div className="space-y-3">
+            <Label>Authentication mode</Label>
+            <RadioGroup
+              value={oauthMode}
+              onValueChange={(v) => setOauthMode(v as "org" | "client")}
+              className="grid gap-3"
+            >
+              <label
+                htmlFor="oauth-mode-org"
+                className={`flex items-start gap-3 rounded-lg border p-3.5 cursor-pointer transition-colors ${
+                  oauthMode === "org"
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-muted-foreground/30"
+                }`}
+              >
+                <RadioGroupItem value="org" id="oauth-mode-org" className="mt-0.5" />
+                <div className="flex-1 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">Organization authenticates</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    You authenticate once and all your users share that connection.
+                    Best for company-wide services like Intercom, Datadog, or Sentry.
+                  </p>
+                </div>
+              </label>
+              <label
+                htmlFor="oauth-mode-client"
+                className={`flex items-start gap-3 rounded-lg border p-3.5 cursor-pointer transition-colors ${
+                  oauthMode === "client"
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-muted-foreground/30"
+                }`}
+              >
+                <RadioGroupItem value="client" id="oauth-mode-client" className="mt-0.5" />
+                <div className="flex-1 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">Each end-user authenticates</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Each end-user connects their own account when they first use a tool.
+                    Best for personal services like Stripe, GitHub, or Google Calendar.
+                  </p>
+                </div>
+              </label>
+            </RadioGroup>
+          </div>
+        )}
 
         {/* Bearer token field (shown when probe detects bearer auth) */}
         {probeStatus === "done" && probeResult?.detected_type === "bearer" && (
@@ -1213,7 +1282,10 @@ function OpenAPISourceStep({ onBack }: { onBack: () => void }) {
                       Go to your service&apos;s developer or admin console
                     </li>
                     <li>
-                      Create a new OAuth application (or &quot;client&quot;)
+                      Create a new OAuth application (or &quot;client&quot;).
+                      Name it something your users will recognize, like
+                      &quot;[Your Product] AI Assistant&quot; &mdash; this appears
+                      on the consent screen when users connect their account.
                     </li>
                     <li>
                       Set the redirect URI to:{" "}

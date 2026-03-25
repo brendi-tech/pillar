@@ -21,12 +21,23 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def _build_auth_headers(source: MCPToolSource) -> dict[str, str]:
-    """Construct auth headers based on the source's auth_type."""
+def _build_auth_headers(
+    source: MCPToolSource,
+    user_access_token: str | None = None,
+) -> dict[str, str]:
+    """Construct auth headers based on the source's auth_type.
+
+    If ``user_access_token`` is provided (client-auth MCP OAuth),
+    it takes precedence over source-level credentials.
+    """
     headers: dict[str, str] = {
         "Content-Type": "application/json",
         "Accept": "application/json, text/event-stream",
     }
+
+    if user_access_token:
+        headers["Authorization"] = f"Bearer {user_access_token}"
+        return headers
 
     if source.auth_type == "bearer":
         creds = _parse_credentials(source.auth_credentials)
@@ -410,10 +421,15 @@ async def execute_mcp_tool(
     mcp_source: MCPToolSource,
     caller: CallerContext,
     timeout_ms: int = 30000,
+    user_access_token: str | None = None,
 ) -> dict[str, Any]:
-    """Call a tool on the customer's MCP server via Streamable HTTP."""
+    """Call a tool on the customer's MCP server via Streamable HTTP.
 
-    headers = _build_auth_headers(mcp_source)
+    ``user_access_token`` overrides source-level auth when provided
+    (used for client-auth MCP OAuth where each end-user has their own token).
+    """
+
+    headers = _build_auth_headers(mcp_source, user_access_token=user_access_token)
 
     payload = {
         "jsonrpc": "2.0",
@@ -427,8 +443,9 @@ async def execute_mcp_tool(
 
     timeout_s = timeout_ms / 1000
     logger.info(
-        "[MCP] tools/call %s on %s (source=%s, auth=%s, timeout=%ss)",
-        tool_name, mcp_source.url, mcp_source.name, mcp_source.auth_type, timeout_s,
+        "[MCP] tools/call %s on %s (source=%s, auth=%s, per_user=%s, timeout=%ss)",
+        tool_name, mcp_source.url, mcp_source.name, mcp_source.auth_type,
+        bool(user_access_token), timeout_s,
     )
 
     try:
@@ -437,20 +454,42 @@ async def execute_mcp_tool(
                 session_id = await _initialize_session(client, mcp_source.url, headers)
             except httpx.HTTPStatusError as exc:
                 if exc.response.status_code == 401 and mcp_source.auth_type == "oauth":
-                    refreshed = await _try_oauth_refresh(mcp_source)
-                    if refreshed:
-                        headers = _build_auth_headers(mcp_source)
-                        session_id = await _initialize_session(client, mcp_source.url, headers)
-                    else:
-                        logger.warning(
-                            "[MCP] AUTH_ERROR %s on %s: OAuth token expired, refresh failed",
-                            tool_name, mcp_source.url,
+                    if user_access_token:
+                        # Per-user token failed — try refresh via UserToolCredential
+                        refreshed = await _try_user_oauth_refresh(
+                            mcp_source, user_access_token, caller,
                         )
-                        return {
-                            "success": False,
-                            "auth_error": True,
-                            "error": "OAuth token expired. Re-authorization is required.",
-                        }
+                        if refreshed:
+                            user_access_token = refreshed
+                            headers = _build_auth_headers(
+                                mcp_source, user_access_token=user_access_token,
+                            )
+                            session_id = await _initialize_session(
+                                client, mcp_source.url, headers,
+                            )
+                        else:
+                            return {
+                                "success": False,
+                                "auth_error": True,
+                                "error": "Your OAuth token has expired. Please reconnect your account.",
+                            }
+                    else:
+                        refreshed = await _try_oauth_refresh(mcp_source)
+                        if refreshed:
+                            headers = _build_auth_headers(mcp_source)
+                            session_id = await _initialize_session(
+                                client, mcp_source.url, headers,
+                            )
+                        else:
+                            logger.warning(
+                                "[MCP] AUTH_ERROR %s on %s: OAuth token expired, refresh failed",
+                                tool_name, mcp_source.url,
+                            )
+                            return {
+                                "success": False,
+                                "auth_error": True,
+                                "error": "OAuth token expired. Re-authorization is required.",
+                            }
                 elif exc.response.status_code == 401:
                     logger.warning(
                         "[MCP] AUTH_ERROR %s on %s: HTTP 401 (auth_type=%s)",
@@ -734,3 +773,68 @@ async def _try_oauth_refresh(source: MCPToolSource) -> bool:
     except Exception:
         logger.exception("OAuth token refresh failed for %s", source.name)
         return False
+
+
+async def _try_user_oauth_refresh(
+    source: MCPToolSource,
+    current_access_token: str,
+    caller: Any,
+) -> str | None:
+    """Attempt to refresh a per-user OAuth token for a client-auth MCP source.
+
+    Returns the new access_token string on success, or None on failure
+    (which deactivates the credential so the agent re-prompts).
+    """
+    from apps.mcp_oauth.token_client import refresh_access_token
+    from apps.tools.models import UserToolCredential
+
+    channel = getattr(caller, "channel", "web")
+    channel_user_id = getattr(caller, "channel_user_id", None)
+    if not channel_user_id:
+        return None
+
+    credential = await UserToolCredential.objects.filter(
+        mcp_source=source,
+        channel=channel,
+        channel_user_id=channel_user_id,
+        is_active=True,
+    ).afirst()
+
+    if not credential or not credential.refresh_token:
+        return None
+
+    if not source.oauth_token_endpoint or not source.oauth_client_id:
+        return None
+
+    try:
+        token_resp = await refresh_access_token(
+            token_endpoint=source.oauth_token_endpoint,
+            refresh_token=credential.refresh_token,
+            client_id=source.oauth_client_id,
+        )
+        if not token_resp.is_valid:
+            credential.is_active = False
+            await credential.asave(update_fields=["is_active"])
+            return None
+
+        from datetime import timedelta
+
+        credential.access_token = token_resp.access_token
+        credential.refresh_token = token_resp.refresh_token or credential.refresh_token
+        credential.token_type = token_resp.token_type or "Bearer"
+        if token_resp.expires_in:
+            credential.expires_at = timezone.now() + timedelta(seconds=token_resp.expires_in)
+        await credential.asave(update_fields=[
+            "access_token", "refresh_token", "token_type", "expires_at",
+        ])
+        logger.info(
+            "Per-user OAuth token refreshed for MCP source %s (user=%s:%s)",
+            source.name, channel, channel_user_id,
+        )
+        return credential.access_token
+    except Exception:
+        logger.exception(
+            "Per-user OAuth token refresh failed for %s (user=%s:%s)",
+            source.name, channel, channel_user_id,
+        )
+        return None

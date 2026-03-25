@@ -1,4 +1,5 @@
 export type MCPAuthType = 'none' | 'bearer' | 'header' | 'oauth';
+export type MCPOAuthMode = 'org' | 'client';
 export type MCPDiscoveryStatus = 'pending' | 'success' | 'error';
 export type MCPOAuthStatus =
   | 'none'
@@ -44,6 +45,7 @@ export interface MCPToolSource {
   slug: string;
   url: string;
   auth_type: MCPAuthType;
+  oauth_mode: MCPOAuthMode;
   discovered_tools: MCPDiscoveredTool[];
   tool_count: number;
   tool_configs: MCPToolConfigItem[];
@@ -69,6 +71,7 @@ export interface CreateMCPToolSourcePayload {
   url: string;
   auth_type: MCPAuthType;
   auth_credentials?: Record<string, string>;
+  oauth_mode?: MCPOAuthMode;
   product_id: string;
 }
 

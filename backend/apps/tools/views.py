@@ -390,22 +390,36 @@ class MCPSourceViewSet(AsyncModelViewSet):
 
             if as_meta.registration_endpoint:
                 from django.conf import settings
-                callback_url = f"{settings.API_BASE_URL}/api/admin/oauth/mcp-callback/"
+
+                redirect_uris = [f"{settings.API_BASE_URL}/api/admin/oauth/mcp-callback/"]
+                if source.oauth_mode == MCPToolSource.OAuthMode.CLIENT:
+                    redirect_uris.append(f"{settings.API_BASE_URL}/api/tools/oauth/callback/")
+
                 reg_result = await register_client(
                     registration_endpoint=as_meta.registration_endpoint,
                     client_name='Pillar',
-                    redirect_uris=[callback_url],
+                    redirect_uris=redirect_uris,
                 )
                 if reg_result and reg_result.get('client_id'):
                     source.oauth_client_id = reg_result['client_id']
 
-            source.oauth_status = MCPToolSource.OAuthStatus.AUTHORIZATION_REQUIRED
+            if source.oauth_mode == MCPToolSource.OAuthMode.CLIENT:
+                source.oauth_status = MCPToolSource.OAuthStatus.AUTHORIZED
+            else:
+                source.oauth_status = MCPToolSource.OAuthStatus.AUTHORIZATION_REQUIRED
             source.discovery_error = ''
             await source.asave(update_fields=[
                 "oauth_authorization_endpoint", "oauth_token_endpoint",
                 "oauth_registration_endpoint", "oauth_scopes",
                 "oauth_client_id", "oauth_status", "discovery_error",
             ])
+
+            if source.oauth_mode == MCPToolSource.OAuthMode.CLIENT:
+                from apps.tools.services.mcp_client import discover_and_store
+                try:
+                    await discover_and_store(source)
+                except Exception:
+                    logger.exception("Post-DCR discovery failed for client-auth source %s", source.name)
         except Exception as exc:
             logger.exception("OAuth discovery failed for %s: %s", source, exc)
             source.oauth_status = MCPToolSource.OAuthStatus.ERROR
