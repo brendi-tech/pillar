@@ -1,0 +1,21 @@
+import { Pillar } from '@pillar-ai/sdk';
+
+const pillar = Pillar.getInstance()!;
+
+pillar.defineTool({
+  name: 'delete_project',
+  description: 'Permanently delete a project and all its data',
+  type: 'trigger_tool',
+  needsConfirmation: true,
+  inputSchema: {
+    type: 'object',
+    properties: {
+      projectId: { type: 'string', description: 'Project ID to delete' },
+    },
+    required: ['projectId'],
+  },
+  execute: async ({ projectId }) => {
+    await api.deleteProject(projectId);
+    return { deleted: true };
+  },
+});

@@ -1,0 +1,39 @@
+// ----- ConfirmPurchase.vue -----
+
+<script setup lang="ts">
+import type { ConfirmationRenderProps } from "@pillar-ai/vue";
+
+const props = defineProps<
+  ConfirmationRenderProps<{ total: number; cartId: string }>
+>();
+</script>
+
+<template>
+  <div class="p-4 border rounded">
+    <p>Complete purchase for ${{ props.data.total }}?</p>
+    <div class="flex gap-2 mt-4">
+      <button @click="props.onConfirm()">Buy Now</button>
+      <button @click="props.onCancel()">Cancel</button>
+    </div>
+  </div>
+</template>
+
+// ----- useCheckoutTools.vue -----
+
+<script setup lang="ts">
+import { usePillarTool } from "@pillar-ai/vue";
+import ConfirmPurchase from "./ConfirmPurchase.vue";
+
+usePillarTool({
+  name: "complete_purchase",
+  description: "Complete the purchase",
+  type: "trigger_tool",
+  renderConfirmation: ConfirmPurchase,
+  execute: async ({ cartId }) => {
+    await api.checkout(cartId);
+    return { success: true };
+  },
+});
+</script>
+
+<template><slot /></template>

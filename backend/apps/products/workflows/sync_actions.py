@@ -86,7 +86,9 @@ async def sync_actions_workflow(workflow_input: SyncActionsInput, context: Conte
         logger.error("[ActionSync] Missing required job_id or product_id")
         return {'error': 'Missing required fields'}
     
-    logger.info(f"[ActionSync] Starting workflow for job {job_id}")
+    logger.info(
+        f"[ActionSync] Starting workflow for job {job_id} (mode={workflow_input.mode!r})"
+    )
     
     try:
         # Step 1: Load job and product

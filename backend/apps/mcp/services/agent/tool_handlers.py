@@ -65,7 +65,43 @@ BUILTIN_TOOLS = {
         },
         "auto_run": True,
         "returns_data": False,
-    }
+    },
+    "render_chart": {
+        "name": "render_chart",
+        "description": "Render an interactive chart or graph inline in the conversation",
+        "action_type": "inline_ui",
+        "data_schema": {
+            "type": "object",
+            "properties": {
+                "chart_type": {
+                    "type": "string",
+                    "enum": ["bar", "horizontal_bar", "stacked_bar", "line", "pie", "scatter", "area", "donut", "radar"],
+                },
+                "title": {"type": "string"},
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "labels": {"type": "array", "items": {"type": "string"}},
+                        "datasets": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "label": {"type": "string"},
+                                    "values": {"type": "array", "items": {"type": "number"}},
+                                },
+                                "required": ["values"],
+                            },
+                        },
+                    },
+                    "required": ["labels", "datasets"],
+                },
+            },
+            "required": ["chart_type", "data"],
+        },
+        "auto_run": True,
+        "returns_data": True,
+    },
 }
 BUILTIN_ACTIONS = BUILTIN_TOOLS
 

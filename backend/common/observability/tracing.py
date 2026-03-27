@@ -112,7 +112,7 @@ def setup_tracing(project_id: Optional[str] = None) -> trace.Tracer:
 
 
 def _auto_instrument() -> None:
-    """Auto-instrument Django, ASGI, psycopg, Redis, and requests."""
+    """Auto-instrument Django, psycopg, Redis, and requests."""
     instrumentors = [
         ("opentelemetry.instrumentation.django", "DjangoInstrumentor"),
         ("opentelemetry.instrumentation.psycopg", "PsycopgInstrumentor"),

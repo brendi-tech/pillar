@@ -48,6 +48,72 @@ CORE_TOOLS = [
             "required": ["query"],
         },
     },
+    {
+        "name": "render_chart",
+        "description": (
+            "Render an interactive chart or graph inline in the conversation. "
+            "Use this tool whenever you have structured numerical data that would be "
+            "clearer as a visualization than as text or a table. Good use cases: "
+            "comparisons between categories, trends over time, proportional breakdowns, "
+            "distributions, correlations, and multi-attribute profiles. Supports bar, "
+            "horizontal_bar, stacked_bar, line, pie, area, scatter, donut, and radar "
+            "chart types. Choose the chart type that best fits the data: "
+            "bar for comparisons, horizontal_bar for ranked lists or long labels, "
+            "stacked_bar for part-to-whole across categories, line for trends, "
+            "pie/donut for proportions, scatter for correlations, "
+            "area for cumulative trends, radar for multi-attribute comparisons."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "chart_type": {
+                    "type": "string",
+                    "enum": ["bar", "horizontal_bar", "stacked_bar", "line", "pie", "scatter", "area", "donut", "radar"],
+                    "description": (
+                        "The chart type. bar: comparisons, horizontal_bar: ranked lists / long labels, "
+                        "stacked_bar: part-to-whole across categories, line: trends over time, "
+                        "pie/donut: proportions, scatter: correlations, area: cumulative values, "
+                        "radar: multi-attribute comparisons."
+                    ),
+                },
+                "title": {
+                    "type": "string",
+                    "description": "Chart title displayed above the chart",
+                },
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "labels": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": "X-axis labels or category names",
+                        },
+                        "datasets": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "label": {
+                                        "type": "string",
+                                        "description": "Dataset legend label",
+                                    },
+                                    "values": {
+                                        "type": "array",
+                                        "items": {"type": "number"},
+                                        "description": "Numeric values corresponding to each label",
+                                    },
+                                },
+                                "required": ["values"],
+                            },
+                            "description": "One or more data series",
+                        },
+                    },
+                    "required": ["labels", "datasets"],
+                },
+            },
+            "required": ["chart_type", "data"],
+        },
+    },
 ]
 
 # Conditional tools - unlocked by context during the agentic loop

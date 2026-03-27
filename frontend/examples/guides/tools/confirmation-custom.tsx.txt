@@ -1,0 +1,32 @@
+import { usePillarTool, type ConfirmationRenderProps } from "@pillar-ai/react";
+
+function ConfirmPurchase({
+  data,
+  onConfirm,
+  onCancel,
+  isReady,
+  isLatest,
+}: ConfirmationRenderProps<{ total: number; cartId: string }>) {
+  return (
+    <div className={`p-4 border rounded ${!isLatest ? "opacity-50" : ""}`}>
+      <p>Complete purchase for ${data.total}?</p>
+      <div className="flex gap-2 mt-4">
+        <button onClick={() => onConfirm()} disabled={!isReady}>
+          Buy Now
+        </button>
+        <button onClick={onCancel}>Cancel</button>
+      </div>
+    </div>
+  );
+}
+
+usePillarTool({
+  name: "complete_purchase",
+  description: "Complete the purchase",
+  type: "trigger_tool",
+  renderConfirmation: ConfirmPurchase,
+  execute: async ({ cartId }) => {
+    await api.checkout(cartId);
+    return { success: true };
+  },
+});

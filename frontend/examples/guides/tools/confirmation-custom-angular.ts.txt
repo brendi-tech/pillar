@@ -1,0 +1,41 @@
+import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { injectPillarTool } from '@pillar-ai/angular';
+
+@Component({
+  selector: 'app-confirm-purchase',
+  standalone: true,
+  template: `
+    <div class="p-4 border rounded">
+      <p>Complete purchase for \${{ data.total }}?</p>
+      <div class="flex gap-2 mt-4">
+        <button (click)="onConfirm.emit()">Buy Now</button>
+        <button (click)="onCancel.emit()">Cancel</button>
+      </div>
+    </div>
+  `,
+})
+export class ConfirmPurchaseComponent {
+  @Input() data: any;
+  @Output() onConfirm = new EventEmitter<Record<string, unknown> | void>();
+  @Output() onCancel = new EventEmitter<void>();
+}
+
+@Component({
+  selector: 'app-checkout',
+  standalone: true,
+  template: `<div>Checkout</div>`,
+})
+export class CheckoutComponent {
+  constructor() {
+    injectPillarTool({
+      name: 'complete_purchase',
+      description: 'Complete the purchase',
+      type: 'trigger_tool',
+      renderConfirmation: ConfirmPurchaseComponent,
+      execute: async ({ cartId }) => {
+        await api.checkout(cartId);
+        return { success: true };
+      },
+    });
+  }
+}
