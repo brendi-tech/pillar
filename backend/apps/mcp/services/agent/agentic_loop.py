@@ -604,6 +604,30 @@ async def run_agentic_loop(
                 ):
                     yield event
 
+            elif tool_name == "render_table":
+                action = BUILTIN_TOOLS["render_table"]
+                async for event in execute_client_action(
+                    **_handler_common,
+                    tool_call_id=tool_call_id,
+                    action_name=tool_name,
+                    parameters=arguments,
+                    action=action,
+                    thinking_text=thinking_text,
+                ):
+                    yield event
+
+            elif tool_name == "render_metric":
+                action = BUILTIN_TOOLS["render_metric"]
+                async for event in execute_client_action(
+                    **_handler_common,
+                    tool_call_id=tool_call_id,
+                    action_name=tool_name,
+                    parameters=arguments,
+                    action=action,
+                    thinking_text=thinking_text,
+                ):
+                    yield event
+
             elif tool_name == "reconnect_account":
                 async for event in execute_reconnect_account(
                     **_handler_common,

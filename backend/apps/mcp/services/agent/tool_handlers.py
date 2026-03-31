@@ -102,6 +102,79 @@ BUILTIN_TOOLS = {
         "auto_run": True,
         "returns_data": True,
     },
+    "render_table": {
+        "name": "render_table",
+        "description": "Render a sortable data table inline in the conversation",
+        "action_type": "inline_ui",
+        "data_schema": {
+            "type": "object",
+            "properties": {
+                "title": {"type": "string"},
+                "columns": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "key": {"type": "string"},
+                            "label": {"type": "string"},
+                            "format": {
+                                "type": "string",
+                                "enum": ["text", "number", "currency", "percent", "date", "badge", "link"],
+                            },
+                            "align": {
+                                "type": "string",
+                                "enum": ["left", "center", "right"],
+                            },
+                        },
+                        "required": ["key", "label"],
+                    },
+                },
+                "rows": {
+                    "type": "array",
+                    "items": {"type": "object"},
+                },
+                "caption": {"type": "string"},
+            },
+            "required": ["columns", "rows"],
+        },
+        "auto_run": True,
+        "returns_data": True,
+    },
+    "render_metric": {
+        "name": "render_metric",
+        "description": "Render key metric / KPI cards inline in the conversation",
+        "action_type": "inline_ui",
+        "data_schema": {
+            "type": "object",
+            "properties": {
+                "title": {"type": "string"},
+                "metrics": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {"type": "string"},
+                            "value": {"type": "number"},
+                            "format": {
+                                "type": "string",
+                                "enum": ["number", "currency", "percent"],
+                            },
+                            "change": {"type": "number"},
+                            "change_label": {"type": "string"},
+                            "trend": {
+                                "type": "string",
+                                "enum": ["up", "down", "flat"],
+                            },
+                        },
+                        "required": ["label", "value"],
+                    },
+                },
+            },
+            "required": ["metrics"],
+        },
+        "auto_run": True,
+        "returns_data": True,
+    },
 }
 BUILTIN_ACTIONS = BUILTIN_TOOLS
 

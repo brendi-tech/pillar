@@ -114,6 +114,140 @@ CORE_TOOLS = [
             "required": ["chart_type", "data"],
         },
     },
+    {
+        "name": "render_table",
+        "description": (
+            "Render a sortable data table inline in the conversation. "
+            "Use this tool whenever you have structured data that is best "
+            "presented in rows and columns — lists of items, comparisons, "
+            "records, summaries, or any multi-field data. "
+            "Columns support format hints: text (default), number (with commas), "
+            "currency ($ with 2 decimals), percent (appends %), date (formatted), "
+            "badge (colored status pill), and link (clickable URL). "
+            "Columns are sortable by default — the user can click headers to sort. "
+            "Choose render_table over render_chart when the user needs to see "
+            "exact values, compare across many fields, or scan a list. "
+            "Choose render_chart when the visual pattern matters more than exact numbers."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "title": {
+                    "type": "string",
+                    "description": "Table title displayed above the table",
+                },
+                "columns": {
+                    "type": "array",
+                    "description": "Column definitions for the table",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "key": {
+                                "type": "string",
+                                "description": "Field key matching the row data objects",
+                            },
+                            "label": {
+                                "type": "string",
+                                "description": "Column header display text",
+                            },
+                            "format": {
+                                "type": "string",
+                                "enum": ["text", "number", "currency", "percent", "date", "badge", "link"],
+                                "description": (
+                                    "Display format: text (default), number (with commas), "
+                                    "currency ($ with 2 decimals), percent (appends %), "
+                                    "date (formatted date), badge (colored status pill), "
+                                    "link (clickable URL)"
+                                ),
+                            },
+                            "align": {
+                                "type": "string",
+                                "enum": ["left", "center", "right"],
+                                "description": "Text alignment. Defaults: right for numbers/currency/percent, center for badges, left for text.",
+                            },
+                        },
+                        "required": ["key", "label"],
+                    },
+                },
+                "rows": {
+                    "type": "array",
+                    "description": "Row data objects. Each key should match a column key.",
+                    "items": {
+                        "type": "object",
+                    },
+                },
+                "caption": {
+                    "type": "string",
+                    "description": "Optional footer caption text",
+                },
+            },
+            "required": ["columns", "rows"],
+        },
+    },
+    {
+        "name": "render_metric",
+        "description": (
+            "Render one to four key metric / KPI cards inline in the conversation. "
+            "Use this tool whenever you have important single numbers the user should "
+            "see at a glance — totals, counts, rates, scores, monetary amounts, or "
+            "any headline figure. Great for: account balances, usage stats, "
+            "conversion rates, summary counts, plan limits, or before/after comparisons. "
+            "Each metric can include an optional trend indicator (up/down/flat) with a "
+            "delta value. Choose render_metric over render_chart when there are 1-4 "
+            "discrete values to highlight and the exact number matters more than a trend "
+            "line. Choose render_metric over render_table when there are few values and "
+            "visual prominence is more important than tabular detail."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "title": {
+                    "type": "string",
+                    "description": "Optional heading displayed above the metrics",
+                },
+                "metrics": {
+                    "type": "array",
+                    "description": "Array of 1-4 metric objects to display",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "label": {
+                                "type": "string",
+                                "description": "Short name for the metric (e.g., 'Active Users', 'MRR')",
+                            },
+                            "value": {
+                                "type": "number",
+                                "description": "The numeric value to display prominently",
+                            },
+                            "format": {
+                                "type": "string",
+                                "enum": ["number", "currency", "percent"],
+                                "description": (
+                                    "Display format: number (with commas), "
+                                    "currency ($ with 2 decimals), percent (appends %)"
+                                ),
+                            },
+                            "change": {
+                                "type": "number",
+                                "description": "Delta value shown next to the trend arrow (e.g., 8.2 for +8.2%)",
+                            },
+                            "change_label": {
+                                "type": "string",
+                                "description": "Context for the change (e.g., 'vs last month', 'since yesterday')",
+                            },
+                            "trend": {
+                                "type": "string",
+                                "enum": ["up", "down", "flat"],
+                                "description": "Trend direction — drives arrow icon and color (green/red/gray)",
+                            },
+                        },
+                        "required": ["label", "value"],
+                    },
+                },
+            },
+            "required": ["metrics"],
+        },
+    },
 ]
 
 # Conditional tools - unlocked by context during the agentic loop
