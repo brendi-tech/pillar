@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Code, Layers, RefreshCw, Zap } from "lucide-react";
+import { LayoutGrid, Layers, RefreshCw, Zap } from "lucide-react";
 import { EngineersHeading } from "./EngineersHeading";
 import { GridBackground } from "./GridBackground";
 import { NumberedHeading } from "./NumberedHeading";
@@ -9,27 +9,27 @@ import { NumberedHeading } from "./NumberedHeading";
 const features = [
   {
     icon: Zap,
-    title: "One Install, MCP Included",
+    title: "Bring Your Tools",
     description:
-      "npm install and go. Ships with a standards-compliant MCP server and WebMCP support so you can power top models and agent workflows through Pillar.",
+      "Point Pillar at your OpenAPI spec, connect your MCP server, or define tools in code. All three feed into the same agent.",
   },
   {
     icon: Layers,
     title: "Managed Knowledge",
     description:
-      "We crawl your docs and integrate with your content sources. RAG that stays fresh, automatically.",
+      "We crawl your docs and integrate with your content sources. Add a source and every agent gets it automatically.",
   },
   {
-    icon: Code,
-    title: "Full Control",
+    icon: LayoutGrid,
+    title: "Pick and Choose Per Agent",
     description:
-      "Define actions in your frontend code. Same session, same auth—no token passing. Can call your backend too.",
+      "Create an internal Slack agent, a customer-facing copilot, a Cursor agent. Configure exactly which tools and knowledge each one sees — all from the dashboard.",
   },
   {
     icon: RefreshCw,
-    title: "Self-Improving",
+    title: "Updates Happen Everywhere",
     description:
-      "When a user gets stuck, easily copy a prompt from Pillar to your AI coding tool to create a new action directing the model on what to do.",
+      "Change a tool, update your docs, add a knowledge source. Every agent that uses it gets the update — no redeployment per channel.",
   },
 ];
 

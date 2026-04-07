@@ -2,23 +2,23 @@ import { MarketingPage } from "@/components/MarketingPage/MarketingPage";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Pillar - Your App's Copilot",
+  title: "Pillar - The Control Plane for AI Agents",
   description:
-    "Pillar is an open source copilot that turns user and agent requests into completed actions, right inside your app.",
+    "Pillar is the open source agent platform. Connect your tools once — Pillar adds reasoning, knowledge, multi-channel deployment, and a dashboard to manage it all.",
   alternates: {
     canonical: "/",
   },
   openGraph: {
-    title: "Pillar - Your App's Copilot",
+    title: "Pillar - The Control Plane for AI Agents",
     description:
-      "Pillar is an open source copilot that turns user and agent requests into completed actions, right inside your app.",
+      "Pillar is the open source agent platform. Connect your tools once — Pillar adds reasoning, knowledge, multi-channel deployment, and a dashboard to manage it all.",
     url: "https://trypillar.com",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Pillar - Your App's Copilot",
+    title: "Pillar - The Control Plane for AI Agents",
     description:
-      "Pillar is an open source copilot that turns user and agent requests into completed actions, right inside your app.",
+      "Pillar is the open source agent platform. Connect your tools once — Pillar adds reasoning, knowledge, multi-channel deployment, and a dashboard to manage it all.",
   },
   robots: {
     index: true,

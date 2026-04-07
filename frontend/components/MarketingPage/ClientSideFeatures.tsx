@@ -217,11 +217,10 @@ const ClientSideFeatures = () => {
           <div className="h-[220px] items-center justify-center hidden max-1300:flex">
             <SessionCard />
           </div>
-          <h3 className="font-semibold mb-2">Same Session = Real Power</h3>
+          <h3 className="font-semibold mb-2">In-App Copilot</h3>
           <p className="font-normal">
-            Pillar runs in the user&apos;s browser with their session—and
-            registers actions as WebMCP tools. No proxy servers, no token
-            forwarding. When <code className="text-xs bg-black/5 px-1 py-0.5 rounded">navigator.modelContext</code> ships,
+            Runs in the user&apos;s browser with their session — same auth,
+            zero latency. Actions register as WebMCP tools. When <code className="text-xs bg-black/5 px-1 py-0.5 rounded">navigator.modelContext</code> ships,
             your app is already wired.
           </p>
         </div>
@@ -234,10 +233,10 @@ const ClientSideFeatures = () => {
           <div className="h-[220px] items-center justify-center hidden max-1300:flex">
             <FormCard />
           </div>
-          <h3 className="font-semibold mb-2">Full Control</h3>
+          <h3 className="font-semibold mb-2">Slack & Discord</h3>
           <p className="font-normal">
-            Your actions are client defined. Re-use patterns, forms, and CSS
-            that already exist. Inline in chat or directly as modals.
+            Agents call your backend APIs directly — native to each platform.
+            Slack threads, Discord channels, same tools and knowledge.
           </p>
         </div>
         <div
@@ -249,10 +248,10 @@ const ClientSideFeatures = () => {
           <div className="h-[220px] items-center justify-center hidden max-1300:flex">
             <SpeedCard />
           </div>
-          <h3 className="font-semibold mb-2">Native Speed</h3>
+          <h3 className="font-semibold mb-2">MCP Compatible</h3>
           <p className="font-normal">
-            UI actions happen locally, instantly. No round-trip to external
-            servers. Feels native because it is native.
+            Expose your tools to any MCP client, or connect your existing
+            MCP server as a tool source. Pillar speaks the protocol natively.
           </p>
         </div>
         <div
@@ -264,10 +263,10 @@ const ClientSideFeatures = () => {
           <div className="h-[220px] items-center justify-center hidden max-1300:flex pb-6">
             <InfraCard />
           </div>
-          <h3 className="font-semibold mb-2">Your Infrastructure</h3>
+          <h3 className="font-semibold mb-2">One Dashboard</h3>
           <p className="font-normal">
-            Actions call your APIs with the user's existing auth. You control
-            what's possible. Pillar just orchestrates.
+            Manage conversations, analytics, and agent config across every
+            channel — one control plane for all of them.
           </p>
         </div>
       </div>

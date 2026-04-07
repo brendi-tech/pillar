@@ -1,16 +1,7 @@
-"use client";
-
-import { useEffect, useRef, useState } from "react";
-import {
-  motion,
-  useScroll,
-  useTransform,
-  type MotionValue,
-} from "framer-motion";
 import { GridBackground } from "./GridBackground";
 import { NumberedHeading } from "./NumberedHeading";
 
-const PROMPT_TEXT = "How do I add a copilot to my app?";
+const PROMPT_TEXT = "I have tools. Now what?";
 
 const TOOL_BOXES = [
   {
@@ -47,21 +38,29 @@ const TOOL_BOXES = [
 
 const PILLAR_LAYERS = [
   {
-    title: "Frontend Components",
-    description: "Drop-in React sidebar. Your components, your auth.",
+    title: "Tools",
+    description:
+      "Bring your MCP server, point at your OpenAPI spec, or define tools in code. All three feed into the same agent.",
+  },
+  {
+    title: "Knowledge",
+    description:
+      "Crawl your docs, connect content sources, auto-index. Every agent searches the same knowledge base.",
   },
   {
     title: "Reasoning Engine",
-    description: "Agent backend that plans, reasons, and calls your tools.",
-  },
-  {
-    title: "Knowledge Base",
-    description: "Your docs crawled, chunked, and always current.",
-  },
-  {
-    title: "Agent-Ready",
     description:
-      "WebMCP lets browser agents like Gemini, Comet, and others interact with your app too.",
+      "Plans, selects tools, chains multi-step actions. You bring the APIs — Pillar orchestrates.",
+  },
+  {
+    title: "Control Plane",
+    description:
+      "Dashboard for agent config, analytics, conversations, and identity. One place to manage everything.",
+  },
+  {
+    title: "Channels",
+    description:
+      "Deploys to Slack, Discord, your app, MCP, CLI — and whatever's next. Change once, update everywhere.",
   },
 ];
 
@@ -205,7 +204,7 @@ const GlobeIcon = ({ color }: { color: string }) => (
 );
 
 const TOOL_ICONS = [BrowserIcon, GearIcon, DatabaseIcon];
-const LAYER_ICONS = [ComponentIcon, BrainIcon, BookIcon, GlobeIcon];
+const LAYER_ICONS = [GearIcon, BookIcon, BrainIcon, ComponentIcon, GlobeIcon];
 
 const maskStyle: React.CSSProperties = { maskType: "alpha" };
 
@@ -233,22 +232,28 @@ const PillarLogoMark = () => (
 );
 
 // ---------------------------------------------------------------------------
-// Section separator with numbered heading (matches other marketing sections)
+// Supported channels / surfaces
 // ---------------------------------------------------------------------------
+
+const SUPPORTED_CHANNELS = [
+  { name: "Slack", domain: "slack.com" },
+  { name: "Discord", domain: "discord.com" },
+  { name: "Cursor", domain: "cursor.com" },
+  { name: "Claude Desktop", domain: "anthropic.com" },
+  { name: "Web Copilot", domain: "pillar.so" },
+  { name: "MCP", domain: "modelcontextprotocol.io" },
+];
 
 const GRADIENT_LINE_BG =
   "linear-gradient(90deg, rgba(212,212,212,0) 0%, #D4D4D4 30%, #D4D4D4 70%, rgba(212,212,212,0) 100%)";
 
-
 // ---------------------------------------------------------------------------
-// Sub-components
+// Sub-components (static, no scroll animation)
 // ---------------------------------------------------------------------------
 
 function SearchPrompt() {
   return (
-    <div
-      className="absolute left-1/2 top-[7%] z-10 w-full max-w-lg -translate-x-1/2 px-4 md:px-0"
-    >
+    <div className="mx-auto w-full max-w-lg px-4 md:px-0">
       <div className="flex items-center gap-3 rounded-2xl border border-black/[0.06] bg-white/90 px-5 py-3.5 shadow-[0_1px_2px_rgba(0,0,0,0.03),0_4px_16px_rgba(0,0,0,0.05)] backdrop-blur-xl">
         <span className="text-[#B0B0B0]">
           <SearchIcon />
@@ -261,333 +266,154 @@ function SearchPrompt() {
   );
 }
 
-// Both titles share this vertical position so they swap in place
-const TITLE_TOP = "top-[24%] md:top-[28%]";
-
-function OldWayDivider({ progress }: { progress: MotionValue<number> }) {
-  const opacity = useTransform(progress, [0.02, 0.06], [0, 1]);
-  const scaleX = useTransform(progress, [0.02, 0.06], [0, 1]);
-
+function OldWayDivider() {
   return (
-    <motion.div
-      className="absolute left-1/2 top-[22%] z-10 w-full max-w-[200px] -translate-x-1/2 md:max-w-[280px]"
-      style={{ opacity }}
-    >
-      <motion.div
+    <div className="mx-auto w-full max-w-[200px] md:max-w-[280px]">
+      <div
         className="h-px w-full"
         style={{
-          scaleX,
-          transformOrigin: "center center",
           background: "linear-gradient(90deg, transparent, #D4D4D4, transparent)",
         }}
       />
-    </motion.div>
-  );
-}
-
-function OldWayTitle({ progress }: { progress: MotionValue<number> }) {
-  const opacity = useTransform(progress, [0.03, 0.07], [0, 1]);
-  const y = useTransform(progress, [0.03, 0.07], [30, 0]);
-
-  return (
-    <motion.h2
-      className={`absolute left-1/2 ${TITLE_TOP} z-10 whitespace-nowrap font-editorial text-3xl tracking-tight text-[#1D1D1F] md:text-5xl`}
-      style={{ opacity, y, x: "-50%" }}
-    >
-      The old way
-    </motion.h2>
-  );
-}
-
-function ToolCard({
-  index,
-  progress,
-  mobile,
-}: {
-  index: number;
-  progress: MotionValue<number>;
-  mobile: boolean;
-}) {
-  const tool = TOOL_BOXES[index];
-  const Icon = TOOL_ICONS[index];
-
-  const entryStart = 0.06 + index * 0.06;
-  const entryEnd = entryStart + 0.05;
-
-  const opacity = useTransform(
-    progress,
-    [entryStart, entryEnd],
-    [0, 1]
-  );
-
-  const xSlide = useTransform(
-    progress,
-    [entryStart, entryEnd],
-    [100, 0]
-  );
-
-  const offsetX = mobile ? index * -20 : index * -100;
-  const offsetY = mobile ? index * 90 : index * 150;
-  const cardHalfW = mobile ? 130 : 130;
-
-  return (
-    <motion.div
-      className="absolute left-1/2 w-[260px] sm:w-[300px] md:w-[340px]"
-      style={{
-        opacity,
-        x: useTransform(xSlide, (v) => v + offsetX - cardHalfW),
-        y: offsetY,
-      }}
-    >
-      <div
-        className="rounded-2xl border border-black/[0.06] bg-white p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_20px_rgba(0,0,0,0.06)] md:p-5"
-        style={{
-          transform: mobile
-            ? "perspective(800px) rotateX(4deg) rotateY(-6deg)"
-            : "perspective(800px) rotateX(8deg) rotateY(-12deg)",
-          transformOrigin: "center center",
-        }}
-      >
-        <div className="flex items-center gap-3">
-          <div
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px]"
-            style={{
-              background: `linear-gradient(135deg, ${tool.accent}18, ${tool.accent}08)`,
-              boxShadow: `inset 0 0 0 0.5px ${tool.accent}20`,
-            }}
-          >
-            <Icon color={tool.accent} />
-          </div>
-          <span className="text-base font-semibold tracking-[-0.01em] text-[#1D1D1F] md:text-lg">
-            {tool.title}
-          </span>
-        </div>
-        <div className="mt-2.5 rounded-lg bg-[#F8F8F8] px-3 py-2 font-mono text-xs text-[#86868B] md:text-sm">
-          {tool.command}
-        </div>
-        <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1.5">
-          {tool.alternatives.map((alt) => (
-            <span
-              key={alt.name}
-              className="inline-flex items-center gap-1.5 text-xs text-[#6B6B6B]"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={`https://www.google.com/s2/favicons?domain=${alt.domain}&sz=32`}
-                alt=""
-                width={14}
-                height={14}
-                className="rounded-sm opacity-70"
-              />
-              {alt.name}
-            </span>
-          ))}
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
-function ToolCardsContainer({ progress, mobile, tallScreen }: { progress: MotionValue<number>; mobile: boolean; tallScreen: boolean }) {
-  const captionOpacity = useTransform(progress, [0.22, 0.25], [0, 1]);
-  const captionY = useTransform(progress, [0.22, 0.25], [12, 0]);
-  const lastCardBottom = mobile
-    ? (tallScreen ? 370 : 330)
-    : (tallScreen ? 530 : 480);
-
-  return (
-    <div className="absolute left-1/2 top-[32%] md:top-[36%]">
-      {TOOL_BOXES.map((_, i) => (
-        <ToolCard key={i} index={i} progress={progress} mobile={mobile} />
-      ))}
-      <motion.div
-        className="absolute left-1/2 z-10 w-screen max-w-md px-4 md:px-0"
-        style={{ opacity: captionOpacity, y: captionY, x: "-50%", top: lastCardBottom }}
-      >
-        <div className="flex items-center justify-center gap-3 text-[10px] font-medium uppercase tracking-[0.06em] text-[#86868B] md:gap-6 md:text-sm md:tracking-[0.08em]">
-          <span className="flex items-center gap-1.5">
-            <span className="inline-block h-1 w-1 rounded-full bg-[#C4C4C4]" />
-            Fragile glue code
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="inline-block h-1 w-1 rounded-full bg-[#C4C4C4]" />
-            3+ vendors to manage
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="inline-block h-1 w-1 rounded-full bg-[#C4C4C4]" />
-            Endless edge cases
-          </span>
-        </div>
-      </motion.div>
     </div>
   );
 }
 
-function OldWayGroup({
-  progress,
-  mobile,
-  children,
-}: {
-  progress: MotionValue<number>;
-  mobile: boolean;
-  children: React.ReactNode;
-}) {
-  const groupScale = useTransform(
-    progress,
-    [0.38, 0.48],
-    mobile ? [1, 1] : [1, 0.55]
-  );
-  const groupOpacity = useTransform(
-    progress,
-    [0.38, 0.48],
-    mobile ? [1, 0] : [1, 0.3]
-  );
-  const groupX = useTransform(
-    progress,
-    [0.38, 0.48],
-    mobile ? ["0%", "0%"] : ["0%", "-33%"]
-  );
-
+function OldWayTitle() {
   return (
-    <motion.div
-      className="absolute inset-0"
-      style={{
-        scale: groupScale,
-        opacity: groupOpacity,
-        x: groupX,
-        transformOrigin: "center center",
-      }}
-    >
-      {children}
-    </motion.div>
+    <h2 className="whitespace-nowrap text-center font-editorial text-3xl tracking-tight text-[#1D1D1F] md:text-4xl">
+      The old way
+    </h2>
   );
 }
 
-function DividerWithLogo({ progress }: { progress: MotionValue<number> }) {
-  const opacity = useTransform(progress, [0.42, 0.47], [0, 1]);
-  const scaleX = useTransform(progress, [0.42, 0.47], [0, 1]);
-  const logoScale = useTransform(progress, [0.43, 0.47], [0.5, 1]);
+function ToolCard({ index }: { index: number }) {
+  const tool = TOOL_BOXES[index];
+  const Icon = TOOL_ICONS[index];
 
   return (
-    <motion.div
-      className="absolute left-1/2 top-[14%] z-10 flex w-full max-w-sm -translate-x-1/2 items-center px-6 md:top-[20%] md:max-w-lg md:px-4"
-      style={{ opacity }}
-    >
-      <motion.div
+    <div className="rounded-2xl border border-black/[0.06] bg-white p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_20px_rgba(0,0,0,0.06)] md:p-5">
+      <div className="flex items-center gap-3">
+        <div
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px]"
+          style={{
+            background: `linear-gradient(135deg, ${tool.accent}18, ${tool.accent}08)`,
+            boxShadow: `inset 0 0 0 0.5px ${tool.accent}20`,
+          }}
+        >
+          <Icon color={tool.accent} />
+        </div>
+        <span className="text-base font-semibold tracking-[-0.01em] text-[#1D1D1F] md:text-lg">
+          {tool.title}
+        </span>
+      </div>
+      <div className="mt-2.5 rounded-lg bg-[#F8F8F8] px-3 py-2 font-mono text-xs text-[#86868B] md:text-sm">
+        {tool.command}
+      </div>
+      <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1.5">
+        {tool.alternatives.map((alt) => (
+          <span
+            key={alt.name}
+            className="inline-flex items-center gap-1.5 text-xs text-[#6B6B6B]"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={`https://www.google.com/s2/favicons?domain=${alt.domain}&sz=32`}
+              alt=""
+              width={14}
+              height={14}
+              className="rounded-sm opacity-70"
+            />
+            {alt.name}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function OldWayCaption() {
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-[10px] font-medium uppercase tracking-[0.06em] text-[#86868B] md:gap-x-5 md:text-xs md:tracking-[0.08em]">
+      <span className="flex items-center gap-1.5">
+        <span className="inline-block h-1 w-1 rounded-full bg-[#C4C4C4]" />
+        Nothing shared under the hood
+      </span>
+      <span className="flex items-center gap-1.5">
+        <span className="inline-block h-1 w-1 rounded-full bg-[#C4C4C4]" />
+        Rebuilt per channel
+      </span>
+      <span className="flex items-center gap-1.5">
+        <span className="inline-block h-1 w-1 rounded-full bg-[#C4C4C4]" />
+        Updates don&apos;t propagate
+      </span>
+    </div>
+  );
+}
+
+function HorizontalDividerWithLogo() {
+  return (
+    <div className="flex w-full items-center px-6">
+      <div
         className="h-[2px] flex-1"
         style={{
-          scaleX,
-          transformOrigin: "right center",
           background: "linear-gradient(90deg, transparent, #FF6E00)",
         }}
       />
       <div className="mx-3 shrink-0">
-        <motion.div style={{ scale: logoScale }}>
-          <PillarLogoMark />
-        </motion.div>
+        <PillarLogoMark />
       </div>
-      <motion.div
+      <div
         className="h-[2px] flex-1"
         style={{
-          scaleX,
-          transformOrigin: "left center",
           background: "linear-gradient(90deg, #FF6E00, transparent)",
         }}
       />
-    </motion.div>
+    </div>
   );
 }
 
-function PillarWayTitle({ progress }: { progress: MotionValue<number> }) {
-  const opacity = useTransform(progress, [0.46, 0.50], [0, 1]);
-  const y = useTransform(progress, [0.46, 0.50], [20, 0]);
-
+function VerticalDividerWithLogo() {
   return (
-    <motion.h2
-      className={`absolute left-1/2 ${TITLE_TOP} z-10 whitespace-nowrap font-editorial text-3xl tracking-tight text-[#1D1D1F] md:text-5xl`}
-      style={{ opacity, y, x: "-50%" }}
-    >
-      The Pillar way
-    </motion.h2>
-  );
-}
-
-function PillarContainer({ progress, tallScreen }: { progress: MotionValue<number>; tallScreen: boolean }) {
-  const containerOpacity = useTransform(progress, [0.49, 0.54], [0, 1]);
-  const containerScale = useTransform(progress, [0.49, 0.54], [0.92, 1]);
-  const containerY = useTransform(progress, [0.49, 0.54], [20, 0]);
-  const logosOpacity = useTransform(progress, [0.66, 0.70], [0, 1]);
-  const logosY = useTransform(progress, [0.66, 0.70], [16, 0]);
-
-  return (
-    <motion.div
-      className="absolute left-1/2 top-[30%] z-10 w-full max-w-sm px-4 md:top-[36%] md:max-w-lg md:px-0"
-      style={{
-        opacity: containerOpacity,
-        scale: containerScale,
-        y: containerY,
-        x: "-50%",
-      }}
-    >
-      <div className="rounded-2xl border border-black/[0.04] bg-white/90 p-5 shadow-[0_4px_24px_rgba(0,0,0,0.06),0_1px_3px_rgba(0,0,0,0.03)] backdrop-blur-2xl md:p-8">
-        {PILLAR_LAYERS.map((layer, i) => {
-          const layerStart = 0.53 + i * 0.03;
-          const layerEnd = layerStart + 0.08;
-          return (
-            <PillarLayer
-              key={i}
-              index={i}
-              layer={layer}
-              progress={progress}
-              entryRange={[layerStart, layerEnd]}
-            />
-          );
-        })}
+    <div className="flex flex-col items-center justify-center px-6 py-8">
+      <div
+        className="w-[2px] flex-1"
+        style={{
+          background: "linear-gradient(180deg, transparent, #FF6E00)",
+        }}
+      />
+      <div className="my-4 shrink-0">
+        <PillarLogoMark />
       </div>
-      <motion.div className={tallScreen ? "mt-10 md:mt-14" : "mt-6 md:mt-8"} style={{ opacity: logosOpacity, y: logosY }}>
-        <p className="mb-3 text-center text-xs font-medium uppercase tracking-[0.08em] text-[#86868B]">
-          Works with every major model
-        </p>
-        <div className="flex items-center justify-center gap-5 md:gap-7">
-          {MODEL_PROVIDERS.map((provider) => (
-            <span
-              key={provider.name}
-              className="flex items-center gap-1.5 text-xs text-[#6B6B6B] md:text-sm"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={`https://www.google.com/s2/favicons?domain=${provider.domain}&sz=32`}
-                alt={provider.name}
-                width={18}
-                height={18}
-                className="rounded-sm opacity-60 grayscale"
-              />
-              <span className="hidden sm:inline">{provider.name}</span>
-            </span>
-          ))}
-        </div>
-      </motion.div>
-    </motion.div>
+      <div
+        className="w-[2px] flex-1"
+        style={{
+          background: "linear-gradient(180deg, #FF6E00, transparent)",
+        }}
+      />
+    </div>
+  );
+}
+
+function PillarWayTitle() {
+  return (
+    <h2 className="whitespace-nowrap text-center font-editorial text-3xl tracking-tight text-[#1D1D1F] md:text-4xl">
+      The Pillar way
+    </h2>
   );
 }
 
 function PillarLayer({
   index,
   layer,
-  progress,
-  entryRange,
 }: {
   index: number;
   layer: (typeof PILLAR_LAYERS)[number];
-  progress: MotionValue<number>;
-  entryRange: [number, number];
 }) {
   const Icon = LAYER_ICONS[index];
-  const opacity = useTransform(progress, entryRange, [0, 1]);
-  const y = useTransform(progress, entryRange, [12, 0]);
 
   return (
-    <motion.div style={{ opacity, y }}>
+    <div>
       {index > 0 && (
         <div
           className="my-3.5 h-px md:my-5"
@@ -610,27 +436,89 @@ function PillarLayer({
           </span>
         </div>
       </div>
-    </motion.div>
+    </div>
+  );
+}
+
+function PillarLayersCard() {
+  return (
+    <div className="rounded-2xl border border-black/[0.04] bg-white/90 p-5 shadow-[0_4px_24px_rgba(0,0,0,0.06),0_1px_3px_rgba(0,0,0,0.03)] backdrop-blur-2xl md:p-8">
+      {PILLAR_LAYERS.map((layer, i) => (
+        <PillarLayer key={i} index={i} layer={layer} />
+      ))}
+    </div>
+  );
+}
+
+function ChannelLogos() {
+  return (
+    <div className="mt-6 md:mt-8">
+      <p className="mb-3 text-center text-xs font-medium uppercase tracking-[0.08em] text-[#86868B]">
+        Ship to all of these out of the box
+      </p>
+      <div className="flex flex-wrap items-center justify-center gap-5 md:gap-7">
+        {SUPPORTED_CHANNELS.map((channel) => (
+          <span
+            key={channel.name}
+            className="flex items-center gap-1.5 text-xs text-[#6B6B6B] md:text-sm"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={`https://www.google.com/s2/favicons?domain=${channel.domain}&sz=32`}
+              alt={channel.name}
+              width={18}
+              height={18}
+              className="rounded-sm opacity-60 grayscale"
+            />
+            <span className="hidden sm:inline">{channel.name}</span>
+          </span>
+        ))}
+      </div>
+    </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Model provider logos
+// Column composites
 // ---------------------------------------------------------------------------
 
-const MODEL_PROVIDERS = [
-  { name: "OpenAI", domain: "openai.com" },
-  { name: "Anthropic", domain: "anthropic.com" },
-  { name: "Google", domain: "deepmind.google" },
-  { name: "Meta", domain: "ai.meta.com" },
-  { name: "Mistral", domain: "mistral.ai" },
-  { name: "Cohere", domain: "cohere.com" },
-  { name: "Groq", domain: "groq.com" },
-];
+function OldWayColumn() {
+  return (
+    <div className="flex flex-col items-center gap-5 opacity-55 grayscale-[20%]">
+      <OldWayDivider />
+      <OldWayTitle />
+      <div className="flex w-full flex-col gap-4 px-2">
+        {TOOL_BOXES.map((_, i) => (
+          <ToolCard key={i} index={i} />
+        ))}
+      </div>
+      <OldWayCaption />
+    </div>
+  );
+}
 
+function PillarWayColumn() {
+  return (
+    <div className="flex flex-col items-center gap-5">
+      <div className="mx-auto w-full max-w-[200px] md:max-w-[280px]">
+        <div
+          className="h-px w-full"
+          style={{
+            background: "linear-gradient(90deg, transparent, #FF6E00, transparent)",
+          }}
+        />
+      </div>
+      <PillarWayTitle />
+      <div className="w-full px-2">
+        <PillarLayersCard />
+      </div>
+      <ChannelLogos />
+    </div>
+  );
+}
 
 // ---------------------------------------------------------------------------
-// Main Section
+// Section separator
 // ---------------------------------------------------------------------------
 
 function SectionSeparator() {
@@ -643,68 +531,46 @@ function SectionSeparator() {
   );
 }
 
+// ---------------------------------------------------------------------------
+// Main Section
+// ---------------------------------------------------------------------------
 
 export function StackSection() {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [stickyTop, setStickyTop] = useState(80);
-  const [mobile, setMobile] = useState(false);
-  const [tallScreen, setTallScreen] = useState(false);
-  const [stickyHeight, setStickyHeight] = useState("calc(100vh - 80px)");
-
-  useEffect(() => {
-    const update = () => {
-      const w = window.innerWidth;
-      let top: number;
-      if (w >= 1024) top = 80;
-      else if (w >= 640) top = 64;
-      else top = 56;
-      setStickyTop(top);
-      setMobile(w < 768);
-      setTallScreen(window.innerHeight >= 900);
-      setStickyHeight(`calc(100dvh - ${top}px)`);
-    };
-    update();
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
-  }, []);
-
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: [`start ${stickyTop}px`, `end end`],
-  });
-
   return (
     <div>
       <SectionSeparator />
 
-      <div ref={containerRef} className="relative h-[500vh] bg-white">
-        <div
-          className="sticky z-10 overflow-hidden bg-white"
-          style={{ top: stickyTop, height: stickyHeight, minHeight: 780 }}
-        >
-          <div className="relative h-full max-w-marketingSection mx-auto border-x border-marketing bg-white">
-            <GridBackground
-              className="absolute inset-0 z-0"
-              gradients={[
-                { x: "50%", y: "50%", radius: "90%", color: "rgba(255,255,255,0.4)" },
-              ]}
-            />
+      <div className="relative bg-white">
+        <div className="relative max-w-marketingSection mx-auto border-x border-marketing bg-white">
+          <GridBackground
+            className="absolute inset-0 z-0"
+            gradients={[
+              { x: "50%", y: "50%", radius: "90%", color: "rgba(255,255,255,0.4)" },
+            ]}
+          />
 
-            <div className="relative z-10 flex justify-center">
-              <NumberedHeading className="bg-[#1A1A1A] text-[#FF6E00]">
-                [01] ONE PLATFORM
-              </NumberedHeading>
-            </div>
+          <div className="relative z-10 flex justify-center pt-0 pb-2">
+            <NumberedHeading className="bg-[#1A1A1A] text-[#FF6E00]">
+              [01] THE CONTROL PLANE
+            </NumberedHeading>
+          </div>
 
+          <div className="relative z-10 py-6 md:py-8">
             <SearchPrompt />
-            <OldWayGroup progress={scrollYProgress} mobile={mobile}>
-              <OldWayDivider progress={scrollYProgress} />
-              <OldWayTitle progress={scrollYProgress} />
-              <ToolCardsContainer progress={scrollYProgress} mobile={mobile} tallScreen={tallScreen} />
-            </OldWayGroup>
-            <DividerWithLogo progress={scrollYProgress} />
-            <PillarWayTitle progress={scrollYProgress} />
-            <PillarContainer progress={scrollYProgress} tallScreen={tallScreen} />
+          </div>
+
+          {/* Desktop: side-by-side */}
+          <div className="relative z-10 hidden md:grid md:grid-cols-[1fr_auto_1fr] pb-16 pt-4">
+            <OldWayColumn />
+            <VerticalDividerWithLogo />
+            <PillarWayColumn />
+          </div>
+
+          {/* Mobile: stacked */}
+          <div className="relative z-10 flex flex-col gap-10 px-4 pb-12 pt-2 md:hidden">
+            <OldWayColumn />
+            <HorizontalDividerWithLogo />
+            <PillarWayColumn />
           </div>
         </div>
       </div>

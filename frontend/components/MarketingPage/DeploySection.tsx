@@ -43,12 +43,13 @@ export const DeploySection = () => {
 
                 <div className="mt-8 space-y-6 text-[#1A1A1A] text-base md:text-lg leading-relaxed max-w-md">
                   <p>
-                    Connect your existing content, define what users can
-                    accomplish, and embed it in your product.
+                    Add your tool sources in the dashboard — OpenAPI spec,
+                    MCP server URL, or SDK-defined tools. Connect your
+                    knowledge sources, pick which tools each agent gets.
                   </p>
                   <p>
-                    You&apos;re ready for users and agents and AI tools to build
-                    off of—we handle the infrastructure complexity.
+                    We&apos;ve seen companies deploy a Slack app in a day.
+                    Updates happen everywhere — no per-channel redeployment.
                   </p>
                 </div>
               </div>
@@ -63,7 +64,7 @@ export const DeploySection = () => {
         className="h-[128px] grid place-items-center max-w-marketingSection mx-auto border-x border-marketing relative"
       >
         <p className="text-center text-white text-sm bg-black/30 p-[10px] max-w-[620px] mx-auto">
-          Define actions in your frontend. Same codebase, same deploy pipeline, same auth context.<br />
+          OpenAPI, MCP, or SDK — all tool sources in one dashboard. Pick and choose which tools go where.<br />
           Nothing new to operate.
         </p>
       </div>
