@@ -49,8 +49,20 @@ class MCPResponseAdapter(ResponseAdapter):
         self,
         user_text: str,
         images: list[dict] | None = None,
+        is_hidden: bool = False,
     ) -> str:
-        """Create turn messages. MCP doesn't need image enrichment."""
+        """Create conversation + turn messages for MCP channel."""
+        from apps.analytics.models import ChatConversation
+
+        # Ensure the conversation row exists before creating messages
+        await ChatConversation.objects.aget_or_create(
+            id=self.conversation_id,
+            defaults={
+                'organization_id': self.organization_id,
+                'product_id': self.product_id,
+                'channel': self.channel or 'mcp',
+            },
+        )
         return await super().prepare_turn(user_text)
 
     async def prepare_resume(
