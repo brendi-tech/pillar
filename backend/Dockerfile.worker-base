@@ -59,12 +59,13 @@ WORKDIR /app
 
 # Copy compiled venv from builder
 COPY --from=builder /app/.venv /app/.venv
-ENV PATH="/app/.venv/bin:$PATH"
 
 # Copy uv from builder (deploy Dockerfile.worker runs uv sync on top of this base)
 COPY --from=builder /root/.local/bin/uv /root/.local/bin/uv
 COPY --from=builder /root/.local/bin/uvx /root/.local/bin/uvx
-ENV PATH="/root/.local/bin:$PATH"
+
+# Add .venv and uv to PATH so installed packages and uv are available
+ENV PATH="/root/.local/bin:/app/.venv/bin:$PATH"
 
 # Copy Node.js runtime + global packages (OpenClaw) from builder
 COPY --from=builder /usr/bin/node /usr/bin/node
