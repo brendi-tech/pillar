@@ -42,6 +42,13 @@ graceful_timeout = 30
 max_requests = 1000
 max_requests_jitter = 50
 
+# --- Memory Optimization ---
+
+# Load the Django application in the master process before forking workers.
+# Workers share read-only memory pages (framework code, AI library code) via
+# copy-on-write, reducing total RSS by ~300-500MB across 2 workers.
+preload_app = True
+
 # --- Logging ---
 
 # "-" sends to stdout/stderr, which Cloud Run captures automatically.
