@@ -22,15 +22,13 @@ dependencies = [
     # Cache
     "redis>=5.0.1",
     "django-redis>=5.4.0",
-    # Production server
-    "gunicorn>=21.2.0",
+    # Static files (in MIDDLEWARE — loaded by all Django processes)
     "whitenoise>=6.6.0",
-    "uvicorn[standard]>=0.30.0",
-    # Async support
+    # Async support (channels in CHANNEL_LAYERS config — loaded by all Django processes)
     "asgiref>=3.7.0",
-    "adrf>=0.1.6", # Async Django REST Framework views
-    "channels>=4.0.0", # Django Channels for WebSocket support
-    "channels-redis>=4.2.0", # Redis channel layer backend
+    "adrf>=0.1.6",
+    "channels>=4.0.0",
+    "channels-redis>=4.2.0",
     # LLM & AI
     "openai>=1.3.5",
     "litellm>=1.0.0",
@@ -44,59 +42,26 @@ dependencies = [
     "numpy>=1.24.0,<2.0",
     # Content Conversion
     "mistune>=3.0.0",
-    "markdown>=3.5.0", # For rendering markdown to HTML
+    "markdown>=3.5.0",
     # Web Scraping
     "firecrawl-py>=4.0.0",
     "requests>=2.31.0",
     "httpx>=0.26.0",
     "beautifulsoup4>=4.12.2",
     "html2text>=2020.1.16",
-    # Phase 2: Content Sources (YouTube, Podcasts, Documents, Buckets)
-    "youtube-transcript-api>=1.0.0", # YouTube transcript fetching
-    "yt-dlp>=2024.0.0", # YouTube audio extraction
-    "feedparser>=6.0.0", # RSS parsing for YouTube/Podcasts
-    "pypdf>=4.0.0", # PDF text extraction
-    "python-docx>=1.0.0", # DOCX text extraction
-    "pydub>=0.25.0", # Audio preprocessing (needs ffmpeg)
-    "groq>=0.9.0", # Whisper transcription
-    "boto3>=1.35.0", # S3 client
-    "google-cloud-storage>=2.18.0", # GCS client
-    "django-storages[google]>=1.14.0", # Django storage backends for GCS/S3
+    # Content Sources
+    "youtube-transcript-api>=1.0.0",
+    "feedparser>=6.0.0",
+    "pypdf>=4.0.0",
+    "python-docx>=1.0.0",
+    "boto3>=1.35.0",
+    "google-cloud-storage>=2.18.0",
+    "django-storages[google]>=1.14.0",
     # Sources Integration
     "Unified-python-sdk>=0.48.0",
     "cryptography>=41.0.0",
-    # Code Parsing (GitHub code indexing)
-    "tree-sitter>=0.23.0",
-    "tree-sitter-python>=0.23.0",
-    "tree-sitter-javascript>=0.23.0",
-    "tree-sitter-go>=0.23.0",
-    "tree-sitter-typescript>=0.23.0",
-    "tree-sitter-rust>=0.23.0",
-    "tree-sitter-java>=0.23.0",
-    "tree-sitter-ruby>=0.23.0",
-    # Browser automation (Agent Score)
-    "playwright>=1.49.0",
-    # Stagehand (Browserbase) — AI browser agent for signup test
-    "stagehand>=0.3.0",
-    # Workflow Orchestration
-    "hatchet-sdk>=1.20.0",
-    # Development tools
-    "ipython>=8.17.2",
-    # watchdog is a transitive dependency (via uvicorn[standard])
-    # Used by VSCode launch.json for Hatchet worker auto-reload
-    # Testing
-    "pytest>=7.4.3",
-    "pytest-django>=4.7.0",
-    "pytest-cov>=4.1.0",
-    "pytest-asyncio>=0.23.0",
-    "factory-boy>=3.3.0",
-    "faker>=20.0.3",
-    # Code quality
-    "ruff>=0.1.6",
-    "watchdog>=6.0.0",
+    # Tokenization
     "tiktoken>=0.12.0",
-    "ag-ui-protocol>=0.1.10",
-    "pytest-xdist>=3.8.0",
     "uuid-utils>=0.14.0",
     # OpenTelemetry (distributed tracing)
     "opentelemetry-api>=1.26.0",
@@ -114,7 +79,6 @@ dependencies = [
     # Billing
     "stripe>=12.0.0",
     "python-json-logger>=4.0.0",
-    "pillar-ai-server>=0.2.1",
     "slack-sdk>=3.41.0",
     "django-fernet-encrypted-fields>=0.3.1",
     "pynacl>=1.6.2",
@@ -179,7 +143,37 @@ exclude = [
 [tool.uv.sources]
 
 [dependency-groups]
+api = [
+    # Production ASGI server (CLI tools — not imported by Python code)
+    "gunicorn>=21.2.0",
+    "uvicorn[standard]>=0.30.0",
+]
+worker = [
+    # Workflow Orchestration
+    "hatchet-sdk>=1.20.0",
+    # Browser automation (Agent Score)
+    "playwright>=1.49.0",
+    "stagehand>=0.3.0",
+    # Audio transcription
+    "yt-dlp>=2024.0.0",
+    "pydub>=0.25.0",
+    "groq>=0.9.0",
+]
 dev = [
+    # Testing
+    "pytest>=7.4.3",
+    "pytest-django>=4.7.0",
+    "pytest-cov>=4.1.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-xdist>=3.8.0",
+    "factory-boy>=3.3.0",
+    "faker>=20.0.3",
+    # Code quality
+    "ruff>=0.1.6",
+    # Development tools
+    "ipython>=8.17.2",
+    "watchdog>=6.0.0",
+    # AI evaluation
     "claude-agent-sdk>=0.1.50",
     "deepeval>=3.8.4",
 ]
