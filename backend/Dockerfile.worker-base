@@ -1,36 +1,26 @@
-# Help Center Hatchet Worker — Base Image
+# Help Center Hatchet Worker — Base Image (Multi-stage)
 #
-# Contains all heavy, slow-changing dependencies:
-#   - System packages, Node.js 22, uv
-#   - OpenClaw (pinned version)
-#   - Python dependencies (from pyproject.toml / uv.lock)
-#   - Playwright Chromium + system libs
-#   - Non-root hatchet user
+# Stage 1 (builder): Compiler toolchain, Node.js, uv, Python deps, Playwright.
+# Stage 2 (runtime): Clean image with runtime libs, compiled venv, Node.js,
+#                     OpenClaw, Playwright Chromium, and non-root user.
 #
 # Rebuild triggers: pyproject.toml, uv.lock, or this file changes on main.
 # Also rebuilt weekly via cron as a safety net.
-#
-# The deploy Dockerfile (Dockerfile.worker) extends this image and only
-# copies application code, making deploys fast (~1-2 min vs ~15 min).
 
-FROM python:3.12-slim
+# ── Stage 1: Builder ────────────────────────────────────────────────
+FROM python:3.12-slim AS builder
 
-# Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
-# Set work directory
 WORKDIR /app
 
-# Install system dependencies, uv, and Node.js 22 (for OpenClaw)
+# Build tools + Node.js 22 (for OpenClaw) + uv
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    postgresql-client \
     gcc \
     python3-dev \
     libpq-dev \
     curl \
-    procps \
-    psmisc \
     ca-certificates \
     gnupg \
     git \
@@ -40,42 +30,66 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Pin OpenClaw to a specific version for deterministic builds.
-# Bump this intentionally when upgrading — do NOT use @latest.
 RUN npm install -g openclaw@2026.2.14
 
-# Add uv to PATH
 ENV PATH="/root/.local/bin:$PATH"
 
 # Copy only dependency manifests (for layer caching)
 COPY pyproject.toml uv.lock* ./
 
-# Install Python dependencies (includes hatchet-sdk)
-RUN uv sync --frozen --no-dev
+# Install shared + worker-group Python dependencies
+RUN uv sync --frozen --no-dev --group worker
 
-# Add .venv to PATH so installed packages are available
+# Add .venv to PATH so playwright CLI is available
 ENV PATH="/app/.venv/bin:$PATH"
 
-# Install Playwright Chromium browser AND all required system dependencies.
-# `--with-deps` uses Playwright's own dependency list, which is kept in sync
-# with each Chromium revision and avoids missing-library errors like
-# "libXcomposite.so.1: cannot open shared object file".
-#
-# PLAYWRIGHT_BROWSERS_PATH must be set BEFORE any install so both
-# Python Playwright (used by our code) and Node.js Playwright (used by
-# OpenClaw) share the same browser binaries directory.
-#
-# IMPORTANT: Only run Python Playwright's install — NOT the Node.js
-# playwright-core CLI.  OpenClaw bundles playwright-core (not full
-# playwright), and `playwright-core install chromium` overwrites the
-# full Chrome binary with just a headless shell, breaking the browser.
-# Python's `playwright install` downloads the full Chrome for Testing
-# AND the headless shell; OpenClaw's Playwright can use either.
-#
-# After installing, create a /usr/bin/chromium symlink so OpenClaw's
-# browser auto-detection finds it (it looks for system Chrome/Chromium).
+# Install Playwright Chromium browser (binaries only — system deps in runtime stage).
+# PLAYWRIGHT_BROWSERS_PATH must be set so both Python Playwright and OpenClaw
+# share the same browser binaries directory.
 ENV PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright
-RUN playwright install --with-deps chromium \
-    && CHROME=$(find /opt/ms-playwright/chromium-* -name "chrome" -not -path "*headless*" -type f 2>/dev/null | head -1) \
+RUN playwright install chromium
+
+# ── Stage 2: Runtime ────────────────────────────────────────────────
+FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+# Copy compiled venv from builder
+COPY --from=builder /app/.venv /app/.venv
+ENV PATH="/app/.venv/bin:$PATH"
+
+# Copy uv from builder (deploy Dockerfile.worker runs uv sync on top of this base)
+COPY --from=builder /root/.local/bin/uv /root/.local/bin/uv
+COPY --from=builder /root/.local/bin/uvx /root/.local/bin/uvx
+ENV PATH="/root/.local/bin:$PATH"
+
+# Copy Node.js runtime + global packages (OpenClaw) from builder
+COPY --from=builder /usr/bin/node /usr/bin/node
+COPY --from=builder /usr/bin/npx /usr/bin/npx
+COPY --from=builder /usr/lib/node_modules /usr/lib/node_modules
+# Recreate npm/npx symlinks pointing to the copied node_modules
+RUN ln -sf ../lib/node_modules/npm/bin/npm-cli.js /usr/bin/npm
+
+# Copy Playwright browser binaries from builder
+ENV PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright
+COPY --from=builder /opt/ms-playwright /opt/ms-playwright
+
+# Install runtime-only system packages (no gcc, no dev headers, no git, no gnupg).
+# Then install Playwright's required runtime system libraries for Chromium.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    postgresql-client \
+    procps \
+    psmisc \
+    curl \
+    ca-certificates \
+    && playwright install-deps chromium \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create /usr/bin/chromium symlink so OpenClaw's browser auto-detection finds it.
+RUN CHROME=$(find /opt/ms-playwright/chromium-* -name "chrome" -not -path "*headless*" -type f 2>/dev/null | head -1) \
     && echo "Playwright Chromium: ${CHROME:-NOT FOUND}" \
     && if [ -n "$CHROME" ]; then \
          ln -sf "$CHROME" /usr/bin/chromium; \
@@ -86,9 +100,6 @@ RUN playwright install --with-deps chromium \
 RUN mkdir -p /app/static /app/media
 
 # Create non-root user for running hatchet worker.
-# - /home/hatchet/.openclaw: writable dir for OpenClaw's browser profile data
-# - /opt/ms-playwright: shared Playwright browser binaries (read+execute)
-# - /usr/lib/node_modules: global npm packages including openclaw (read+execute)
 RUN groupadd hatchet && \
     useradd -g hatchet -u 1000 hatchet -m && \
     mkdir -p /home/hatchet/.openclaw && \
