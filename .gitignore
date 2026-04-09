@@ -38,3 +38,6 @@ frontend/package-lock.json
 # Superset demo
 demos/superset-copilot/.yalc/
 demos/superset-copilot/yalc.lock
+
+# Claude docs
+docs/superpowers/
