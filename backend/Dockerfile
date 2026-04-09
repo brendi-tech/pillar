@@ -17,7 +17,7 @@ WORKDIR /app
 COPY . .
 
 # Sync deps in case pyproject.toml/uv.lock have new packages not yet in the base image
-RUN uv sync --frozen --no-dev
+RUN uv sync --frozen --no-dev --group api
 
 # Create necessary directories (may already exist from base, but ensure)
 RUN mkdir -p /app/static /app/media
