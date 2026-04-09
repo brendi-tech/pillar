@@ -42,3 +42,13 @@ Thumbs.db
 # Docker
 Dockerfile*
 docker-compose*.yml
+
+# Large local directories
+media/
+tests/
+
+# Logs
+*.log
+
+# Ruff cache
+.ruff_cache/
