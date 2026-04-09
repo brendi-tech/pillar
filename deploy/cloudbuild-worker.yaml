@@ -35,7 +35,7 @@ steps:
       - '--min-instances'
       - '${_MIN_INSTANCES}'
       - '--max-instances'
-      - '3'
+      - '5'
       - '--concurrency'
       - '1'
       - '--timeout'
@@ -58,7 +58,7 @@ images:
 substitutions:
   _ENVIRONMENT: 'production'
   _ENVIRONMENT_SUFFIX: ''
-  _MEMORY: '2Gi'
+  _MEMORY: '4Gi'
   _CPU: '2'
   _MIN_INSTANCES: '1'
   _DB_HOST: ''

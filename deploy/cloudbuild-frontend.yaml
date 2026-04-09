@@ -37,7 +37,7 @@ steps:
       - '--min-instances'
       - '${_MIN_INSTANCES}'
       - '--max-instances'
-      - '5'
+      - '10'
       - '--concurrency'
       - '200'
       - '--timeout'
