@@ -1,28 +1,21 @@
-# Help Center Backend — Base Image
+# Help Center Backend — Base Image (Multi-stage)
 #
-# Contains all heavy, slow-changing dependencies:
-#   - System packages + uv
-#   - Python dependencies (from pyproject.toml / uv.lock)
+# Stage 1 (builder): Installs compiler toolchain + uv, builds Python deps.
+# Stage 2 (runtime): Clean slim image with only runtime libraries + compiled venv.
 #
 # Rebuild triggers: pyproject.toml, uv.lock, or this file changes on main.
 # Also rebuilt weekly via cron as a safety net.
-#
-# The deploy Dockerfile (backend/Dockerfile) extends this image and only
-# copies application code + runs collectstatic, making deploys fast
-# (~1-2 min vs ~6-10 min).
 
-FROM python:3.12-slim
+# ── Stage 1: Builder ────────────────────────────────────────────────
+FROM python:3.12-slim AS builder
 
-# Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
-# Set work directory
 WORKDIR /app
 
-# Install system dependencies and uv
+# Build tools needed to compile C extensions (psycopg, numpy, cryptography, etc.)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    postgresql-client \
     gcc \
     python3-dev \
     libpq-dev \
@@ -31,14 +24,29 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && curl -LsSf https://astral.sh/uv/install.sh | sh \
     && rm -rf /var/lib/apt/lists/*
 
-# Add uv to PATH
 ENV PATH="/root/.local/bin:$PATH"
 
 # Copy only dependency manifests (for layer caching)
 COPY pyproject.toml uv.lock* ./
 
-# Install Python dependencies
-RUN uv sync --frozen --no-dev
+# Install shared + api-group Python dependencies
+RUN uv sync --frozen --no-dev --group api
+
+# ── Stage 2: Runtime ────────────────────────────────────────────────
+FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+# Runtime-only system packages (no gcc, no dev headers)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy compiled venv from builder
+COPY --from=builder /app/.venv /app/.venv
 
 # Add .venv to PATH so installed packages are available
 ENV PATH="/app/.venv/bin:$PATH"
