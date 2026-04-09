@@ -103,7 +103,8 @@ function isAdminSubdomain(hostname: string): boolean {
     hostnameWithoutPort === "admin.localhost" ||
     hostnameWithoutPort === "admin" ||
     hostnameWithoutPort === "admin.pillar.bot" ||
-    hostnameWithoutPort === "admin.trypillar.com"
+    hostnameWithoutPort === "admin.trypillar.com" ||
+    hostnameWithoutPort === "pillar-admin.brendi.com.br"
   );
 }
 
