@@ -48,8 +48,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy compiled venv from builder
 COPY --from=builder /app/.venv /app/.venv
 
-# Add .venv to PATH so installed packages are available
-ENV PATH="/app/.venv/bin:$PATH"
+# Copy uv from builder (deploy Dockerfiles run uv sync on top of this base)
+COPY --from=builder /root/.local/bin/uv /root/.local/bin/uv
+COPY --from=builder /root/.local/bin/uvx /root/.local/bin/uvx
+
+# Add .venv and uv to PATH so installed packages and uv are available
+ENV PATH="/root/.local/bin:/app/.venv/bin:$PATH"
 
 # Create necessary directories
 RUN mkdir -p /app/static /app/media
