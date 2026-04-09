@@ -7,7 +7,7 @@ services:
       POSTGRES_USER: ${HC_POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${HC_POSTGRES_PASSWORD:-postgres}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
     healthcheck:
       test: pg_isready -U ${HC_POSTGRES_USER:-postgres}
       start_period: 30s
