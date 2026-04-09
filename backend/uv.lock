@@ -1219,6 +1219,7 @@ dependencies = [
     { name = "firecrawl-py" },
     { name = "google-cloud-storage" },
     { name = "google-generativeai" },
+    { name = "hatchet-sdk" },
     { name = "html2text" },
     { name = "httpx" },
     { name = "litellm" },
@@ -1240,6 +1241,7 @@ dependencies = [
     { name = "opentelemetry-resourcedetector-gcp" },
     { name = "opentelemetry-sdk" },
     { name = "pgvector" },
+    { name = "pillar-ai-server" },
     { name = "psycopg", extra = ["binary"] },
     { name = "pynacl" },
     { name = "pypdf" },
@@ -1279,7 +1281,6 @@ dev = [
 ]
 worker = [
     { name = "groq" },
-    { name = "hatchet-sdk" },
     { name = "playwright" },
     { name = "pydub" },
     { name = "stagehand" },
@@ -1311,6 +1312,7 @@ requires-dist = [
     { name = "firecrawl-py", specifier = ">=4.0.0" },
     { name = "google-cloud-storage", specifier = ">=2.18.0" },
     { name = "google-generativeai", specifier = ">=0.8.5" },
+    { name = "hatchet-sdk", specifier = ">=1.20.0" },
     { name = "html2text", specifier = ">=2020.1.16" },
     { name = "httpx", specifier = ">=0.26.0" },
     { name = "litellm", specifier = ">=1.0.0" },
@@ -1332,6 +1334,7 @@ requires-dist = [
     { name = "opentelemetry-resourcedetector-gcp", specifier = ">=1.6.0" },
     { name = "opentelemetry-sdk", specifier = ">=1.26.0" },
     { name = "pgvector", specifier = ">=0.2.4" },
+    { name = "pillar-ai-server", specifier = ">=0.2.1" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.2.0" },
     { name = "pynacl", specifier = ">=1.6.2" },
     { name = "pypdf", specifier = ">=4.0.0" },
@@ -1371,7 +1374,6 @@ dev = [
 ]
 worker = [
     { name = "groq", specifier = ">=0.9.0" },
-    { name = "hatchet-sdk", specifier = ">=1.20.0" },
     { name = "playwright", specifier = ">=1.49.0" },
     { name = "pydub", specifier = ">=0.25.0" },
     { name = "stagehand", specifier = ">=0.3.0" },
@@ -2498,6 +2500,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/25/6c/6d8b4b03b958c02fa8687ec6063c49d952a189f8c91ebbe51e877dfab8f7/pgvector-0.4.2.tar.gz", hash = "sha256:322cac0c1dc5d41c9ecf782bd9991b7966685dee3a00bc873631391ed949513a", size = 31354, upload-time = "2025-12-05T01:07:17.87Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/5a/26/6cee8a1ce8c43625ec561aff19df07f9776b7525d9002c86bceb3e0ac970/pgvector-0.4.2-py3-none-any.whl", hash = "sha256:549d45f7a18593783d5eec609ea1684a724ba8405c4cb182a0b2b08aeff04e08", size = 27441, upload-time = "2025-12-05T01:07:16.536Z" },
+]
+
+[[package]]
+name = "pillar-ai-server"
+version = "0.2.4"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/ae/23/87577ed94567924cb2d55536e6a1073874f7e948996b64875c4741b2be57/pillar_ai_server-0.2.4.tar.gz", hash = "sha256:52fd06c9863cf7ddec40b1194b260c8ead407e1a23ba3eb00058d5bb14466eaf", size = 39249, upload-time = "2026-03-24T18:42:05.011Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/18/32/53a61ea4b28cbd79894dab6798de309d2a702f90e8a3f3a74b648e97dc3d/pillar_ai_server-0.2.4-py3-none-any.whl", hash = "sha256:86561715b6bfd7fff797dafe3b92af72383e7d8db7ed242b5719338d8ab57ec7", size = 19005, upload-time = "2026-03-24T18:42:04.016Z" },
 ]
 
 [[package]]
