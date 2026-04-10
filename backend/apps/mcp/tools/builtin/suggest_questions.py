@@ -123,7 +123,8 @@ class SuggestQuestionsTool(Tool):
             
             # Check cache for generated questions (unless force_refresh)
             generated_questions = []
-            cache_key = CacheKeys.suggested_questions(site_id)
+            lang_suffix = f":{language}" if language and language != 'en' else ''
+            cache_key = CacheKeys.suggested_questions(site_id) + lang_suffix
             
             if not force_refresh:
                 cached = cache.get(cache_key)
@@ -133,7 +134,7 @@ class SuggestQuestionsTool(Tool):
 
             # Generate new questions if cache miss
             if not generated_questions:
-                generated_questions = await self._generate_questions(help_center_config)
+                generated_questions = await self._generate_questions(help_center_config, language=language)
                 # Cache the generated results (not including manual)
                 cache.set(cache_key, generated_questions, CACHE_TTL_SECONDS)
                 logger.info(f"[SuggestQuestions] Generated and cached {len(generated_questions)} questions for site {site_id}")
@@ -167,6 +168,7 @@ class SuggestQuestionsTool(Tool):
     async def _generate_questions(
         self,
         help_center_config,
+        language: str = None,
     ) -> List[Dict[str, str]]:
         """
         Generate action-oriented questions using LLM.
@@ -193,12 +195,18 @@ class SuggestQuestionsTool(Tool):
             logger.info("[SuggestQuestions] No actions or articles available, skipping generation")
             return []
 
+        # Resolve language name for prompts
+        effective_lang = language or 'en'
+        from apps.mcp.services.prompts.system_prompts import LANGUAGE_NAMES
+        lang_name = LANGUAGE_NAMES.get(effective_lang, effective_lang.upper()) if effective_lang != 'en' else None
+
         # Build prompt
         prompt = self._build_prompt(
             product_name=help_center_config.name,
             actions_context=actions_context,
             articles_context=articles_context,
             has_actions=has_actions,
+            lang_name=lang_name,
         )
 
         # Generate with LLM (use budget model for question generation)
@@ -211,12 +219,15 @@ class SuggestQuestionsTool(Tool):
 
         logger.info(f"[SuggestQuestions] Generating {MAX_POOL_SIZE} questions with model: {model_name}")
 
+        lang_instruction = f" IMPORTANT: All prompts MUST be written entirely in {lang_name}." if lang_name else ""
+
         if has_actions:
             system_prompt = (
                 "You are an assistant that generates action-oriented starter prompts for a product's AI copilot. "
                 "The copilot can perform actions, not just answer questions. Generate exactly 3 focused prompts "
                 "that invite the user to ask the copilot to DO something. Use imperative phrasing like "
                 "'Create...', 'Set up...', 'Show me...' instead of 'How do I...'. Return only valid JSON array."
+                f"{lang_instruction}"
             )
         else:
             system_prompt = (
@@ -224,6 +235,7 @@ class SuggestQuestionsTool(Tool):
                 "Generate exactly 3 focused prompts that invite the user to engage with the copilot. "
                 "Use guiding phrasing like 'Walk me through...', 'Help me understand...', 'Show me how to...' "
                 "instead of passive 'How do I...' or 'What is...'. Return only valid JSON array."
+                f"{lang_instruction}"
             )
 
         response = await llm_client.complete_async(
@@ -334,6 +346,7 @@ class SuggestQuestionsTool(Tool):
         actions_context: str,
         articles_context: str,
         has_actions: bool = False,
+        lang_name: str = None,
     ) -> str:
         """Build the LLM prompt for generating starter prompts.
 
@@ -368,6 +381,7 @@ Requirements:
 - Keep each prompt under 10 words
 {tone_requirements}- Make prompts specific and actionable, not generic
 - DO NOT invent capabilities not listed above
+{f'- ALL prompts MUST be written entirely in {lang_name}. Do not use English.' if lang_name else ''}
 
 Return ONLY a JSON array with {MAX_POOL_SIZE} prompts:
 [
