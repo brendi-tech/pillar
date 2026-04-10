@@ -87,5 +87,11 @@ class McpConfig(AppConfig):
         if 'test' in sys.argv or 'pytest' in sys.argv[0]:
             logger.info("[McpConfig] Skipping pre-import during tests")
             return True
-        
+
+        # Skip when PILLAR_SKIP_HEAVY_INIT is set (e.g. hatchet worker)
+        import os
+        if os.environ.get('PILLAR_SKIP_HEAVY_INIT'):
+            logger.info("[McpConfig] Skipping pre-import (PILLAR_SKIP_HEAVY_INIT)")
+            return True
+
         return False

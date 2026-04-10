@@ -49,6 +49,11 @@ def setup_tracing(project_id: Optional[str] = None) -> trace.Tracer:
     if _initialized:
         return trace.get_tracer("pillar")
 
+    if os.getenv("OTEL_SDK_DISABLED", "").lower() in ("true", "1", "yes"):
+        logger.info("[Tracing] Disabled via OTEL_SDK_DISABLED")
+        _initialized = True
+        return trace.get_tracer("pillar")
+
     try:
         resource = Resource.create({
             "service.name": _get_service_name(),

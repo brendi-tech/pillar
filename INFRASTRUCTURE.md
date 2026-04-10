@@ -69,6 +69,7 @@ Pillar runs on **Google Cloud Run** with 3 services, backed by **Supabase** (Pos
 | Min instances | 1 |
 | Max instances | 5 |
 | Concurrency | 1 (one task at a time per instance) |
+| CPU throttling | Disabled (`--no-cpu-throttling`) |
 | Timeout | 900s (15 min) |
 | VPC | vpc-connector-front |
 | Auth | Internal only (no-allow-unauthenticated) |

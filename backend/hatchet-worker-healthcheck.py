@@ -134,7 +134,16 @@ def run_hatchet_worker() -> None:
     """Run Hatchet worker with retry logic for transient registration failures."""
     import django
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.production')
-    django.setup()
+    os.environ['PILLAR_SKIP_HEAVY_INIT'] = '1'
+    print("[WORKER] Starting django.setup()...", flush=True)
+    try:
+        django.setup()
+        print("[WORKER] django.setup() completed", flush=True)
+    except Exception as e:
+        print(f"[WORKER] django.setup() FAILED: {e}", flush=True)
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
 
     from common.hatchet_client import get_hatchet_client
     from worker_config import get_all_workflows
